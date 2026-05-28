@@ -1,0 +1,41 @@
+{
+  "name": "unifi",
+  "version": "1.0.0",
+  "description": "UniFi Network and Protect CLI skills for managing UDM devices, clients, VLANs, firewall rules, cameras, PTZ, and events.",
+  "author": {
+    "name": "Infiquetra",
+    "email": "hello@infiquetra.com",
+    "url": "https://github.com/infiquetra"
+  },
+  "homepage": "https://github.com/infiquetra/infiquetra-codex-plugins/tree/main/plugins/unifi",
+  "repository": "https://github.com/infiquetra/infiquetra-codex-plugins",
+  "license": "MIT",
+  "keywords": [
+    "unifi",
+    "ubiquiti",
+    "network",
+    "protect",
+    "cameras",
+    "home-lab",
+    "udm",
+    "firewall",
+    "vlan"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "UniFi",
+    "shortDescription": "UniFi Network and Protect operations.",
+    "longDescription": "Provides Codex skills and bundled CLI scripts for UniFi Network and Protect operations with confirmation gates for mutations.",
+    "developerName": "Infiquetra",
+    "category": "Infrastructure",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "brandColor": "#0074E4",
+    "defaultPrompt": [
+      "Use the UniFi Network or Protect skill for this operation."
+    ]
+  }
+}

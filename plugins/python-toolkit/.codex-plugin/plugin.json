@@ -1,0 +1,36 @@
+{
+  "name": "python-toolkit",
+  "version": "1.0.0",
+  "description": "Python development toolkit for Infiquetra project setup, testing, and implementation patterns.",
+  "author": {
+    "name": "Infiquetra Team",
+    "email": "hello@infiquetra.com",
+    "url": "https://github.com/infiquetra"
+  },
+  "homepage": "https://github.com/infiquetra/infiquetra-codex-plugins/tree/main/plugins/python-toolkit",
+  "repository": "https://github.com/infiquetra/infiquetra-codex-plugins",
+  "license": "MIT",
+  "keywords": [
+    "python",
+    "testing",
+    "development",
+    "patterns"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Python Toolkit",
+    "shortDescription": "Infiquetra Python setup, testing, and coding patterns.",
+    "longDescription": "Provides Python project setup, testing, and serverless implementation guidance for Infiquetra repositories.",
+    "developerName": "Infiquetra",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "brandColor": "#2D6CDF",
+    "defaultPrompt": [
+      "Apply the Infiquetra Python toolkit to this project or code change."
+    ]
+  }
+}

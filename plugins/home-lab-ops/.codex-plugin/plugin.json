@@ -1,0 +1,38 @@
+{
+  "name": "home-lab-ops",
+  "version": "1.0.0",
+  "description": "Proxmox, Ansible, Ceph, monitoring, and vault operations guidance for the Infiquetra home lab.",
+  "author": {
+    "name": "Infiquetra",
+    "email": "hello@infiquetra.com",
+    "url": "https://github.com/infiquetra"
+  },
+  "homepage": "https://github.com/infiquetra/infiquetra-codex-plugins/tree/main/plugins/home-lab-ops",
+  "repository": "https://github.com/infiquetra/infiquetra-codex-plugins",
+  "license": "MIT",
+  "keywords": [
+    "proxmox",
+    "ansible",
+    "ceph",
+    "homelab",
+    "monitoring",
+    "vault"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Home Lab Ops",
+    "shortDescription": "Operational playbooks for the Infiquetra home lab.",
+    "longDescription": "Provides Codex skills for Proxmox operations, Ansible preflight checks, inventory synchronization, monitoring guardrails, and vault workflows.",
+    "developerName": "Infiquetra",
+    "category": "Infrastructure",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "brandColor": "#207A5A",
+    "defaultPrompt": [
+      "Help with a home lab operation using the relevant Infiquetra runbook skill."
+    ]
+  }
+}

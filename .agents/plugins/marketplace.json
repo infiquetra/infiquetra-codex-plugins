@@ -1,0 +1,81 @@
+{
+  "name": "infiquetra-codex-plugins",
+  "interface": {
+    "displayName": "Infiquetra Codex Plugins",
+    "shortDescription": "Codex-native Infiquetra plugin adapters."
+  },
+  "plugins": [
+    {
+      "name": "blueprint-reviewer",
+      "source": {
+        "source": "local",
+        "path": "./plugins/blueprint-reviewer"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Coding"
+    },
+    {
+      "name": "home-lab-ops",
+      "source": {
+        "source": "local",
+        "path": "./plugins/home-lab-ops"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Infrastructure"
+    },
+    {
+      "name": "python-toolkit",
+      "source": {
+        "source": "local",
+        "path": "./plugins/python-toolkit"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Coding"
+    },
+    {
+      "name": "sdlc-manager",
+      "source": {
+        "source": "local",
+        "path": "./plugins/sdlc-manager"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
+      "name": "unifi",
+      "source": {
+        "source": "local",
+        "path": "./plugins/unifi"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Infrastructure"
+    },
+    {
+      "name": "test-suite",
+      "source": {
+        "source": "local",
+        "path": "./plugins/test-suite"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Coding"
+    }
+  ]
+}

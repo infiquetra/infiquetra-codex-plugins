@@ -1,0 +1,37 @@
+# Infiquetra Codex Plugins
+
+Codex-native adapter repo for selected Infiquetra plugins.
+
+This repo is not a full mirror of `infiquetra-claude-plugins`. It carries the
+Codex-ready plugin surface, currently:
+
+| Plugin | Version | Status |
+|---|---:|---|
+| `blueprint-reviewer` | 0.1.0 | baseline |
+| `home-lab-ops` | 1.0.0 | baseline |
+| `python-toolkit` | 1.0.0 | baseline |
+| `sdlc-manager` | 1.4.0 | baseline |
+| `unifi` | 1.0.0 | baseline |
+| `test-suite` | 2.0.0 | proof port |
+
+## Layout
+
+- `plugins/<name>/.codex-plugin/plugin.json` is the Codex manifest.
+- `plugins/<name>/skills/` is the active Codex skill surface.
+- `.agents/plugins/marketplace.json` is the repo-local marketplace.
+- `docs/portability/matrix.md` records what is included, deferred, blocked, or unsupported.
+- `docs/cutover/cache-replacement.md` records the gates before repo-managed installs replace cached copies.
+- `scripts/validate_codex_plugins.py` checks manifests, inventory, stale host paths, and bundled script boundaries.
+
+## Validate
+
+```bash
+python3 scripts/validate_codex_plugins.py
+python3 plugins/test-suite/skills/run-quality-checks/scripts/test_runner.py --dry-run --checks pytest,ruff
+python3 -m pytest
+```
+
+## Source Policy
+
+Treat this repo as the source of truth after validation and cutover. Do not edit
+installed Codex cache copies as maintained source.

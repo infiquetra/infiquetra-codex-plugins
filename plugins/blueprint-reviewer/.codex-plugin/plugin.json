@@ -1,0 +1,39 @@
+{
+  "name": "blueprint-reviewer",
+  "version": "0.1.0",
+  "description": "Rubric-driven review for upstream-of-PR Infiquetra SDLC phases: blueprint sections, ADRs, specs, and GitHub issues.",
+  "author": {
+    "name": "Infiquetra",
+    "email": "hello@infiquetra.com",
+    "url": "https://github.com/infiquetra"
+  },
+  "homepage": "https://github.com/infiquetra/infiquetra-codex-plugins/tree/main/plugins/blueprint-reviewer",
+  "repository": "https://github.com/infiquetra/infiquetra-codex-plugins",
+  "license": "MIT",
+  "keywords": [
+    "blueprint",
+    "spec",
+    "issue",
+    "reviewer",
+    "rubrics",
+    "sdlc",
+    "mount-olympus"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Blueprint Reviewer",
+    "shortDescription": "Rubric review for blueprints, specs, ADRs, and issues.",
+    "longDescription": "Applies Infiquetra SDLC review rubrics to upstream planning artifacts before implementation work starts.",
+    "developerName": "Infiquetra",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "brandColor": "#2457C5",
+    "defaultPrompt": [
+      "Review this blueprint, spec, ADR, or issue using the appropriate Infiquetra rubric."
+    ]
+  }
+}

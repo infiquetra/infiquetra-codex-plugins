@@ -1,0 +1,18 @@
+[project]
+name = "infiquetra-codex-plugins"
+version = "0.1.0"
+description = "Codex-native Infiquetra plugin adapters"
+requires-python = ">=3.12"
+
+[dependency-groups]
+dev = [
+  "pytest>=8.0.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "plugins/sdlc-manager/tests"]
+python_files = ["test_*.py"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"

@@ -1,0 +1,37 @@
+{
+  "name": "test-suite",
+  "version": "2.0.0",
+  "description": "Parallel Python quality checks for pytest, ruff, mypy, and bandit.",
+  "author": {
+    "name": "Infiquetra Team",
+    "email": "hello@infiquetra.com",
+    "url": "https://github.com/infiquetra"
+  },
+  "homepage": "https://github.com/infiquetra/infiquetra-codex-plugins/tree/main/plugins/test-suite",
+  "repository": "https://github.com/infiquetra/infiquetra-codex-plugins",
+  "license": "MIT",
+  "keywords": [
+    "testing",
+    "pytest",
+    "quality",
+    "python",
+    "parallel"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Test Suite",
+    "shortDescription": "Parallel Python quality-check runner.",
+    "longDescription": "Runs pytest, ruff, mypy, and bandit through a packaged runner script, with dry-run support for Codex plugin smoke validation.",
+    "developerName": "Infiquetra",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "brandColor": "#D95F02",
+    "defaultPrompt": [
+      "Run or prepare Python quality checks using the Infiquetra test suite."
+    ]
+  }
+}
