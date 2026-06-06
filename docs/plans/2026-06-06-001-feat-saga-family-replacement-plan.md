@@ -3,6 +3,7 @@ title: "feat: Replace Codex SDLC baseline with Saga family"
 type: feat
 status: active
 date: 2026-06-06
+deepened: 2026-06-06
 origin: docs/brainstorms/2026-06-06-codex-saga-family-replacement-requirements.md
 ---
 
@@ -100,7 +101,14 @@ the U1 source-baseline and capability-map checkpoint is complete.
   on one branch, but perform old-plugin deletion late in the branch after new
   plugin scaffolds, capability mapping, validators, and pre-deletion isolated
   Codex proof evidence exist. This honors the atomic replacement requirement
-  without making the early port steps depend on a partially deleted repo.
+  without making the early port steps depend on a partially deleted repo. If
+  proof fails after new plugin porting starts, the branch must fail closed:
+  keep the old active plugins, postpone hard deletion, and either repair the
+  failed replacement proof or split the failed scope into a follow-up before
+  merge. A mergeable replacement branch has only one successful end state: all
+  four Saga-family plugins active and both old active plugins deleted. A split
+  result must be a clearly non-activation preparatory PR that does not claim to
+  satisfy the atomic replacement.
 - KTD2. Skill-first Codex port: Copy portable skills, references, scripts,
   config, tests, README, and changelog content; transform Claude commands into
   Codex skills or reference guidance; do not copy `.claude-plugin`, `commands`,
@@ -108,8 +116,9 @@ the U1 source-baseline and capability-map checkpoint is complete.
   and the Codex plugin manifest model.
 - KTD3. Source-parity names stay behind namespaces: Keep Saga names such as
   `plan`, `work`, and `brainstorm` inside the `saga` plugin and prove they are
-  addressable as namespaced skills. If Codex cannot address them that way, the
-  replacement fails before merge.
+  addressable as namespaced skills by resolution or invocation evidence, not
+  visibility alone. If Codex cannot address them that way, the replacement fails
+  before merge.
 - KTD4. Mission-control inherits and hardens the SDLC script surface:
   `mission-control` should start from the Claude `mission-control` script and
   tests, not from the older Codex `sdlc-manager` copy, then rewrite Claude state
@@ -117,10 +126,14 @@ the U1 source-baseline and capability-map checkpoint is complete.
   write path.
 - KTD5. Deploy confirmation belongs at both instruction and script boundaries:
   Skills must ask before mutation, and mutation scripts must also require an
-  explicit confirmation input or flag for non-dry-run operations. A user should
-  not be able to bypass safety only because the script was called directly.
-  Any real mutation proof must target an explicit disposable or non-production
-  repository or environment.
+  explicit confirmation input or flag for non-dry-run operations bound to the
+  exact previewed mutation plan: host, repo, ref or tag, issue or project IDs,
+  and operation payload. A user should not be able to bypass safety only because
+  the script was called directly. Any real mutation proof must target an
+  explicit proof-owned allowlisted repository or environment with cleanup or
+  rollback evidence. Real mutation proof also requires a verified GitHub auth
+  boundary for the operation: required scopes, allowed account or token-source
+  classes, and prohibited broad/default credentials.
 - KTD6. Team-execution agents become Codex protocol material: Claude agent
   prompts are converted into self-contained reference files or prompt templates
   consumed by the `team-execution` skill. Codex subagents are used only when the
@@ -132,23 +145,34 @@ the U1 source-baseline and capability-map checkpoint is complete.
   team-execution may write local state under `.codex/...`, but generated files
   must be gitignored before proof runs, must not store credentials, must redact
   sensitive operational data before writing evidence, and must have explicit
-  retention or cleanup rules.
+  retention or cleanup rules. Tracked proof artifacts must be shareable without
+  secrets, full sensitive prompts, credential-adjacent local details, or raw
+  transcripts that contain protected operational data.
 - KTD8. Isolated Codex proof is a release gate: Use a fresh non-default
   `CODEX_HOME` profile for marketplace registration, plugin install,
   fresh-session skill visibility, and representative skill-flow proof before
   old-plugin deletion. The proof may include a manual TUI checkpoint if Codex
   still lacks a non-interactive plugin install command, but it must produce
   machine-checkable artifacts and must not mutate the user's default profile.
-- KTD9. Validation becomes capability-aware: Keep the existing inventory and
-  stale-host checks, but add Saga-family cutover checks, capability-map checks,
-  recursive skill/reference/docs host-behavior checks, namespace-proof evidence
-  checks, known-use inventory checks, state-protection checks, mutation-gate
-  checks, disposable-target checks, link checks, and proof artifact parsing so
-  the validator enforces the new operating model instead of only file shape.
+- KTD9. Validation is layered, not monolithic: Keep
+  `scripts/validate_codex_plugins.py` responsible for static repo shape and
+  active-inventory checks, then add explicit companion checks or modes for the
+  target inventory fixture, capability map, known-use inventory, proof artifact
+  schema, state policy, link integrity, and runtime proof evidence. This avoids
+  turning one validator into the only place where every safety rule lives.
 - KTD10. Marketplace activation belongs to deletion: U2 defines and tests the
-  target inventory contract, but `.agents/plugins/marketplace.json` activation
-  waits until U8, when the old plugin roots are removed and the new roots become
-  the final active inventory.
+  target inventory contract in a non-default target or fixture mode, while the
+  default validator continues to represent the current active repo until U8.
+  `.agents/plugins/marketplace.json` activation waits until U8, when the old
+  plugin roots are removed and the new roots become the final active inventory.
+  Validation modes must have stable names: `current`, `target-fixture`, and
+  `cutover`.
+- KTD11. Saga routes by handoff, not by hidden plugin API: Saga may emit a
+  handoff envelope, recommend a namespaced skill, or call package-local Saga
+  helpers, but it must not depend on direct Python imports, script calls, or
+  private runtime APIs inside `deploy`, `mission-control`, or `team-execution`.
+  The operator/model invokes the receiving plugin skill, and that plugin owns
+  its own confirmation, auth, state, and proof boundary.
 
 ---
 
@@ -158,11 +182,13 @@ the U1 source-baseline and capability-map checkpoint is complete.
 
 ```mermaid
 flowchart TB
-  Operator[Codex operator] --> Saga[saga skills]
+  Operator[Codex operator or model] --> Saga[saga skills]
   Saga --> SagaState[.codex/saga state]
-  Saga --> Team[team-execution protocol]
-  Saga --> Mission[mission-control SDLC owner]
-  Saga --> Deploy[deploy release owner]
+  Saga --> Envelope[handoff envelope or namespaced skill recommendation]
+  Envelope --> OperatorInvoke[operator/model invokes receiving skill]
+  OperatorInvoke --> Team[team-execution protocol]
+  OperatorInvoke --> Mission[mission-control SDLC owner]
+  OperatorInvoke --> Deploy[deploy release owner]
 
   Team --> TeamState[.codex/team-execution evidence]
   Team --> Subagents[Codex subagents when safe]
@@ -177,13 +203,22 @@ flowchart TB
   Validator --> Deploy
 ```
 
+### Orchestration Contract
+
+Saga coordinates lifecycle state and emits handoff material. It does not import
+or call private implementation surfaces from the receiving plugins. The receiving
+plugin owns its own instructions, scripts, auth checks, confirmation gates, local
+state, and proof evidence.
+
 ### Cutover Gate
 
 ```mermaid
 stateDiagram-v2
   [*] --> SourceFrozen
   SourceFrozen --> CapabilityMapped
-  CapabilityMapped --> NewPluginsPorted
+  CapabilityMapped --> KnownUsesInventoried
+  KnownUsesInventoried --> TargetValidation
+  TargetValidation --> NewPluginsPorted
   NewPluginsPorted --> LocalValidation
   LocalValidation --> PreDeletionCodexProof
   PreDeletionCodexProof --> DeleteOldPlugins
@@ -192,8 +227,13 @@ stateDiagram-v2
 
   SourceFrozen --> Blocked: missing baseline
   CapabilityMapped --> Blocked: unmapped active capability
+  KnownUsesInventoried --> Blocked: unmapped old invocation
+  TargetValidation --> Blocked: target contract invalid
   LocalValidation --> Blocked: tests or validator fail
-  PreDeletionCodexProof --> Blocked: namespace or flow proof fails
+  PreDeletionCodexProof --> KeepOldActivePlugins: namespace or flow proof fails
+  KeepOldActivePlugins --> RepairOrSplitScope
+  RepairOrSplitScope --> TargetValidation: repair branch
+  RepairOrSplitScope --> Blocked: split required before merge
   DeleteOldPlugins --> Blocked: deletion attempted before gates
 ```
 
@@ -205,11 +245,30 @@ flowchart TB
   Classify --> Safety{Safe to delegate?}
   Safety -->|yes, subagents available| Delegate[spawn bounded reviewers and validators]
   Safety -->|no or unavailable| Serial[run reviewer and validator protocol serially]
-  Delegate --> Consensus[consensus and dissent gate]
-  Serial --> Consensus
-  Consensus --> Evidence[evidence capture and state policy]
+  Delegate --> DelegatedConsensus[independent delegated consensus]
+  Serial --> SerialConsensus[serial consensus with independence limits]
+  DelegatedConsensus --> Evidence[evidence capture and state policy]
+  SerialConsensus --> Evidence
   Evidence --> Verify[main-thread final verification]
   Verify --> Outcome[pass, warn, hard-fail, or blocked]
+  SerialConsensus --> UsabilityProof[usability proof, not independence-sensitive proof]
+```
+
+### Mutation Boundary
+
+```mermaid
+sequenceDiagram
+  participant Skill as deploy or mission-control skill
+  participant Script as package-local script
+  participant External as GitHub or deployment target
+
+  Skill->>Script: request dry-run or preview
+  Script-->>Skill: exact mutation plan and auth provenance class
+  Skill->>Skill: require confirmation bound to the exact plan
+  Skill->>Script: confirmed plan identifier and payload
+  Script->>Script: revalidate target, auth class, and confirmation match
+  Script->>External: mutate only if all guards pass
+  Script-->>Skill: result plus redacted evidence
 ```
 
 ---
@@ -270,6 +329,7 @@ docs/
     saga-family-known-use-inventory.md
   cutover/
   validation/
+    saga-family-target-inventory.json
 tests/
 scripts/
 ```
@@ -297,22 +357,30 @@ scripts/
   commands, skills, scripts, config, tests, agents, docs, and references. Build
   an old-to-new capability map for every active `sdlc-manager` and
   `blueprint-reviewer` skill, marking each as `mission-control`,
-  `saga/team-execution`, removed-from-scope, or lineage-only. Add a known-use
-  inventory by searching repo docs, scripts, tests, marketplace config,
-  Codex plugin cache references, and any planned migration notes for active
-  invocations of `sdlc-manager`, `blueprint-reviewer`, `sdlc-*`,
-  `blueprint-review`, `spec-review`, and `issue-review`; each hit must map to a
-  replacement, an intentional retirement, or an accepted break. Treat this as a
-  mandatory pre-implementation checkpoint for porting and deletion units: U2-U9
-  do not start until the source commit, remote provenance, source inventory,
-  old-to-new capability map, and known-use inventory are recorded and reviewed.
+  Saga, `team-execution`, intentionally retired, or accepted break. Reserve
+  `lineage-only` for provenance and source notes, not for active old skills.
+  Add a known-use inventory by searching repo-maintained docs, scripts, tests,
+  marketplace config, confirmed active external invocation sources, and planned
+  migration notes for active invocations of `sdlc-manager`,
+  `blueprint-reviewer`, `sdlc-*`, `blueprint-review`, `spec-review`, and
+  `issue-review`. Treat installed Codex cache references as provenance or
+  stale-reference evidence unless they are confirmed active. Name
+  `hermes-extensions` as a known external migration input. Each confirmed active
+  hit must map to an exact replacement owner, an intentional retirement, or an
+  accepted break with rationale. Cache-derived rows must store normalized
+  plugin/skill identifiers and disposition only, with redacted path classes
+  instead of absolute paths, local profile names, raw cache snippets, or
+  transcripts. Treat this as a mandatory pre-implementation checkpoint for
+  porting and deletion units: U2-U9 do not start until the source commit, remote
+  provenance, source inventory, old-to-new capability map, and known-use
+  inventory are recorded and reviewed.
 - **Patterns to follow:** `docs/portability/provenance.md`,
   `docs/portability/matrix.md`, and `docs/engineering-journal/DECISIONS.md`.
 - **Test scenarios:** Test expectation: none -- this unit creates durable
   planning and provenance docs; validator enforcement lands in U2 and U7.
-- **Verification:** A reviewer can trace every removed active skill and known
-  active old invocation to a new owner, explicit retirement, or accepted break
-  before any old plugin source is deleted.
+- **Verification:** A reviewer can trace every removed active skill and
+  confirmed active old invocation to a new owner, explicit retirement, or
+  accepted break before any old plugin source is deleted.
 
 ### U2. Add Saga-Family Inventory And Validation Contract
 
@@ -325,41 +393,65 @@ scripts/
   - `scripts/validate_codex_plugins.py`
   - `tests/test_validate_codex_plugins.py`
   - `docs/validation.md`
+  - `docs/validation/saga-family-target-inventory.json`
   - `docs/portability/matrix.md`
   - `pyproject.toml`
-- **Approach:** Replace the hard-coded MVP inventory with the Saga-family
-  target inventory contract in validator code and tests, without activating the
-  new marketplace entries yet. Keep checks for local marketplace source paths,
+- **Approach:** Introduce staged validation rather than flipping the default
+  validator to the future inventory too early. Mode `current` keeps checking the
+  current active repo until U8 and remains the default command path. Mode
+  `target-fixture` validates the Saga-family target inventory and proof
+  prerequisites before marketplace activation. Mode `cutover`, used after U8,
+  validates the active tree
+  against the new inventory. Keep checks for local marketplace source paths,
   installability, `.codex-plugin` manifests, missing skills, stale host paths,
   script-reference boundaries, and forbidden active Claude directories. Expand
   active text validation recursively across skill references, plugin READMEs,
   portability docs, and package-local references with an explicit lineage
   allowlist. Add checks that `team-execution` is no longer `blocked` in the
   portability matrix, that the source-baseline and capability-map docs exist,
-  that the known-use inventory exists and has a disposition for every old-use
-  hit class,
-  that old active plugin names are absent from final inventory, that host-only
-  behaviors are rewritten or lineage-only, and that proof artifacts are present
-  before cutover is considered complete. Extend proof-artifact checks so
-  mutation-capable validation defaults to dry-run or preview, any real mutation
-  evidence names a disposable or non-production target, mission-control retains
-  dry-run or preview modes where old workflows had them, and team-execution
-  serial evidence records separate role artifacts plus serial-consensus limits.
-- **Execution note:** Start with validator tests that fail against the current
-  old inventory so the replacement contract is visible before source deletion.
+  that the known-use inventory exists and has a disposition for every confirmed
+  active old-use hit class, that old active plugin names are absent from final
+  inventory, that host-only behaviors are rewritten or lineage-only, and that
+  proof artifacts are present before cutover is considered complete. Extend
+  proof-artifact checks so mutation-capable validation defaults to dry-run or
+  preview, any real mutation evidence names a proof-owned allowlisted target
+  with cleanup or rollback evidence, mission-control retains dry-run or preview
+  modes where old workflows had them, and team-execution serial evidence records
+  separate role artifacts plus serial-consensus limits. Use one test-ownership
+  strategy: update `pyproject.toml` as each new plugin test suite lands, so
+  default pytest discovery expands incrementally rather than relying on
+  undocumented per-unit test commands.
+- **Validation mode matrix:**
+  - `current`: default pre-U8 mode; passes against the current active repo and
+    is the CI-safe mode before marketplace activation.
+  - `target-fixture`: fixture-backed mode; validates the Saga-family target
+    inventory, capability map, proof prerequisites, and expected old-inventory
+    failures without requiring the active marketplace to flip.
+  - `cutover`: final active-tree mode; runs after U8 and fails if the old
+    plugins remain active, new plugins are absent, proof artifacts are missing,
+    or cutover gates are incomplete.
+- **Execution note:** Target and cutover mode tests should fail against the
+  current old inventory through explicit fixtures or expected-error assertions;
+  default `current` validation must remain green until U8 flips the active
+  inventory.
 - **Patterns to follow:** Existing functions in `scripts/validate_codex_plugins.py`
   and tests in `tests/test_validate_codex_plugins.py`.
 - **Test scenarios:**
   - Covers AE1. Given the old inventory, validation reports
     `sdlc-manager` and `blueprint-reviewer` as unexpected active plugins and
     the four Saga-family plugins as missing.
+  - Covers AE1. Given the current pre-cutover repo, default validation still
+    passes until U8 changes the active marketplace and plugin roots.
+  - Covers AE1. Given the Saga-family target fixture, `target-fixture`
+    validation checks the future inventory without requiring
+    `.agents/plugins/marketplace.json` to be flipped before U8.
   - Covers AE1. Given a known-use inventory missing an old invocation class or
-    disposition, validation blocks hard deletion.
+    disposition for a confirmed active use, validation blocks hard deletion.
   - Covers AE3. Given missing namespace-proof evidence for `saga:plan`,
     `saga:work`, or `saga:brainstorm`, validation blocks final cutover.
   - Covers AE6. Given deploy or mission-control proof with real mutation
-    evidence against protected release or production state, validation blocks
-    final cutover.
+    evidence outside the proof-owned allowlist or without cleanup/rollback
+    evidence, validation blocks final cutover.
   - Covers AE7. Given team-execution degraded proof without per-role artifacts
     or serial-consensus labeling, validation blocks final cutover.
   - Covers AE8. Given active `.claude/saga` or `.claude/team-execution` state
@@ -374,6 +466,8 @@ scripts/
     directory.
   - Given a script reference that escapes its package or points to a missing
     file, validation preserves the existing boundary failure.
+  - Given each new plugin test suite lands, `pyproject.toml` includes that path
+    before the unit is considered complete.
 - **Verification:** Validator tests describe the new target inventory and the
   validator fails closed when proof, known-use, mutation-target, or cutover
   evidence is missing.
@@ -400,9 +494,11 @@ scripts/
   - `plugins/mission-control/skills/*/references/`
   - `plugins/mission-control/config/project-mappings.json`
   - `plugins/mission-control/config/sdlc-schema.json`
+  - `plugins/mission-control/config/target-allowlist.json`
   - `plugins/mission-control/scripts/sdlc_manager.py`
   - `plugins/mission-control/scripts/sync_template_docs.py`
   - `plugins/mission-control/tests/`
+  - `plugins/mission-control/tests/test_prompt_alignment_codex.py`
   - `pyproject.toml`
 - **Approach:** Port the current Claude `mission-control` skill/script/test
   surface, then rewrite installed-path guidance to package-relative Codex
@@ -410,9 +506,20 @@ scripts/
   file. Preserve prepared issue drafts and sidecars. Add or tighten
   script-level confirmation so GitHub writes present a mutation plan or dry run
   before mutation, and review any existing `--yes` style escape so it is allowed
-  only for clearly documented non-interactive contexts. Preserve dry-run or
-  preview modes for every mission-control workflow whose `sdlc-manager`
-  predecessor had one, and make dry-run or preview the default validation path.
+  only when the confirmation is bound to the exact previewed host, repo, issue
+  or project IDs, and operation payload, includes freshness data such as a
+  digest/run id and TTL, and passes remote-state precondition checks immediately
+  before mutation. Require configured GitHub host, org, repo, and project
+  allowlists before any issue, board, label, milestone, comment, or project
+  mutation; reject non-allowlisted targets before preview and again before
+  mutation. Preserve dry-run or preview modes for every mission-control workflow
+  whose `sdlc-manager` predecessor had one, and make dry-run or preview the
+  default validation path. The capability map must route SDLC status and triage
+  workflows to an existing mission-control skill or record them as intentionally
+  removed. Rewrite source prompt-alignment tests for Codex surfaces rather than
+  porting Claude assertions as-is: assert `.codex-plugin`, skills, references,
+  README, and marketplace metadata instead of `.claude-plugin`, `commands`, or
+  `agents`.
 - **Patterns to follow:** Existing `plugins/sdlc-manager/scripts/sdlc_manager.py`
   for Codex path rewrites, existing SDLC tests under `plugins/sdlc-manager/tests`,
   and source `mission-control` tests.
@@ -424,6 +531,12 @@ scripts/
     draft and sidecar without GitHub mutation.
   - Given `issue create-prepared`, the script renders a mutation plan and stops
     before mutation unless confirmation is supplied.
+  - Given a confirmation token or flag produced for one mutation plan, a changed
+    repo, host, issue or project ID, or payload invalidates the confirmation.
+  - Given a stale or replayed confirmation token, or remote state that changed
+    after preview, the script refuses mutation and requires a fresh preview.
+  - Given a non-allowlisted GitHub host, org, repo, or project target, the script
+    rejects the operation before preview and again before mutation.
   - Given insufficient GitHub permissions for a write path, the script returns a
     clear permission failure without logging credentials.
   - Given missing or malformed Codex defaults, mission-control warns and
@@ -432,6 +545,12 @@ scripts/
     planned actions without mutation.
   - Given a mapped old SDLC workflow that previously supported dry-run or
     preview, mission-control retains an equivalent dry-run or preview path.
+  - Given SDLC status or triage workflows in the source or old capability map,
+    the capability map names their owning mission-control skill or records a
+    deliberate removal rationale.
+  - Given Codex prompt-alignment tests, they assert the Codex plugin manifest,
+    skill, reference, README, and marketplace surfaces rather than Claude
+    command or agent directories.
 - **Verification:** Mission-control tests pass, active skills reference packaged
   scripts correctly, and the README/auth notes explain `gh` authentication,
   required scopes, and failure behavior without storing tokens.
@@ -459,18 +578,25 @@ scripts/
   - `plugins/deploy/tests/test_mint_tag.py`
   - `plugins/deploy/tests/test_query_deployments.py`
   - `plugins/deploy/tests/test_preview_release_notes.py`
+  - `pyproject.toml`
 - **Approach:** Convert deploy commands into Codex skills while keeping
   `deploy-state` as shared policy context. Preserve repo-owner checks,
   deployment tag naming, unhealthy snapshot checks, status/drift queries, and
   release-note previews. Add explicit script-level confirmation for any
   non-dry-run tag push or release/deployment mutation, and make dry-run the
-  representative validation path. If implementation needs a real mutation proof,
-  point it only at an explicit disposable or non-production repo/environment,
-  never protected release state or production deployment state. Document the
-  deploy auth model in README and PORTABILITY: least-privilege `gh` scopes, no
-  plugin-managed token storage, no credential logging, separation between
-  validation and real-operation environments, and failure behavior for both
-  `gh` API calls and git tag pushes when permissions are missing.
+  representative validation path. Confirmation must include freshness data such
+  as a digest/run id and TTL, and deploy must re-check remote-state
+  preconditions immediately before mutation. If implementation needs a real
+  mutation proof, point it only at an explicit proof-owned allowlisted
+  repo/environment with cleanup or rollback evidence, never protected release
+  state or production deployment state. Document the deploy auth model in README
+  and PORTABILITY: least-privilege `gh` scopes, allowed account or token-source
+  classes, prohibited broad/default credentials, no plugin-managed token
+  storage, no credential logging, non-secret auth provenance fields, separation
+  between validation and real-operation environments, and failure behavior for
+  both `gh` API calls and git tag pushes when permissions are missing. Treat
+  deploy tests as new Codex tests over the ported scripts; the pinned source has
+  no deploy test suite to copy as-is.
 - **Patterns to follow:** `plugins/unifi` for credentialed operation guardrails
   and existing deploy source scripts for deterministic tag logic.
 - **Test scenarios:**
@@ -485,15 +611,23 @@ scripts/
   - Given status or release-note preview commands, the scripts run in read-only
     mode and do not require mutation confirmation.
   - Given a real mutation proof fixture or harness config, it rejects production
-    deployment state and protected release state as targets.
+    deployment state, protected release state, and non-allowlisted targets.
+  - Given any non-dry-run tag push path, including nonprod, confirmation is
+    bound to the exact host, repo, source ref, tag, and payload that were
+    previewed.
+  - Given a stale or replayed confirmation token, or remote state that changed
+    after preview, deploy refuses mutation and requires a fresh preview.
   - Given missing `gh` auth or insufficient repository access, the failure is
     explicit and does not log secrets.
+  - Given a real mutation proof with unverifiable scopes or a prohibited token
+    source class, deploy falls back to dry-run-only proof and blocks mutation.
   - Given deploy write paths, tests or validator fixtures prove they require the
     declared auth boundary and do not rely on stored plugin tokens.
 - **Verification:** Deploy tests cover dry-run, confirmation refusal, repo-owner
-  guard, unhealthy-marker guard, rollback/hotfix tag naming, and read-only
-  status or release-note paths, plus auth-scope guidance, no-token-storage
-  behavior, no credential logging, and validation-vs-real-operation separation.
+  guard, unhealthy-marker guard, every non-dry-run tag push path,
+  rollback/hotfix tag naming, and read-only status or release-note paths, plus
+  auth-scope guidance, auth-provenance recording, no-token-storage behavior, no
+  credential logging, and validation-vs-real-operation separation.
 
 ### U5. Port Team-Execution With Subagent And Serial Modes
 
@@ -515,12 +649,15 @@ scripts/
   - `plugins/team-execution/skills/team-execution/references/validator-criteria.md`
   - `plugins/team-execution/skills/team-execution/references/validator-execution-order.md`
   - `plugins/team-execution/skills/team-execution/references/validator-evidence-state.md`
+  - `plugins/team-execution/skills/team-execution/references/validator-spawn-quirks.md`
+  - `plugins/team-execution/skills/team-execution/references/validator-pane-behavior.md`
   - `plugins/team-execution/skills/team-execution/references/delegation-safety.md`
   - `docs/portability/saga-family-state-policy.md`
   - `.gitignore`
   - `plugins/team-execution/skills/appsec-audit/SKILL.md`
   - `plugins/team-execution/scripts/protocol_probe.py`
   - `plugins/team-execution/tests/test_protocol_probe.py`
+  - `pyproject.toml`
 - **Approach:** Convert Claude agent prompts into reference registry entries or
   prompt snippets under `skills/team-execution/references/`; do not keep an
   active top-level `agents/` directory. Rewrite setup instructions away from
@@ -531,14 +668,20 @@ scripts/
   policy, evidence schema, selected validator behavior, and serial fallback
   evidence that records separate reviewer and validator artifacts per role,
   labels consensus as serial or non-subagent consensus, and states independence
-  limits. Add explicit prompt/material injection boundaries in
+  limits. Treat simulated delegated-mode tests as unit characterization only;
+  runtime proof must record `subagent_capability=present|absent` and use the
+  real Codex subagent path when present. Add explicit prompt/material injection boundaries in
   `delegation-safety.md`: imported prompts, task artifacts, source documents,
   and delegated outputs are untrusted context; delegated prompts must delimit
   user/source material; subagents cannot authorize mutation; and delegated
   outputs require main-thread verification before they influence gates. Add
   `.codex/saga/` and
   `.codex/team-execution/` ignore rules and a state/evidence policy describing
-  allowed data classes, redaction-before-write, retention, and cleanup.
+  allowed data classes, redaction-before-write, retention, and cleanup. Port
+  `validator-spawn-quirks.md` into Codex-safe protocol guidance because it
+  carries required/optional validator and missing-tool behavior. Explicitly
+  translate or retire `validator-pane-behavior.md` because its tmux pane model
+  is Claude-host display guidance, not a Codex runtime requirement.
 - **Patterns to follow:** Compound Engineering subagent guidance: use Codex
   `spawn_agent` when available, keep delegated tasks bounded, treat spawn
   failures as backpressure, and provide sequential fallback.
@@ -551,6 +694,9 @@ scripts/
     proves reviewer and validator prompt construction, bounded dispatch,
     delegation-safety filtering, result ingestion, dissent capture, and
     main-thread final verification.
+  - Covers AE7. Given runtime proof, the evidence records whether Codex
+    subagents were present; if absent, simulated-present tests count only as
+    unit coverage and release gating relies on degraded serial proof.
   - Covers AE8. Given repo-local state, the probe selects `.codex/team-execution/`
     only when it is ignored or otherwise protected; otherwise it instructs a
     user-local fallback.
@@ -558,6 +704,9 @@ scripts/
     blocked with setup guidance instead of silently skipping.
   - Given optional validators with missing tools, the protocol records
     skipped-by-config or warn according to the registry.
+  - Given source validator pane guidance, the port either translates the
+    operator-relevant behavior into Codex-safe evidence guidance or records the
+    tmux-specific display behavior as retired lineage.
   - Given a task containing secrets, credentials, or production-only data, the
     delegation-safety reference keeps the data main-thread and blocks subagent
     sharing.
@@ -567,9 +716,10 @@ scripts/
   - Given reviewer non-consensus, validators do not proceed unless the operator
     explicitly overrides with rationale.
 - **Verification:** Team-execution has no active agent directory, loads its
-  registries from self-contained references, proves both subagent-present and
-  degraded-mode paths, records serial fallback limits, and verifies local state
-  roots are ignored before any proof harness writes evidence.
+  registries from self-contained references, proves real-subagent runtime
+  behavior when available, proves degraded serial behavior when unavailable,
+  records serial fallback limits, and verifies local state roots are ignored
+  before any proof harness writes evidence.
 
 ### U6. Port Saga Lifecycle And Codex Backend Contract
 
@@ -609,6 +759,7 @@ scripts/
   - `plugins/saga/tests/test_saga_state.py`
   - `plugins/saga/tests/test_handoff_envelope.py`
   - `plugins/saga/tests/test_codex_operator_choice.py`
+  - `pyproject.toml`
 - **Approach:** Port Saga skills and scripts, rewriting `.claude/saga` to
   `.codex/saga`, `AskUserQuestion` references to Codex's blocking question
   equivalent or chat fallback, and slash-command routing language to skill
@@ -620,7 +771,14 @@ scripts/
   root Saga references such as `saga-spec.md` and `operator-choice.md`; either
   keep them as package-local references with validator-covered links or duplicate
   their required content into skill-local references with a per-reference
-  mapping so every skill remains self-contained.
+  mapping so every skill remains self-contained. Treat Saga tests as new Codex
+  characterization tests over state paths, backend choices, handoff envelopes,
+  and reference links; the pinned source snapshot has no Saga test directory to
+  copy as-is. Add malicious-input characterization around source docs,
+  session-discovery material, and handoff content so Saga delimits imported
+  material, cannot be induced to authorize mutation, cannot expose
+  `cc-workflows-ultracode` as executable, and emits only recommendations that
+  receiving plugins re-verify.
 - **Patterns to follow:** Source `saga` lifecycle docs, this repo's package-local
   script boundary checks, and Compound Engineering's skill self-containment
   guidance.
@@ -635,15 +793,19 @@ scripts/
     `.codex/saga/` and never `.claude/saga/`.
   - Given a handoff, Saga produces a thin envelope that names
     `mission-control` as the issue artifact owner.
+  - Given malicious source docs, session-discovery material, or handoff content,
+    Saga treats it as untrusted material and does not authorize mutation,
+    bypass backend rules, or bypass receiving-plugin verification.
   - Given a nonprod-deploy destination, Saga records deploy intent but routes
     mutation to `deploy`.
   - Given stale source paths in skill docs, validator detects them before
     cutover.
   - Given Saga root or skill-local markdown links, validator proves every target
     resolves after the Codex port.
-- **Verification:** Saga script tests pass, Codex backend tests prove the
-  Claude-only backend is not executable, and skill docs use source-parity names
-  without stale command-only language or broken reference links.
+- **Verification:** New Saga characterization tests pass, Codex backend tests
+  prove the Claude-only backend is not executable, and skill docs use
+  source-parity names without stale command-only language or broken reference
+  links.
 
 ### U7. Build Pre-Deletion Isolated Codex Proof
 
@@ -658,6 +820,7 @@ scripts/
   - `docs/validation/saga-family-codex-proof.md`
   - `docs/validation/saga-family-codex-proof.schema.json`
   - `docs/cutover/cache-replacement.md`
+  - `.gitignore`
   - `scripts/validate_codex_plugins.py`
 - **Approach:** Add a proof harness that creates a fresh non-default
   `CODEX_HOME`, assembles a temporary proof marketplace from repo-local new
@@ -665,27 +828,41 @@ scripts/
   plugin install command or required TUI checkpoint, and captures fresh-session
   proof evidence. The machine-readable proof contract must include the isolated
   profile path or redacted path class, marketplace path, command sequence,
-  install evidence, installed inventory, visible or invocable skill evidence,
-  representative flow evidence, state paths, and no-default-profile checks. The
-  tracked proof document summarizes the artifact and redacts sensitive local
-  details; generated raw evidence stays under ignored `.codex/...` proof state.
+  install evidence, installed inventory, namespaced skill resolution or
+  invocation evidence, representative flow evidence, state paths, and
+  no-default-profile checks. Raw proof artifacts live under an ignored path such
+  as `.codex/proofs/saga-family/<run-id>.json`; tracked proof summaries live in
+  `docs/validation/saga-family-codex-proof.md` and validate against
+  `docs/validation/saga-family-codex-proof.schema.json`. The tracked proof
+  document summarizes the artifact and redacts sensitive local details;
+  generated raw evidence stays under ignored `.codex/...` proof state.
   The proof must cover one representative flow per new plugin: Saga namespace
   and backend proof, deploy dry-run and write-intent confirmation proof,
   mission-control prepared/dry-run and write-intent confirmation proof, and
-  team-execution subagent-present plus degraded-mode proof. The harness should
+  team-execution runtime capability plus degraded-mode proof. The harness should
   separate read-only validation from real operation, default mutation-capable
-  validation to dry-run or preview, require explicit disposable or
-  non-production targets for any real mutation proof, and never touch the
-  default profile.
+  validation to dry-run or preview, require explicit proof-owned allowlisted
+  targets plus cleanup or rollback evidence for any real mutation proof, record
+  non-secret auth provenance, fail real mutation proof when required scopes or
+  token-source class cannot be verified, and never touch the default profile.
+  U7 proves both a fresh replacement marketplace and an upgrade profile seeded
+  with the old six-plugin inventory; U9 proves the final active marketplace
+  after U8 deletion.
 - **Patterns to follow:** Plugin-creator update and install guidance, existing
   `docs/validation.md`, and Compound Engineering's Codex install notes for
   non-default profiles.
 - **Test scenarios:**
   - Covers AE3. Given a proof run without `saga:plan`, `saga:work`, and
-    `saga:brainstorm` evidence, the proof fails.
+    `saga:brainstorm` resolution or invocation evidence, the proof fails.
+  - Covers AE3. Given a global `plan` or `work` skill, or another plugin with
+    generic skill names, namespace proof fails unless the resolved skill belongs
+    to `saga` and loads the expected Saga skill/reference content.
   - Covers AE7. Given subagents available or simulated available, the proof
     records bounded dispatch, result ingestion, dissent capture, and
     main-thread final verification.
+  - Covers AE7. Given Codex subagents are present, runtime proof uses the real
+    subagent path; given they are absent, simulated-present tests count only as
+    unit coverage and release gating relies on degraded serial proof.
   - Covers AE7. Given subagents disabled or unavailable, the proof runs
     team-execution degraded mode and records per-role serial gate evidence,
     serial-consensus labeling, and independence limits.
@@ -698,24 +875,38 @@ scripts/
   - Given deploy or mission-control write intent invoked through a Codex skill,
     the transcript shows the operator-visible mutation plan, confirmation
     refusal or prompt, and proof that no external mutation occurred.
-  - Given any proof fixture that attempts a real mutation against protected
-    release or production deployment state, the proof harness rejects it before
-    invoking deploy or mission-control.
+  - Given any proof fixture that attempts a real mutation outside the
+    proof-owned allowlist, without cleanup or rollback evidence, or against
+    protected release or production deployment state, the proof harness rejects
+    it before invoking deploy or mission-control.
+  - Given a write-capable proof path, the artifact records non-secret auth
+    provenance: host, account class, repo owner boundary, and token source class
+    without logging credentials.
+  - Given retained proof evidence, tracked artifacts contain only allowed
+    summary fields and redacted excerpts, not credentials, full sensitive
+    prompts, raw transcripts with protected operational data, or
+    credential-adjacent local details.
   - Given the temporary proof marketplace, removed skills such as `sdlc-board`,
     `sdlc-flow`, `sdlc-issues`, `blueprint-review`, `issue-review`, and
     `spec-review` are not visible or invocable in the fresh session.
   - Given no non-interactive Codex plugin install command, the proof records a
     required manual TUI checkpoint and fails until the checkpoint is completed
     in the isolated profile.
+  - Given an isolated profile seeded with the old six-plugin inventory, the
+    upgrade proof applies the replacement marketplace or reinstall procedure,
+    detects stale cache state, and proves old skills are absent while
+    Saga-family skills are present.
   - Given an attempt to use the default profile or a reused non-empty profile,
     the proof harness refuses to run unless the profile is proven clean.
 - **Verification:** The proof document and machine-readable artifact contain the
   isolated profile class, marketplace source, installed plugin list, namespaced
-  Saga proof, representative flow evidence for all four new plugins,
-  subagent-present evidence, degraded-mode evidence, skill-layer mutation-gate
-  evidence, disposable-target evidence for real mutation proof when present,
-  old-skill absence evidence for the proof marketplace, protected state
-  evidence, and no default profile mutation.
+  Saga resolution or invocation proof, representative flow evidence for all four
+  new plugins, subagent capability status, real-subagent evidence when
+  available, degraded-mode evidence, skill-layer mutation-gate evidence,
+  proof-owned target and cleanup evidence for real mutation proof when present,
+  auth-boundary and auth-provenance evidence, old-skill absence evidence for
+  fresh and upgrade proof profiles, protected state evidence, and no default
+  profile mutation.
 
 ### U8. Delete Old Active Plugins And Update Active Docs
 
@@ -731,6 +922,7 @@ scripts/
   - `README.md`
   - `docs/baseline/codex-visible-plugins.md`
   - `docs/cutover/cache-replacement.md`
+  - `docs/cutover/saga-family-rollback-and-split.md`
   - `docs/validation.md`
   - `docs/portability/matrix.md`
   - `docs/portability/provenance.md`
@@ -748,8 +940,12 @@ scripts/
   capability owner, one-line behavior difference, and removal rationale when no
   replacement exists. Reconcile that migration map with the known-use inventory
   from U1 before deletion. Add validation that every deleted skill and every
-  known active old invocation has a migration, retirement, or accepted-break row
-  reachable from README or cutover docs.
+  confirmed active old invocation has a migration, retirement, or accepted-break
+  row reachable from README or cutover docs. Add rollback instructions and
+  split/postpone criteria in a dedicated cutover artifact. That artifact must
+  state that partial replacement activation is not a successful merge state:
+  either the branch completes the full Saga-family cutover, or any split branch
+  remains non-activating preparatory work.
 - **Patterns to follow:** Existing README inventory table and cutover gate style.
 - **Test scenarios:**
   - Covers AE1. Given final inventory validation, old plugin directories and
@@ -760,8 +956,13 @@ scripts/
     `issue-review`, and `spec-review` map to exact new namespaced skills or
     prompts without active aliases.
   - Given any deleted skill without a migration row, validation fails.
-  - Given any known active old invocation without a migration, retirement, or
-    accepted-break row, validation fails.
+  - Given any confirmed active old invocation without a migration, retirement,
+    or accepted-break row, validation fails.
+  - Given old review invocations such as `blueprint-review`, `spec-review`, and
+    `issue-review`, migration rows name the exact operator-facing Saga skill,
+    team-execution protocol owner, or removal rationale.
+  - Given rollback or split criteria are missing from cutover docs, validation
+    blocks hard deletion.
   - Given provenance docs, removed plugins appear only as lineage or migration
     context and not as active usage instructions.
   - Given `pyproject.toml`, test discovery no longer points at removed plugin
@@ -782,17 +983,24 @@ scripts/
   - `tests/test_validate_codex_plugins.py`
   - `docs/validation.md`
   - `docs/validation/saga-family-codex-proof.md`
+  - `docs/validation/saga-family-codex-proof.schema.json`
   - `docs/cutover/cache-replacement.md`
+  - `docs/cutover/saga-family-rollback-and-split.md`
   - `docs/portability/saga-family-capability-map.md`
+  - `docs/portability/saga-family-known-use-inventory.md`
+  - `docs/portability/saga-family-state-policy.md`
+  - `.gitignore`
 - **Approach:** Run the narrow script/unit checks, the manifest validation loop,
   the full repo validator, and the final active-inventory isolated Codex proof.
   Parse the machine-readable proof artifact rather than trusting prose-only
   evidence. Audit the final tree for old active plugin names, forbidden Claude
   directories, stale `.claude` state paths in skills or references, missing
   migration entries, missing known-use dispositions, missing confirmation gates,
-  missing mutation-target safeguards, missing proof evidence, broken
-  package-local links, missing state ignore rules, prompt/material injection
-  gaps, and docs that still say the six-plugin MVP is current.
+  missing mutation-target safeguards, missing auth-provenance evidence, missing
+  proof evidence, broken package-local links, missing state ignore rules,
+  prompt/material injection gaps, evidence-retention gaps, missing rollback or
+  split criteria, missing raw-proof ignore rules, and docs that still say the
+  six-plugin MVP is current.
 - **Patterns to follow:** `docs/validation.md` and the existing repo validator
   output style.
 - **Test scenarios:**
@@ -805,16 +1013,23 @@ scripts/
     `sdlc-board`, `sdlc-flow`, `sdlc-issues`, `blueprint-review`,
     `issue-review`, or `spec-review` remain visible or invocable, final
     validation fails.
+  - Given migration docs collapse old review invocations into a vague
+    `saga/team-execution` owner instead of exact operator skill, protocol owner,
+    or removal rationale, final validation fails.
   - Given a proof document without a parseable companion artifact or required
     evidence fields, final validation fails.
   - Given missing deploy or mission-control confirmation-gate tests, final
     validation fails or the cutover checklist blocks deletion.
   - Given deploy or mission-control validation that mutates protected release or
     production deployment state, final validation fails.
+  - Given deploy or mission-control confirmation that is not bound to the exact
+    previewed mutation plan, final validation fails.
+  - Given write-capable proof without non-secret auth provenance, final
+    validation fails.
   - Given missing deploy or mission-control auth-boundary documentation and
     tests, final validation fails or the cutover checklist blocks deletion.
-  - Given missing known-use inventory dispositions for old plugin or skill
-    invocations, final validation fails.
+  - Given missing known-use inventory dispositions for confirmed active old
+    plugin or skill invocations, final validation fails.
   - Given team-execution degraded evidence without separate role artifacts,
     serial-consensus labeling, or independence limits, final validation fails.
   - Given stale `.claude-plugin`, `commands`, or `agents` directories inside
@@ -822,16 +1037,22 @@ scripts/
   - Given active references to host-only Claude behavior, unresolved markdown
     links, or untrusted prompt material that can bypass gates, final validation
     fails.
+  - Given tracked proof artifacts that retain forbidden data classes, raw
+    sensitive transcripts, credentials, or credential-adjacent local details,
+    final validation fails.
   - Given missing `.codex/saga/` or `.codex/team-execution/` ignore coverage,
     state policy, redaction checks, or retention/cleanup expectations, final
     validation fails.
   - Given proof evidence from the default Codex profile, final validation fails.
+  - Given missing rollback/split criteria or missing stale-cache upgrade proof,
+    final validation fails.
 - **Verification:** The branch is ready for code review only when repo
-  validation, manifest validation, script/unit tests, subagent-present proof,
-  degraded-mode proof, serial fallback artifact proof, skill-layer mutation-gate
-  proof, disposable-target proof where real mutation is present, old-skill
-  absence proof, known-use inventory proof, and final isolated Codex proof all
-  pass.
+  validation, manifest validation, script/unit tests, real-subagent proof when
+  capability is present, degraded-mode proof, serial fallback artifact proof,
+  skill-layer mutation-gate proof, proof-owned target and cleanup proof where
+  real mutation is present, old-skill absence proof, known-use inventory proof,
+  auth-provenance proof, retention policy proof, and final isolated Codex proof
+  all pass.
 
 ---
 
@@ -874,6 +1095,11 @@ The hard-delete decision also makes usage discovery a system-wide concern. The
 replacement should fail closed if old plugin or skill invocations are still
 known but not mapped, retired, or recorded as accepted breaks.
 
+All ported source material is untrusted context until rewritten and validated
+for Codex. Claude-origin skills, commands, agent prompts, migration maps, and
+proof transcripts cannot override Codex safety rules, mutation confirmation,
+auth boundaries, or main-thread final verification.
+
 ---
 
 ## Risks And Mitigations
@@ -885,11 +1111,26 @@ known but not mapped, retired, or recorded as accepted breaks.
   proof evidence exists.
 - **Mission-control or deploy could mutate external state during tests.**
   Mitigation: default representative tests to dry-run, fixtures, or mocked
-  subprocess calls; require explicit confirmation for non-dry-run writes; reject
-  protected release or production deployment targets in proof harnesses.
+  subprocess calls; require exact-plan confirmation for non-dry-run writes;
+  reject non-allowlisted, protected release, or production deployment targets in
+  proof harnesses.
+- **A broad confirmation could be reused for the wrong mutation.** Mitigation:
+  bind confirmations to the previewed host, repo, ref or tag, issue or project
+  IDs, and operation payload; scripts revalidate the match before mutation.
+- **Proof could pass under an overbroad personal credential.** Mitigation:
+  record non-secret auth provenance, including host, account class, repo owner
+  boundary, and token source class, without logging credentials.
 - **Team-execution could become a no-op without Claude agents.** Mitigation:
   make degraded mode a tested protocol with required reviewer, validator,
   evidence, dissent, serial-consensus labeling, and final-verification gates.
+- **Ported prompts or transcripts could inject unsafe instructions.**
+  Mitigation: treat source prompts, migration docs, proof transcripts, and
+  delegated outputs as untrusted material that cannot bypass confirmation,
+  delegation, auth, or verification gates.
+- **Tracked proof artifacts could leak sensitive material.** Mitigation: define
+  allowed evidence fields, forbidden data classes, raw transcript handling,
+  retention horizon, cleanup trigger, and shareability checks before proof
+  artifacts are committed.
 - **Old active docs could survive the deletion.** Mitigation: extend validation
   to reject stale active inventory and stale host/path references, then run a
   final audit in U9.
@@ -909,13 +1150,16 @@ known but not mapped, retired, or recorded as accepted breaks.
 - Cutover docs must replace "six MVP plugins" with the Saga-family gate and
   include the migration map and known-use disposition summary.
 - Validation docs must distinguish repo validation, manifest validation, script
-  smoke checks, isolated Codex proof, dry-run proof, disposable-target mutation
-  proof, and real GitHub/deployment operations.
+  smoke checks, isolated Codex proof, dry-run proof, proof-owned mutation proof,
+  staged target/cutover validation, and real GitHub/deployment operations.
 - Portability docs must preserve lineage without implying Claude-only files are
   active Codex runtime.
 - The proof document must identify the isolated-profile class, not rely on chat
   memory as evidence, and link to a generated machine-readable artifact whose
   schema is validator-covered.
+- Proof and state-policy docs must define allowed evidence fields, forbidden
+  data classes, raw transcript handling, retention horizon, cleanup trigger, and
+  non-secret auth provenance fields.
 
 ---
 
