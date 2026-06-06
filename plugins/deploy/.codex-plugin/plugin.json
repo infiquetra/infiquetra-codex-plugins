@@ -1,0 +1,38 @@
+{
+  "name": "deploy",
+  "version": "0.1.1",
+  "description": "Tag-promotion deployment operations for Infiquetra repositories.",
+  "author": {
+    "name": "Infiquetra",
+    "email": "hello@infiquetra.com",
+    "url": "https://github.com/infiquetra"
+  },
+  "homepage": "https://github.com/infiquetra/infiquetra-codex-plugins/tree/main/plugins/deploy",
+  "repository": "https://github.com/infiquetra/infiquetra-codex-plugins",
+  "license": "MIT",
+  "keywords": [
+    "deploy",
+    "tag-promotion",
+    "rollback",
+    "hotfix",
+    "release-notes",
+    "infiquetra"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Deploy",
+    "shortDescription": "Infiquetra tag-promotion deploy helpers.",
+    "longDescription": "Provides Codex skills and bundled scripts for dry-run deployment previews, tag promotion, rollback and hotfix tags, deployment status, and release-note previews.",
+    "developerName": "Infiquetra",
+    "category": "Infrastructure",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "brandColor": "#C05621",
+    "defaultPrompt": [
+      "Use the deploy skill that matches this Infiquetra deployment workflow."
+    ]
+  }
+}

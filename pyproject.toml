@@ -10,7 +10,12 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["tests", "plugins/sdlc-manager/tests", "plugins/mission-control/tests"]
+testpaths = [
+  "tests",
+  "plugins/sdlc-manager/tests",
+  "plugins/mission-control/tests",
+  "plugins/deploy/tests",
+]
 python_files = ["test_*.py"]
 addopts = ["--import-mode=importlib"]
 
