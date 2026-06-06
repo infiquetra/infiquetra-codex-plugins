@@ -1,7 +1,7 @@
 ---
 title: "feat: Replace Codex SDLC baseline with Saga family"
 type: feat
-status: active
+status: completed
 date: 2026-06-06
 deepened: 2026-06-06
 origin: docs/brainstorms/2026-06-06-codex-saga-family-replacement-requirements.md

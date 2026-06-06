@@ -284,7 +284,7 @@ decisions. Produces knowledge, not production code.
 ## 6. Context Update
 
 **Definition**: Maintains the Blueprint Repository's accuracy and completeness. Essential for
-AI effectiveness — Claude Code relies on up-to-date context in the blueprint repo.
+agent effectiveness because Codex relies on up-to-date context in the blueprint repo.
 
 ### When to Use
 - Implementing a Capability reveals spec gaps

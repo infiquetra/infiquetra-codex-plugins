@@ -91,8 +91,8 @@ def test_prepared_issue_guidance_routes_natural_language_creation() -> None:
         assert "issue prepare" in text
         assert "issue create-prepared" in text
 
-    assert "--prepare" in skill
-    assert "--draft" in skill
+    assert "mission-control:issues" in skill
+    assert "Use `mission-control:issues`" in skill
     assert "--from" in skill
     assert "--maturity" in skill
     assert "prepared issue" in skill.lower()

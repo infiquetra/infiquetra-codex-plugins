@@ -108,10 +108,10 @@ research, or documentation context.
 Use the prepared workflow when the user starts from rough text, notes, copied queue entries, or
 asks for an Asgard/Olympus issue that should be reviewed before mutation.
 
-`/issue` is the primary user-facing command for this path. `/issue` remains a
-compatibility alias. `--prepare` is the canonical non-mutating mode; `--draft` means the same
-thing. `--from` accepts a local path, GitHub issue/PR URL, branch ref, or natural search hint.
-`--maturity` overrides inferred handoff maturity.
+Use `mission-control:issues` for this path. `issue prepare` is the canonical
+non-mutating script mode. `--from` accepts a local path, GitHub issue/PR URL,
+branch ref, or natural search hint. `--maturity` overrides inferred handoff
+maturity.
 
 ```bash
 python3 sdlc_manager.py issue prepare \
@@ -135,10 +135,10 @@ PR when needed, and only then creates the issue.
 Prepared handoff drafts include `handoff_maturity` in the sidecar and a body section with the
 suggested next action. Maturity values are:
 
-- `idea-ready` -> suggest `/plan <issue>`.
-- `requirements-ready` -> suggest `/plan <issue>`.
-- `plan-ready` -> suggest `/work <issue>`.
-- `resume-ready` -> suggest `/work <issue>`.
+- `idea-ready` -> suggest `saga:plan <issue>`.
+- `requirements-ready` -> suggest `saga:plan <issue>`.
+- `plan-ready` -> suggest `saga:work <issue>`.
+- `resume-ready` -> suggest `saga:work <issue>`.
 - `deferred-context` -> preserve context and clarify before execution.
 
 Source artifact resolution:
@@ -161,8 +161,8 @@ Natural-language routing rules:
 - If team or project is ambiguous, ask. Do not guess.
 - Do not bypass prepared readiness checks with ad hoc `gh issue create` when the prompt asks to
   create from source text.
-- Do not suggest `/loop` to a team recipient. Use `/plan <issue>` or `/work <issue>` only when the
-  recipient has `saga`.
+- Do not suggest Saga loop routing to a team recipient. Use `saga:plan <issue>`
+  or `saga:work <issue>` only when the recipient has `saga`.
 
 Safe starting statuses:
 

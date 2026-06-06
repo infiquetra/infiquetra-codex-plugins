@@ -179,6 +179,7 @@ STALE_ACTIVE_PATTERNS = (
     "~/.claude/plugins/cache",
     "infiquetra-claude-plugins/plugins/",
     ".claude-plugin",
+    "Claude Code",
     "Claude Code plugin",
     "claude-plugins repository",
 )
