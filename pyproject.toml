@@ -16,6 +16,7 @@ testpaths = [
   "plugins/mission-control/tests",
   "plugins/deploy/tests",
   "plugins/team-execution/tests",
+  "plugins/saga/tests",
 ]
 python_files = ["test_*.py"]
 addopts = ["--import-mode=importlib"]

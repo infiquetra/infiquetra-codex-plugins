@@ -1,0 +1,38 @@
+{
+  "name": "saga",
+  "version": "0.19.0",
+  "description": "Infiquetra lifecycle spine for ideation, planning, work routing, reviews, QA, handoff, and resume state.",
+  "author": {
+    "name": "Infiquetra",
+    "email": "hello@infiquetra.com",
+    "url": "https://github.com/infiquetra"
+  },
+  "homepage": "https://github.com/infiquetra/infiquetra-codex-plugins/tree/main/plugins/saga",
+  "repository": "https://github.com/infiquetra/infiquetra-codex-plugins",
+  "license": "MIT",
+  "keywords": [
+    "lifecycle",
+    "planning",
+    "handoff",
+    "reviews",
+    "qa",
+    "infiquetra"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Saga",
+    "shortDescription": "Infiquetra lifecycle routing and state.",
+    "longDescription": "Provides Codex skills and bundled scripts for lifecycle ideation, brainstorming, specs, planning, work routing, reviews, QA, retros, handoffs, resume state, and plugin-boundary recommendations.",
+    "developerName": "Infiquetra",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "brandColor": "#6A4A9C",
+    "defaultPrompt": [
+      "Use the Saga skill that matches this Infiquetra lifecycle phase."
+    ]
+  }
+}
