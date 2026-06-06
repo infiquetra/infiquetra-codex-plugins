@@ -5,6 +5,7 @@ Run from the repo root.
 ```bash
 python3 scripts/validate_codex_plugins.py
 python3 scripts/validate_codex_plugins.py --mode target-fixture
+python3 scripts/prove_codex_plugin_profile.py --write-docs
 python3 plugins/test-suite/skills/run-quality-checks/scripts/test_runner.py --dry-run --checks pytest,ruff
 python3 -m pytest
 ```
@@ -36,3 +37,10 @@ The custom validator checks:
 - Baseline provenance, source-baseline docs, capability-map docs, known-use inventory, target fixture, and cutover gates.
 - Target and cutover validation require `team-execution` to be unblocked in the portability matrix.
 - Cutover validation requires proof and rollback/split evidence before the old active plugins are considered removable.
+
+Saga-family proof:
+
+- `scripts/prove_codex_plugin_profile.py` writes ignored raw proof JSON under `.codex/proofs/saga-family/<run-id>/`.
+- The tracked summary is `docs/validation/saga-family-codex-proof.md`.
+- The tracked schema is `docs/validation/saga-family-codex-proof.schema.json`.
+- Default mode is deterministic static proof. Use `--install-mode codex-cli` only for an isolated local install proof; it sets `CODEX_HOME` under the ignored proof directory and refuses non-empty profiles.
