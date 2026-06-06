@@ -1,0 +1,112 @@
+{
+  "schema_version": "1.0",
+  "mode": "target-fixture",
+  "description": "Saga-family target inventory used before active marketplace cutover.",
+  "plugins": [
+    {
+      "name": "saga",
+      "version": "0.19.0",
+      "skills": [
+        "office-hours",
+        "ideate",
+        "brainstorm",
+        "spec",
+        "strategy",
+        "plan",
+        "work",
+        "qa",
+        "investigate",
+        "retro",
+        "resume",
+        "handoff",
+        "founder-review",
+        "ceo-review",
+        "doc-review",
+        "code-review",
+        "optimize",
+        "loop"
+      ],
+      "forbidden_active_dirs": [".claude-plugin", "commands", "agents"]
+    },
+    {
+      "name": "deploy",
+      "version": "0.1.1",
+      "skills": [
+        "deploy-state",
+        "deploy",
+        "deploy-status",
+        "deploy-notes",
+        "deploy-hotfix"
+      ],
+      "forbidden_active_dirs": [".claude-plugin", "commands", "agents"]
+    },
+    {
+      "name": "mission-control",
+      "version": "2.0.0",
+      "skills": [
+        "board",
+        "flow",
+        "issues",
+        "labels",
+        "metrics",
+        "milestones",
+        "rollout"
+      ],
+      "forbidden_active_dirs": [".claude-plugin", "commands", "agents"]
+    },
+    {
+      "name": "team-execution",
+      "version": "2.0.0",
+      "skills": ["team-execution", "appsec-audit"],
+      "forbidden_active_dirs": [".claude-plugin", "commands", "agents"]
+    },
+    {
+      "name": "home-lab-ops",
+      "version": "1.0.0",
+      "skills": [
+        "ansible-preflight",
+        "inventory-sync",
+        "monitoring-guard",
+        "proxmox-operations",
+        "vault-helper"
+      ],
+      "forbidden_active_dirs": [".claude-plugin", "commands", "agents"]
+    },
+    {
+      "name": "python-toolkit",
+      "version": "1.0.0",
+      "skills": [
+        "python-patterns",
+        "python-project-setup",
+        "python-testing-patterns"
+      ],
+      "forbidden_active_dirs": [".claude-plugin", "commands", "agents"]
+    },
+    {
+      "name": "unifi",
+      "version": "1.0.0",
+      "skills": ["unifi-network", "unifi-protect"],
+      "forbidden_active_dirs": [".claude-plugin", "commands", "agents"]
+    },
+    {
+      "name": "test-suite",
+      "version": "2.0.0",
+      "skills": ["run-quality-checks"],
+      "forbidden_active_dirs": [".claude-plugin", "commands", "agents"]
+    }
+  ],
+  "removed_plugins": ["blueprint-reviewer", "sdlc-manager"],
+  "required_namespace_proof": ["saga:plan", "saga:work", "saga:brainstorm"],
+  "required_state_roots": [".codex/saga/", ".codex/team-execution/"],
+  "mutation_gate_plugins": ["deploy", "mission-control"],
+  "required_docs": [
+    "docs/portability/source-baseline-saga-family.md",
+    "docs/portability/saga-family-capability-map.md",
+    "docs/portability/saga-family-known-use-inventory.md"
+  ],
+  "required_cutover_evidence": [
+    "docs/validation/saga-family-codex-proof.md",
+    "docs/validation/saga-family-codex-proof.schema.json",
+    "docs/cutover/saga-family-rollback-and-split.md"
+  ]
+}

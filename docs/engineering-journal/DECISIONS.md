@@ -16,3 +16,16 @@ because that is the Codex-visible cache version and source plugin manifest versi
 
 Installed cache paths define the behavioral baseline but must not be edited as maintained
 source. Repo-managed installs can replace cache-managed usage only after documented gates pass.
+
+## 2026-06-06: Saga-Family Replacement Is Gated
+
+The Codex baseline will move from `sdlc-manager` and `blueprint-reviewer` to
+`saga`, `deploy`, `mission-control`, and `team-execution`, but the old active
+plugins are not deleted until source baseline, capability mapping, known-use
+inventory, staged validation, and isolated Codex proof gates pass.
+
+The source snapshot for this replacement is
+`infiquetra-claude-plugins@16de95c82ccb2ed80d7f11018e1c2e8247a80a7f`.
+Claude command files, agent files, and `.claude-plugin` manifests remain
+lineage only. Codex-active ports must be skills, references, scripts, tests,
+config, docs, and `.codex-plugin` manifests.

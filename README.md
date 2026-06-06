@@ -7,12 +7,19 @@ Codex-ready plugin surface, currently:
 
 | Plugin | Version | Status |
 |---|---:|---|
-| `blueprint-reviewer` | 0.1.0 | baseline |
+| `saga` | 0.19.0 | active |
+| `deploy` | 0.1.1 | active |
+| `mission-control` | 2.0.0 | active |
+| `team-execution` | 2.0.0 | active |
 | `home-lab-ops` | 1.0.0 | baseline |
 | `python-toolkit` | 1.0.0 | baseline |
-| `sdlc-manager` | 1.4.0 | baseline |
 | `unifi` | 1.0.0 | baseline |
 | `test-suite` | 2.0.0 | proof port |
+
+`mission-control` replaces the prior SDLC surface, and Saga-family review flows
+replace the prior document-review surface. Exact migration rows live in
+`docs/portability/saga-family-capability-map.md` and
+`docs/portability/saga-family-known-use-inventory.md`.
 
 ## Layout
 

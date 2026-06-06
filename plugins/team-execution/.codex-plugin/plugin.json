@@ -1,0 +1,37 @@
+{
+  "name": "team-execution",
+  "version": "2.0.0",
+  "description": "Codex-native reviewer and validator orchestration protocol for Infiquetra work.",
+  "author": {
+    "name": "Infiquetra",
+    "email": "hello@infiquetra.com",
+    "url": "https://github.com/infiquetra"
+  },
+  "homepage": "https://github.com/infiquetra/infiquetra-codex-plugins/tree/main/plugins/team-execution",
+  "repository": "https://github.com/infiquetra/infiquetra-codex-plugins",
+  "license": "MIT",
+  "keywords": [
+    "review",
+    "validators",
+    "subagents",
+    "protocol",
+    "infiquetra"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Team Execution",
+    "shortDescription": "Reviewer consensus and validator-gate protocol.",
+    "longDescription": "Provides Codex skills, references, and proof helpers for reviewer consensus, selected validator gates, Codex subagent delegation when available, and serial main-thread fallback when delegation is unavailable.",
+    "developerName": "Infiquetra",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "brandColor": "#3A6B5A",
+    "defaultPrompt": [
+      "Use team-execution to plan or run reviewer consensus and selected validator gates for this Infiquetra work."
+    ]
+  }
+}

@@ -1,32 +1,42 @@
 # Codex-Visible Plugin Baseline
 
-Verified: 2026-05-27
+Verified: 2026-06-06
 
 Source catalogs:
 
-- Claude source repo: `infiquetra-claude-plugins` at `8f5baebb35bb865e3680a457ef02aba5cb418ac4`
-- Antigravity source repo: `infiquetra-antigravity-plugins` at `c0c4d04a253e7ee4a6b5407600c8144eea3d781f`
-- Codex installed cache root: `/Users/jefcox/.codex/plugins/cache/infiquetra-plugins`
+- Saga-family source snapshot: `infiquetra-claude-plugins` at
+  `16de95c82ccb2ed80d7f11018e1c2e8247a80a7f`
+- Original Codex cache evidence: `/Users/jefcox/.codex/plugins/cache/infiquetra-plugins`
+- Repo-managed marketplace: `.agents/plugins/marketplace.json`
 
-The five baseline plugins below were visible to Codex from cache before this repo was created.
-They define the initial replacement baseline, but the cache remains installed state only.
+The active repo-managed Codex inventory is the eight-plugin Saga-family cutover
+set below. Installed cache copies are local state only; this repo is the
+maintained source after validation.
 
-| Plugin | Cache Version | Cache Path | Expected Skills |
-|---|---:|---|---|
-| `blueprint-reviewer` | 0.1.0 | `/Users/jefcox/.codex/plugins/cache/infiquetra-plugins/blueprint-reviewer/0.1.0` | `blueprint-review`, `issue-review`, `spec-review` |
-| `home-lab-ops` | 1.0.0 | `/Users/jefcox/.codex/plugins/cache/infiquetra-plugins/home-lab-ops/1.0.0` | `ansible-preflight`, `inventory-sync`, `monitoring-guard`, `proxmox-operations`, `vault-helper` |
-| `python-toolkit` | 1.0.0 | `/Users/jefcox/.codex/plugins/cache/infiquetra-plugins/python-toolkit/1.0.0` | `python-patterns`, `python-project-setup`, `python-testing-patterns` |
-| `sdlc-manager` | 1.4.0 | `/Users/jefcox/.codex/plugins/cache/infiquetra-plugins/sdlc-manager/1.4.0` | `sdlc-board`, `sdlc-flow`, `sdlc-issues`, `sdlc-labels`, `sdlc-metrics`, `sdlc-milestones`, `sdlc-rollout` |
-| `unifi` | 1.0.0 | `/Users/jefcox/.codex/plugins/cache/infiquetra-plugins/unifi/1.0.0` | `unifi-network`, `unifi-protect` |
+| Plugin | Version | Expected Namespaced Skills |
+|---|---:|---|
+| `saga` | 0.19.0 | `saga:office-hours`, `saga:ideate`, `saga:brainstorm`, `saga:spec`, `saga:strategy`, `saga:plan`, `saga:work`, `saga:qa`, `saga:investigate`, `saga:retro`, `saga:resume`, `saga:handoff`, `saga:founder-review`, `saga:ceo-review`, `saga:doc-review`, `saga:code-review`, `saga:optimize`, `saga:loop` |
+| `deploy` | 0.1.1 | `deploy:deploy-state`, `deploy:deploy`, `deploy:deploy-status`, `deploy:deploy-notes`, `deploy:deploy-hotfix` |
+| `mission-control` | 2.0.0 | `mission-control:board`, `mission-control:flow`, `mission-control:issues`, `mission-control:labels`, `mission-control:metrics`, `mission-control:milestones`, `mission-control:rollout` |
+| `team-execution` | 2.0.0 | `team-execution:team-execution`, `team-execution:appsec-audit` |
+| `home-lab-ops` | 1.0.0 | `home-lab-ops:ansible-preflight`, `home-lab-ops:inventory-sync`, `home-lab-ops:monitoring-guard`, `home-lab-ops:proxmox-operations`, `home-lab-ops:vault-helper` |
+| `python-toolkit` | 1.0.0 | `python-toolkit:python-patterns`, `python-toolkit:python-project-setup`, `python-toolkit:python-testing-patterns` |
+| `unifi` | 1.0.0 | `unifi:unifi-network`, `unifi:unifi-protect` |
+| `test-suite` | 2.0.0 | `test-suite:run-quality-checks` |
 
 ## Replacement Rule
 
 Repo-managed content supersedes the cache only after:
 
 1. All Codex manifests pass plugin validation.
-2. `scripts/validate_codex_plugins.py` passes.
+2. `scripts/validate_codex_plugins.py` passes in default, `target-fixture`, and
+   `cutover` modes.
 3. The `test-suite` dry-run smoke check passes inside this repo.
-4. The allowlisted marketplace inventory still contains exactly the six MVP plugins.
-5. Rollback instructions in `docs/cutover/cache-replacement.md` are still current.
+4. The allowlisted marketplace inventory contains exactly the eight plugins in
+   this document.
+5. `docs/cutover/cache-replacement.md` and
+   `docs/cutover/saga-family-rollback-and-split.md` remain current.
 
-Do not edit the cache paths above as source.
+Prior SDLC and document-review invocations are not active aliases in this repo.
+Use `docs/portability/saga-family-capability-map.md` and
+`docs/portability/saga-family-known-use-inventory.md` for exact replacements.
