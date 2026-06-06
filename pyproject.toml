@@ -15,6 +15,7 @@ testpaths = [
   "plugins/sdlc-manager/tests",
   "plugins/mission-control/tests",
   "plugins/deploy/tests",
+  "plugins/team-execution/tests",
 ]
 python_files = ["test_*.py"]
 addopts = ["--import-mode=importlib"]
