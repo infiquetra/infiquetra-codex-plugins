@@ -26,3 +26,25 @@ The `test-suite` proof port establishes this recipe for future skill-plus-script
 
 This proof does not establish transform rules for MCP servers, apps, external credentials,
 marketplace publishing, or native orchestration features.
+
+## Saga-Family Replacement Baseline
+
+Verified: 2026-06-06
+
+The Saga-family replacement is frozen against
+`infiquetra-claude-plugins` commit
+`16de95c82ccb2ed80d7f11018e1c2e8247a80a7f`. The detailed source inventory is
+recorded in `source-baseline-saga-family.md`; old-to-new capability ownership is
+recorded in `saga-family-capability-map.md`; known old-use dispositions are
+recorded in `saga-family-known-use-inventory.md`.
+
+| Plugin | Source Version | Source | Copied Assets Planned | Codex Differences Required |
+|---|---:|---|---|---|
+| `saga` | 0.19.0 | Claude plugin at `16de95c82ccb2ed80d7f11018e1c2e8247a80a7f` | `skills`, references, scripts, README, changelog | Add Codex manifest; keep source-parity skill names behind the `saga` namespace; rewrite `.claude/saga` to `.codex/saga`; omit command files. |
+| `deploy` | 0.1.1 | Claude plugin at `16de95c82ccb2ed80d7f11018e1c2e8247a80a7f` | deploy-state skill, scripts, README, changelog, command-origin behavior | Add Codex manifest; convert commands to skills; add dry-run, preview, exact-plan confirmation, auth-boundary, and proof-owned mutation safeguards; omit agent and command files. |
+| `mission-control` | 2.0.0 | Claude plugin at `16de95c82ccb2ed80d7f11018e1c2e8247a80a7f` | `skills`, references, config, scripts, tests, README, changelog | Add Codex manifest; rewrite prompt-alignment tests for Codex; preserve dry-run and preview modes; add allowlist and exact-plan confirmation gates; omit command and agent files. |
+| `team-execution` | 2.0.0 | Claude plugin at `16de95c82ccb2ed80d7f11018e1c2e8247a80a7f` | `skills`, references, README, changelog, agent-origin prompt concepts | Add Codex manifest; convert agents into registries or prompt snippets; use Codex subagents only when available; provide tested serial fallback; omit command and agent files. |
+
+`sdlc-manager` and `blueprint-reviewer` remain active only until the
+Saga-family target validation and isolated proof gates pass. After U8 they are
+lineage and migration context only, not active plugin source.
