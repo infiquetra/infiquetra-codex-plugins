@@ -12,7 +12,6 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = [
   "tests",
-  "plugins/sdlc-manager/tests",
   "plugins/mission-control/tests",
   "plugins/deploy/tests",
   "plugins/team-execution/tests",

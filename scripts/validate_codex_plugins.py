@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 
-CURRENT_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
+LEGACY_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
     "blueprint-reviewer": {
         "version": "0.1.0",
         "skills": ("blueprint-review", "issue-review", "spec-review"),
@@ -102,13 +102,14 @@ TARGET_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
         "version": "2.0.0",
         "skills": ("team-execution", "appsec-audit"),
     },
-    "home-lab-ops": CURRENT_EXPECTED_PLUGINS["home-lab-ops"],
-    "python-toolkit": CURRENT_EXPECTED_PLUGINS["python-toolkit"],
-    "unifi": CURRENT_EXPECTED_PLUGINS["unifi"],
-    "test-suite": CURRENT_EXPECTED_PLUGINS["test-suite"],
+    "home-lab-ops": LEGACY_EXPECTED_PLUGINS["home-lab-ops"],
+    "python-toolkit": LEGACY_EXPECTED_PLUGINS["python-toolkit"],
+    "unifi": LEGACY_EXPECTED_PLUGINS["unifi"],
+    "test-suite": LEGACY_EXPECTED_PLUGINS["test-suite"],
 }
 
-# Backward-compatible name for current-mode tests and callers.
+# Backward-compatible names for current-mode tests and callers.
+CURRENT_EXPECTED_PLUGINS = TARGET_EXPECTED_PLUGINS
 EXPECTED_PLUGINS = CURRENT_EXPECTED_PLUGINS
 
 CLAUDE_CATALOG = {
@@ -155,6 +156,24 @@ OLD_ACTIVE_SKILLS = {
 }
 REQUIRED_NAMESPACE_PROOF_SKILLS = {"saga:plan", "saga:work", "saga:brainstorm"}
 REQUIRED_STATE_ROOTS = {".codex/saga/", ".codex/team-execution/"}
+REQUIRED_MIGRATION_REPLACEMENTS = {
+    "sdlc-board": ("mission-control:board",),
+    "sdlc-flow": ("mission-control:flow",),
+    "sdlc-issues": ("mission-control:issues",),
+    "sdlc-labels": ("mission-control:labels",),
+    "sdlc-metrics": ("mission-control:metrics",),
+    "sdlc-milestones": ("mission-control:milestones",),
+    "sdlc-rollout": ("mission-control:rollout",),
+    "blueprint-review": ("saga:doc-review", "team-execution:team-execution"),
+    "spec-review": ("saga:spec", "saga:doc-review", "team-execution:team-execution"),
+    "issue-review": ("saga:doc-review", "mission-control:issues", "team-execution:team-execution"),
+}
+REQUIRED_ROLLBACK_SPLIT_PHRASES = (
+    "partial replacement activation is not a successful merge state",
+    "full Saga-family cutover",
+    "non-activating preparatory work",
+    "rollback",
+)
 
 STALE_ACTIVE_PATTERNS = (
     "~/.claude/plugins/cache",
@@ -185,12 +204,8 @@ def validate_repository(root: Path, mode: str = "current") -> list[str]:
     if mode == "current":
         expected_plugins = CURRENT_EXPECTED_PLUGINS
         validate_marketplace(root, expected_plugins, errors)
-        validate_plugins(
-            root,
-            expected_plugins,
-            errors,
-            optional_plugins=TARGET_EXPECTED_PLUGINS,
-        )
+        validate_plugins(root, expected_plugins, errors)
+        validate_cutover_evidence(root, errors)
     elif mode == "cutover":
         expected_plugins = TARGET_EXPECTED_PLUGINS
         validate_marketplace(root, expected_plugins, errors)
@@ -203,8 +218,9 @@ def validate_repository(root: Path, mode: str = "current") -> list[str]:
     validate_matrix(root, mode, errors)
     validate_provenance(root, expected_plugins, errors)
     validate_cutover(root, errors)
-    if mode != "current":
+    if mode != "current" or expected_plugins is TARGET_EXPECTED_PLUGINS:
         validate_saga_family_docs(root, errors)
+        validate_deletion_migration_map(root, errors)
     return errors
 
 
@@ -574,6 +590,58 @@ def validate_cutover_evidence(root: Path, errors: list[str]) -> None:
     for path in (proof_doc, proof_schema, rollback_doc):
         if not path.is_file():
             errors.append(f"cutover evidence missing `{path.relative_to(root)}`")
+
+    schema = load_json(proof_schema, errors)
+    if schema is not None:
+        required = set(schema.get("required", []))
+        missing = {
+            "schema_version",
+            "run_id",
+            "default_profile_mutated",
+            "installed_plugins",
+            "namespace_proof",
+            "old_skill_absence",
+            "flows",
+            "state_proof",
+            "mutation_boundary",
+            "codex_cli_install",
+        } - required
+        if missing:
+            errors.append(f"proof schema missing required fields: {sorted(missing)}")
+
+    rollback_text = read_text(rollback_doc, errors)
+    if rollback_text is not None:
+        lower = rollback_text.lower()
+        for phrase in REQUIRED_ROLLBACK_SPLIT_PHRASES:
+            if phrase.lower() not in lower:
+                errors.append(
+                    f"{rollback_doc.relative_to(root)} missing rollback/split phrase `{phrase}`"
+                )
+
+
+def validate_deletion_migration_map(root: Path, errors: list[str]) -> None:
+    docs = (
+        root / "README.md",
+        root / "docs" / "cutover" / "cache-replacement.md",
+        root / "docs" / "cutover" / "saga-family-rollback-and-split.md",
+        root / "docs" / "portability" / "saga-family-capability-map.md",
+        root / "docs" / "portability" / "saga-family-known-use-inventory.md",
+    )
+    text_parts = []
+    for path in docs:
+        text = read_text(path, errors)
+        if text is not None:
+            text_parts.append(text)
+    combined = "\n".join(text_parts)
+
+    for skill, replacements in REQUIRED_MIGRATION_REPLACEMENTS.items():
+        if f"`{skill}`" not in combined and skill not in combined:
+            errors.append(f"migration docs missing old invocation `{skill}`")
+        for replacement in replacements:
+            if f"`{replacement}`" not in combined and replacement not in combined:
+                errors.append(
+                    f"migration docs missing replacement `{replacement}` for `{skill}`"
+                )
 
 
 def compare_inventory(

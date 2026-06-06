@@ -45,6 +45,7 @@ recorded in `saga-family-known-use-inventory.md`.
 | `mission-control` | 2.0.0 | Claude plugin at `16de95c82ccb2ed80d7f11018e1c2e8247a80a7f` | `skills`, references, config, scripts, tests, README, changelog | Add Codex manifest; rewrite prompt-alignment tests for Codex; preserve dry-run and preview modes; add allowlist and exact-plan confirmation gates; omit command and agent files. |
 | `team-execution` | 2.0.0 | Claude plugin at `16de95c82ccb2ed80d7f11018e1c2e8247a80a7f` | `skills`, references, README, changelog, agent-origin prompt concepts | Add Codex manifest; convert agents into registries or prompt snippets; use Codex subagents only when available; provide tested serial fallback; omit command and agent files. |
 
-`sdlc-manager` and `blueprint-reviewer` remain active only until the
-Saga-family target validation and isolated proof gates pass. After U8 they are
-lineage and migration context only, not active plugin source.
+The prior SDLC and document-review plugin roots are now lineage and migration
+context only, not active plugin source. The active replacement inventory is
+`saga`, `deploy`, `mission-control`, `team-execution`, `home-lab-ops`,
+`python-toolkit`, `unifi`, and `test-suite`.

@@ -5,6 +5,7 @@ from pathlib import Path
 from scripts.validate_codex_plugins import (
     CURRENT_EXPECTED_PLUGINS,
     EXPECTED_PLUGINS,
+    LEGACY_EXPECTED_PLUGINS,
     TARGET_EXPECTED_PLUGINS,
     compare_inventory,
     validate_relative_file,
@@ -25,18 +26,27 @@ def test_target_fixture_validates_without_active_cutover():
     assert validate_repository(REPO_ROOT, mode="target-fixture") == []
 
 
-def test_cutover_reports_old_inventory_before_u8():
-    errors = validate_repository(REPO_ROOT, mode="cutover")
-
-    assert errors
-    assert any("marketplace inventory mismatch" in error for error in errors)
-    assert any("plugin directory inventory mismatch" in error for error in errors)
-    assert any("saga" in error and "missing" in error for error in errors)
-    assert any("sdlc-manager" in error and "unexpected" in error for error in errors)
+def test_cutover_validates_after_u8():
+    assert validate_repository(REPO_ROOT, mode="cutover") == []
 
 
-def test_expected_plugin_set_includes_mvp():
+def test_expected_plugin_set_is_saga_family_cutover():
     assert set(EXPECTED_PLUGINS) == {
+        "saga",
+        "deploy",
+        "mission-control",
+        "team-execution",
+        "home-lab-ops",
+        "python-toolkit",
+        "unifi",
+        "test-suite",
+    }
+    assert EXPECTED_PLUGINS is CURRENT_EXPECTED_PLUGINS
+    assert EXPECTED_PLUGINS is TARGET_EXPECTED_PLUGINS
+
+
+def test_legacy_plugin_set_remains_only_for_migration_checks():
+    assert set(LEGACY_EXPECTED_PLUGINS) == {
         "blueprint-reviewer",
         "home-lab-ops",
         "python-toolkit",
@@ -44,7 +54,7 @@ def test_expected_plugin_set_includes_mvp():
         "unifi",
         "test-suite",
     }
-    assert EXPECTED_PLUGINS is CURRENT_EXPECTED_PLUGINS
+    assert {"blueprint-reviewer", "sdlc-manager"}.isdisjoint(EXPECTED_PLUGINS)
 
 
 def test_target_plugin_set_describes_saga_family_cutover():

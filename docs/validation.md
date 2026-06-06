@@ -14,8 +14,8 @@ Validation modes:
 
 | Mode | Purpose | Expected timing |
 |---|---|---|
-| `current` | Validate the active pre-cutover repository inventory. This is the default mode and must stay green until the marketplace flips. | U1-U7 and normal CI before cutover. |
-| `target-fixture` | Validate `docs/validation/saga-family-target-inventory.json`, source-baseline docs, capability mapping, known-use dispositions, state roots, namespace-proof requirements, and mutation-gate requirements without requiring the active marketplace to flip. | U2 onward. |
+| `current` | Validate the active Saga-family repository inventory, active marketplace, proof evidence, migration map, and rollback/split evidence. This is the default mode. | U8 onward and normal CI after cutover. |
+| `target-fixture` | Validate `docs/validation/saga-family-target-inventory.json`, source-baseline docs, capability mapping, known-use dispositions, state roots, namespace-proof requirements, and mutation-gate requirements without depending on the active marketplace. | U2 onward. |
 | `cutover` | Validate the active tree against the Saga-family target inventory and require cutover proof evidence. | U8-U9 after new plugin roots and marketplace entries are active. |
 
 For Codex manifest contract validation:

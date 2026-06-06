@@ -35,7 +35,7 @@ tool-specific orchestration.
 
 ## Notes
 
-- Count differences are intentional. The current Codex inventory has 6 active plugins; the Saga-family target has 8 active plugins, not the full Claude catalog.
-- `blueprint-reviewer` and `sdlc-manager` remain in the current Codex baseline only until the Saga-family cutover gates pass. They are superseded by `saga`, `team-execution`, and `mission-control`.
+- Count differences are intentional. The active Codex inventory has 8 active plugins, not the full Claude catalog.
+- The prior SDLC and document-review plugin roots are superseded by `saga`, `team-execution`, and `mission-control`.
 - `team-execution` is no longer blocked as a target. Its Codex design must prove subagent and serial fallback behavior before activation.
 - The `sdlc-manager` rollout field named `claude_md` is retained because it is part of the existing SDLC tracking data model, not a Codex plugin host dependency.

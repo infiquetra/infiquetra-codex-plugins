@@ -70,16 +70,15 @@ active Codex runtime surfaces.
 | `mission-control` | `sdlc_manager.py`, `sync_template_docs.py` | `project-mappings.json`, `sdlc-schema.json` | 12 source tests | Port tests and rewrite prompt-alignment expectations from Claude to Codex. |
 | `team-execution` | none in source | none | none in source | Add a Codex protocol probe and tests for delegated and serial modes. |
 
-## Immediate Gates
+## Cutover Gates
 
-Before U2-U9 may remove or activate anything, the implementation must preserve
-these constraints:
+The implementation must preserve these constraints:
 
-- The old active Codex plugins stay active until target validation, source
-  parity mapping, known-use mapping, and isolated proof gates pass.
-- `sdlc-manager` and `blueprint-reviewer` content is allowed as lineage and
-  migration evidence until U8, but old skill aliases must not survive the final
-  cutover as active compatibility shims.
+- Target validation, source parity mapping, known-use mapping, and isolated
+  proof gates must pass before active replacement is considered complete.
+- Prior SDLC and document-review plugin content is lineage and migration
+  evidence only; old skill aliases must not survive the final cutover as active
+  compatibility shims.
 - New active plugin roots must not contain top-level `.claude-plugin`,
   `commands`, or `agents` directories.
 - Saga and team-execution state must use ignored `.codex/saga/` and

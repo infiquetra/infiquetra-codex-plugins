@@ -59,9 +59,9 @@ inputs. These command names do not remain active in the Codex cutover.
 - Team-execution owns reviewer and validator protocol orchestration. It may use
   Codex subagents when available and must provide serial fallback when not.
 
-## Deletion Gate
+## Deletion Status
 
-U8 may delete `plugins/sdlc-manager/` and `plugins/blueprint-reviewer/` only
-after validation proves every row above has either an active replacement,
-documented retirement, or accepted break. This file currently maps every active
-old skill to a replacement owner.
+U8 deletes the old active roots only after validation proves every row above has
+either an active replacement, documented retirement, or accepted break. This file
+maps every old active skill to a replacement owner; the old names remain here as
+migration context, not active aliases.
