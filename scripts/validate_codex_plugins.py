@@ -6,11 +6,12 @@ from __future__ import annotations
 import json
 import re
 import sys
+from argparse import ArgumentParser
 from pathlib import Path
 from typing import Any
 
 
-EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
+CURRENT_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
     "blueprint-reviewer": {
         "version": "0.1.0",
         "skills": ("blueprint-review", "issue-review", "spec-review"),
@@ -51,17 +52,77 @@ EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
     },
 }
 
+TARGET_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
+    "saga": {
+        "version": "0.19.0",
+        "skills": (
+            "office-hours",
+            "ideate",
+            "brainstorm",
+            "spec",
+            "strategy",
+            "plan",
+            "work",
+            "qa",
+            "investigate",
+            "retro",
+            "resume",
+            "handoff",
+            "founder-review",
+            "ceo-review",
+            "doc-review",
+            "code-review",
+            "optimize",
+            "loop",
+        ),
+    },
+    "deploy": {
+        "version": "0.1.1",
+        "skills": (
+            "deploy-state",
+            "deploy",
+            "deploy-status",
+            "deploy-notes",
+            "deploy-hotfix",
+        ),
+    },
+    "mission-control": {
+        "version": "2.0.0",
+        "skills": (
+            "board",
+            "flow",
+            "issues",
+            "labels",
+            "metrics",
+            "milestones",
+            "rollout",
+        ),
+    },
+    "team-execution": {
+        "version": "2.0.0",
+        "skills": ("team-execution", "appsec-audit"),
+    },
+    "home-lab-ops": CURRENT_EXPECTED_PLUGINS["home-lab-ops"],
+    "python-toolkit": CURRENT_EXPECTED_PLUGINS["python-toolkit"],
+    "unifi": CURRENT_EXPECTED_PLUGINS["unifi"],
+    "test-suite": CURRENT_EXPECTED_PLUGINS["test-suite"],
+}
+
+# Backward-compatible name for current-mode tests and callers.
+EXPECTED_PLUGINS = CURRENT_EXPECTED_PLUGINS
+
 CLAUDE_CATALOG = {
-    "blueprint-reviewer",
+    "deploy",
     "docs-generator",
     "home-lab-ops",
     "identity-toolkit",
     "marketplace-lister",
+    "mission-control",
     "pagerduty",
     "python-toolkit",
     "redis-channel",
+    "saga",
     "sdk-lifecycle",
-    "sdlc-manager",
     "slack",
     "splunk",
     "team-execution",
@@ -72,6 +133,28 @@ CLAUDE_CATALOG = {
 
 ALLOWED_STATUSES = {"included", "proof-port", "deferred", "blocked", "unsupported"}
 REQUIRED_CUTOVER_TERMS = ("trusted source", "allowlisted inventory", "pins", "rollback")
+VALIDATION_MODES = {"current", "target-fixture", "cutover"}
+TARGET_FIXTURE = Path("docs/validation/saga-family-target-inventory.json")
+REQUIRED_SAGA_FAMILY_DOCS = (
+    Path("docs/portability/source-baseline-saga-family.md"),
+    Path("docs/portability/saga-family-capability-map.md"),
+    Path("docs/portability/saga-family-known-use-inventory.md"),
+)
+OLD_ACTIVE_PLUGINS = {"blueprint-reviewer", "sdlc-manager"}
+OLD_ACTIVE_SKILLS = {
+    "blueprint-review",
+    "issue-review",
+    "spec-review",
+    "sdlc-board",
+    "sdlc-flow",
+    "sdlc-issues",
+    "sdlc-labels",
+    "sdlc-metrics",
+    "sdlc-milestones",
+    "sdlc-rollout",
+}
+REQUIRED_NAMESPACE_PROOF_SKILLS = {"saga:plan", "saga:work", "saga:brainstorm"}
+REQUIRED_STATE_ROOTS = {".codex/saga/", ".codex/team-execution/"}
 
 STALE_ACTIVE_PATTERNS = (
     "~/.claude/plugins/cache",
@@ -80,23 +163,51 @@ STALE_ACTIVE_PATTERNS = (
     "Claude Code plugin",
     "claude-plugins repository",
 )
+LINEAGE_ALLOWED_PARTS = {
+    "PORTABILITY.md",
+    "CHANGELOG.md",
+    "docs/portability/provenance.md",
+    "docs/portability/source-baseline-saga-family.md",
+    "docs/portability/saga-family-capability-map.md",
+    "docs/portability/saga-family-known-use-inventory.md",
+}
 
 SCRIPT_FIELD_RE = re.compile(r"^\s*script:\s*(?P<path>\S+)\s*$", re.MULTILINE)
 PLUGIN_SCRIPT_RE = re.compile(r"(?P<path>plugins/[A-Za-z0-9_.-]+/[A-Za-z0-9_./-]+\.py)")
 MATRIX_ROW_RE = re.compile(r"^\|\s*`(?P<plugin>[^`]+)`\s*\|\s*(?P<status>[a-z-]+)\s*\|")
 
 
-def validate_repository(root: Path) -> list[str]:
+def validate_repository(root: Path, mode: str = "current") -> list[str]:
     errors: list[str] = []
-    validate_marketplace(root, errors)
-    validate_plugins(root, errors)
-    validate_matrix(root, errors)
-    validate_provenance(root, errors)
+    if mode not in VALIDATION_MODES:
+        return [f"unknown validation mode `{mode}`"]
+
+    if mode == "current":
+        expected_plugins = CURRENT_EXPECTED_PLUGINS
+        validate_marketplace(root, expected_plugins, errors)
+        validate_plugins(root, expected_plugins, errors)
+    elif mode == "cutover":
+        expected_plugins = TARGET_EXPECTED_PLUGINS
+        validate_marketplace(root, expected_plugins, errors)
+        validate_plugins(root, expected_plugins, errors)
+        validate_cutover_evidence(root, errors)
+    else:
+        expected_plugins = TARGET_EXPECTED_PLUGINS
+        validate_target_fixture(root, errors)
+
+    validate_matrix(root, mode, errors)
+    validate_provenance(root, expected_plugins, errors)
     validate_cutover(root, errors)
+    if mode != "current":
+        validate_saga_family_docs(root, errors)
     return errors
 
 
-def validate_marketplace(root: Path, errors: list[str]) -> None:
+def validate_marketplace(
+    root: Path,
+    expected_plugins: dict[str, dict[str, Any]],
+    errors: list[str],
+) -> None:
     path = root / ".agents" / "plugins" / "marketplace.json"
     payload = load_json(path, errors)
     if payload is None:
@@ -126,7 +237,7 @@ def validate_marketplace(root: Path, errors: list[str]) -> None:
         if not isinstance(policy, dict) or policy.get("installation") != "AVAILABLE":
             errors.append(f"marketplace entry `{name}` must be installable")
 
-    expected = set(EXPECTED_PLUGINS)
+    expected = set(expected_plugins)
     if seen != expected:
         errors.append(
             "marketplace inventory mismatch: "
@@ -134,20 +245,24 @@ def validate_marketplace(root: Path, errors: list[str]) -> None:
         )
 
 
-def validate_plugins(root: Path, errors: list[str]) -> None:
+def validate_plugins(
+    root: Path,
+    expected_plugins: dict[str, dict[str, Any]],
+    errors: list[str],
+) -> None:
     plugins_root = root / "plugins"
     actual_plugins = {
         path.name for path in plugins_root.iterdir() if path.is_dir() and not path.name.startswith(".")
     }
-    expected_plugins = set(EXPECTED_PLUGINS)
-    if actual_plugins != expected_plugins:
+    expected_plugin_names = set(expected_plugins)
+    if actual_plugins != expected_plugin_names:
         errors.append(
             "plugin directory inventory mismatch: "
-            f"missing={sorted(expected_plugins - actual_plugins)} "
-            f"unexpected={sorted(actual_plugins - expected_plugins)}"
+            f"missing={sorted(expected_plugin_names - actual_plugins)} "
+            f"unexpected={sorted(actual_plugins - expected_plugin_names)}"
         )
 
-    for plugin_name, expected in EXPECTED_PLUGINS.items():
+    for plugin_name, expected in expected_plugins.items():
         plugin_root = plugins_root / plugin_name
         validate_plugin(root, plugin_root, plugin_name, expected, errors)
 
@@ -159,6 +274,10 @@ def validate_plugin(
     expected: dict[str, Any],
     errors: list[str],
 ) -> None:
+    if not plugin_root.is_dir():
+        errors.append(f"{plugin_name}: missing plugin directory")
+        return
+
     manifest_path = plugin_root / ".codex-plugin" / "plugin.json"
     manifest = load_json(manifest_path, errors)
     if manifest is not None:
@@ -182,7 +301,11 @@ def validate_plugin(
 
     skills_root = plugin_root / "skills"
     expected_skills = set(expected["skills"])
-    actual_skills = {path.name for path in skills_root.iterdir() if path.is_dir()}
+    if skills_root.is_dir():
+        actual_skills = {path.name for path in skills_root.iterdir() if path.is_dir()}
+    else:
+        errors.append(f"{plugin_name}: missing skills directory")
+        actual_skills = set()
     if actual_skills != expected_skills:
         errors.append(
             f"{plugin_name}: skill inventory mismatch "
@@ -203,22 +326,40 @@ def validate_plugin(
             errors.append(
                 f"{plugin_name}/{skill_name}: frontmatter name must be `{skill_name}`"
             )
-        validate_active_text(repo_root, skill_md, text, errors)
-        validate_script_references(repo_root, plugin_root, skill_md, text, errors)
 
-    readme = plugin_root / "README.md"
-    if readme.is_file():
-        text = read_text(readme, errors)
-        if text is not None:
-            validate_active_text(repo_root, readme, text, errors)
-            validate_script_references(repo_root, plugin_root, readme, text, errors)
+    for markdown_path in iter_plugin_markdown_files(plugin_root):
+        text = read_text(markdown_path, errors)
+        if text is None:
+            continue
+        validate_active_text(repo_root, markdown_path, text, errors)
+        validate_script_references(repo_root, plugin_root, markdown_path, text, errors)
 
 
 def validate_active_text(repo_root: Path, path: Path, text: str, errors: list[str]) -> None:
     rel = path.relative_to(repo_root)
+    if lineage_allowed(rel):
+        return
     for pattern in STALE_ACTIVE_PATTERNS:
         if pattern in text:
             errors.append(f"{rel}: contains stale host reference `{pattern}`")
+
+
+def lineage_allowed(rel: Path) -> bool:
+    rel_text = rel.as_posix()
+    if rel.name in LINEAGE_ALLOWED_PARTS:
+        return True
+    return rel_text in LINEAGE_ALLOWED_PARTS
+
+
+def iter_plugin_markdown_files(plugin_root: Path) -> list[Path]:
+    candidates = [plugin_root / "README.md", plugin_root / "PORTABILITY.md"]
+    skills_root = plugin_root / "skills"
+    if skills_root.is_dir():
+        candidates.extend(sorted(skills_root.rglob("*.md")))
+    references_root = plugin_root / "references"
+    if references_root.is_dir():
+        candidates.extend(sorted(references_root.rglob("*.md")))
+    return [path for path in candidates if path.is_file()]
 
 
 def validate_script_references(
@@ -257,7 +398,7 @@ def validate_relative_file(
         errors.append(f"{rel_source}: script reference `{raw_path}` points to missing file")
 
 
-def validate_matrix(root: Path, errors: list[str]) -> None:
+def validate_matrix(root: Path, mode: str, errors: list[str]) -> None:
     path = root / "docs" / "portability" / "matrix.md"
     text = read_text(path, errors)
     if text is None:
@@ -278,23 +419,158 @@ def validate_matrix(root: Path, errors: list[str]) -> None:
     bad_statuses = {plugin: status for plugin, status in rows.items() if status not in ALLOWED_STATUSES}
     if bad_statuses:
         errors.append(f"portability matrix has invalid statuses: {bad_statuses}")
-    if rows.get("team-execution") not in {"blocked", "unsupported"}:
-        errors.append("team-execution must be blocked or unsupported in the matrix")
+    if rows.get("team-execution") == "blocked":
+        errors.append("team-execution must not remain blocked in the Saga-family matrix")
+    if mode != "current":
+        for plugin_name in ("saga", "deploy", "mission-control", "team-execution"):
+            if rows.get(plugin_name) not in {"included", "proof-port"}:
+                errors.append(f"{plugin_name} must be included or proof-port for {mode}")
     for required in ("Verified:", "Review trigger:", "Source snapshot:"):
         if required not in text:
             errors.append(f"portability matrix missing `{required}`")
 
 
-def validate_provenance(root: Path, errors: list[str]) -> None:
+def validate_provenance(
+    root: Path,
+    expected_plugins: dict[str, dict[str, Any]],
+    errors: list[str],
+) -> None:
     path = root / "docs" / "portability" / "provenance.md"
     text = read_text(path, errors)
     if text is None:
         return
-    for plugin_name in EXPECTED_PLUGINS:
+    for plugin_name in expected_plugins:
         if f"`{plugin_name}`" not in text:
             errors.append(f"provenance missing `{plugin_name}`")
     if "Proof-Port Recipe" not in text or "test-suite" not in text:
         errors.append("provenance missing test-suite proof-port recipe")
+
+
+def validate_target_fixture(root: Path, errors: list[str]) -> None:
+    path = root / TARGET_FIXTURE
+    payload = load_json(path, errors)
+    if payload is None:
+        return
+    validate_target_fixture_payload(payload, path, errors)
+
+
+def validate_target_fixture_payload(
+    payload: dict[str, Any],
+    path: Path,
+    errors: list[str],
+) -> None:
+    plugins = payload.get("plugins")
+    if not isinstance(plugins, list):
+        errors.append(f"{path}: field `plugins` must be a list")
+        return
+
+    actual_plugins: dict[str, dict[str, Any]] = {}
+    for entry in plugins:
+        if not isinstance(entry, dict) or not isinstance(entry.get("name"), str):
+            errors.append(f"{path}: plugin entries must be objects with string names")
+            continue
+        actual_plugins[entry["name"]] = entry
+
+    compare_inventory(
+        set(actual_plugins),
+        set(TARGET_EXPECTED_PLUGINS),
+        "target fixture plugin inventory",
+        errors,
+    )
+
+    for plugin_name, expected in TARGET_EXPECTED_PLUGINS.items():
+        entry = actual_plugins.get(plugin_name)
+        if entry is None:
+            continue
+        if entry.get("version") != expected["version"]:
+            errors.append(
+                f"{path}: {plugin_name} version must be {expected['version']}"
+            )
+        skills = entry.get("skills")
+        if not isinstance(skills, list) or not all(isinstance(skill, str) for skill in skills):
+            errors.append(f"{path}: {plugin_name} skills must be a list of strings")
+            continue
+        compare_inventory(
+            set(skills),
+            set(expected["skills"]),
+            f"target fixture {plugin_name} skills",
+            errors,
+        )
+        for forbidden in (".claude-plugin", "commands", "agents"):
+            if forbidden in entry.get("forbidden_active_dirs", []):
+                continue
+            errors.append(f"{path}: {plugin_name} must forbid active `{forbidden}` directories")
+
+    removed_plugins = set(payload.get("removed_plugins", []))
+    compare_inventory(
+        removed_plugins,
+        OLD_ACTIVE_PLUGINS,
+        "target fixture removed plugins",
+        errors,
+    )
+
+    namespace_proof = set(payload.get("required_namespace_proof", []))
+    missing_namespace = REQUIRED_NAMESPACE_PROOF_SKILLS - namespace_proof
+    if missing_namespace:
+        errors.append(
+            "target fixture missing namespace proof skills: "
+            f"{sorted(missing_namespace)}"
+        )
+
+    state_roots = set(payload.get("required_state_roots", []))
+    missing_state_roots = REQUIRED_STATE_ROOTS - state_roots
+    if missing_state_roots:
+        errors.append(f"target fixture missing state roots: {sorted(missing_state_roots)}")
+
+    mutation_plugins = set(payload.get("mutation_gate_plugins", []))
+    if {"deploy", "mission-control"} - mutation_plugins:
+        errors.append("target fixture must require mutation gates for deploy and mission-control")
+
+
+def validate_saga_family_docs(root: Path, errors: list[str]) -> None:
+    for rel_path in REQUIRED_SAGA_FAMILY_DOCS:
+        path = root / rel_path
+        if read_text(path, errors) is None:
+            continue
+
+    disposition_text = ""
+    for rel_path in (
+        Path("docs/portability/saga-family-capability-map.md"),
+        Path("docs/portability/saga-family-known-use-inventory.md"),
+    ):
+        text = read_text(root / rel_path, errors)
+        if text is not None:
+            disposition_text += text
+
+    for skill in sorted(OLD_ACTIVE_SKILLS):
+        if f"`{skill}`" not in disposition_text and skill not in disposition_text:
+            errors.append(f"saga-family disposition docs missing `{skill}`")
+
+    matrix = read_text(root / "docs" / "portability" / "matrix.md", errors)
+    if matrix is not None and "| `team-execution` | blocked |" in matrix:
+        errors.append("portability matrix still marks team-execution as blocked")
+
+
+def validate_cutover_evidence(root: Path, errors: list[str]) -> None:
+    proof_doc = root / "docs" / "validation" / "saga-family-codex-proof.md"
+    proof_schema = root / "docs" / "validation" / "saga-family-codex-proof.schema.json"
+    rollback_doc = root / "docs" / "cutover" / "saga-family-rollback-and-split.md"
+    for path in (proof_doc, proof_schema, rollback_doc):
+        if not path.is_file():
+            errors.append(f"cutover evidence missing `{path.relative_to(root)}`")
+
+
+def compare_inventory(
+    actual: set[str],
+    expected: set[str],
+    label: str,
+    errors: list[str],
+) -> None:
+    if actual != expected:
+        errors.append(
+            f"{label} mismatch: missing={sorted(expected - actual)} "
+            f"unexpected={sorted(actual - expected)}"
+        )
 
 
 def validate_cutover(root: Path, errors: list[str]) -> None:
@@ -345,14 +621,23 @@ def read_text(path: Path, errors: list[str]) -> str | None:
 
 
 def main() -> int:
+    parser = ArgumentParser(description="Validate the Infiquetra Codex plugin repo.")
+    parser.add_argument(
+        "--mode",
+        choices=sorted(VALIDATION_MODES),
+        default="current",
+        help="Validation mode. Defaults to current active inventory.",
+    )
+    args = parser.parse_args()
+
     repo_root = Path(__file__).resolve().parents[1]
-    errors = validate_repository(repo_root)
+    errors = validate_repository(repo_root, mode=args.mode)
     if errors:
-        print("Codex plugin validation failed:")
+        print(f"Codex plugin validation failed ({args.mode}):")
         for error in errors:
             print(f"- {error}")
         return 1
-    print(f"Codex plugin validation passed: {repo_root}")
+    print(f"Codex plugin validation passed ({args.mode}): {repo_root}")
     return 0
 
 
