@@ -1,0 +1,8 @@
+{
+  "github": {
+    "hosts": ["github.com"],
+    "orgs": ["infiquetra"],
+    "repositories": ["*"],
+    "projects": ["jeff-intent", "asgard", "mount-olympus"]
+  }
+}

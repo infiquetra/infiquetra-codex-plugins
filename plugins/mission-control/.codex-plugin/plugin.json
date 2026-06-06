@@ -1,0 +1,42 @@
+{
+  "name": "mission-control",
+  "version": "2.0.0",
+  "description": "SDLC management for Jeff Intent, Asgard, and Mount Olympus: prepared issue drafts, board schemas, labels, project fields, sub-issues, metrics, and card validation.",
+  "author": {
+    "name": "Infiquetra",
+    "email": "hello@infiquetra.com",
+    "url": "https://github.com/infiquetra"
+  },
+  "homepage": "https://github.com/infiquetra/infiquetra-codex-plugins/tree/main/plugins/mission-control",
+  "repository": "https://github.com/infiquetra/infiquetra-codex-plugins",
+  "license": "MIT",
+  "keywords": [
+    "sdlc",
+    "github-projects",
+    "kanban",
+    "issues",
+    "labels",
+    "metrics",
+    "sub-issues",
+    "mount-olympus",
+    "asgard",
+    "jeff-intent"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Mission Control",
+    "shortDescription": "Infiquetra SDLC issue, board, label, and metrics workflows.",
+    "longDescription": "Provides Codex skills and bundled scripts for prepared issue drafts, GitHub Projects boards, labels, milestones, flow metrics, rollout checks, and card validation across Jeff Intent, Asgard, and Mount Olympus.",
+    "developerName": "Infiquetra",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "brandColor": "#2F6F73",
+    "defaultPrompt": [
+      "Use the mission-control skill that matches this Infiquetra SDLC workflow."
+    ]
+  }
+}

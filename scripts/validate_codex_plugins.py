@@ -185,7 +185,12 @@ def validate_repository(root: Path, mode: str = "current") -> list[str]:
     if mode == "current":
         expected_plugins = CURRENT_EXPECTED_PLUGINS
         validate_marketplace(root, expected_plugins, errors)
-        validate_plugins(root, expected_plugins, errors)
+        validate_plugins(
+            root,
+            expected_plugins,
+            errors,
+            optional_plugins=TARGET_EXPECTED_PLUGINS,
+        )
     elif mode == "cutover":
         expected_plugins = TARGET_EXPECTED_PLUGINS
         validate_marketplace(root, expected_plugins, errors)
@@ -249,22 +254,33 @@ def validate_plugins(
     root: Path,
     expected_plugins: dict[str, dict[str, Any]],
     errors: list[str],
+    optional_plugins: dict[str, dict[str, Any]] | None = None,
 ) -> None:
     plugins_root = root / "plugins"
     actual_plugins = {
         path.name for path in plugins_root.iterdir() if path.is_dir() and not path.name.startswith(".")
     }
     expected_plugin_names = set(expected_plugins)
-    if actual_plugins != expected_plugin_names:
+    optional_plugin_names = set(optional_plugins or {}) - expected_plugin_names
+    allowed_plugin_names = expected_plugin_names | optional_plugin_names
+    missing_plugins = expected_plugin_names - actual_plugins
+    unexpected_plugins = actual_plugins - allowed_plugin_names
+    if missing_plugins or unexpected_plugins:
         errors.append(
             "plugin directory inventory mismatch: "
-            f"missing={sorted(expected_plugin_names - actual_plugins)} "
-            f"unexpected={sorted(actual_plugins - expected_plugin_names)}"
+            f"missing={sorted(missing_plugins)} "
+            f"unexpected={sorted(unexpected_plugins)}"
         )
 
     for plugin_name, expected in expected_plugins.items():
         plugin_root = plugins_root / plugin_name
         validate_plugin(root, plugin_root, plugin_name, expected, errors)
+    for plugin_name, expected in (optional_plugins or {}).items():
+        if plugin_name in expected_plugins:
+            continue
+        plugin_root = plugins_root / plugin_name
+        if plugin_root.exists():
+            validate_plugin(root, plugin_root, plugin_name, expected, errors)
 
 
 def validate_plugin(
