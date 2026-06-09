@@ -1,10 +1,11 @@
 ---
 title: Saga Family Documentation Package Plan
 type: docs
-status: active
+status: completed
 date: 2026-06-09
 origin: docs/brainstorms/2026-06-09-saga-family-documentation-package-requirements.md
 deepened: 2026-06-09
+completed: 2026-06-09
 ---
 
 # Saga Family Documentation Package Plan
@@ -14,6 +15,26 @@ deepened: 2026-06-09
 Build a comprehensive `docs/saga/` field guide with generated lifecycle facts, polished visual assets, command dry-run references, scenario playbooks, state and maturity guidance, markdown failure examples, recovery playbooks, and drift tests.
 
 The work is docs/template/test only. It must not change Saga runtime behavior, command semantics, backend choices, or mutation ownership.
+
+---
+
+## Implementation Closeout
+
+Completed on 2026-06-09 in the Codex plugin repo.
+
+All implementation units U1 through U8 were delivered: generated lifecycle facts, the `docs/saga/` field guide, state and ownership references, command catalog, scenario playbooks, markdown and recovery guides, rendered visual assets, README cross-links, and docs drift tests.
+
+Verification passed:
+
+| Check | Result |
+|---|---|
+| `python3 scripts/build_saga_docs_facts.py --check` | pass |
+| `python3 scripts/render_saga_docs_assets.py --check` | pass |
+| `PYTHONPATH=. python3 -m pytest tests/test_saga_docs_package.py tests/test_saga_doc_formatting.py -q` | 35 passed |
+| `python3 scripts/validate_codex_plugins.py` | pass |
+| `PYTHONPATH=. python3 -m pytest plugins/saga/tests tests/test_validate_codex_plugins.py -q` | 20 passed |
+| `git diff --check` | pass |
+| `PYTHONPATH=. python3 -m pytest -q` | 211 passed |
 
 ---
 

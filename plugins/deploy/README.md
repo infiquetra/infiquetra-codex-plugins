@@ -2,6 +2,10 @@
 
 Deployment commands for Infiquetra repositories that use tag-promotion workflows.
 
+Deploy participates in the Saga family after readiness, QA, or hotfix routing
+calls for deployment mutation. The full lifecycle guide is
+`../../docs/saga/README.md`.
+
 ## Codex Skills
 
 - `deploy` previews or pushes `nonprod`, `staging`, `production`, and rollback tags.

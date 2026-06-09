@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="790" viewBox="0 0 1200 790" role="img">
+<defs>
+<marker id="arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+<path d="M0,0 L0,6 L9,3 z" fill="#475569"/>
+</marker>
+<filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+<feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0f172a" flood-opacity="0.12"/>
+</filter>
+</defs>
+<rect width="1200" height="790" fill="#f8fafc"/>
+<text x="58" y="72" font-family="Inter, Arial, sans-serif" font-size="36" font-weight="850" fill="#172033">Saga Family Ownership Boundaries</text>
+<text x="60" y="112" font-family="Inter, Arial, sans-serif" font-size="19" font-weight="400" fill="#5b6472">Each plugin owns one mutation or evidence domain. Handoffs transfer context, not authority.</text>
+<rect x="50" y="165" width="250" height="470" rx="10" fill="#ffffff" stroke="#dbe3ef" stroke-width="1"/>
+<rect x="50" y="165" width="250" height="64" rx="10" fill="#2563eb"/>
+<rect x="50" y="211" width="250" height="18" fill="#2563eb"/>
+<text x="70" y="206" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="850" fill="#ffffff">saga</text>
+<text x="70" y="266" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="850" fill="#5b6472">OWNS</text>
+<text x="70" y="298" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="400" fill="#172033"><tspan x="70" dy="0">lifecycle choice, local Saga</tspan><tspan x="70" dy="20">state, routing, durable</tspan><tspan x="70" dy="20">lifecycle artifacts, and</tspan><tspan x="70" dy="20">handoff envelopes</tspan></text>
+<line x1="70" y1="432" x2="280" y2="432" stroke="#e2e8f0"/>
+<text x="70" y="470" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="850" fill="#5b6472">DOES NOT OWN</text>
+<text x="70" y="502" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="400" fill="#172033"><tspan x="70" dy="0">issue mutation, deployment</tspan><tspan x="70" dy="20">mutation, reviewer/validator</tspan><tspan x="70" dy="20">execution, or another</tspan><tspan x="70" dy="20">owner&#x27;s state</tspan></text>
+<rect x="340" y="165" width="250" height="470" rx="10" fill="#ffffff" stroke="#dbe3ef" stroke-width="1"/>
+<rect x="340" y="165" width="250" height="64" rx="10" fill="#0f766e"/>
+<rect x="340" y="211" width="250" height="18" fill="#0f766e"/>
+<text x="360" y="206" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="850" fill="#ffffff">mission-control</text>
+<text x="360" y="266" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="850" fill="#5b6472">OWNS</text>
+<text x="360" y="298" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="400" fill="#172033"><tspan x="360" dy="0">GitHub issues, prepared</tspan><tspan x="360" dy="20">issue drafts, comments,</tspan><tspan x="360" dy="20">labels, milestones, project</tspan><tspan x="360" dy="20">boards, project fields,</tspan><tspan x="360" dy="20">rollout, and flow metrics</tspan></text>
+<line x1="360" y1="432" x2="570" y2="432" stroke="#e2e8f0"/>
+<text x="360" y="470" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="850" fill="#5b6472">DOES NOT OWN</text>
+<text x="360" y="502" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="400" fill="#172033"><tspan x="360" dy="0">Saga lifecycle phase</tspan><tspan x="360" dy="20">authority or deployment tags</tspan></text>
+<rect x="630" y="165" width="250" height="470" rx="10" fill="#ffffff" stroke="#dbe3ef" stroke-width="1"/>
+<rect x="630" y="165" width="250" height="64" rx="10" fill="#7c3aed"/>
+<rect x="630" y="211" width="250" height="18" fill="#7c3aed"/>
+<text x="650" y="206" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="850" fill="#ffffff">team-execution</text>
+<text x="650" y="266" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="850" fill="#5b6472">OWNS</text>
+<text x="650" y="298" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="400" fill="#172033"><tspan x="650" dy="0">reviewer consensus, selected</tspan><tspan x="650" dy="20">validators, delegated or</tspan><tspan x="650" dy="20">serial evidence, and guarded</tspan><tspan x="650" dy="20">nonprod automation evidence</tspan></text>
+<line x1="650" y1="432" x2="860" y2="432" stroke="#e2e8f0"/>
+<text x="650" y="470" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="850" fill="#5b6472">DOES NOT OWN</text>
+<text x="650" y="502" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="400" fill="#172033"><tspan x="650" dy="0">final mutation approval,</tspan><tspan x="650" dy="20">scope decisions, or</tspan><tspan x="650" dy="20">deployment ownership</tspan></text>
+<rect x="920" y="165" width="250" height="470" rx="10" fill="#ffffff" stroke="#dbe3ef" stroke-width="1"/>
+<rect x="920" y="165" width="250" height="64" rx="10" fill="#16a34a"/>
+<rect x="920" y="211" width="250" height="18" fill="#16a34a"/>
+<text x="940" y="206" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="850" fill="#ffffff">deploy</text>
+<text x="940" y="266" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="850" fill="#5b6472">OWNS</text>
+<text x="940" y="298" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="400" fill="#172033"><tspan x="940" dy="0">tag promotion, rollback,</tspan><tspan x="940" dy="20">hotfix, deployment status,</tspan><tspan x="940" dy="20">release-note previews, and</tspan><tspan x="940" dy="20">deployment guardrails</tspan></text>
+<line x1="940" y1="432" x2="1150" y2="432" stroke="#e2e8f0"/>
+<text x="940" y="470" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="850" fill="#5b6472">DOES NOT OWN</text>
+<text x="940" y="502" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="400" fill="#172033"><tspan x="940" dy="0">readiness review, issue</tspan><tspan x="940" dy="20">lifecycle, or code</tspan><tspan x="940" dy="20">implementation</tspan></text>
+<rect x="205" y="670" width="790" height="82" rx="10" fill="#ffffff" stroke="#dbe3ef" stroke-width="1"/>
+<text x="230" y="705" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="850" fill="#172033">Handoff rule</text>
+<text x="365" y="705" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="400" fill="#172033"><tspan x="365" dy="0">A receiver re-reads and re-verifies the handoff payload before mutating its own</tspan><tspan x="365" dy="22">domain.</tspan></text>
+</svg>

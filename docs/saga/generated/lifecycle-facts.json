@@ -1,0 +1,381 @@
+{
+  "docs_package": {
+    "required_docs": [
+      "docs/saga/README.md",
+      "docs/saga/lifecycle-atlas.md",
+      "docs/saga/command-catalog.md",
+      "docs/saga/state-and-maturity.md",
+      "docs/saga/associated-plugins.md",
+      "docs/saga/scenarios.md",
+      "docs/saga/markdown-contracts.md",
+      "docs/saga/recovery-playbooks.md",
+      "docs/saga/quick-reference.md"
+    ],
+    "required_scenarios": [
+      "vague idea to plan",
+      "plan-ready issue to PR",
+      "PR-ready work through review and QA",
+      "handoff issue creation",
+      "security-sensitive review escalation",
+      "deployment after QA",
+      "hotfix flow",
+      "stalled Saga recovery"
+    ],
+    "required_visual_assets": [
+      "docs/saga/visual-assets/saga-lifecycle-atlas.svg",
+      "docs/saga/visual-assets/saga-lifecycle-atlas.png",
+      "docs/saga/visual-assets/saga-lifecycle-atlas.pdf",
+      "docs/saga/visual-assets/readiness-ladder.svg",
+      "docs/saga/visual-assets/ownership-boundaries.svg"
+    ]
+  },
+  "generated_by": "scripts/build_saga_docs_facts.py",
+  "owner_boundaries": {
+    "deploy": {
+      "does_not_own": "readiness review, issue lifecycle, or code implementation",
+      "owns": "tag promotion, rollback, hotfix, deployment status, release-note previews, and deployment guardrails"
+    },
+    "mission-control": {
+      "does_not_own": "Saga lifecycle phase authority or deployment tags",
+      "owns": "GitHub issues, prepared issue drafts, comments, labels, milestones, project boards, project fields, rollout, and flow metrics"
+    },
+    "saga": {
+      "does_not_own": "issue mutation, deployment mutation, reviewer/validator execution, or another owner's state",
+      "owns": "lifecycle choice, local Saga state, routing, durable lifecycle artifacts, and handoff envelopes"
+    },
+    "team-execution": {
+      "does_not_own": "final mutation approval, scope decisions, or deployment ownership",
+      "owns": "reviewer consensus, selected validators, delegated or serial evidence, and guarded nonprod automation evidence"
+    }
+  },
+  "plugins": {
+    "deploy": {
+      "skills": [
+        {
+          "description": "Infiquetra deployment state and tag-promotion guidance. Use for deploy, deploy-status, deploy-notes, deploy-hotfix, rollback planning, hotfix promotion, and deployment evidence.",
+          "name": "deploy-state",
+          "namespace": "deploy:deploy-state",
+          "skill_path": "plugins/deploy/skills/deploy-state/SKILL.md"
+        },
+        {
+          "description": "Promote an Infiquetra repository by minting a policy-compliant deployment tag. Use for nonprod, staging, production, and rollback tag-promotion flows.",
+          "name": "deploy",
+          "namespace": "deploy:deploy",
+          "skill_path": "plugins/deploy/skills/deploy/SKILL.md"
+        },
+        {
+          "description": "Show Infiquetra deployment status and version drift across nonprod, staging, and production.",
+          "name": "deploy-status",
+          "namespace": "deploy:deploy-status",
+          "skill_path": "plugins/deploy/skills/deploy-status/SKILL.md"
+        },
+        {
+          "description": "Preview release notes for an Infiquetra tag-promotion deployment candidate.",
+          "name": "deploy-notes",
+          "namespace": "deploy:deploy-notes",
+          "skill_path": "plugins/deploy/skills/deploy-notes/SKILL.md"
+        },
+        {
+          "description": "Prepare and promote an Infiquetra hotfix tag through the deployment workflow.",
+          "name": "deploy-hotfix",
+          "namespace": "deploy:deploy-hotfix",
+          "skill_path": "plugins/deploy/skills/deploy-hotfix/SKILL.md"
+        }
+      ],
+      "version": "0.1.1"
+    },
+    "mission-control": {
+      "skills": [
+        {
+          "description": "Manage the Infiquetra GitHub Projects boards: Jeff Intent, Asgard, and Mount Olympus. Handles board views, status moves, item adds, terminal-item archive, WIP analysis, field discovery, and standup preparation.",
+          "name": "board",
+          "namespace": "mission-control:board",
+          "skill_path": "plugins/mission-control/skills/board/SKILL.md"
+        },
+        {
+          "description": "Operator-facing GraphQL + REST helpers for the Mount Olympus board. Wraps the GitHub APIs the orchestrator uses, so Jeff can do per-card work (set Initiative/Objective fields, link sub-issues, validate card bodies, self-heal labels, discover project mappings) without writing GraphQL by hand. Each command is idempotent where possible, and surfaces partial failures clearly.",
+          "name": "flow",
+          "namespace": "mission-control:flow",
+          "skill_path": "plugins/mission-control/skills/flow/SKILL.md"
+        },
+        {
+          "description": "Create and manage SDLC issues in Infiquetra GitHub repositories using the 6-type issue taxonomy: capability, enhancement, defect, exploration, context-update, and objective. Handles issue type selection, template-guided creation, Hermes label application, project board assignment, and milestone linking.",
+          "name": "issues",
+          "namespace": "mission-control:issues",
+          "skill_path": "plugins/mission-control/skills/issues/SKILL.md"
+        },
+        {
+          "description": "Manage GitHub labels and project field options for Infiquetra repositories. Handles applying SDLC labels to issues, auditing repos for missing labels, deploying the full label taxonomy, auto-labeling issues based on title/body patterns, and creating new field options when new initiatives or objectives are introduced.",
+          "name": "labels",
+          "namespace": "mission-control:labels",
+          "skill_path": "plugins/mission-control/skills/labels/SKILL.md"
+        },
+        {
+          "description": "Flow metrics and analysis for Infiquetra project boards using GitHub timeline events. Provides cycle time, throughput, WIP age, per-status time breakdowns, and interpretation guidance across Jeff Intent, Asgard, and Mount Olympus.",
+          "name": "metrics",
+          "namespace": "mission-control:metrics",
+          "skill_path": "plugins/mission-control/skills/metrics/SKILL.md"
+        },
+        {
+          "description": "Manage GitHub Milestones for Infiquetra Objectives. Creates, lists, links, and tracks milestone progress when an Objective needs due-date rollup across one or more repos.",
+          "name": "milestones",
+          "namespace": "mission-control:milestones",
+          "skill_path": "plugins/mission-control/skills/milestones/SKILL.md"
+        },
+        {
+          "description": "Track and drive SDLC rollout across Infiquetra organization repositories. Provides rollout status dashboards, gap analysis per repo, label and template deployment, and progress tracking. Uses GitHub repos, issue templates, labels, project mapping, and rollout-status tracking.",
+          "name": "rollout",
+          "namespace": "mission-control:rollout",
+          "skill_path": "plugins/mission-control/skills/rollout/SKILL.md"
+        }
+      ],
+      "version": "2.0.0"
+    },
+    "saga": {
+      "skills": [
+        {
+          "description": "The two-mode frame-finding front door for early Infiquetra thinking. Startup mode runs the six market/customer forcing questions (stage-aware); Builder mode runs discovery/shaping for infra, workflow, and internal-tooling. Finds the right frame, then routes \u2014 to /ideate, /brainstorm, /plan, or /strategy. Triggers on \"office hours\", \"is this worth building\", \"help me think through this\", \"I have an idea but I'm not sure what it even is\", \"what's even the right frame here\".",
+          "name": "office-hours",
+          "namespace": "saga:office-hours",
+          "skill_path": "plugins/saga/skills/office-hours/SKILL.md"
+        },
+        {
+          "description": "Generate and critically evaluate grounded Infiquetra product, architecture, or workflow ideas. Multi-agent divergent\u2192convergent engine \u2014 generate many, critique all, explain survivors only. Triggers on \"ideate on X\", \"give me ideas\", \"what should I improve\", \"surprise me\", \"what would you change\".",
+          "name": "ideate",
+          "namespace": "saga:ideate",
+          "skill_path": "plugins/saga/skills/ideate/SKILL.md"
+        },
+        {
+          "description": "Deep-dive one chosen Infiquetra idea into a right-sized requirements document before planning.",
+          "name": "brainstorm",
+          "namespace": "saga:brainstorm",
+          "skill_path": "plugins/saga/skills/brainstorm/SKILL.md"
+        },
+        {
+          "description": "Interrogate a vague ask into a precise, backlog-ready WHAT spec \u2014 five-Why, scope/MVP lock, failure-mode enumeration, read-code-first, quantify-everything. Convergent and relentless on one decided direction. Triggers on \"spec this out\", \"turn this into a spec\", \"what exactly are we building\", \"sharpen this ask before handoff\", and when /office-hours, /loop, or /brainstorm have settled the WHY but the WHAT is still fuzzy.",
+          "name": "spec",
+          "namespace": "saga:spec",
+          "skill_path": "plugins/saga/skills/spec/SKILL.md"
+        },
+        {
+          "description": "Create or maintain the repository root STRATEGY.md \u2014 the durable direction anchor (target problem, approach, who it's for, key metrics, tracks). Interview-driven and rerunnable. Triggers on \"write our strategy\", \"update the direction\", \"what are we working on\", \"set up the strategy doc\", and when /ideate, /brainstorm, or /plan need upstream grounding and no STRATEGY.md exists yet.",
+          "name": "strategy",
+          "namespace": "saga:strategy",
+          "skill_path": "plugins/saga/skills/strategy/SKILL.md"
+        },
+        {
+          "description": "Create durable Infiquetra implementation plans with issue, review, test, and deploy gates. Interrogates HOW work gets built, writes an agent-consumable plan artifact, records a plan saga, and routes to doc-review and /work. Triggers on \"plan this\", \"how should we build this\", \"create a plan\", \"break this down\", or a handoff issue ready for planning.",
+          "name": "plan",
+          "namespace": "saga:plan",
+          "skill_path": "plugins/saga/skills/plan/SKILL.md"
+        },
+        {
+          "description": "Execute a settled Infiquetra plan to PR-ready, then own the round-N PR continuation loop. Restores and writes the work-thread saga (the primary writer), recommends an execution backend, runs risk-gated tests, calls /code-review programmatically and reads its envelope, gates hard on P0/P1 and stale reviews, and coordinates PR-open/review-request/merge under explicit confirmation \u2014 without owning deploy. Triggers on \"build it\", \"work this plan\", \"execute the plan\", \"resume work on #N\", or a plan-ready / resume-ready handoff issue.",
+          "name": "work",
+          "namespace": "saga:work",
+          "skill_path": "plugins/saga/skills/work/SKILL.md"
+        },
+        {
+          "description": "Run a risk-driven Infiquetra acceptance-evidence QA gate on shipped work. Restores the work-thread saga, classifies the change into risk classes, runs acceptance checks (including browser behavior via the installed MCP), gathers evidence, assigns severity, derives a ship verdict, writes a durable QA artifact, advances the saga qa-track on pass, and routes by merge state \u2014 without fixing, committing, or deploying. Triggers on \"qa\", \"run QA\", \"does this actually work\", \"acceptance check\", \"ship-readiness\", or a /work or /code-review hand-in after merge.",
+          "name": "qa",
+          "namespace": "saga:qa",
+          "skill_path": "plugins/saga/skills/qa/SKILL.md"
+        },
+        {
+          "description": "The Infiquetra systematic-debugging engine. Find the root cause of a bug, test failure, error, or unexpected behavior before any fix. Diagnosis is the primary deliverable: it writes an agent-consumable DEBUG REPORT, routes real implementation work to saga:work via a saga:handoff issue, design problems to saga:brainstorm, and trackable defects to saga:handoff. Read-only on the world and the saga; never commits, pushes, opens a PR, or deploys.",
+          "name": "investigate",
+          "namespace": "saga:investigate",
+          "skill_path": "plugins/saga/skills/investigate/SKILL.md"
+        },
+        {
+          "description": "The Infiquetra lifecycle META-IMPROVEMENT ENGINE. The TERMINAL, ADVISORY lifecycle phase downstream of /qa \u2014 it reads the work that shipped, gathers evidence (git forensics behind a stale-base/wrong-today BLOCK guard, saga trajectory, gh issues/PRs READ-ONLY, session transcripts), interviews the operator, writes a concise agent-consumable retro doc, PROMOTES generalizable findings into the engineering journal (pure-append, auto), CURATES the journal + auto-memory (staleness / contradiction / dedup / rule-enforcement sweeps, propose-diff-and-wait), and runs net-new meta-improvement passes (new-skill detection, refine the lifecycle SKILLs, refine directives, prune memory) \u2014 every one gated. It never blocks /loop, never mutates the world, never writes the saga, and never self-applies a non-journal edit. Triggers on \"retro\", \"retrospective\", \"what did we learn\", \"leave the system smarter\", a /qa or /handoff hand-in, or the end of a meaningful work loop / PR / deploy.",
+          "name": "retro",
+          "namespace": "saga:retro",
+          "skill_path": "plugins/saga/skills/retro/SKILL.md"
+        },
+        {
+          "description": "The Infiquetra lifecycle's HEAVY forensic reconstruction engine \u2014 the deep half beside /loop's lightweight restore. Two tiers \u2014 Tier 1 reconstructs from the saga's WHOLE tick-chain trajectory (not just the last frame) plus PR archaeology and explicit conflict reconciliation; Tier 2 (fallback only, no saga AND no resolvable issue) is a slim source-only port of CE session forensics over local JSONL logs. Read-only on the world; it writes one git-ignored re-entry tick that reuses the restored saga_id, then routes. Triggers on \"resume\", \"reconstruct what happened\", \"what was tried across these PRs\", a corrupt or missing local cache, or same-machine work that never wrote a saga.",
+          "name": "resume",
+          "namespace": "saga:resume",
+          "skill_path": "plugins/saga/skills/resume/SKILL.md"
+        },
+        {
+          "description": "Route durable Infiquetra lifecycle artifacts into mission-control prepared issue drafts.",
+          "name": "handoff",
+          "namespace": "saga:handoff",
+          "skill_path": "plugins/saga/skills/handoff/SKILL.md"
+        },
+        {
+          "description": "CEO/founder-mode scope and ambition review. Rethink the problem, find the 10x product, challenge premises, expand or cut scope deliberately \u2014 across four committed modes (SCOPE EXPANSION, SELECTIVE EXPANSION, HOLD SCOPE, SCOPE REDUCTION). Fires upstream of execution on a /plan artifact, STRATEGY.md, /brainstorm output, or an ad-hoc scope question; produces a scope decision and routes deep rigor back to /doc-review and /code-review in a closed loop. Triggers on \"think bigger\", \"expand scope\", \"is this ambitious enough\", \"rethink this\", \"scope review\", or a /ceo-review invocation. Does not implement, record strategy, file issues, or change code.",
+          "name": "founder-review",
+          "namespace": "saga:founder-review",
+          "skill_path": "plugins/saga/skills/founder-review/SKILL.md"
+        },
+        {
+          "description": "Alias-style skill for founder-review. Use when the user asks for CEO review, founder review, scope ambition review, scope expansion/reduction, or whether a plan, strategy, feature, or PR is ambitious enough.",
+          "name": "ceo-review",
+          "namespace": "saga:ceo-review",
+          "skill_path": "plugins/saga/skills/ceo-review/SKILL.md"
+        },
+        {
+          "description": "Review Infiquetra plans, requirements, and SDLC documents for implementation readiness.",
+          "name": "doc-review",
+          "namespace": "saga:doc-review",
+          "skill_path": "plugins/saga/skills/doc-review/SKILL.md"
+        },
+        {
+          "description": "Run a structured Infiquetra code-quality review at the work-to-PR boundary. Reads the merge-base diff, runs a built-vs-planned audit plus judgment-selected review lenses, validates findings, writes a durable review artifact, appends to the work-thread saga, and routes \u2014 without mutating code. Triggers on \"review this PR\", \"code review\", \"check my diff\", \"pre-PR review\", or a /work hand-in before shipping.",
+          "name": "code-review",
+          "namespace": "saga:code-review",
+          "skill_path": "plugins/saga/skills/code-review/SKILL.md"
+        },
+        {
+          "description": "Run a metric-driven Infiquetra optimization loop \u2014 define a measurable goal, baseline current behavior, generate a hypothesis backlog, run bounded one-variable experiments, measure each against hard degenerate gates before any LLM-judge, keep the best real improvement and revert the rest, and converge on the measurably-best version. Eight metric classes (perf, cost, reliability, agent-usability, security, quality/accuracy, developer-experience, maintainability). Off-chain and saga-untouched; it finds the winner, then routes it to /work to ship \u2014 it never commits, merges, or deploys. Triggers on \"optimize this\", \"make it faster/cheaper\", \"tune this\", \"baseline and improve\", \"drive this metric to a target\", or a perf finding handed in from /qa or /loop.",
+          "name": "optimize",
+          "namespace": "saga:optimize",
+          "skill_path": "plugins/saga/skills/optimize/SKILL.md"
+        },
+        {
+          "description": "The Infiquetra lifecycle router and resume substrate. Three modes \u2014 Route (dispatch the one next command), Drive (walk phases across the lifecycle, pausing at every gate and handoff), and Resume (scan the saga, restore the work-thread, re-enter where it left off). Reads the saga at entry, ticks it on every routing decision, and routes to the destination command \u2014 which owns its own phase work, gates, AND its own execution backend. Triggers on \"loop\", \"where does this go\", \"route this\", \"drive it through the lifecycle\", \"resume\", \"what's in flight\", an issue/plan path, or a bare ad-hoc ask.",
+          "name": "loop",
+          "namespace": "saga:loop",
+          "skill_path": "plugins/saga/skills/loop/SKILL.md"
+        }
+      ],
+      "version": "0.20.0"
+    },
+    "team-execution": {
+      "skills": [
+        {
+          "description": "Two-phase Codex protocol for Infiquetra work: plan reviewer and validator coverage, then execute approved work with reviewer consensus, selected validator gates, evidence capture, and guarded nonprod automation.",
+          "name": "team-execution",
+          "namespace": "team-execution:team-execution",
+          "skill_path": "plugins/team-execution/skills/team-execution/SKILL.md"
+        },
+        {
+          "description": "Application security audit focused on URL and input trust boundaries, SSRF-style risks, redirects, metadata endpoints, allowlists, and evidence-backed findings.",
+          "name": "appsec-audit",
+          "namespace": "team-execution:appsec-audit",
+          "skill_path": "plugins/team-execution/skills/appsec-audit/SKILL.md"
+        }
+      ],
+      "version": "2.0.0"
+    }
+  },
+  "saga_routing": {
+    "advisory_commands": [
+      "saga:spec",
+      "saga:qa",
+      "saga:investigate",
+      "saga:strategy",
+      "saga:optimize",
+      "saga:retro",
+      "saga:resume"
+    ],
+    "alias_skills": [
+      "ceo-review"
+    ],
+    "command_states": {
+      "brainstorm": "shipped",
+      "code-review": "shipped",
+      "doc-review": "hard gate shipped",
+      "founder-review": "shipped",
+      "handoff": "shipped envelope",
+      "ideate": "shipped",
+      "investigate": "advisory off-chain shipped",
+      "loop": "router re-entry",
+      "office-hours": "shipped",
+      "optimize": "advisory off-chain shipped",
+      "plan": "shipped",
+      "qa": "advisory gate-only shipped",
+      "resume": "advisory stub",
+      "retro": "advisory terminal shipped",
+      "spec": "advisory off-chain shipped",
+      "strategy": "advisory shipped",
+      "work": "shipped"
+    },
+    "hard_gates": [
+      {
+        "blocks": "saga:work when unresolved P0/P1 findings remain",
+        "name": "doc-review readiness",
+        "owner": "saga:doc-review"
+      }
+    ],
+    "main_chain": [
+      "idea-ready/requirements-ready",
+      "saga:plan",
+      "saga:doc-review",
+      "saga:work",
+      "saga:code-review",
+      "saga:qa",
+      "saga:handoff or saga:retro"
+    ],
+    "routable_commands": [
+      "office-hours",
+      "ideate",
+      "brainstorm",
+      "spec",
+      "plan",
+      "doc-review",
+      "work",
+      "code-review",
+      "qa",
+      "investigate",
+      "founder-review",
+      "strategy",
+      "optimize",
+      "handoff",
+      "retro",
+      "resume",
+      "loop"
+    ]
+  },
+  "schema_version": "1.0",
+  "source_files": [
+    "scripts/validate_codex_plugins.py",
+    "plugins/saga/references/saga-spec.md",
+    "plugins/saga/skills/loop/references/dispatch-table.md",
+    "plugins/saga/references/formatting-style.md"
+  ],
+  "state": {
+    "lifecycle_phases": [
+      "ideation",
+      "brainstorm",
+      "plan",
+      "review",
+      "work",
+      "qa",
+      "retro"
+    ],
+    "maturity_by_lifecycle_phase": {
+      "brainstorm": "requirements-ready",
+      "ideation": "idea-ready",
+      "plan": "plan-ready",
+      "qa": "resume-ready",
+      "retro": "resume-ready",
+      "review": "plan-ready",
+      "work": "resume-ready"
+    },
+    "maturity_storage": "derived-never-stored",
+    "phase_statuses": [
+      "pending",
+      "in_progress",
+      "complete"
+    ],
+    "readiness_maturities": [
+      "idea-ready",
+      "requirements-ready",
+      "plan-ready",
+      "resume-ready",
+      "deferred-context"
+    ],
+    "thread_statuses": [
+      "active",
+      "blocked",
+      "paused",
+      "handed-off",
+      "done",
+      "abandoned"
+    ]
+  }
+}
