@@ -365,7 +365,7 @@ scripts/
   `blueprint-reviewer`, `sdlc-*`, `blueprint-review`, `spec-review`, and
   `issue-review`. Treat installed Codex cache references as provenance or
   stale-reference evidence unless they are confirmed active. Name
-  `hermes-extensions` as a known external migration input. Each confirmed active
+  `infiquetra-hermes-plugins` as a known external migration input. Each confirmed active
   hit must map to an exact replacement owner, an intentional retirement, or an
   accepted break with rationale. Cache-derived rows must store normalized
   plugin/skill identifiers and disposition only, with redacted path classes
