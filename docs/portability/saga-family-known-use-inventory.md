@@ -14,7 +14,7 @@ Searches covered:
   planning artifacts.
 - Installed Codex cache inventory for `sdlc-manager` and `blueprint-reviewer`,
   treated as installed-state evidence rather than maintained source.
-- `hermes-extensions` as the known external migration input named by the plan.
+- `infiquetra-hermes-plugins` as the known external migration input named by the plan.
 
 No other external active invocation source was confirmed in this checkpoint.
 
@@ -42,10 +42,10 @@ No other external active invocation source was confirmed in this checkpoint.
 | Portability and provenance docs | `docs/portability/matrix.md`, `docs/portability/provenance.md` | old plugin identifiers | Yes, as repo docs | `migration-reference` | Update with replacement provenance and mark old plugins as superseded lineage, not active target inventory. |
 | Planning and ideation docs | `docs/brainstorms/`, `docs/ideation/`, `docs/plans/` | old plugin identifiers and old skill examples | No, migration planning only | `migration-reference` | Keep as historical decision context. Do not treat as active invocation proof. |
 | Installed Codex cache | Codex cache inventory for old plugins | `sdlc-manager:{sdlc-board,sdlc-flow,sdlc-issues,sdlc-labels,sdlc-metrics,sdlc-milestones,sdlc-rollout}`, `blueprint-reviewer:{blueprint-review,issue-review,spec-review}` | Installed-state evidence only | `cache-provenance` | U7/U9 isolated proof must show old skills absent from fresh and upgrade profiles. |
-| Hermes operation skill docs | `hermes-extensions/skills/infiquetra-operations/**` | `sdlc-manager:*` | Yes, external migration input | `external-migration-input` | Route SDLC references to `mission-control:*`; route loop or issue handoff ownership to `saga` handoff plus `mission-control:issues`. |
-| Hermes operation registry and tests | `hermes-extensions/lib/infiquetra_ops/registry.py`, `hermes-extensions/lib/infiquetra_ops/tests/` | `sdlc-manager`, `sdlc-manager:*`, old slash commands | Yes, external migration input | `external-migration-input` | Replace registry family with `mission-control` equivalents in the Hermes repo after this Codex cutover plan establishes the target names. |
-| Hermes loop SDLC references | `hermes-extensions/plugins/infiquetra_loop/**` | `sdlc-manager`, `/sdlc-board`, `/create-issue`, `/sdlc-create`, `/sdlc-triage`, `/sdlc-metrics` | Yes, external migration input | `external-migration-input` | Route lifecycle state and issue handoff through Saga; route SDLC mutation through `mission-control`. |
-| Hermes review references | `hermes-extensions/plugins/infiquetra_loop/skills/doc-review/SKILL.md` | `blueprint-reviewer`, `/blueprint-review`, `/spec-review`, `/issue-review` | Yes, external migration input | `external-migration-input` | Route document review to `saga:doc-review` and `saga:spec`; route issue comment mutation to `mission-control:issues`; use `team-execution:team-execution` for consensus review where needed. |
+| Hermes operation skill docs | `infiquetra-hermes-plugins/skills/infiquetra-operations/**` | `sdlc-manager:*` | Yes, external migration input | `external-migration-input` | Route SDLC references to `mission-control:*`; route loop or issue handoff ownership to `saga` handoff plus `mission-control:issues`. |
+| Hermes operation registry and tests | `infiquetra-hermes-plugins/lib/infiquetra_ops/registry.py`, `infiquetra-hermes-plugins/lib/infiquetra_ops/tests/` | `sdlc-manager`, `sdlc-manager:*`, old slash commands | Yes, external migration input | `external-migration-input` | Replace registry family with `mission-control` equivalents in the Hermes repo after this Codex cutover plan establishes the target names. |
+| Hermes loop SDLC references | `infiquetra-hermes-plugins/plugins/infiquetra_loop/**` | `sdlc-manager`, `/sdlc-board`, `/create-issue`, `/sdlc-create`, `/sdlc-triage`, `/sdlc-metrics` | Yes, external migration input | `external-migration-input` | Route lifecycle state and issue handoff through Saga; route SDLC mutation through `mission-control`. |
+| Hermes review references | `infiquetra-hermes-plugins/plugins/infiquetra_loop/skills/doc-review/SKILL.md` | `blueprint-reviewer`, `/blueprint-review`, `/spec-review`, `/issue-review` | Yes, external migration input | `external-migration-input` | Route document review to `saga:doc-review` and `saga:spec`; route issue comment mutation to `mission-control:issues`; use `team-execution:team-execution` for consensus review where needed. |
 
 ## U8 Migration Rows
 

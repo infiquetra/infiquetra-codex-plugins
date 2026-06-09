@@ -1,5 +1,16 @@
 # Decisions
 
+## 2026-06-09: Track renamed Hermes plugin repo in Mission Control
+
+Mission Control project mappings now use `infiquetra-hermes-plugins` for the Hermes-facing plugin
+repository (commit `698b4b0`). The proof script and active portability docs moved with the mapping
+so board routing, proof scenarios, and migration guidance stay aligned.
+
+Rejected: relying on GitHub redirects or leaving the old source name in proof fixtures. Redirects do
+not help board-routing config or test fixtures, and stale proof data would keep validating the wrong
+operator path. Revisit if Mission Control starts discovering repository sets live instead of carrying
+a vendored canonical list.
+
 ## 2026-05-27: Curated Codex Adapter Repo
 
 `infiquetra-codex-plugins` is a Codex-native adapter repo, not a mirror of the Claude or

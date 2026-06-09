@@ -232,7 +232,7 @@ def prove_mission_control(repo_root: Path, proof_dir: Path) -> dict[str, Any]:
             "issue",
             "prepare",
             "--repo",
-            "hermes-extensions",
+            "infiquetra-hermes-plugins",
             "--type",
             "capability",
             "--team",
