@@ -17,6 +17,9 @@ The source-parity skill names are intentionally generic and are expected to be
 used through the plugin namespace, for example `saga:plan`, `saga:work`, and
 `saga:brainstorm`.
 
+For the full Saga family lifecycle, command catalog, state guide, scenarios, and
+visual atlas, see `../../docs/saga/README.md`.
+
 ## State
 
 Ignored local Saga state belongs under:

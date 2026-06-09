@@ -14,6 +14,10 @@ All operations run locally via the `gh` CLI, providing:
 - **Milestone management** — create and track Objectives via GitHub Milestones
 - **Flow helpers** — `flow set-field` / `flow link-sub-issue` / `flow verify-label` / `flow validate-card` / `flow field-options` / `flow discover-project`. Operator-facing GraphQL + REST helpers for project field assignment, native sub-issue linking, self-healing label create, and card pre-flight validation
 
+Mission Control participates in the Saga family by owning SDLC mutation after
+Saga emits reviewed handoff context. The full lifecycle guide is
+`../../docs/saga/README.md`.
+
 ## Quick Start
 
 ### Prerequisites

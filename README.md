@@ -21,6 +21,8 @@ replace the prior document-review surface. Exact migration rows live in
 `docs/portability/saga-family-capability-map.md` and
 `docs/portability/saga-family-known-use-inventory.md`.
 
+The operator-facing Saga family guide lives in `docs/saga/README.md`.
+
 ## Layout
 
 - `plugins/<name>/.codex-plugin/plugin.json` is the Codex manifest.

@@ -19,6 +19,10 @@ The plugin provides two related skills:
 Subagents are advisory evidence collectors. They do not authorize mutation,
 change scope, bypass confirmation, or make the final completion decision.
 
+Team Execution participates in the Saga family by owning reviewer consensus,
+validator selection, and evidence capture. The full lifecycle guide is
+`../../docs/saga/README.md`.
+
 ## Reviewer Protocol
 
 Base reviewers:
