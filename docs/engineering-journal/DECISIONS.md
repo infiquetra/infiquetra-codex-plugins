@@ -50,3 +50,18 @@ All Saga skills that write durable documents link `saga/references/formatting-st
 The contract chooses tables for compact comparative fields and short prose for narrative fields. This
 preserves field names for humans and LLM consumers while avoiding the CommonMark collapse caused by
 adjacent `**label:**` lines.
+
+## 2026-06-09: Saga Family Documentation Package Shape
+
+The Saga family documentation package will use `docs/saga/` as the canonical operator guide, backed by
+standard-library generated lifecycle facts and focused docs drift tests. The guide will explain the
+Saga family as `saga`, `mission-control`, `team-execution`, and `deploy` together, while keeping each
+plugin's mutation and orchestration boundary intact.
+
+Visual assets will use SVG as the editable source format and `rsvg-convert` for PNG/PDF exports when
+available. This avoids adding a new dependency for a documentation package while still producing
+presentation-ready assets.
+
+Rejected: one giant Saga README, Mermaid-only centerpiece visuals, and fully hand-drawn diagrams.
+Those options either hide ownership boundaries, fail the presentation-quality bar, or drift away from
+the routing/state contracts too easily.
