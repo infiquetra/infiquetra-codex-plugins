@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.20.0 - 2026-06-08
+
+- Import the Saga document-readability contract from `infiquetra-claude-plugins`
+  `abcc06b16763975d71e483a6dac768f4664d7b63`: add
+  `saga/references/formatting-style.md` and link it from all nine doc-writing skills
+  (`ideate`, `plan`, `brainstorm`, `spec`, `strategy`, `retro`, `doc-review`,
+  `code-review`, `founder-review`).
+- Fix the triggering `ideate` template shape for Codex: the survivor schema no longer stacks
+  `**label:**` fields with no blank line. Survivors now render as a heading, one-line summary,
+  short prose, and a compact field table while preserving Codex paths and blocking-question wording.
+- Add `tests/test_saga_doc_formatting.py` to fail on stacked-bold-label collapses and on any
+  doc-writing skill that stops linking the shared formatting contract.
+
+## 0.19.0 - 2026-06-06
+
+- Complete the Codex Saga-family proof port and cutover from the 2026-06-06 source baseline. Saga is
+  active behind the `saga` namespace with Codex state roots, no command directories, and no
+  Claude-host manifests.
+
 ## 0.18.0 - 2026-06-04
 
 - Rebuild `/optimize` from a 20-line stub into a **metric-driven optimization engine** — the

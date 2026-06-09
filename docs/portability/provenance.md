@@ -38,9 +38,13 @@ recorded in `source-baseline-saga-family.md`; old-to-new capability ownership is
 recorded in `saga-family-capability-map.md`; known old-use dispositions are
 recorded in `saga-family-known-use-inventory.md`.
 
+Saga itself was later refreshed to
+`infiquetra-claude-plugins@abcc06b16763975d71e483a6dac768f4664d7b63` for the 0.20.0 document
+formatting contract. The rest of the Saga-family source baseline remains at the 2026-06-06 snapshot.
+
 | Plugin | Source Version | Source | Copied Assets Planned | Codex Differences Required |
 |---|---:|---|---|---|
-| `saga` | 0.19.0 | Claude plugin at `16de95c82ccb2ed80d7f11018e1c2e8247a80a7f` | `skills`, references, scripts, README, changelog | Add Codex manifest; keep source-parity skill names behind the `saga` namespace; rewrite `.claude/saga` to `.codex/saga`; omit command files. |
+| `saga` | 0.20.0 | Claude plugin at `abcc06b16763975d71e483a6dac768f4664d7b63` | `skills`, references, scripts, README, changelog, document-formatting test | Add Codex manifest; keep source-parity skill names behind the `saga` namespace; rewrite `.claude/saga` to `.codex/saga`; omit command files, agent files, and Claude manifests. |
 | `deploy` | 0.1.1 | Claude plugin at `16de95c82ccb2ed80d7f11018e1c2e8247a80a7f` | deploy-state skill, scripts, README, changelog, command-origin behavior | Add Codex manifest; convert commands to skills; add dry-run, preview, exact-plan confirmation, auth-boundary, and proof-owned mutation safeguards; omit agent and command files. |
 | `mission-control` | 2.0.0 | Claude plugin at `16de95c82ccb2ed80d7f11018e1c2e8247a80a7f` | `skills`, references, config, scripts, tests, README, changelog | Add Codex manifest; rewrite prompt-alignment tests for Codex; preserve dry-run and preview modes; add allowlist and exact-plan confirmation gates; omit command and agent files. |
 | `team-execution` | 2.0.0 | Claude plugin at `16de95c82ccb2ed80d7f11018e1c2e8247a80a7f` | `skills`, references, README, changelog, agent-origin prompt concepts | Add Codex manifest; convert agents into registries or prompt snippets; use Codex subagents only when available; provide tested serial fallback; omit command and agent files. |

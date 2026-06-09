@@ -1,6 +1,6 @@
 {
   "name": "saga",
-  "version": "0.19.0",
+  "version": "0.20.0",
   "description": "Infiquetra lifecycle spine for ideation, planning, work routing, reviews, QA, handoff, and resume state.",
   "author": {
     "name": "Infiquetra",
