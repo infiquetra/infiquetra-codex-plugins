@@ -20,6 +20,13 @@ The Codex port may copy and rewrite portable source material from this
 snapshot. It must not treat Claude manifests, command files, or agent files as
 active Codex runtime surfaces.
 
+## Saga Refresh
+
+Saga was refreshed after this frozen family baseline to source commit
+`abcc06b16763975d71e483a6dac768f4664d7b63` for version `0.20.0`, limited to the shared document
+formatting contract, doc-writing skill template updates, changelog, manifest version, and
+markdown-only formatting test.
+
 ## Portability Rule
 
 | Source material | Codex treatment |
@@ -38,7 +45,7 @@ active Codex runtime surfaces.
 
 | Plugin | Source version | Portable roots | Host-only or lineage roots | Codex target |
 |---|---:|---|---|---|
-| `saga` | `0.19.0` | `skills/`, `references/`, `scripts/`, README, changelog | `.claude-plugin/`, `commands/` | Lifecycle spine with source-parity skill names, `.codex/saga/` state, and handoff envelopes. |
+| `saga` | `0.20.0` | `skills/`, `references/`, `scripts/`, README, changelog, doc-formatting test | `.claude-plugin/`, `commands/` | Lifecycle spine with source-parity skill names, `.codex/saga/` state, handoff envelopes, and shared document formatting contract. |
 | `deploy` | `0.1.1` | `skills/deploy-state/`, `scripts/`, README, changelog | `.claude-plugin/`, `commands/`, `agents/` | Deployment owner with dry-run, preview, and exact-plan confirmation gates. |
 | `mission-control` | `2.0.0` | `skills/`, skill references, `config/`, `scripts/`, `tests/`, README, changelog | `.claude-plugin/`, `commands/`, `agents/` | SDLC successor for issue, board, label, milestone, metrics, rollout, and flow operations. |
 | `team-execution` | `2.0.0` | `skills/`, skill references, README, changelog | `.claude-plugin/`, `commands/`, `agents/`, tmux-oriented `docs/` | Reviewer and validator protocol using Codex subagents when available and serial fallback otherwise. |

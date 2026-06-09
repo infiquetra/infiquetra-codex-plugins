@@ -29,3 +29,13 @@ The source snapshot for this replacement is
 Claude command files, agent files, and `.claude-plugin` manifests remain
 lineage only. Codex-active ports must be skills, references, scripts, tests,
 config, docs, and `.codex-plugin` manifests.
+
+## 2026-06-08: Saga Document Formatting Contract
+
+Codex Saga adopts the shared document formatting contract from
+`infiquetra-claude-plugins@abcc06b16763975d71e483a6dac768f4664d7b63`.
+All Saga skills that write durable documents link `saga/references/formatting-style.md`.
+
+The contract chooses tables for compact comparative fields and short prose for narrative fields. This
+preserves field names for humans and LLM consumers while avoiding the CommonMark collapse caused by
+adjacent `**label:**` lines.

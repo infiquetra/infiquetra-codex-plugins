@@ -3,7 +3,8 @@
 ## Source
 
 - Source plugin: `saga`
-- Source commit: `16de95c82ccb2ed80d7f11018e1c2e8247a80a7f`
+- Base source commit: `16de95c82ccb2ed80d7f11018e1c2e8247a80a7f`
+- Latest imported source commit: `abcc06b16763975d71e483a6dac768f4664d7b63`
 - Port status: Codex-native proof port
 
 ## Codex Port Shape
@@ -31,6 +32,12 @@ Codex Saga exposes only:
 
 The source workflow fan-out backend is lineage only and is not executable in
 this Codex plugin.
+
+## Document Formatting Contract
+
+Saga 0.20.0 imports the source document-readability contract into
+`references/formatting-style.md`. It is active Codex skill guidance and test coverage, not a
+host-specific command or manifest surface.
 
 ## Handoff Contract
 

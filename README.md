@@ -7,7 +7,7 @@ Codex-ready plugin surface, currently:
 
 | Plugin | Version | Status |
 |---|---:|---|
-| `saga` | 0.19.0 | active |
+| `saga` | 0.20.0 | active |
 | `deploy` | 0.1.1 | active |
 | `mission-control` | 2.0.0 | active |
 | `team-execution` | 2.0.0 | active |
