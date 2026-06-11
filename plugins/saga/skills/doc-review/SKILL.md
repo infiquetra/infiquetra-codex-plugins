@@ -5,8 +5,8 @@ description: Review Infiquetra plans, requirements, and SDLC documents for imple
 
 # Doc Review
 
-Use this when a plan, requirements document, strategy document, or formal Infiquetra SDLC
-artifact is about to guide implementation.
+Use this when a plan, requirements document, strategy document, implementation-spec folder, or formal
+Infiquetra SDLC artifact is about to guide implementation.
 
 The core question is:
 
@@ -35,6 +35,8 @@ Classify by explicit context first, then evidence. Use this precedence:
      inline in this skill.
    - Specs under `specs/` or documents with spec-phase metadata -> route to `/spec`,
      which runs the spec-phase rubrics.
+   - Multi-document implementation spec folders under `platform-specs/06-*` -> use buildability-probe
+     mode when the target profile defines exact probe inputs and pass criteria.
 3. Content-shape signals:
    - Plan signals: `origin:`, `Implementation Units`, `Key Technical Decisions`, `U1`,
      file lists, test scenarios, verification sections.
@@ -77,6 +79,44 @@ readiness summary. Do not reclassify rubric findings as readiness findings.
 
 If the rubric engine or its rubrics are unavailable, say so clearly and continue with the
 readiness review where safe.
+
+## Buildability-Probe Mode
+
+Use buildability-probe mode for a profile-backed, multi-document implementation spec set that is about
+to drive a build. Normal readiness review is still the right gate for single docs, plans, requirements,
+issues, and strategy.
+
+The probe is a fresh-context cold-builder simulation. Do not run it inline in the same context that
+authored or remediated the spec. Prefer `team-execution` delegated mode when it can provide a clean
+review context; otherwise tell the operator that a new session is required for the probe to be valid.
+
+Probe inputs are profile-owned. For the service-implementation profile, pass only:
+
+- the service folder set;
+- `platform-specs/05-technical-specifications/`;
+- accepted ADRs from the target library's ADR index;
+- PRD-0001 when present;
+- the target library's acceptance matrix when present.
+
+Do not add authoring notes, prior probe artifacts, remediation notes, or unrelated repo memory to the
+probe input set.
+
+The probe artifact must include:
+
+1. implementation breakdown: repos, stacks, endpoints, tables, events, and test plan;
+2. exhaustive assumptions and questions by category: product, architecture, data, API, operations;
+3. per-question boundary-test classification;
+4. `VERDICT: PASS` only when there are zero spec defects.
+
+Boundary test: if two reasonable implementers could answer a question differently and the difference is
+visible in API behavior, data shape, or user experience, it is a spec defect. Otherwise it is an
+execution-time discovery.
+
+Write probe artifacts under `docs/reviews/YYYY-MM-DD-<target>-buildability-probe[-rN].md`. A failed
+probe maps boundary-test defects to P0/P1 findings and blocks `/plan` or `/work` unless the operator
+explicitly overrides with a rationale. Remediation closes the defect class across the folder set; it
+does not patch only the cited line. After remediation, run a fresh probe. Escalate after three failed
+rounds.
 
 ## Readiness-Skeptic Pass
 

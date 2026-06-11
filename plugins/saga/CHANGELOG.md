@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.21.0 - 2026-06-11
+
+- Add `product-review` as an off-chain build-measure-learn gate between ideation and requirements,
+  with `experiment-ready` prototype routing to `saga:plan`, full-build routing to `saga:brainstorm`,
+  and parked ideas recorded as deferred context.
+- Add `implementation-spec` as a profile-driven authoring harness for Infiquetra `*-context-library`
+  implementation specs. CAMPPS-style service implementation specs are the first fully supported
+  profile; thinner profiles stop for a governing standard rather than inheriting another library's
+  contract.
+- Extend `doc-review` with buildability-probe mode for profile-backed multi-document specs and update
+  handoff, routing, docs facts, visual assets, and maturity handling for `experiment-ready`.
+
 ## 0.20.0 - 2026-06-08
 
 - Import the Saga document-readability contract from `infiquetra-claude-plugins`

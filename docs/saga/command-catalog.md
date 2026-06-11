@@ -10,8 +10,10 @@ Each command keeps its plugin namespace. Generic names such as `plan` and `work`
 |---|---|---|---|---|---|
 | `saga:office-hours` | Find the right frame for an early ask. | prompt, light repo context | optional framing notes | none | `saga:ideate`, `saga:brainstorm`, `saga:plan`, or `saga:strategy` |
 | `saga:ideate` | Generate and rank grounded ideas. | repo scan, journal, optional web/context | `docs/ideation/` | none | `saga:brainstorm` or `saga:plan` |
+| `saga:product-review` | De-risk ideation survivors before committing. | ideation artifact, current grounding | `docs/product-reviews/` | none | `saga:plan`, `saga:brainstorm`, or parked |
 | `saga:brainstorm` | Turn one idea into requirements. | ideation survivor or topic | `docs/brainstorms/` | none | `saga:plan`, `saga:spec`, `saga:handoff`, or `saga:doc-review` |
 | `saga:spec` | Sharpen a vague WHAT. | prompt, repo evidence, requirements | `docs/specs/` | none | `saga:plan`, `saga:handoff`, or `saga:doc-review` |
+| `saga:implementation-spec` | Author profile-backed context-library implementation specs. | target context library, profile standard, requirements | context-library spec folders and review inputs | docs only | `saga:doc-review` or `saga:plan` |
 | `saga:strategy` | Create or maintain durable direction. | repo state, strategy context | `STRATEGY.md` | docs only | `saga:ideate`, `saga:brainstorm`, or `saga:plan` |
 | `saga:plan` | Decide HOW to build settled requirements. | issue, requirements, repo evidence | `docs/plans/`, `.codex/saga/` | local ignored state | `saga:doc-review` |
 | `saga:doc-review` | Check implementation readiness. | plan, requirements, strategy, issue docs | `docs/reviews/` when needed | safe in-place doc fixes only | `saga:work` if no P0/P1 |
@@ -74,4 +76,3 @@ Before any command, ask this compact map.
 | What route follows? | The next Saga family command or terminal state. |
 
 Generated command facts live in [lifecycle-facts.json](generated/lifecycle-facts.json).
-

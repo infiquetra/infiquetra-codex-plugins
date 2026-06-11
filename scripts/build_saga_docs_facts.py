@@ -20,8 +20,10 @@ SAGA_FAMILY_PLUGINS = ("saga", "mission-control", "team-execution", "deploy")
 SAGA_ROUTABLE_COMMANDS = (
     "office-hours",
     "ideate",
+    "product-review",
     "brainstorm",
     "spec",
+    "implementation-spec",
     "plan",
     "doc-review",
     "work",
@@ -55,6 +57,7 @@ MATURITY_BY_PHASE = {
 
 READINESS_MATURITIES = (
     "idea-ready",
+    "experiment-ready",
     "requirements-ready",
     "plan-ready",
     "resume-ready",
@@ -64,8 +67,10 @@ READINESS_MATURITIES = (
 COMMAND_STATES = {
     "office-hours": "shipped",
     "ideate": "shipped",
+    "product-review": "shipped",
     "brainstorm": "shipped",
     "spec": "advisory off-chain shipped",
+    "implementation-spec": "advisory off-chain shipped",
     "plan": "shipped",
     "doc-review": "hard gate shipped",
     "work": "shipped",
@@ -82,7 +87,7 @@ COMMAND_STATES = {
 }
 
 MAIN_CHAIN = (
-    "idea-ready/requirements-ready",
+    "idea-ready/experiment-ready/requirements-ready",
     "saga:plan",
     "saga:doc-review",
     "saga:work",
@@ -132,6 +137,7 @@ REQUIRED_VISUAL_ASSETS = (
 
 REQUIRED_SCENARIOS = (
     "vague idea to plan",
+    "experiment-ready prototype to plan",
     "plan-ready issue to PR",
     "PR-ready work through review and QA",
     "handoff issue creation",

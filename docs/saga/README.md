@@ -38,7 +38,8 @@ The normal linear spine is:
 
 ```text
 office-hours / ideate
--> brainstorm or spec
+-> product-review when the bet needs cheap validation
+-> brainstorm, spec, or implementation-spec
 -> plan
 -> doc-review
 -> work
@@ -57,8 +58,10 @@ Saga writes and consumes durable repo artifacts rather than relying on chat memo
 | Artifact family | Typical owner command | Maturity or role |
 |---|---|---|
 | `docs/ideation/` | `saga:ideate` | `idea-ready` |
+| `docs/product-reviews/` | `saga:product-review` | `experiment-ready`, `requirements-ready`, or `deferred-context` |
 | `docs/brainstorms/` | `saga:brainstorm` | `requirements-ready` |
 | `docs/specs/` | `saga:spec` | `requirements-ready` off-chain |
+| `platform-specs/06-*/` in context libraries | `saga:implementation-spec` | profile-backed implementation specs |
 | `docs/plans/` | `saga:plan` | `plan-ready` after review |
 | `docs/reviews/` | `saga:doc-review`, `saga:code-review` | readiness and code review evidence |
 | `docs/work-sessions/` | `saga:work` | `resume-ready` execution evidence |
@@ -76,4 +79,3 @@ This guide is built from the repo's active contracts and generated facts.
 | [Formatting style](../../plugins/saga/references/formatting-style.md) | generated-document readability contract |
 | [Capability map](../portability/saga-family-capability-map.md) | migration and ownership boundaries |
 | [Generated facts](generated/lifecycle-facts.json) | deterministic command, plugin, state, and visual facts |
-

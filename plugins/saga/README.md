@@ -7,7 +7,8 @@ own issue mutation, deployment mutation, or reviewer/validator execution.
 
 ## Skill Groups
 
-- Framing: `office-hours`, `ideate`, `brainstorm`, `spec`, `strategy`
+- Framing: `office-hours`, `ideate`, `product-review`, `brainstorm`,
+  `spec`, `implementation-spec`, `strategy`
 - Planning and execution routing: `plan`, `work`, `loop`, `resume`, `handoff`
 - Review and validation: `doc-review`, `code-review`, `founder-review`,
   `ceo-review`, `qa`
@@ -29,8 +30,10 @@ Ignored local Saga state belongs under:
 ```
 
 Durable project artifacts remain in tracked docs such as `docs/plans/`,
-`docs/brainstorms/`, `docs/specs/`, `docs/reviews/`, and
-`docs/work-sessions/`.
+`docs/product-reviews/`, `docs/brainstorms/`, `docs/specs/`,
+`docs/reviews/`, and `docs/work-sessions/`. Context-library
+implementation specs live under the target library's `platform-specs/`
+profile.
 
 ## Execution Backends
 
@@ -60,6 +63,10 @@ cross-repo work, security/infra risk, or deployment-sensitive gates.
   `inline` or `team-execution`.
 - `scripts/handoff_envelope.py` emits structured handoff material for
   `mission-control`.
+- `scripts/product_review.py` supports `product-review` revival and route
+  recommendations.
+- `scripts/implementation_spec_audit.py` discovers context-library profiles
+  and audits service implementation spec folders.
 - `scripts/detect_deploy_strategy.py` classifies deployment workflow coverage.
 - `scripts/discover_sessions.py` and `scripts/extract_session_skeleton.py`
   support local Codex session forensics without reading full session bodies into

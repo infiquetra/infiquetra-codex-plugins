@@ -40,15 +40,15 @@
 <rect x="244" y="228" width="176" height="18" fill="#0f766e"/>
 <text x="260" y="222" font-family="Inter, Arial, sans-serif" font-size="21" font-weight="800" fill="#ffffff">Shape</text>
 </g>
-<text x="260" y="272" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="400" fill="#5b6472"><tspan x="260" dy="0">One promising</tspan><tspan x="260" dy="18">direction becomes</tspan><tspan x="260" dy="18">requirements.</tspan></text>
+<text x="260" y="272" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="400" fill="#5b6472"><tspan x="260" dy="0">One promising</tspan><tspan x="260" dy="18">direction is</tspan><tspan x="260" dy="18">tested or shaped.</tspan></text>
 <text x="260" y="334" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="800" fill="#5b6472">COMMAND</text>
-<text x="260" y="360" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="400" fill="#172033"><tspan x="260" dy="0">saga:brainstorm</tspan><tspan x="260" dy="19">saga:spec</tspan></text>
+<text x="260" y="360" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="400" fill="#172033"><tspan x="260" dy="0">saga:product-</tspan><tspan x="260" dy="19">review</tspan><tspan x="260" dy="19">saga:brainstorm</tspan><tspan x="260" dy="19">saga:spec</tspan></text>
 <line x1="260" y1="400" x2="404" y2="400" stroke="#e2e8f0"/>
 <text x="260" y="410" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="800" fill="#5b6472">ARTIFACT</text>
-<text x="260" y="436" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="400" fill="#172033"><tspan x="260" dy="0">docs/brainstorms/</tspan><tspan x="260" dy="19">docs/specs/</tspan></text>
+<text x="260" y="436" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="400" fill="#172033"><tspan x="260" dy="0">docs/product-</tspan><tspan x="260" dy="19">reviews/</tspan><tspan x="260" dy="19">docs/brainstorms/</tspan><tspan x="260" dy="19">docs/specs/</tspan></text>
 <line x1="260" y1="476" x2="404" y2="476" stroke="#e2e8f0"/>
 <text x="260" y="486" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="800" fill="#5b6472">MATURITY</text>
-<text x="260" y="512" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="400" fill="#172033"><tspan x="260" dy="0">requirements-ready</tspan></text>
+<text x="260" y="512" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="400" fill="#172033"><tspan x="260" dy="0">experiment-ready</tspan><tspan x="260" dy="19">requirements-ready</tspan></text>
 <line x1="260" y1="552" x2="404" y2="552" stroke="#e2e8f0"/>
 <text x="260" y="562" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="800" fill="#5b6472">GATE</text>
 <text x="260" y="588" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="400" fill="#172033"><tspan x="260" dy="0">advisory</tspan></text>
@@ -65,10 +65,10 @@
 </g>
 <text x="454" y="272" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="400" fill="#5b6472"><tspan x="454" dy="0">A buildable</tspan><tspan x="454" dy="18">implementation</tspan><tspan x="454" dy="18">path is chosen.</tspan></text>
 <text x="454" y="334" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="800" fill="#5b6472">COMMAND</text>
-<text x="454" y="360" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="400" fill="#172033"><tspan x="454" dy="0">saga:plan</tspan></text>
+<text x="454" y="360" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="400" fill="#172033"><tspan x="454" dy="0">saga:implementatio</tspan><tspan x="454" dy="19">n-spec</tspan><tspan x="454" dy="19">saga:plan</tspan></text>
 <line x1="454" y1="400" x2="598" y2="400" stroke="#e2e8f0"/>
 <text x="454" y="410" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="800" fill="#5b6472">ARTIFACT</text>
-<text x="454" y="436" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="400" fill="#172033"><tspan x="454" dy="0">docs/plans/</tspan><tspan x="454" dy="19">.codex/saga/</tspan></text>
+<text x="454" y="436" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="400" fill="#172033"><tspan x="454" dy="0">context-library</tspan><tspan x="454" dy="19">specs</tspan><tspan x="454" dy="19">docs/plans/</tspan></text>
 <line x1="454" y1="476" x2="598" y2="476" stroke="#e2e8f0"/>
 <text x="454" y="486" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="800" fill="#5b6472">MATURITY</text>
 <text x="454" y="512" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="400" fill="#172033"><tspan x="454" dy="0">plan-ready</tspan></text>
@@ -196,7 +196,7 @@
 <line x1="1424" y1="704" x2="1568" y2="704" stroke="#e2e8f0"/>
 <rect x="70" y="800" width="580" height="112" rx="10" fill="#ffffff" stroke="#dbe3ef" stroke-width="1"/>
 <text x="95" y="837" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="800" fill="#172033">Main Chain</text>
-<text x="95" y="871" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="400" fill="#172033"><tspan x="95" dy="0">idea-ready/requirements-ready -&gt; saga:plan -&gt; saga:doc-review -&gt;</tspan><tspan x="95" dy="22">saga:work -&gt; saga:code-review -&gt; saga:qa -&gt; saga:handoff or saga:retro</tspan></text>
+<text x="95" y="871" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="400" fill="#172033"><tspan x="95" dy="0">idea-ready/experiment-ready/requirements-ready -&gt; saga:plan -&gt; saga:doc-</tspan><tspan x="95" dy="22">review -&gt; saga:work -&gt; saga:code-review -&gt; saga:qa -&gt; saga:handoff or</tspan><tspan x="95" dy="22">saga:retro</tspan></text>
 <rect x="690" y="800" width="840" height="112" rx="10" fill="#ffffff" stroke="#dbe3ef" stroke-width="1"/>
 <text x="715" y="837" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="800" fill="#172033">Mutation Boundary</text>
 <text x="715" y="871" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="400" fill="#172033"><tspan x="715" dy="0">Saga routes and records context. Mission Control mutates SDLC state, Team Execution owns review</tspan><tspan x="715" dy="22">evidence, and Deploy owns tags.</tspan></text>

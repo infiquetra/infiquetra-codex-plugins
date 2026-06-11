@@ -13,6 +13,7 @@
     ],
     "required_scenarios": [
       "vague idea to plan",
+      "experiment-ready prototype to plan",
       "plan-ready issue to PR",
       "PR-ready work through review and QA",
       "handoff issue creation",
@@ -146,6 +147,12 @@
           "skill_path": "plugins/saga/skills/ideate/SKILL.md"
         },
         {
+          "description": "De-risk surviving Infiquetra ideas before committing to a build. Slots after saga:ideate and before saga:brainstorm or saga:plan. Per idea: riskiest assumption, smallest build-to-learn, success metric threshold, premise check, and operator-confirmed route.",
+          "name": "product-review",
+          "namespace": "saga:product-review",
+          "skill_path": "plugins/saga/skills/product-review/SKILL.md"
+        },
+        {
           "description": "Deep-dive one chosen Infiquetra idea into a right-sized requirements document before planning.",
           "name": "brainstorm",
           "namespace": "saga:brainstorm",
@@ -156,6 +163,12 @@
           "name": "spec",
           "namespace": "saga:spec",
           "skill_path": "plugins/saga/skills/spec/SKILL.md"
+        },
+        {
+          "description": "Author profile-backed, builder-ready implementation specs for Infiquetra context libraries. Detects or asks for the target *-context-library, uses that library's own authoring standard, and routes buildability-style review through saga:doc-review when the profile defines exact inputs and pass criteria.",
+          "name": "implementation-spec",
+          "namespace": "saga:implementation-spec",
+          "skill_path": "plugins/saga/skills/implementation-spec/SKILL.md"
         },
         {
           "description": "Create or maintain the repository root STRATEGY.md \u2014 the durable direction anchor (target problem, approach, who it's for, key metrics, tracks). Interview-driven and rerunnable. Triggers on \"write our strategy\", \"update the direction\", \"what are we working on\", \"set up the strategy doc\", and when /ideate, /brainstorm, or /plan need upstream grounding and no STRATEGY.md exists yet.",
@@ -242,7 +255,7 @@
           "skill_path": "plugins/saga/skills/loop/SKILL.md"
         }
       ],
-      "version": "0.20.0"
+      "version": "0.21.0"
     },
     "team-execution": {
       "skills": [
@@ -282,11 +295,13 @@
       "founder-review": "shipped",
       "handoff": "shipped envelope",
       "ideate": "shipped",
+      "implementation-spec": "advisory off-chain shipped",
       "investigate": "advisory off-chain shipped",
       "loop": "router re-entry",
       "office-hours": "shipped",
       "optimize": "advisory off-chain shipped",
       "plan": "shipped",
+      "product-review": "shipped",
       "qa": "advisory gate-only shipped",
       "resume": "advisory stub",
       "retro": "advisory terminal shipped",
@@ -302,7 +317,7 @@
       }
     ],
     "main_chain": [
-      "idea-ready/requirements-ready",
+      "idea-ready/experiment-ready/requirements-ready",
       "saga:plan",
       "saga:doc-review",
       "saga:work",
@@ -313,8 +328,10 @@
     "routable_commands": [
       "office-hours",
       "ideate",
+      "product-review",
       "brainstorm",
       "spec",
+      "implementation-spec",
       "plan",
       "doc-review",
       "work",
@@ -364,6 +381,7 @@
     ],
     "readiness_maturities": [
       "idea-ready",
+      "experiment-ready",
       "requirements-ready",
       "plan-ready",
       "resume-ready",

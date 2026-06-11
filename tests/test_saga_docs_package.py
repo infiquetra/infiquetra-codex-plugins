@@ -44,7 +44,7 @@ def test_routable_saga_commands_and_maturities_are_documented() -> None:
     facts = load_facts()
     command_catalog = (DOCS_ROOT / "command-catalog.md").read_text(encoding="utf-8")
     state_doc = (DOCS_ROOT / "state-and-maturity.md").read_text(encoding="utf-8")
-    assert len(facts["saga_routing"]["routable_commands"]) == 17
+    assert len(facts["saga_routing"]["routable_commands"]) == 19
     for command in facts["saga_routing"]["routable_commands"]:
         assert f"saga:{command}" in command_catalog
     for maturity in facts["state"]["readiness_maturities"]:

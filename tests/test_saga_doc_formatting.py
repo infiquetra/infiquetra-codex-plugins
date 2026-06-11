@@ -10,7 +10,7 @@ What it checks:
 
 1. No template/format file stacks bold-label lines without a blank line between
    them (the CommonMark collapse that produced "all jumbled together").
-2. Each of the nine doc-writing skills links the shared contract somewhere in
+2. Each doc-writing skill links the shared contract somewhere in
    its skill directory.
 3. The shared contract's golden specimen passes the same collapse check.
 
@@ -43,9 +43,11 @@ DOC_OUTPUT_FILES: dict[str, list[str]] = {
         "references/ideation-artifact.md",
         "references/convergence-and-partnership.md",
     ],
+    "product-review": ["references/product-review-template.md"],
     "plan": ["references/plan-sections.md"],
     "brainstorm": ["references/requirements-sections.md"],
     "spec": ["references/spec-template.md"],
+    "implementation-spec": ["references/profile-contract.md"],
     "strategy": ["references/strategy-template.md"],
     "retro": ["references/retro-report.md"],
     "doc-review": ["SKILL.md"],

@@ -2670,6 +2670,7 @@ _ISSUE_TYPE_LABELS = {
 _PREPARED_DRAFT_DIR = Path("docs") / "sdlc-issue-drafts"
 _HANDOFF_MATURITY_CHOICES = (
     "idea-ready",
+    "experiment-ready",
     "requirements-ready",
     "plan-ready",
     "resume-ready",
@@ -2679,6 +2680,7 @@ _SOURCE_SEARCH_DIRS = (
     Path(".codex") / "saga",
     Path("docs") / "plans",
     Path("docs") / "brainstorms",
+    Path("docs") / "product-reviews",
     Path("docs") / "ideation",
     Path("docs") / "reviews",
     Path("docs") / "work-sessions",
@@ -2688,6 +2690,8 @@ _SOURCE_HINT_DIRS = {
     "plan": (Path("docs") / "plans",),
     "brainstorm": (Path("docs") / "brainstorms",),
     "requirements": (Path("docs") / "brainstorms",),
+    "product-review": (Path("docs") / "product-reviews",),
+    "experiment": (Path("docs") / "product-reviews",),
     "idea": (Path("docs") / "ideation",),
     "ideation": (Path("docs") / "ideation",),
     "review": (Path("docs") / "reviews",),
@@ -2816,6 +2820,8 @@ def _infer_maturity_from_path(path: Path) -> str:
     normalized = path.as_posix()
     if "docs/ideation/" in normalized:
         return "idea-ready"
+    if "docs/product-reviews/" in normalized:
+        return "experiment-ready"
     if "docs/brainstorms/" in normalized:
         return "requirements-ready"
     if "docs/plans/" in normalized or "docs/reviews/" in normalized:
@@ -2831,6 +2837,8 @@ def _infer_kind_from_path(path: Path) -> str:
     normalized = path.as_posix()
     if "docs/ideation/" in normalized:
         return "ideation"
+    if "docs/product-reviews/" in normalized:
+        return "product-review"
     if "docs/brainstorms/" in normalized:
         return "brainstorm"
     if "docs/plans/" in normalized:
@@ -3107,6 +3115,7 @@ def _render_draft_markdown(issue: PreparedIssue) -> str:
 def _suggested_next_action(handoff_maturity: str) -> str:
     return {
         "idea-ready": "Use `/plan <issue>` to shape requirements before implementation.",
+        "experiment-ready": "Use `/plan <issue>` to plan the scoped experiment before implementation.",
         "requirements-ready": "Use `/plan <issue>` to create an implementation plan.",
         "plan-ready": "Use `/work <issue>` to execute from the plan-grade context.",
         "resume-ready": "Use `/work <issue>` to resume from the captured work state.",

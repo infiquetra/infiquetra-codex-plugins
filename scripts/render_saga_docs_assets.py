@@ -176,10 +176,10 @@ def render_atlas(facts: dict) -> str:
         {
             "title": "Shape",
             "color": TEAL,
-            "intent": "One promising direction becomes requirements.",
-            "command": "saga:brainstorm\nsaga:spec",
-            "artifact": "docs/brainstorms/\ndocs/specs/",
-            "maturity": "requirements-ready",
+            "intent": "One promising direction is tested or shaped.",
+            "command": "saga:product-review\nsaga:brainstorm\nsaga:spec",
+            "artifact": "docs/product-reviews/\ndocs/brainstorms/\ndocs/specs/",
+            "maturity": "experiment-ready\nrequirements-ready",
             "gate": "advisory",
             "owner": "saga",
         },
@@ -187,8 +187,8 @@ def render_atlas(facts: dict) -> str:
             "title": "Plan",
             "color": GREEN,
             "intent": "A buildable implementation path is chosen.",
-            "command": "saga:plan",
-            "artifact": "docs/plans/\n.codex/saga/",
+            "command": "saga:implementation-spec\nsaga:plan",
+            "artifact": "context-library specs\ndocs/plans/",
             "maturity": "plan-ready",
             "gate": "review required",
             "owner": "saga",
@@ -289,9 +289,10 @@ def render_atlas(facts: dict) -> str:
 
 def render_readiness_ladder(facts: dict) -> str:
     maturities = facts["state"]["readiness_maturities"]
-    colors = [BLUE, TEAL, GREEN, VIOLET, SLATE]
+    colors = [BLUE, TEAL, GREEN, AMBER, VIOLET, SLATE]
     notes = {
         "idea-ready": "A direction exists and can be evaluated.",
+        "experiment-ready": "A scoped prototype or spike can be planned.",
         "requirements-ready": "The chosen idea has durable requirements.",
         "plan-ready": "The plan has passed readiness review.",
         "resume-ready": "Execution state can be resumed from artifacts.",

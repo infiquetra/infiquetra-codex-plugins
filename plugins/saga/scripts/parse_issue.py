@@ -24,6 +24,7 @@ REFACTOR_RE = re.compile(r"\b(refactor|dry|solid|complexity|technical debt|clean
 H3_RE = re.compile(r"^###\s+(.+?)\s*$", re.MULTILINE)
 HANDOFF_MATURITY_VALUES = {
     "idea-ready",
+    "experiment-ready",
     "requirements-ready",
     "plan-ready",
     "resume-ready",
@@ -77,7 +78,7 @@ def extract_handoff(body: str) -> dict[str, object]:
         "source": source_context.get("source", ""),
         "source_type": source_context.get("source_type", ""),
         "source_title": source_context.get("source_title", ""),
-        "can_plan": maturity in {"idea-ready", "requirements-ready"},
+        "can_plan": maturity in {"idea-ready", "experiment-ready", "requirements-ready"},
         "can_work": maturity in {"plan-ready", "resume-ready"},
         "requires_clarification": maturity == "deferred-context",
     }

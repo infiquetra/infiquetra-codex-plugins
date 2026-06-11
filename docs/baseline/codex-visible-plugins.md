@@ -15,7 +15,7 @@ maintained source after validation.
 
 | Plugin | Version | Expected Namespaced Skills |
 |---|---:|---|
-| `saga` | 0.20.0 | `saga:office-hours`, `saga:ideate`, `saga:brainstorm`, `saga:spec`, `saga:strategy`, `saga:plan`, `saga:work`, `saga:qa`, `saga:investigate`, `saga:retro`, `saga:resume`, `saga:handoff`, `saga:founder-review`, `saga:ceo-review`, `saga:doc-review`, `saga:code-review`, `saga:optimize`, `saga:loop` |
+| `saga` | 0.21.0 | `saga:office-hours`, `saga:ideate`, `saga:product-review`, `saga:brainstorm`, `saga:spec`, `saga:implementation-spec`, `saga:strategy`, `saga:plan`, `saga:work`, `saga:qa`, `saga:investigate`, `saga:retro`, `saga:resume`, `saga:handoff`, `saga:founder-review`, `saga:ceo-review`, `saga:doc-review`, `saga:code-review`, `saga:optimize`, `saga:loop` |
 | `deploy` | 0.1.1 | `deploy:deploy-state`, `deploy:deploy`, `deploy:deploy-status`, `deploy:deploy-notes`, `deploy:deploy-hotfix` |
 | `mission-control` | 2.0.0 | `mission-control:board`, `mission-control:flow`, `mission-control:issues`, `mission-control:labels`, `mission-control:metrics`, `mission-control:milestones`, `mission-control:rollout` |
 | `team-execution` | 2.0.0 | `team-execution:team-execution`, `team-execution:appsec-audit` |

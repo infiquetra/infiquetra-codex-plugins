@@ -136,6 +136,7 @@ Prepared handoff drafts include `handoff_maturity` in the sidecar and a body sec
 suggested next action. Maturity values are:
 
 - `idea-ready` -> suggest `saga:plan <issue>`.
+- `experiment-ready` -> suggest `saga:plan <issue>` for a scoped prototype or spike.
 - `requirements-ready` -> suggest `saga:plan <issue>`.
 - `plan-ready` -> suggest `saga:work <issue>`.
 - `resume-ready` -> suggest `saga:work <issue>`.
@@ -144,6 +145,8 @@ suggested next action. Maturity values are:
 Source artifact resolution:
 
 - Explicit local path: `--from docs/brainstorms/example.md`.
+- Product-review paths under `docs/product-reviews/` infer `experiment-ready` unless an explicit
+  maturity is supplied.
 - GitHub issue or PR URL: fetched through `gh issue view` or `gh pr view`.
 - Branch ref: `--from branch:current` or `--from branch:<name>` captures resume context.
 - Natural language such as "from the brainstorm" or "handoff the plan" searches durable

@@ -52,10 +52,12 @@ Do not copy SDLC issue templates into this skill.
 ## Maturity
 
 - `docs/ideation/` -> `idea-ready`
+- `docs/product-reviews/` -> frontmatter `maturity` when present, otherwise `experiment-ready`
 - `docs/brainstorms/` -> `requirements-ready`
 - `docs/specs/` -> `requirements-ready`
 - `docs/plans/` or `docs/reviews/` -> `plan-ready`
 - `docs/work-sessions/` or branch refs -> `resume-ready`
+- `platform-specs/06-service-implementations/` or `platform-specs/06-feature-modules/` -> `requirements-ready`
 - explicit preserve/defer language -> `deferred-context` when the user says execution should wait
 
 ## Recipient Guidance
@@ -65,6 +67,7 @@ Prepared issues must be self-contained for recipients without `saga`.
 When a recipient does have `saga`, the issue may suggest:
 
 - `saga:plan` for `idea-ready` or `requirements-ready`;
+- `saga:plan` for `experiment-ready` scoped experiment work;
 - `saga:work` for `plan-ready` or `resume-ready`.
 
 Do not suggest `saga:loop` for normal team handoff.

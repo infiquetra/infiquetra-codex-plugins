@@ -26,6 +26,9 @@ Do not mix `status` and `phase_status`. `status=active` with `phase_status=compl
 | `qa` | `resume-ready` |
 | `retro` | `resume-ready` |
 
+`experiment-ready` appears when product review has selected a scoped prototype or spike. It routes to
+`saga:plan`, but the plan should stay experiment-sized rather than becoming a full feature plan.
+
 `deferred-context` appears in handoff issue context when work is intentionally parked or lacks enough lifecycle evidence for direct planning or execution.
 
 ## Readiness Ladder
@@ -33,6 +36,7 @@ Do not mix `status` and `phase_status`. `status=active` with `phase_status=compl
 | Maturity | Means | Normal consumer |
 |---|---|---|
 | `idea-ready` | A worthwhile direction exists, but requirements may still need shaping. | `saga:brainstorm` or `saga:plan` depending on clarity |
+| `experiment-ready` | A product assumption has a scoped build-to-learn experiment and threshold. | `saga:plan` |
 | `requirements-ready` | WHAT is settled enough to plan. | `saga:plan` |
 | `plan-ready` | HOW is settled and reviewed enough to execute. | `saga:work` |
 | `resume-ready` | Execution, QA, or retro context can be resumed. | `saga:work`, `saga:code-review`, `saga:qa`, or `saga:retro` |
@@ -63,4 +67,3 @@ If cached `.codex/saga/` state disagrees with an owner, the owner wins.
 | `next_step` | `/doc-review docs/plans/example-plan.md` | The next safe lifecycle move. |
 
 For the canonical state contract, read [Saga spec](../../plugins/saga/references/saga-spec.md).
-

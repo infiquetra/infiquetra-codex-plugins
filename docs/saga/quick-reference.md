@@ -8,8 +8,10 @@ Keep this page open when choosing a Saga family command.
 |---|---|
 | "I have an idea but not the frame" | `saga:office-hours` |
 | "Give me options" | `saga:ideate` |
+| "Which idea is worth testing cheaply?" | `saga:product-review` |
 | "Deepen this one idea into requirements" | `saga:brainstorm` |
 | "Make this vague ask precise" | `saga:spec` |
+| "Author a context-library implementation spec" | `saga:implementation-spec` |
 | "How should we build it?" | `saga:plan` |
 | "Is this plan ready?" | `saga:doc-review` |
 | "Build the reviewed plan" | `saga:work` |
@@ -24,6 +26,7 @@ Keep this page open when choosing a Saga family command.
 | Maturity | Next normal move |
 |---|---|
 | `idea-ready` | `saga:brainstorm` or `saga:plan` |
+| `experiment-ready` | `saga:plan` for a scoped prototype or spike |
 | `requirements-ready` | `saga:plan` |
 | `plan-ready` | `saga:work` |
 | `resume-ready` | `saga:work`, `saga:code-review`, `saga:qa`, or `saga:retro` |
@@ -44,4 +47,3 @@ Keep this page open when choosing a Saga family command.
 The presentation assets live in [visual-assets](visual-assets/).
 
 ![Saga lifecycle atlas](visual-assets/saga-lifecycle-atlas.svg)
-

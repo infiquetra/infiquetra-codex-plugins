@@ -1,6 +1,6 @@
 {
   "name": "saga",
-  "version": "0.20.0",
+  "version": "0.21.0",
   "description": "Infiquetra lifecycle spine for ideation, planning, work routing, reviews, QA, handoff, and resume state.",
   "author": {
     "name": "Infiquetra",
@@ -22,7 +22,7 @@
   "interface": {
     "displayName": "Saga",
     "shortDescription": "Infiquetra lifecycle routing and state.",
-    "longDescription": "Provides Codex skills and bundled scripts for lifecycle ideation, brainstorming, specs, planning, work routing, reviews, QA, retros, handoffs, resume state, and plugin-boundary recommendations.",
+    "longDescription": "Provides Codex skills and bundled scripts for lifecycle ideation, product review, brainstorming, specs, implementation-spec authoring, planning, work routing, reviews, QA, retros, handoffs, resume state, and plugin-boundary recommendations.",
     "developerName": "Infiquetra",
     "category": "Coding",
     "capabilities": [

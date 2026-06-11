@@ -29,6 +29,18 @@ Outcome: the work becomes plan-ready and safe to execute.
 
 Outcome: the reviewed plan becomes PR-ready without Saga mutating issue fields directly.
 
+## Experiment-ready prototype to plan
+
+| Step | Command | Artifact or state |
+|---|---|---|
+| Start | ideation survivor has an unproven product assumption | `docs/ideation/...` |
+| De-risk | `saga:product-review` | `docs/product-reviews/...` with `experiment-ready` route |
+| Plan experiment | `saga:plan` | experiment-sized plan, metric, threshold, and stop condition |
+| Review | `saga:doc-review` | confirms the spike can run without inventing product decisions |
+| Execute | `saga:work` | scoped prototype or measurement work |
+
+Outcome: the team learns from a small experiment before committing to full requirements or feature work.
+
 ## PR-ready work through review and QA
 
 | Step | Command | Artifact or state |
@@ -95,4 +107,3 @@ Outcome: urgent work still preserves diagnosis, review, QA, and deployment owner
 | Resume | `saga:work`, `saga:code-review`, `saga:qa`, or `saga:retro` | route from verified state |
 
 Outcome: the operator resumes from verified owner state rather than blindly trusting stale cache.
-

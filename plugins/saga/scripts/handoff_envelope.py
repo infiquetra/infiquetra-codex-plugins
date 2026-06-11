@@ -14,10 +14,13 @@ STATE_DIR = Path(".codex/saga")
 SOURCE_DIRS = (
     Path("docs/plans"),
     Path("docs/brainstorms"),
+    Path("docs/product-reviews"),
     Path("docs/specs"),
     Path("docs/ideation"),
     Path("docs/reviews"),
     Path("docs/work-sessions"),
+    Path("platform-specs/06-service-implementations"),
+    Path("platform-specs/06-feature-modules"),
 )
 
 
@@ -25,6 +28,8 @@ def infer_maturity(source: str) -> str:
     normalized = source.replace("\\", "/")
     if "docs/ideation/" in normalized:
         return "idea-ready"
+    if "docs/product-reviews/" in normalized:
+        return "experiment-ready"
     if "docs/brainstorms/" in normalized:
         return "requirements-ready"
     if "docs/specs/" in normalized:
@@ -35,12 +40,42 @@ def infer_maturity(source: str) -> str:
         return "plan-ready"
     if "docs/work-sessions/" in normalized or normalized.startswith("branch:"):
         return "resume-ready"
+    if "platform-specs/06-service-implementations/" in normalized:
+        return "requirements-ready"
+    if "platform-specs/06-feature-modules/" in normalized:
+        return "requirements-ready"
     return "requirements-ready"
+
+
+def read_frontmatter_maturity(root: Path, source: str) -> str | None:
+    path = root / source
+    if not path.is_file():
+        return None
+    lines = path.read_text(encoding="utf-8").splitlines()
+    if not lines or lines[0].strip() != "---":
+        return None
+    for line in lines[1:]:
+        stripped = line.strip()
+        if stripped == "---":
+            return None
+        if stripped.startswith("maturity:"):
+            value = stripped.split(":", 1)[1].strip()
+            return value or None
+    return None
+
+
+def infer_maturity_for_source(root: Path, source: str) -> str:
+    normalized = source.replace("\\", "/")
+    if "docs/product-reviews/" in normalized:
+        return read_frontmatter_maturity(root, source) or infer_maturity(source)
+    return infer_maturity(source)
 
 
 def infer_lifecycle_phase(source: str) -> str:
     normalized = source.replace("\\", "/")
     if "docs/ideation/" in normalized:
+        return "ideation"
+    if "docs/product-reviews/" in normalized:
         return "ideation"
     if "docs/brainstorms/" in normalized:
         return "brainstorm"
@@ -50,6 +85,10 @@ def infer_lifecycle_phase(source: str) -> str:
         return "review"
     if "docs/work-sessions/" in normalized or normalized.startswith("branch:"):
         return "work"
+    if "platform-specs/06-service-implementations/" in normalized:
+        return "brainstorm"
+    if "platform-specs/06-feature-modules/" in normalized:
+        return "brainstorm"
     # docs/specs/ is off-chain (/spec) — no lifecycle phase; maturity is set in infer_maturity.
     return "unknown"
 
@@ -113,7 +152,7 @@ def build_handoff_envelope(
     if not selected_source:
         raise RuntimeError("No handoff source found; provide --source or create a durable artifact")
 
-    maturity = infer_maturity(selected_source)
+    maturity = infer_maturity_for_source(root, selected_source)
     handoff_payload = {
         "source": selected_source,
         "maturity": maturity,
