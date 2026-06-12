@@ -1,6 +1,10 @@
 ---
 name: product-review
-description: De-risk surviving Infiquetra ideas before committing to a build. Slots after saga:ideate and before saga:brainstorm or saga:plan. Per idea: riskiest assumption, smallest build-to-learn, success metric threshold, premise check, and operator-confirmed route.
+description: >-
+  De-risk surviving Infiquetra ideas before committing to a build. Slots after
+  saga:ideate and before saga:brainstorm or saga:plan. Per idea: riskiest
+  assumption, smallest build-to-learn, success metric threshold, premise check,
+  and operator-confirmed route.
 argument-hint: "[ideation doc path | topic | idea list]"
 ---
 
