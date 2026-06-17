@@ -1,5 +1,19 @@
 # Changelog — mission-control
 
+## 2.1.0 - 2026-06-17
+
+### Added
+- Added the vendored SDLC issue-contract generated artifacts and parity checker used by
+  prepared issue validation.
+- Added prepared issue approval gating: `issue approve` must mark a ready draft before
+  `issue create-prepared` mutates, unless the operator explicitly passes `--skip-approval`.
+
+### Changed
+- Retired Mount Olympus from active routing and moved active board guidance to Jeff Intent,
+  Asgard, and CAMPPS Project #4.
+- Updated board, flow, metrics, issue, rollout, and milestone guidance for the CAMPPS
+  `Idea -> Committed -> In Progress -> Done -> Parked` workflow.
+
 ## 1.6.1 - 2026-05-31
 
 ### Changed

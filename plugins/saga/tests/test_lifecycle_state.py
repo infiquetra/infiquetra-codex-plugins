@@ -37,6 +37,39 @@ def test_inline_remains_default_for_low_risk_work() -> None:
     assert result["alternatives"] == ["team-execution"]
 
 
+def test_large_no_code_surface_stays_inline_without_coordination_signal() -> None:
+    assert (
+        lifecycle_state.should_offer_team_execution(
+            file_count=12,
+            phase_count=1,
+            has_security=False,
+            has_infra=False,
+            cross_repo=False,
+            deployment_sensitive=False,
+            has_code_surface=False,
+        )
+        is False
+    )
+
+    result = lifecycle_state.recommend_execution_backend(
+        file_count=12,
+        has_code_surface=False,
+    )
+
+    assert result["recommended"] == "inline"
+
+
+def test_cross_repo_and_adversarial_confidence_still_escalate() -> None:
+    cross_repo = lifecycle_state.recommend_execution_backend(
+        cross_repo=True,
+        has_code_surface=False,
+    )
+    adversarial = lifecycle_state.recommend_execution_backend(adversarial_confidence=True)
+
+    assert cross_repo["recommended"] == "team-execution"
+    assert adversarial["recommended"] == "team-execution"
+
+
 def test_destination_normalizes_nonprod_deploy_intent() -> None:
     assert lifecycle_state.normalize_destination("deploy") == "nonprod-deploy"
     assert lifecycle_state.destination_includes_deploy("nonprod") is True

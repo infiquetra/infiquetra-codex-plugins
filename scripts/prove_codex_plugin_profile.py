@@ -196,10 +196,13 @@ def prove_deploy(repo_root: Path, proof_dir: Path) -> dict[str, Any]:
 
 def proof_issue_source() -> str:
     return """### Objective
-Proof prepared issue.
+Prove the Codex prepared issue flow without creating a GitHub issue.
+
+### Intent
+Exercise readiness validation, operator approval, and confirmation refusal in a proof-owned workspace.
 
 ### Acceptance criteria
-- [ ] No mutation
+- [ ] `python3 -m pytest tests/test_prove_codex_plugin_profile.py` passes without creating an issue.
 
 ### Out-of-scope / non-goals
 - Do not create a GitHub issue during proof.
@@ -209,6 +212,9 @@ docs/validation/saga-family-codex-proof.md
 
 ### Tests to add or update
 tests/test_prove_codex_plugin_profile.py
+
+### Context library links
+_none_
 
 ### Verification
 ```bash
@@ -232,13 +238,13 @@ def prove_mission_control(repo_root: Path, proof_dir: Path) -> dict[str, Any]:
             "issue",
             "prepare",
             "--repo",
-            "infiquetra-hermes-plugins",
+            "campps-platform",
             "--type",
             "capability",
             "--team",
-            "olympus",
+            "asgard",
             "--project",
-            "mount-olympus",
+            "campps",
             "--title",
             "Proof prepared issue",
             "--risk",
@@ -252,6 +258,18 @@ def prove_mission_control(repo_root: Path, proof_dir: Path) -> dict[str, Any]:
     )
     prepared = json_from_mixed_stdout(prepare["stdout_excerpt"])
     draft = prepared.get("draft", "docs/sdlc-issue-drafts/2026-06-06-proof-prepared-issue.md")
+    approve = run_command(
+        [
+            sys.executable,
+            str(script),
+            "--format",
+            "json",
+            "issue",
+            "approve",
+            draft,
+        ],
+        cwd=work_dir,
+    )
     create_prepared = run_command(
         [
             sys.executable,
@@ -268,6 +286,7 @@ def prove_mission_control(repo_root: Path, proof_dir: Path) -> dict[str, Any]:
     preview = json_from_mixed_stdout(create_prepared["stdout_excerpt"])
     return {
         "prepare": prepare,
+        "approve": approve,
         "create_prepared_without_confirmation": create_prepared,
         "readiness_passed": prepared.get("readiness", {}).get("passed") is True,
         "mutation_plan_present": "mutation_plan" in preview,

@@ -23,3 +23,7 @@ addopts = ["--import-mode=importlib"]
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+extend-exclude = [
+  "plugins/mission-control/config/generated/issue_contract_data.py",
+  "plugins/mission-control/config/generated/issue_contract_shim.py",
+]

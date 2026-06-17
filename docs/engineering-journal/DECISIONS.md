@@ -1,5 +1,20 @@
 # Decisions
 
+## 2026-06-17: Codex Active Plugin Parity Tracks CAMPPS And Codex Backends
+
+Mission Control now treats Jeff Intent, Asgard, and CAMPPS as the active board topology. Mount
+Olympus remains vendored only as retired historical context and compatibility data. CAMPPS Project
+#4 is the active long-lived initiative board for current CAMPPS routing, with `Idea -> Committed ->
+In Progress -> Done -> Parked` as its workflow.
+
+Saga keeps the Codex execution backend set to `inline` and `team-execution`. The source workflow
+fan-out backend remains lineage-only and unreachable in active Codex surfaces. Large no-code-surface
+work stays `inline` unless cross-repo, consensus, fan-out, deployment, security, infra, or
+adversarial-confidence signals require `team-execution`.
+
+Rejected: porting Claude commands, agents, `.claude-plugin` manifests, GitHub Actions workflows, or
+the source workflow backend as active Codex surfaces.
+
 ## 2026-06-09: Track renamed Hermes plugin repo in Mission Control
 
 Mission Control project mappings now use `infiquetra-hermes-plugins` for the Hermes-facing plugin

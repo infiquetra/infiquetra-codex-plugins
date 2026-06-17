@@ -7,7 +7,6 @@ exercise the small composable helpers (`_select_issue_type`,
 `_apply_post_create_metadata`) plus the integration via skip_metadata.
 """
 
-from pathlib import Path
 from unittest.mock import patch
 
 import os
@@ -100,12 +99,12 @@ def test_prompt_choice_returns_none_when_field_does_not_exist() -> None:
 
 
 def test_prompt_choice_accepts_valid_option() -> None:
-    with patch("builtins.input", return_value="olympus-quality"):
+    with patch("builtins.input", return_value="campps-quality"):
         result = sdlc_manager._prompt_choice(
             "Initiative",
-            options=["olympus-quality", "olympus-performance"],
+            options=["campps-quality", "campps-performance"],
         )
-        assert result == "olympus-quality"
+        assert result == "campps-quality"
 
 
 def test_prompt_choice_uses_default_on_blank_input() -> None:
@@ -123,17 +122,17 @@ def test_prompt_choice_skips_on_dash() -> None:
     with patch("builtins.input", return_value="-"):
         result = sdlc_manager._prompt_choice(
             "Initiative",
-            options=["olympus-quality"],
+            options=["campps-quality"],
         )
         assert result is None
 
 
 def test_prompt_choice_warns_on_invalid_value(capsys) -> None:
     """A typo doesn't crash — operator gets a warning + skip."""
-    with patch("builtins.input", return_value="olympusqulaity"):
+    with patch("builtins.input", return_value="camppsqulaity"):
         result = sdlc_manager._prompt_choice(
             "Initiative",
-            options=["olympus-quality", "olympus-performance"],
+            options=["campps-quality", "campps-performance"],
         )
         assert result is None
     captured = capsys.readouterr()
@@ -295,9 +294,9 @@ def test_metadata_label_failure_does_not_abort_other_steps() -> None:
             repo="campps-mvp",
             issue_number=42,
             issue_type="capability",
-            project_name="mount-olympus",
+            project_name="campps",
             parent=("campps-context-library", 1),
-            field_values={"Initiative": "olympus-quality"},
+            field_values={"Initiative": "campps-quality"},
             fmt="text",
         )
     # board_add was still called despite the label failure
@@ -324,7 +323,7 @@ def test_metadata_skips_field_apply_when_no_project() -> None:
             issue_type="capability",
             project_name=None,
             parent=("campps-context-library", 1),
-            field_values={"Initiative": "olympus-quality"},
+            field_values={"Initiative": "campps-quality"},
             fmt="text",
         )
     mock_board.assert_not_called()

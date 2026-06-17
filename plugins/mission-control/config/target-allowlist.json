@@ -3,6 +3,6 @@
     "hosts": ["github.com"],
     "orgs": ["infiquetra"],
     "repositories": ["*"],
-    "projects": ["jeff-intent", "asgard", "mount-olympus"]
+    "projects": ["jeff-intent", "asgard", "campps"]
   }
 }

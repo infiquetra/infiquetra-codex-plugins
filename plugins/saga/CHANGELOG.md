@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.22.1 - 2026-06-17
+
+- Update `recommend_execution_backend()` for the Codex backend set: large no-code-surface work
+  stays `inline` unless cross-repo, consensus, fan-out, deployment, security, infra, or
+  adversarial-confidence signals require `team-execution`.
+- Keep the source workflow fan-out backend lineage-only and unreachable from active Saga code,
+  docs, tests, and operator-choice guidance.
+
 ## 0.21.0 - 2026-06-11
 
 - Add `product-review` as an off-chain build-measure-learn gate between ideation and requirements,

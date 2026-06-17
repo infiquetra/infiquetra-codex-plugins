@@ -3,27 +3,30 @@
 # ruff: noqa: E402,I001
 
 import json
+import sys
 from pathlib import Path
 from typing import cast
 from unittest.mock import patch
 
 import pytest
 
-import os
-import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 
-sys.path.insert(0, os.path.dirname(__file__))
-
-from import_helpers import load_sdlc_manager
-
-sdlc_manager = load_sdlc_manager()
+import sdlc_manager  # noqa: E402
 
 
+# Updated 2026-06-14 for the U8 context-package contract: a hermes-task card now
+# carries the always-required Intent (R1) + Context library links (R4), and the
+# acceptance criteria name a runnable check (R2/KTD8).
 OLYMPUS_BODY = """### Objective
 Add a prepared issue workflow.
 
+### Intent
+Authoring agents need a draft-then-approve path; without it cards skip review.
+End-state: every prepared card is drafted, gated, and only then created.
+
 ### Acceptance criteria
-- [ ] Drafts are written before GitHub mutation
+- [ ] Drafts are written before GitHub mutation; `uv run pytest plugins/mission-control/tests/test_issue_create_prepared.py` exits 0
 
 ### Out-of-scope / non-goals
 - Do not auto-move issues to Ready
@@ -38,6 +41,9 @@ plugins/mission-control/tests/test_issue_create_prepared.py
 ```bash
 uv run pytest plugins/mission-control/tests/test_issue_create_prepared.py
 ```
+
+### Context library links
+_none_
 """
 
 
@@ -45,10 +51,10 @@ def _ready_draft(tmp_path: Path) -> Path:
     return cast(
         Path,
         sdlc_manager.issue_prepare(
-            repo="hermes-claude-code-router",
+            repo="campps-platform",
             issue_type="capability",
-            team="olympus",
-            project="mount-olympus",
+            team="asgard",
+            project="campps",
             source=OLYMPUS_BODY,
             title="Prepared issue workflow",
             status=None,
@@ -63,10 +69,10 @@ def _blocked_draft(tmp_path: Path) -> Path:
     return cast(
         Path,
         sdlc_manager.issue_prepare(
-            repo="hermes-claude-code-router",
+            repo="campps-platform",
             issue_type="capability",
-            team="olympus",
-            project="mount-olympus",
+            team="asgard",
+            project="campps",
             source="Implement it.",
             title="Blocked issue workflow",
             status=None,
@@ -81,10 +87,10 @@ def _mapped_config() -> dict:
     return {
         "project_mappings": {
             "projects": {
-                "mount-olympus": {
+                "campps": {
                     "number": 1,
-                    "name": "Olympus",
-                    "repositories": ["hermes-claude-code-router"],
+                    "name": "CAMPPS",
+                    "repositories": ["campps-platform"],
                 }
             }
         }
@@ -95,9 +101,9 @@ def _unmapped_config() -> dict:
     return {
         "project_mappings": {
             "projects": {
-                "mount-olympus": {
+                "campps": {
                     "number": 1,
-                    "name": "Olympus",
+                    "name": "CAMPPS",
                     "repositories": [],
                 }
             }
@@ -119,6 +125,70 @@ def test_blocked_draft_refuses_to_mutate(tmp_path) -> None:
     mock_create.assert_not_called()
 
 
+def test_create_prepared_refuses_unapproved_then_succeeds_after_approval(tmp_path) -> None:
+    """The U11 gate is enforced (FIX 1): a ready-but-unapproved draft is refused
+    with no GitHub mutation, and the same draft creates once approved."""
+    draft = _ready_draft(tmp_path)
+    assert (
+        json.loads(draft.with_suffix(".json").read_text())["approval_state"]
+        == "needs_operator_approval"
+    )
+
+    # Refusal path: load_config / _create_github_issue must never be reached.
+    with (
+        patch.object(sdlc_manager, "load_config") as mock_config,
+        patch.object(sdlc_manager, "_create_github_issue") as mock_create,
+        pytest.raises(RuntimeError, match="awaits operator approval"),
+    ):
+        sdlc_manager.issue_create_prepared(draft, fmt="text", auto_confirm=True)
+    mock_config.assert_not_called()
+    mock_create.assert_not_called()
+
+    # Approve, then the same draft creates with no skip_approval override.
+    sdlc_manager.prepared_approve_batch([draft], fmt="text")
+    with (
+        patch.object(sdlc_manager, "load_config", return_value=_mapped_config()),
+        patch.object(sdlc_manager, "_repo_missing_labels", return_value=[]),
+        patch.object(sdlc_manager, "_repo_missing_templates", return_value=[]),
+        patch.object(
+            sdlc_manager,
+            "_create_github_issue",
+            return_value=("https://github.com/infiquetra/campps-platform/issues/7", 7),
+        ),
+        patch.object(sdlc_manager, "board_add"),
+        patch.object(sdlc_manager, "flow_set_field"),
+    ):
+        result = sdlc_manager.issue_create_prepared(draft, fmt="text", auto_confirm=True)
+
+    assert result["created"] is True
+    assert result["number"] == 7
+
+
+def test_create_prepared_skip_approval_bypasses_gate(tmp_path) -> None:
+    """--skip-approval lets the operator's direct prepare->create path through
+    the gate without an explicit approve step (FIX 1)."""
+    draft = _ready_draft(tmp_path)
+
+    with (
+        patch.object(sdlc_manager, "load_config", return_value=_mapped_config()),
+        patch.object(sdlc_manager, "_repo_missing_labels", return_value=[]),
+        patch.object(sdlc_manager, "_repo_missing_templates", return_value=[]),
+        patch.object(
+            sdlc_manager,
+            "_create_github_issue",
+            return_value=("https://github.com/infiquetra/campps-platform/issues/9", 9),
+        ),
+        patch.object(sdlc_manager, "board_add"),
+        patch.object(sdlc_manager, "flow_set_field"),
+    ):
+        result = sdlc_manager.issue_create_prepared(
+            draft, fmt="text", auto_confirm=True, skip_approval=True
+        )
+
+    assert result["created"] is True
+    assert result["number"] == 9
+
+
 def test_declined_confirmation_applies_no_mutation(tmp_path) -> None:
     draft = _ready_draft(tmp_path)
 
@@ -129,102 +199,22 @@ def test_declined_confirmation_applies_no_mutation(tmp_path) -> None:
         patch.object(sdlc_manager, "_safe_input", return_value="n"),
         patch.object(sdlc_manager, "_create_github_issue") as mock_create,
     ):
-        result = sdlc_manager.issue_create_prepared(draft, fmt="text", auto_confirm=False)
-
-    assert result == {"created": False, "reason": "declined"}
-    mock_create.assert_not_called()
-
-
-def test_plain_yes_confirmation_applies_no_mutation(tmp_path) -> None:
-    draft = _ready_draft(tmp_path)
-
-    with (
-        patch.object(sdlc_manager, "load_config", return_value=_mapped_config()),
-        patch.object(sdlc_manager, "_repo_missing_labels", return_value=[]),
-        patch.object(sdlc_manager, "_repo_missing_templates", return_value=[]),
-        patch.object(sdlc_manager, "_safe_input", return_value="yes"),
-        patch.object(sdlc_manager, "_create_github_issue") as mock_create,
-    ):
-        result = sdlc_manager.issue_create_prepared(draft, fmt="text", auto_confirm=False)
-
-    assert result == {"created": False, "reason": "declined"}
-    mock_create.assert_not_called()
-
-
-def test_interactive_confirmation_requires_exact_plan_id(tmp_path) -> None:
-    draft = _ready_draft(tmp_path)
-
-    def confirm_from_prompt(prompt: str) -> str:
-        return prompt.split("id ", 1)[1].split(" ", 1)[0]
-
-    with (
-        patch.object(sdlc_manager, "load_config", return_value=_mapped_config()),
-        patch.object(sdlc_manager, "_repo_missing_labels", return_value=[]),
-        patch.object(sdlc_manager, "_repo_missing_templates", return_value=[]),
-        patch.object(sdlc_manager, "_safe_input", side_effect=confirm_from_prompt),
-        patch.object(
-            sdlc_manager,
-            "_create_github_issue",
-            return_value=("https://github.com/infiquetra/hermes-claude-code-router/issues/42", 42),
-        ),
-        patch.object(sdlc_manager, "board_add"),
-        patch.object(sdlc_manager, "flow_set_field"),
-    ):
-        result = sdlc_manager.issue_create_prepared(draft, fmt="text", auto_confirm=False)
-
-    assert result["created"] is True
-
-
-def test_confirm_plan_mismatch_applies_no_mutation(tmp_path) -> None:
-    draft = _ready_draft(tmp_path)
-
-    with (
-        patch.object(sdlc_manager, "load_config", return_value=_mapped_config()),
-        patch.object(sdlc_manager, "_repo_missing_labels", return_value=[]),
-        patch.object(sdlc_manager, "_repo_missing_templates", return_value=[]),
-        patch.object(sdlc_manager, "_create_github_issue") as mock_create,
-    ):
+        # skip_approval: this test exercises create *mechanics* (declined
+        # confirmation), not the U11 approval gate (covered separately below).
         result = sdlc_manager.issue_create_prepared(
-            draft,
-            fmt="text",
-            confirm_plan="not-the-current-plan",
+            draft, fmt="text", auto_confirm=False, skip_approval=True
         )
 
-    assert result == {"created": False, "reason": "confirmation_mismatch"}
+    assert result == {"created": False, "reason": "declined"}
     mock_create.assert_not_called()
-
-
-def test_non_allowlisted_project_blocks_before_preview(tmp_path, monkeypatch) -> None:
-    draft = _ready_draft(tmp_path)
-    allowlist = tmp_path / "target-allowlist.json"
-    allowlist.write_text(
-        json.dumps(
-            {
-                "github": {
-                    "hosts": ["github.com"],
-                    "orgs": ["infiquetra"],
-                    "repositories": ["*"],
-                    "projects": ["asgard"],
-                }
-            }
-        )
-        + "\n"
-    )
-    monkeypatch.setattr(sdlc_manager, "_TARGET_ALLOWLIST_PATH", allowlist)
-
-    with (
-        patch.object(sdlc_manager, "load_config") as mock_config,
-        patch.object(sdlc_manager, "_repo_missing_labels") as mock_labels,
-        pytest.raises(RuntimeError, match="does not permit project"),
-    ):
-        sdlc_manager.issue_create_prepared(draft, fmt="text", auto_confirm=True)
-
-    mock_config.assert_not_called()
-    mock_labels.assert_not_called()
 
 
 def test_create_prepared_creates_issue_and_marks_draft(tmp_path) -> None:
+    # Models the REAL operator flow end to end: prepare -> approve -> create.
+    # No skip_approval — creation proceeds because the draft was approved first.
     draft = _ready_draft(tmp_path)
+    sdlc_manager.prepared_approve_batch([draft], fmt="text")
+    assert json.loads(draft.with_suffix(".json").read_text())["approval_state"] == "approved"
 
     with (
         patch.object(sdlc_manager, "load_config", return_value=_mapped_config()),
@@ -233,7 +223,7 @@ def test_create_prepared_creates_issue_and_marks_draft(tmp_path) -> None:
         patch.object(
             sdlc_manager,
             "_create_github_issue",
-            return_value=("https://github.com/infiquetra/hermes-claude-code-router/issues/42", 42),
+            return_value=("https://github.com/infiquetra/campps-platform/issues/42", 42),
         ),
         patch.object(sdlc_manager, "board_add") as mock_board,
         patch.object(sdlc_manager, "flow_set_field") as mock_status,
@@ -242,18 +232,18 @@ def test_create_prepared_creates_issue_and_marks_draft(tmp_path) -> None:
 
     assert result["created"] is True
     mock_board.assert_called_once_with(
-        "hermes-claude-code-router",
+        "campps-platform",
         42,
         fmt="text",
         config=_mapped_config(),
-        project_name="mount-olympus",
+        project_name="campps",
     )
     mock_status.assert_called_once_with(
-        "mount-olympus",
-        "hermes-claude-code-router",
+        "campps",
+        "campps-platform",
         42,
         "Status",
-        "Backlog",
+        "Shaping",
         fmt="text",
     )
 
@@ -273,15 +263,18 @@ def test_missing_mapping_opens_pr_and_stops_without_override(tmp_path) -> None:
         patch.object(sdlc_manager, "_open_mapping_pr", return_value="https://github.com/pr/1"),
         patch.object(sdlc_manager, "_create_github_issue") as mock_create,
     ):
-        result = sdlc_manager.issue_create_prepared(draft, fmt="text", auto_confirm=True)
+        # skip_approval: exercises the missing-mapping stop, not the approval gate.
+        result = sdlc_manager.issue_create_prepared(
+            draft, fmt="text", auto_confirm=True, skip_approval=True
+        )
 
     assert result == {"created": False, "mapping_pr_url": "https://github.com/pr/1"}
     mock_create.assert_not_called()
     sidecar = json.loads(draft.with_suffix(".json").read_text())
     assert sidecar["state"] == "mapping_pending"
     assert sidecar["pending_mapping"] == {
-        "repo": "hermes-claude-code-router",
-        "project": "mount-olympus",
+        "repo": "campps-platform",
+        "project": "campps",
     }
 
 
@@ -296,16 +289,18 @@ def test_override_mapping_creates_issue_and_records_pending_mapping(tmp_path) ->
         patch.object(
             sdlc_manager,
             "_create_github_issue",
-            return_value=("https://github.com/infiquetra/hermes-claude-code-router/issues/42", 42),
+            return_value=("https://github.com/infiquetra/campps-platform/issues/42", 42),
         ),
         patch.object(sdlc_manager, "board_add"),
         patch.object(sdlc_manager, "flow_set_field"),
     ):
+        # skip_approval: exercises the override-mapping create path, not the gate.
         result = sdlc_manager.issue_create_prepared(
             draft,
             fmt="text",
             auto_confirm=True,
             override_mapping=True,
+            skip_approval=True,
         )
 
     assert result["created"] is True
@@ -327,22 +322,23 @@ def test_missing_labels_and_templates_are_deployed_after_confirmation(tmp_path) 
         patch.object(
             sdlc_manager,
             "_create_github_issue",
-            return_value=("https://github.com/infiquetra/hermes-claude-code-router/issues/42", 42),
+            return_value=("https://github.com/infiquetra/campps-platform/issues/42", 42),
         ),
         patch.object(sdlc_manager, "board_add"),
         patch.object(sdlc_manager, "flow_set_field"),
     ):
-        sdlc_manager.issue_create_prepared(draft, fmt="text", auto_confirm=True)
+        # skip_approval: exercises label/template deploy mechanics, not the gate.
+        sdlc_manager.issue_create_prepared(draft, fmt="text", auto_confirm=True, skip_approval=True)
 
-    mock_labels.assert_called_once_with("hermes-claude-code-router", fmt="text")
-    mock_templates.assert_called_once_with("hermes-claude-code-router", fmt="text")
+    mock_labels.assert_called_once_with("campps-platform", fmt="text")
+    mock_templates.assert_called_once_with("campps-platform", fmt="text")
 
 
 def test_mapping_pr_uses_temporary_worktree(tmp_path) -> None:
     worktree_root = tmp_path / "infiquetra-sdlc"
     mapping_path = worktree_root / "config" / "project-mappings.json"
     mapping_path.parent.mkdir(parents=True)
-    mapping_path.write_text('{"projects": {"mount-olympus": {"repositories": []}}}\n')
+    mapping_path.write_text('{"projects": {"campps": {"repositories": []}}}\n')
 
     with (
         patch.object(
@@ -356,7 +352,7 @@ def test_mapping_pr_uses_temporary_worktree(tmp_path) -> None:
             sdlc_manager, "_gh", return_value="https://github.com/infiquetra/infiquetra-sdlc/pull/1"
         ),
     ):
-        url = sdlc_manager._open_mapping_pr("hermes-claude-code-router", "mount-olympus")
+        url = sdlc_manager._open_mapping_pr("campps-platform", "campps")
 
     assert url == "https://github.com/infiquetra/infiquetra-sdlc/pull/1"
     git_args = [call.args[0] for call in mock_git.call_args_list]

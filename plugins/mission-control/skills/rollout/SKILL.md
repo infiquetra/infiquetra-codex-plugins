@@ -65,7 +65,8 @@ Rollout status is tracked in `$INFIQUETRA_SDLC_PATH/config/rollout-status.json`.
 
 | Team | Project | Description |
 |------|---------|-------------|
-| Mount Olympus | mount-olympus | All Infiquetra org repos |
+| Asgard | asgard | Rapid-action, incubation, and mission-mode work |
+| CAMPPS | campps | CAMPPS program repositories |
 
 **Note**: Tier 3 repos (Claude tooling) are excluded from project board automation.
 
@@ -78,7 +79,7 @@ Each repo tracks four fields in `rollout-status.json`:
 | `labels` | SDLC labels deployed | All 40+ SDLC labels present in the repo |
 | `templates` | Issue templates deployed | All required templates present (6 for Tier 1/2, 2 for Tier 3) |
 | `claude_md` | CLAUDE.md has SDLC guidance section | CLAUDE.md exists with SDLC workflow guidance |
-| `project` | Repo added to project board | Repo is linked to mount-olympus GitHub Project |
+| `project` | Repo added to project board | Repo is linked to campps GitHub Project |
 
 Status values: `pending`, `complete`, `n/a` (for Tier 3 repos where project board is excluded)
 
@@ -130,7 +131,7 @@ Safe to run multiple times (idempotent).
 python3 sdlc_manager.py rollout deploy-templates --repo infiquetra-core
 
 # Tier 3 repos get minimal templates (defect + enhancement only)
-python3 sdlc_manager.py rollout deploy-templates --repo infiquetra-claude-plugins
+python3 sdlc_manager.py rollout deploy-templates --repo infiquetra-codex-plugins
 ```
 
 Copies templates from `infiquetra-sdlc` checkout into `.github/ISSUE_TEMPLATE/` in the
@@ -156,7 +157,7 @@ python3 sdlc_manager.py rollout update --repo infiquetra-core --field claude_md 
 python3 sdlc_manager.py rollout update --repo infiquetra-core --field project --status complete
 
 # Mark as n/a (for Tier 3 project field)
-python3 sdlc_manager.py rollout update --repo infiquetra-claude-plugins --field project --status n/a
+python3 sdlc_manager.py rollout update --repo infiquetra-codex-plugins --field project --status n/a
 ```
 
 Always run `rollout update` after successful deployment to track progress.

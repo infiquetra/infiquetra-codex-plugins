@@ -13,7 +13,7 @@ truth is `$INFIQUETRA_SDLC_PATH/config/sdlc-schema.json`, with prose context in
 |-------------|-------|---------|
 | `jeff-intent` | Jeff Intent | Raw operator intent, approvals, personal/operator work, and shaping |
 | `asgard` | Asgard | Jeff-proximal rapid action, incubation, and mission-mode work |
-| `mount-olympus` | Olympus | Primary autonomous engineering execution pipeline |
+| `campps` | CAMPPS | Long-lived CAMPPS initiative execution board |
 
 Prefer project views over new boards until scale, automation, or reporting needs justify
 a separate board.
@@ -42,31 +42,26 @@ Asgard modes:
 | Mode | Use |
 |------|-----|
 | Rapid Action | Reversible, time-sensitive work that benefits from low ceremony. |
-| Incubator | Exploratory work likely to define future Olympus execution. |
+| Incubator | Exploratory work likely to define future CAMPPS execution. |
 | Mission | Focused, high-leverage work close to Jeff with a clear outcome. |
 
-### Mount Olympus
+### CAMPPS
 
 ```
-Backlog -> Ready -> Planning -> Assigned -> In Review -> Done / Closed
+Idea -> Committed -> In Progress -> Done -> Parked
 ```
 
 | Status | Purpose |
 |--------|---------|
-| Backlog | Accepted but not yet ready for engineering execution. |
-| Ready | Meets issue schema, has acceptance criteria, and is eligible for dispatch. |
-| Planning | Plan or execution approach is being prepared or reviewed. |
-| Assigned | An agent owns implementation and is within WIP capacity. |
-| In Review | PR, work artifact, or verification evidence is under team-owned review. |
+| Idea | Candidate initiative work or proof card that is not yet committed. |
+| Committed | Accepted into the CAMPPS portfolio for active execution. |
+| In Progress | Execution or verification is actively underway. |
 | Done | Work is completed. |
-| Closed | Work is closed without further active flow. |
+| Parked | Work is intentionally paused without closing the initiative. |
 
-Pause states: `Plan-Approved`, `Needs Review`, `Needs Question`, `Blocked`, `Cancelled`.
-
-Olympus still exposes a live `In Progress` option. Treat it as a live legacy option:
-display it when present, but use `Assigned` for new work. Older status names such as
-`In Development`, `E2E Testing`, `Deployment Ready`, and `Deployed` are legacy migration
-terms. Deployment state belongs in deployment fields and GitHub Deployments/Environments,
+Pause state: `Parked`. Older Mount Olympus status names such as `Assigned`,
+`In Review`, `Deployment Ready`, and `Deployed` are retired historical terms.
+Deployment state belongs in deployment fields and GitHub Deployments/Environments,
 not in the core Status workflow.
 
 ---
@@ -83,10 +78,8 @@ not in the core Status workflow.
 | Asgard | Ready | 8 |
 | Asgard | Active | 5 |
 | Asgard | Verify | 5 |
-| Olympus | Ready | 10 |
-| Olympus | Planning | 3 |
-| Olympus | Assigned | 3 per assigned agent |
-| Olympus | In Review | 5 |
+| CAMPPS | Committed | 10 |
+| CAMPPS | In Progress | 10 |
 
 When a limit is exceeded, finish or unblock current work before pulling more into that status.
 Critical defects can temporarily override WIP, but the exception should be visible in the card.
@@ -100,7 +93,7 @@ Walk right-to-left through the relevant board:
 | Board | Review order |
 |-------|--------------|
 | Jeff Intent / Asgard | Done -> Verify -> Active -> Ready -> Shaping -> Idea |
-| Olympus | Closed -> Done -> In Review -> Assigned -> Planning -> Ready -> Backlog |
+| CAMPPS | Parked -> Done -> In Progress -> Committed -> Idea |
 
 Ask:
 
@@ -119,19 +112,19 @@ Ask:
 1. Capture on Jeff Intent as `Idea`.
 2. Shape until target team and context pack are clear.
 3. Move to `Ready`.
-4. Route to Asgard, Olympus, Jeff, or External/Deferred based on target team.
+4. Route to Asgard, CAMPPS, Jeff, or External/Deferred based on target team.
 
 ### Explicit Cross-Team Transfer
 
-1. Treat Asgard and Olympus as sibling target boards, not stages in a default funnel.
+1. Treat Asgard and CAMPPS as sibling target boards, not stages in a default funnel.
 2. Keep work on the selected board unless an operator explicitly routes, transfers, clones, or links it elsewhere.
 3. When a transfer is requested, make the receiving issue self-contained: target repo or surface, acceptance criteria, verification, risk, approvals, and context links must be clear.
 
-### Olympus Engineering Flow
+### CAMPPS Engineering Flow
 
-1. Start in `Backlog` or `Ready` depending on issue maturity.
-2. Move through `Planning`, `Assigned`, and `In Review`.
-3. Close as `Done` or `Closed`.
+1. Start in `Idea` until the operator commits the initiative work.
+2. Move through `Committed` and `In Progress`.
+3. Close as `Done` or park as `Parked`.
 4. Track environment promotion separately through deployment fields and deployment records.
 
 ---
@@ -143,7 +136,7 @@ Cycle time starts when active ownership begins:
 | Board | Start | Terminal |
 |-------|-------|----------|
 | Jeff Intent / Asgard | Active | Done |
-| Olympus | Assigned | Done, Closed, Cancelled |
+| CAMPPS | In Progress | Done |
 
-Legacy Olympus timeline values may still include `In Progress`, `In Development`, or
-`Deployed`; tooling may read them for history but should not create new cards with those statuses.
+Legacy Mount Olympus timeline values may still include `Assigned`, `In Review`, or
+`Deployed`; tooling may read them for history but should not create new CAMPPS cards with those statuses.

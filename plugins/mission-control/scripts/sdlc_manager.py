@@ -8,45 +8,46 @@ Reads configuration dynamically from the infiquetra-sdlc repository checkout
 All GitHub operations use the `gh` CLI for zero-token-management auth.
 
 Usage:
-    sdlc_manager.py board view --project mount-olympus
+    sdlc_manager.py board view --project campps
     sdlc_manager.py board add --repo athena-service --number 42
-    sdlc_manager.py board move --repo athena-service --number 42 --status "Assigned"
-    sdlc_manager.py board archive --project mount-olympus [--dry-run]
-    sdlc_manager.py board wip --project mount-olympus
-    sdlc_manager.py board standup --project mount-olympus
-    sdlc_manager.py board discover-fields --project mount-olympus
+    sdlc_manager.py board move --repo campps-platform --number 42 --status "In Progress"
+    sdlc_manager.py board archive --project campps [--dry-run]
+    sdlc_manager.py board wip --project campps
+    sdlc_manager.py board standup --project campps
+    sdlc_manager.py board discover-fields --project campps
 
     sdlc_manager.py issue create --repo athena-service --type capability
-    sdlc_manager.py issue prepare --repo athena-service --type capability --team olympus \
-      --project mount-olympus --from docs/plans/example.md
+    sdlc_manager.py issue prepare --repo campps-platform --type capability --team asgard \
+      --project campps --from docs/plans/example.md
+    sdlc_manager.py issue approve docs/sdlc-issue-drafts/<draft>.md
     sdlc_manager.py issue create-prepared docs/sdlc-issue-drafts/<draft>.md
 
     sdlc_manager.py labels sync-fields --repo athena-service --number 42
     sdlc_manager.py labels audit --repo athena-service
     sdlc_manager.py labels deploy --repo athena-service
     sdlc_manager.py labels auto-label --repo athena-service --number 42
-    sdlc_manager.py fields create-option --project mount-olympus --field initiative --option "new-initiative"
-    sdlc_manager.py fields discover --project mount-olympus
+    sdlc_manager.py fields create-option --project campps --field initiative --option "new-initiative"
+    sdlc_manager.py fields discover --project campps
 
-    sdlc_manager.py metrics cycle-time --project mount-olympus [--days 30] [--type capability]
-    sdlc_manager.py metrics throughput --project mount-olympus [--weeks 4]
-    sdlc_manager.py metrics wip-age --project mount-olympus
-    sdlc_manager.py metrics column-time --project mount-olympus --number 42
+    sdlc_manager.py metrics cycle-time --project campps [--days 30] [--type capability]
+    sdlc_manager.py metrics throughput --project campps [--weeks 4]
+    sdlc_manager.py metrics wip-age --project campps
+    sdlc_manager.py metrics column-time --project campps --number 42
 
     sdlc_manager.py milestones create --repo athena-service --title "Pilot: Auth MVP" --due-date 2026-04-15
     sdlc_manager.py milestones list --repo athena-service [--state open]
     sdlc_manager.py milestones progress --repo athena-service --milestone 1
     sdlc_manager.py milestones link --repo athena-service --issue 42 --milestone 1
 
-    sdlc_manager.py rollout status [--team mount-olympus]
+    sdlc_manager.py rollout status [--team asgard]
     sdlc_manager.py rollout gap-analysis --repo athena-service
     sdlc_manager.py rollout deploy-labels --repo athena-service
     sdlc_manager.py rollout deploy-templates --repo athena-service
     sdlc_manager.py rollout deploy-all --repo athena-service
     sdlc_manager.py rollout update --repo athena-service --field labels --status complete
 
-    sdlc_manager.py flow set-field --project mount-olympus --repo R --number N --field Initiative --option <name>
-    sdlc_manager.py flow field-options --project mount-olympus --field Objective
+    sdlc_manager.py flow set-field --project campps --repo R --number N --field Initiative --option <name>
+    sdlc_manager.py flow field-options --project campps --field Objective
     sdlc_manager.py flow discover-project --repo athena-service
     sdlc_manager.py flow link-sub-issue --parent-repo R --parent-number P --child-repo R2 --child-number C
     sdlc_manager.py flow verify-label --repo athena-service --name high-priority [--color D93F0B] [--description "..."]
@@ -60,6 +61,7 @@ Environment Variables:
 
 import argparse
 import hashlib
+import importlib.util
 import json
 import os
 import re
@@ -104,11 +106,11 @@ _USER_DEFAULTS_PATH = Path.home() / ".codex" / "sdlc-defaults.json"
 # Listed here so callers and the wizard agree on the set:
 _USER_DEFAULTS_KEYS = (
     "assignee",  # gh login (NOT OS $USER) — fetched via `gh api user --jq .login`
-    "default_project",  # e.g., "mount-olympus"
-    "default_status",  # e.g., "Backlog"
+    "default_project",  # e.g., "campps"
+    "default_status",  # e.g., "Idea"
     "default_priority",  # e.g., "medium-priority"
-    "default_initiative",  # option name on Olympus board (None until field is created)
-    "default_objective",  # option name on Olympus board (None until field is created)
+    "default_initiative",  # option name on the target board
+    "default_objective",  # option name on the target board
     "preferred_repos",  # list[str] of repos the operator works with most
 )
 
@@ -172,7 +174,7 @@ def _fetch_gh_login() -> str | None:
 
 
 def load_config() -> dict[str, Any]:
-    """Load config from infiquetra-sdlc checkout with remote fallback."""
+    """Load SDLC config, preferring live canonical sources when freshness matters."""
     sdlc_path = get_sdlc_path()
     config: dict[str, Any] = {}
 
@@ -221,7 +223,9 @@ def load_config() -> dict[str, Any]:
             except Exception:
                 config[key] = {}
 
-    # Project mappings and SDLC schema — three-step resolution
+    # Project mappings and SDLC schema each have their own resolution policy.
+    # Mappings allow local override for operator workflow testing; schema prefers
+    # GitHub main first because a local infiquetra-sdlc checkout may be stale.
     config["project_mappings"] = _resolve_project_mappings(sdlc_path)
     config["sdlc_schema"] = _resolve_sdlc_schema(sdlc_path)
 
@@ -238,7 +242,7 @@ _VENDORED_PROJECT_MAPPINGS_PATH = (
     Path(__file__).resolve().parent.parent / "config" / "project-mappings.json"
 )
 _VENDORED_SDLC_SCHEMA_PATH = Path(__file__).resolve().parent.parent / "config" / "sdlc-schema.json"
-PROJECT_CHOICES = ("mount-olympus", "asgard", "jeff-intent")
+PROJECT_CHOICES = ("campps", "asgard", "jeff-intent")
 LIVE_LEGACY_STATUS_ALIASES = {
     "In Progress": "Assigned",
     "In Development": "Assigned",
@@ -284,21 +288,12 @@ def _resolve_project_mappings(sdlc_path: Path) -> dict[str, Any]:
 
 
 def _resolve_sdlc_schema(sdlc_path: Path) -> dict[str, Any]:
-    """Resolve sdlc-schema.json via external checkout → vendored → remote fallback."""
-    override = sdlc_path / "config" / "sdlc-schema.json"
-    if override.exists():
-        with open(override) as f:
-            return cast(dict[str, Any], json.load(f))
-
-    if _VENDORED_SDLC_SCHEMA_PATH.exists():
-        with open(_VENDORED_SDLC_SCHEMA_PATH) as f:
-            return cast(dict[str, Any], json.load(f))
-
+    """Resolve sdlc-schema.json via GitHub main → vendored → local fallback."""
     try:
         result = _gh(
             [
                 "api",
-                f"repos/{ORG}/infiquetra-sdlc/contents/config/sdlc-schema.json",
+                f"repos/{ORG}/infiquetra-sdlc/contents/config/sdlc-schema.json?ref=main",
                 "--jq",
                 ".content",
             ]
@@ -310,6 +305,15 @@ def _resolve_sdlc_schema(sdlc_path: Path) -> dict[str, Any]:
             return cast(dict[str, Any], json.loads(content))
     except (GhApiError, RuntimeError):
         pass
+
+    if _VENDORED_SDLC_SCHEMA_PATH.exists():
+        with open(_VENDORED_SDLC_SCHEMA_PATH) as f:
+            return cast(dict[str, Any], json.load(f))
+
+    local_fallback = sdlc_path / "config" / "sdlc-schema.json"
+    if local_fallback.exists():
+        with open(local_fallback) as f:
+            return cast(dict[str, Any], json.load(f))
 
     return {}
 
@@ -409,6 +413,8 @@ def _terminal_statuses(config: dict, project_name: str, proj: dict) -> list[str]
 def _cycle_start_statuses(project_name: str) -> list[str]:
     if project_name == "mount-olympus":
         return ["Assigned", "In Progress", "In Development"]
+    if project_name == "campps":
+        return ["In Progress"]
     return ["Active"]
 
 
@@ -977,16 +983,34 @@ def board_add(
     fmt: str,
     config: dict | None = None,
     project_name: str | None = None,
+    project_names: list[str] | None = None,
 ) -> None:
-    """Add issue/PR to correct project(s)."""
+    """Add issue/PR to correct project(s).
+
+    Project resolution precedence:
+      1. ``project_names`` — explicit repeatable project list.
+      2. ``project_name`` — single explicit project, for older callers.
+      3. neither given — repo-based project mapping.
+
+    Each project add is fault-isolated so one failing project does not prevent
+    the remaining independent memberships.
+    """
     if not config:
         config = load_config()
 
-    projects = (
-        [get_project_config(config, project_name)]
-        if project_name
-        else get_projects_for_repo(config, repo)
-    )
+    if project_names:
+        seen: set[str] = set()
+        ordered: list[str] = []
+        for name in project_names:
+            if name in seen:
+                continue
+            seen.add(name)
+            ordered.append(name)
+        projects = [get_project_config(config, name) for name in ordered]
+    elif project_name:
+        projects = [get_project_config(config, project_name)]
+    else:
+        projects = get_projects_for_repo(config, repo)
     if not projects:
         mappings = config.get("project_mappings", {})
         excluded = mappings.get("excluded_repositories", [])
@@ -1906,14 +1930,7 @@ def rollout_gap_analysis(repo: str, fmt: str) -> None:
     """Check what SDLC setup is missing from a repo."""
     config = load_config()
     required_labels = [la["name"] for la in config.get("labels", {}).get("labels", [])]
-    template_names = [
-        "capability.yml",
-        "context-update.yml",
-        "defect.yml",
-        "enhancement.yml",
-        "exploration.yml",
-        "objective.yml",
-    ]
+    template_names = _known_template_names()
 
     gaps = []
 
@@ -2294,61 +2311,39 @@ def flow_verify_label(
 
 
 # ===========================
-# CARD VALIDATOR (mirror of home-lab card_validator.py)
+# CARD VALIDATOR (generated-data-backed pre-flight, mirrors home-lab card_validator.py)
 # ===========================
-# Mirrors the home-lab orchestrator's card_validator.py contract enough to
-# pre-flight check an issue body before plan-review fires. This is NOT a
-# strict re-implementation — the home-lab validator is the source of truth
-# (`home-lab/ansible/roles/hermes_orchestrator/files/card_validator.py`) and
-# should be consulted when the contract changes. We mirror the high-leverage
-# checks: 6 required H3 headers, AC has ≥1 checklist item, Verification has
-# ≥1 fenced code block, Files-expected has ≥1 path-like line, no placeholders.
+# The control flow here is hand-maintained; the validator data is generated in
+# infiquetra-sdlc and vendored into config/generated with pinned SHA sidecars.
+_SHIM_DATA_PATH = (
+    Path(__file__).resolve().parent.parent / "config" / "generated" / "issue_contract_shim.py"
+)
+_CONTRACT_DATA_PATH = (
+    Path(__file__).resolve().parent.parent / "config" / "generated" / "issue_contract_data.py"
+)
+_shim_spec = importlib.util.spec_from_file_location("issue_contract_shim", _SHIM_DATA_PATH)
+if _shim_spec is None or _shim_spec.loader is None:  # pragma: no cover - defensive
+    raise ImportError(f"vendored issue-contract shim not loadable at {_SHIM_DATA_PATH}")
+_shim = importlib.util.module_from_spec(_shim_spec)
+_shim_spec.loader.exec_module(_shim)
+_contract_spec = importlib.util.spec_from_file_location("issue_contract_data", _CONTRACT_DATA_PATH)
+if _contract_spec is None or _contract_spec.loader is None:  # pragma: no cover - defensive
+    raise ImportError(f"vendored issue-contract data not loadable at {_CONTRACT_DATA_PATH}")
+_contract = importlib.util.module_from_spec(_contract_spec)
+_contract_spec.loader.exec_module(_contract)
 
-# All regexes + the placeholder set below MUST mirror the home-lab source-of-truth:
-# `home-lab/ansible/roles/hermes_orchestrator/files/card_validator.py`. When that
-# file's contract changes, update these in the same PR.
-
-_REQUIRED_H3_HEADERS = (
-    "Objective",
-    "Acceptance criteria",
-    "Out-of-scope / non-goals",  # exact match: home-lab uses slash, not "or"
-    "Files expected to change",
-    "Tests to add or update",
-    "Verification",
-)
-_OPTIONAL_H3_HEADERS = (
-    "Notes / conventions",
-    "Context library links",
-)
-_HEADER_RE = re.compile(r"^###\s+(.+?)\s*$", re.MULTILINE)
-# Checklist: `- [ ]`, `- [x]`, `* [ ]`, `* [X]`, with leading whitespace.
-# Requires `\S` after the bracket — empty checkbox-only lines don't count
-# (matches home-lab `card_validator.py:73`).
-_CHECKLIST_RE = re.compile(r"^\s*[-*]\s+\[[ xX]\]\s+\S", re.MULTILINE)
-_CODE_BLOCK_RE = re.compile(r"^```", re.MULTILINE)
-# A "plausible path" — matches home-lab `_PATH_LINE_RE` exactly:
-# optional bullet (`-` or `*`), optional quote/backtick wrapper, then a
-# token containing either `/` or `.` (so `pyproject.toml` and `- src/foo.py`
-# both pass). The orchestrator verifies actual existence; we just gate on
-# "looks like a path."
-_PATH_LINE_RE = re.compile(
-    r"^\s*(?:[-*]\s+)?"
-    r"[`'\"]?"
-    r"[\w./~\-]*[/.][\w./~\-]+"
-    r".*$",
-    re.MULTILINE,
-)
-_PLACEHOLDER_LINES = frozenset(
-    {
-        "- [ ]",
-        "-",
-        "* [ ]",
-        "*",
-        "_no response_",
-        "none",
-        "<!-- placeholder -->",
-    }
-)
+_REQUIRED_H3_HEADERS = _shim.REQUIRED_H3_HEADERS
+_OPTIONAL_H3_HEADERS = _shim.OPTIONAL_H3_HEADERS
+_CONTRACT_FIELD_HEADERS = _contract.FIELD_HEADERS
+_CONTRACT_REQUIRED_MATRIX = _contract.REQUIRED_MATRIX
+_CONTRACT_AUTO_FIELDS = frozenset(_CONTRACT_REQUIRED_MATRIX.get("auto_populated_fields", ()))
+_HEADER_RE = re.compile(_shim.HEADER_RE_PATTERN, re.MULTILINE)
+_CHECKLIST_RE = re.compile(_shim.CHECKLIST_RE_PATTERN, re.MULTILINE)
+_CODE_BLOCK_RE = re.compile(_shim.CODE_BLOCK_RE_PATTERN, re.MULTILINE)
+_PATH_LINE_RE = re.compile(_shim.PATH_LINE_RE_PATTERN, re.MULTILINE)
+_ACCEPTANCE_EXECUTABLE_RE = re.compile(_shim.ACCEPTANCE_EXECUTABLE_RE_PATTERN, re.MULTILINE)
+_NONE_MARKER_RE = re.compile(r"^_?none_?$", re.IGNORECASE)
+_PLACEHOLDER_LINES = frozenset(_shim.PLACEHOLDER_LINES)
 
 
 def _split_sections(body: str) -> dict[str, str]:
@@ -2364,25 +2359,7 @@ def _split_sections(body: str) -> dict[str, str]:
 
 
 def validate_card_body(body: str) -> tuple[bool, list[str]]:
-    """Run the card_validator schema check on an issue body.
-
-    Mirrors home-lab card_validator.py's high-leverage checks. When that
-    file's contract changes, update this shim in the same PR.
-
-    Returns (is_valid, errors). The 5 checks:
-      1. All 6 required H3 sections present (Objective, Acceptance criteria,
-         Out-of-scope / non-goals, Files expected to change, Tests to add
-         or update, Verification).
-      2. Acceptance criteria has at least one `- [ ]` or `* [ ]` checklist
-         item with non-whitespace content after the bracket.
-      3. Verification has at least one fenced code block (≥2 ``` markers).
-      4. Files expected to change has at least one path-like line (matches
-         home-lab _PATH_LINE_RE — accepts plain filenames like
-         `pyproject.toml`, bullet-prefixed paths like `- src/foo.py`, and
-         backtick-wrapped paths).
-      5. No required section consists of only placeholder lines
-         (`- [ ]`, `_No response_`, `None`, etc.).
-    """
+    """Run the body-only card validator pre-flight on an issue body."""
     errors: list[str] = []
     sections = _split_sections(body)
     section_names = set(sections.keys())
@@ -2392,13 +2369,19 @@ def validate_card_body(body: str) -> tuple[bool, list[str]]:
     if missing:
         errors.append(f"Missing required H3 sections: {missing}")
 
-    # 2. Acceptance criteria has ≥1 checklist item
+    # 2 + 2b. Acceptance criteria has a checklist item and executable check.
     if "Acceptance criteria" in sections:
         ac = sections["Acceptance criteria"]
         if not _CHECKLIST_RE.search(ac):
             errors.append(
                 "'Acceptance criteria' has no `- [ ]` checklist item "
                 "(card_validator requires at least one)"
+            )
+        elif not _ACCEPTANCE_EXECUTABLE_RE.search(ac):
+            errors.append(
+                "'Acceptance criteria' is not executable (card_validator "
+                "requires each criterion to name a runnable check -- a `code "
+                "span` or a ``` fenced block -- with its expected result)"
             )
 
     # 3. Verification has ≥1 fenced code block
@@ -2420,17 +2403,77 @@ def validate_card_body(body: str) -> tuple[bool, list[str]]:
                 "(card_validator requires at least one `dir/file` style entry)"
             )
 
-    # 5. No placeholder-only sections
+    # 5. No placeholder-only sections (Context library links `_none_` exempt).
     for header in _REQUIRED_H3_HEADERS:
         if header not in sections:
             continue
         text = sections[header].strip()
+        if header == "Context library links" and _NONE_MARKER_RE.match(text):
+            continue
+        if not text:
+            errors.append(f"'{header}' is empty")
+            continue
         # Strip blank lines + check whether all remaining lines are placeholders
         lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
         if lines and all(ln.lower() in _PLACEHOLDER_LINES for ln in lines):
             errors.append(f"'{header}' contains only placeholder text")
 
     return (len(errors) == 0, errors)
+
+
+def _rule_matches(rule_value: str, actual: str | None) -> bool:
+    return rule_value == "*" or rule_value == (actual or "")
+
+
+def _required_contract_field_keys(issue_type: str, risk: str | None) -> list[str]:
+    required_by_field = {
+        field: bool(_CONTRACT_REQUIRED_MATRIX.get("default_required", False))
+        for field in _CONTRACT_REQUIRED_MATRIX["axes"]["field"]
+    }
+    normalized_risk = risk or "*"
+    for rule in _CONTRACT_REQUIRED_MATRIX["rules"]:
+        if not _rule_matches(rule["issue_type"], issue_type):
+            continue
+        if not _rule_matches(rule["risk"], normalized_risk):
+            continue
+        for field in rule["fields"]:
+            required_by_field[field] = bool(rule["required"])
+    return [
+        field
+        for field in _CONTRACT_REQUIRED_MATRIX["axes"]["field"]
+        if required_by_field.get(field) and field not in _CONTRACT_AUTO_FIELDS
+    ]
+
+
+def validate_card_body_for_context(
+    body: str, issue_type: str, risk: str | None
+) -> tuple[bool, list[str]]:
+    """Validate a prepared issue body when issue type and risk are known."""
+    valid, errors = validate_card_body(body)
+    sections = _split_sections(body)
+    required_headers = [
+        _CONTRACT_FIELD_HEADERS[field] for field in _required_contract_field_keys(issue_type, risk)
+    ]
+    missing = [header for header in required_headers if header not in sections]
+    if missing:
+        errors.append(
+            f"Missing required H3 sections for {issue_type}/{risk or 'unknown-risk'}: {missing}"
+        )
+
+    for header in required_headers:
+        if header not in sections:
+            continue
+        text = sections[header].strip()
+        if header == "Context library links" and _NONE_MARKER_RE.match(text):
+            continue
+        if not text:
+            errors.append(f"'{header}' is empty")
+            continue
+        lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+        if lines and all(ln.lower() in _PLACEHOLDER_LINES for ln in lines):
+            errors.append(f"'{header}' contains only placeholder text")
+
+    return (valid and not errors, errors)
 
 
 class CardValidationError(RuntimeError):
@@ -2580,7 +2623,7 @@ def config_init_defaults(non_interactive: bool, fmt: str) -> None:
     suggestions = {
         "assignee": gh_login or existing.get("assignee"),
         "default_project": existing.get("default_project") or auto_project,
-        "default_status": existing.get("default_status") or "Backlog",
+        "default_status": existing.get("default_status") or "Idea",
         "default_priority": existing.get("default_priority") or "medium-priority",
         "default_initiative": existing.get("default_initiative"),  # no default
         "default_objective": existing.get("default_objective"),  # no default
@@ -2707,22 +2750,23 @@ _HERMES_ACTIONABLE_TYPES = frozenset(
         "defect",
     }
 )
+_PREPARE_STATE_BLOCKED = "blocked"
+_PREPARE_STATE_READY = "ready_to_create"
+_APPROVAL_NEEDS_OPERATOR = "needs_operator_approval"
+_APPROVAL_APPROVED = "approved"
+_APPROVABLE_APPROVAL_STATES = frozenset({_APPROVAL_NEEDS_OPERATOR})
+_PREPARED_FIELD_RISK = "Technical Risk"
+_PREPARED_FIELD_OBJECTIVE = "Objective"
+_PREPARED_FIELD_ISSUE_TYPE = "Issue Type"
+_PREPARED_FIELD_LIFECYCLE_ORIGIN = "Lifecycle Origin"
 _MUTATION_CONFIRMATION_TTL_SECONDS = 900
 # Issue types where the capability-adaptive fields are relevant (size,
 # etc.). The orchestrator's planner reads these to inform sequencing /
 # capacity decisions; non-capability cards don't need them.
 #
-# IMPORTANT — PROJECT FIELD REALITY (verified 2026-05-04):
-# As of today, the only single-select field on the Olympus project (#1) is
-# `Status`. `Initiative`, `Objective`, `Capability Size`, `Business Value`,
-# `Technical Risk`, `Target Quarter` are all "decided, not yet created" per
-# Phase A carry-over #2 in `infiquetra-sdlc`. The interactive flow is built
-# to handle the post-create world (per-project schema discovery silently
-# skips prompts for fields the project doesn't expose), so today operators
-# will see ONLY the Status prompt. The skip is intentional, not a bug.
-# When the operator runs the field-creation runbook in
-# `infiquetra-sdlc/docs/operations/operational-reference.md`, the
-# additional prompts light up automatically.
+# Project field discovery is live and per-board. Prompts are skipped when the
+# selected board does not expose a field, so field rollout can happen without a
+# separate CLI release.
 _CAPABILITY_ADAPTIVE_TYPES = frozenset({"capability", "objective"})
 
 
@@ -2760,8 +2804,23 @@ class PreparedIssue:
     body: str
     handoff_maturity: str | None = None
     source_artifact: dict[str, Any] | None = None
+    project_fields: dict[str, str] | None = None
     draft_path: str | None = None
     sidecar_path: str | None = None
+
+
+def _prepared_project_fields(
+    issue: PreparedIssue, source_artifact: SourceArtifact | None
+) -> dict[str, str]:
+    """Resolve offline project-field values recorded with a prepared card."""
+    fields: dict[str, str] = {_PREPARED_FIELD_ISSUE_TYPE: issue.issue_type}
+    if issue.risk:
+        fields[_PREPARED_FIELD_RISK] = issue.risk
+    if issue.handoff_maturity:
+        fields[_PREPARED_FIELD_LIFECYCLE_ORIGIN] = issue.handoff_maturity
+    if source_artifact and source_artifact.ref:
+        fields[_PREPARED_FIELD_OBJECTIVE] = source_artifact.ref
+    return fields
 
 
 @dataclass
@@ -3090,7 +3149,7 @@ def _strip_draft_h1(body: str) -> tuple[str | None, str]:
     return None, body
 
 
-def _render_draft_markdown(issue: PreparedIssue) -> str:
+def _render_draft_markdown(issue: PreparedIssue, approval_state: str | None = None) -> str:
     labels = ", ".join(issue.labels)
     frontmatter = [
         "---",
@@ -3108,6 +3167,8 @@ def _render_draft_markdown(issue: PreparedIssue) -> str:
         frontmatter.append(f"mode: {issue.mode}")
     if issue.handoff_maturity:
         frontmatter.append(f"handoff_maturity: {issue.handoff_maturity}")
+    if approval_state:
+        frontmatter.append(f"approval_state: {approval_state}")
     frontmatter.append("---")
     return "\n".join(frontmatter) + f"\n\n# {issue.title}\n\n{issue.body.rstrip()}\n"
 
@@ -3154,10 +3215,50 @@ def _render_handoff_context(
     return "\n\n" + "\n".join(lines) + "\n"
 
 
+def _context_links_from_source(source_artifact: SourceArtifact | None) -> str:
+    if not source_artifact:
+        return "_none_"
+    if source_artifact.url:
+        return f"- source_context: {source_artifact.url}"
+    if source_artifact.path:
+        return f"- source_context: {source_artifact.path}"
+    return "_none_"
+
+
+def _contract_field_placeholder(
+    field: str,
+    source: str,
+    source_artifact: SourceArtifact | None,
+) -> str:
+    if field == "objective":
+        return source
+    if field == "context_library_links":
+        return _context_links_from_source(source_artifact)
+    if field == "acceptance_criteria":
+        return "- [ ] _No response_"
+    return "_No response_"
+
+
+def _contract_scaffold_body(
+    source: str,
+    issue_type: str,
+    risk: str | None,
+    source_artifact: SourceArtifact | None,
+) -> str:
+    sections: list[str] = []
+    for field in _required_contract_field_keys(issue_type, risk):
+        header = _CONTRACT_FIELD_HEADERS[field]
+        value = _contract_field_placeholder(field, source, source_artifact)
+        sections.append(f"### {header}\n{value}")
+    return "\n\n".join(sections)
+
+
 def _source_to_issue_body(
     source: str,
+    issue_type: str,
     team: str,
     repo: str,
+    risk: str | None,
     mode: str | None,
     handoff_maturity: str | None = None,
     source_artifact: SourceArtifact | None = None,
@@ -3167,6 +3268,10 @@ def _source_to_issue_body(
         if "### Handoff maturity" in stripped:
             return stripped
         return stripped + _render_handoff_context(handoff_maturity, source_artifact)
+    if issue_type in _DISPATCH_ACTIONABLE_TYPES:
+        return _contract_scaffold_body(
+            stripped, issue_type, risk, source_artifact
+        ) + _render_handoff_context(handoff_maturity, source_artifact)
     if team == "asgard":
         return f"""### Intent
 {stripped}
@@ -3255,6 +3360,9 @@ def _read_prepared_issue(draft_path: Path) -> PreparedIssue:
         source_artifact=sidecar.get("source_artifact")
         if isinstance(sidecar.get("source_artifact"), dict)
         else None,
+        project_fields=sidecar.get("project_fields")
+        if isinstance(sidecar.get("project_fields"), dict)
+        else None,
         draft_path=str(draft_path),
         sidecar_path=str(sidecar_path),
     )
@@ -3340,18 +3448,21 @@ def _readiness_for_prepared_issue(issue: PreparedIssue) -> PreparedReadiness:
         warnings.append("Missing handoff maturity metadata")
 
     sections = _split_sections(issue.body)
-    if issue.team == "olympus":
-        if issue.issue_type not in _DISPATCH_ACTIONABLE_TYPES:
-            blocking.append(
-                f"Issue type {issue.issue_type!r} is not an Olympus dispatch-ready task type"
-            )
-        valid_body, body_errors = validate_card_body(issue.body)
+    if issue.issue_type in _DISPATCH_ACTIONABLE_TYPES:
+        valid_body, body_errors = validate_card_body_for_context(
+            issue.body, issue.issue_type, issue.risk
+        )
         if not valid_body:
             blocking.extend(body_errors)
         if not issue.project:
             blocking.append("Missing target project")
         if not issue.risk:
             blocking.append("Missing author-visible risk metadata")
+    elif issue.team == "olympus":
+        if issue.issue_type not in _DISPATCH_ACTIONABLE_TYPES:
+            blocking.append(
+                f"Issue type {issue.issue_type!r} is not an Olympus dispatch-ready task type"
+            )
     elif issue.team == "asgard":
         required = {
             "Intent": "intent",
@@ -3379,11 +3490,15 @@ def _readiness_for_prepared_issue(issue: PreparedIssue) -> PreparedReadiness:
 
 
 def _sidecar_payload(
-    issue: PreparedIssue, readiness: PreparedReadiness, state: str
+    issue: PreparedIssue,
+    readiness: PreparedReadiness,
+    state: str,
+    approval_state: str | None,
 ) -> dict[str, Any]:
     return {
         "schema_version": "1.0",
         "state": state,
+        "approval_state": approval_state,
         "title": issue.title,
         "repo": issue.repo,
         "issue_type": issue.issue_type,
@@ -3395,6 +3510,7 @@ def _sidecar_payload(
         "mode": issue.mode,
         "handoff_maturity": issue.handoff_maturity,
         "source_artifact": issue.source_artifact,
+        "project_fields": issue.project_fields or {},
         "draft_path": issue.draft_path,
         "sidecar_path": issue.sidecar_path,
         "readiness": asdict(readiness),
@@ -3446,10 +3562,13 @@ def issue_prepare(
         labels=_issue_expected_labels(issue_type),
         risk=risk,
         mode=mode,
-        body=_source_to_issue_body(source, team, repo, mode, maturity, source_artifact),
+        body=_source_to_issue_body(
+            source, issue_type, team, repo, risk, mode, maturity, source_artifact
+        ),
         handoff_maturity=maturity,
         source_artifact=_source_artifact_payload(source_artifact),
     )
+    issue.project_fields = _prepared_project_fields(issue, source_artifact)
     readiness = _readiness_for_prepared_issue(issue)
 
     target_dir = draft_dir or _PREPARED_DRAFT_DIR
@@ -3459,10 +3578,16 @@ def issue_prepare(
     issue.draft_path = str(draft_path)
     issue.sidecar_path = str(sidecar_path)
 
-    draft_path.write_text(_render_draft_markdown(issue), encoding="utf-8")
-    state = "ready_to_create" if readiness.passed else "blocked"
+    state = _PREPARE_STATE_READY if readiness.passed else _PREPARE_STATE_BLOCKED
+    approval_state = _APPROVAL_NEEDS_OPERATOR if readiness.passed else None
+    draft_path.write_text(
+        _render_draft_markdown(issue, approval_state=approval_state), encoding="utf-8"
+    )
     sidecar_path.write_text(
-        json.dumps(_sidecar_payload(issue, readiness, state), indent=2, sort_keys=True) + "\n",
+        json.dumps(
+            _sidecar_payload(issue, readiness, state, approval_state), indent=2, sort_keys=True
+        )
+        + "\n",
         encoding="utf-8",
     )
 
@@ -3486,7 +3611,13 @@ def issue_prepare(
 
 
 def _known_template_names() -> list[str]:
-    return [f"{issue_type}.yml" for issue_type in _ISSUE_TYPES]
+    return [
+        "capability.yml",
+        "enhancement.yml",
+        "defect.yml",
+        "exploration.yml",
+        "context-update.yml",
+    ]
 
 
 def _repo_missing_labels(repo: str, required_labels: list[str]) -> list[str]:
@@ -3521,7 +3652,7 @@ def _mapping_update_target() -> tuple[Path, Path, str, str | None]:
         "mission-control mapping instead."
     )
     repo_root = Path(__file__).resolve().parents[3]
-    return _VENDORED_PROJECT_MAPPINGS_PATH, repo_root, "infiquetra-claude-plugins", warning
+    return _VENDORED_PROJECT_MAPPINGS_PATH, repo_root, "infiquetra-codex-plugins", warning
 
 
 def _write_mapping_update(mapping_path: Path, repo: str, project_name: str) -> None:
@@ -3629,6 +3760,13 @@ def _update_sidecar_state(draft_path: Path, updates: dict[str, Any]) -> None:
     sidecar_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
+def _read_sidecar_approval_state(draft_path: Path) -> str | None:
+    sidecar_path = draft_path.with_suffix(".json")
+    payload = json.loads(sidecar_path.read_text(encoding="utf-8"))
+    value = payload.get("approval_state")
+    return str(value) if value is not None else None
+
+
 def _build_mutation_plan(issue: PreparedIssue, config: dict[str, Any]) -> MutationPlan:
     if not issue.draft_path:
         raise RuntimeError("Prepared issue is missing draft_path")
@@ -3722,6 +3860,7 @@ def issue_create_prepared(
     auto_confirm: bool = False,
     confirm_plan: str | None = None,
     override_mapping: bool = False,
+    skip_approval: bool = False,
 ) -> dict[str, Any]:
     issue = _read_prepared_issue(draft_path)
     readiness = _readiness_for_prepared_issue(issue)
@@ -3733,6 +3872,18 @@ def issue_create_prepared(
             for gap in readiness.blocking_gaps:
                 print(f"  - {gap}")
         raise RuntimeError("Prepared issue has blocking readiness gaps")
+
+    approval_state = _read_sidecar_approval_state(draft_path)
+    if approval_state == _APPROVAL_NEEDS_OPERATOR and not skip_approval:
+        message = (
+            f"Prepared draft awaits operator approval; run "
+            f"`issue approve {draft_path}` first, or pass --skip-approval."
+        )
+        if fmt == "json":
+            _out({"created": False, "reason": "needs_operator_approval"}, fmt)
+        else:
+            print(message)
+        raise RuntimeError(message)
 
     _ensure_allowed_prepared_issue_target(issue)
     config = load_config()
@@ -3810,6 +3961,79 @@ def issue_create_prepared(
         _out({**result, "mutation_plan": plan_payload}, fmt)
     else:
         print(f"Created issue: {url}")
+    return result
+
+
+def _set_draft_approval_state(draft_path: Path, approval_state: str) -> None:
+    """Rewrite the approval_state frontmatter line on the draft markdown."""
+    text = draft_path.read_text(encoding="utf-8")
+    metadata, _ = _parse_draft_frontmatter(text)
+    line = f"approval_state: {approval_state}"
+    if "approval_state" in metadata:
+        end = text.find("\n---\n", 4)
+        if end == -1:
+            return
+        head, tail = text[:end], text[end:]
+        head = re.sub(r"(?m)^approval_state:.*$", line, head)
+        draft_path.write_text(head + tail, encoding="utf-8")
+        return
+    if not text.startswith("---\n"):
+        return
+    end = text.find("\n---\n", 4)
+    if end == -1:
+        return
+    draft_path.write_text(text[:end] + f"\n{line}" + text[end:], encoding="utf-8")
+
+
+def prepared_approve_batch(draft_paths: list[Path], fmt: str = "text") -> dict[str, Any]:
+    """Approve prepared drafts after revalidating their on-disk bodies."""
+    approved: list[str] = []
+    skipped: list[dict[str, str]] = []
+    for draft_path in draft_paths:
+        sidecar_path = draft_path.with_suffix(".json")
+        if not sidecar_path.exists():
+            skipped.append({"draft": str(draft_path), "reason": "missing sidecar"})
+            continue
+        try:
+            sidecar = json.loads(sidecar_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as e:
+            skipped.append({"draft": str(draft_path), "reason": f"malformed sidecar: {e}"})
+            continue
+        current = sidecar.get("approval_state")
+        if current == _APPROVAL_APPROVED:
+            skipped.append({"draft": str(draft_path), "reason": "already approved"})
+            continue
+        if current not in _APPROVABLE_APPROVAL_STATES:
+            skipped.append({"draft": str(draft_path), "reason": f"approval_state is {current!r}"})
+            continue
+        try:
+            issue = _read_prepared_issue(draft_path)
+            readiness = _readiness_for_prepared_issue(issue)
+        except RuntimeError as e:
+            skipped.append({"draft": str(draft_path), "reason": f"unreadable draft: {e}"})
+            continue
+        if not readiness.passed:
+            skipped.append({"draft": str(draft_path), "reason": "fails validation"})
+            continue
+        _update_sidecar_state(
+            draft_path,
+            {
+                "approval_state": _APPROVAL_APPROVED,
+                "approved_at": datetime.now(UTC).isoformat(),
+            },
+        )
+        _set_draft_approval_state(draft_path, _APPROVAL_APPROVED)
+        approved.append(str(draft_path))
+
+    result = {"approved": approved, "skipped": skipped}
+    if fmt == "json":
+        _out(result, fmt)
+    else:
+        print(f"Approved {len(approved)} prepared draft(s).")
+        for path in approved:
+            print(f"  - APPROVED: {path}")
+        for entry in skipped:
+            print(f"  - SKIPPED ({entry['reason']}): {entry['draft']}")
     return result
 
 
@@ -4137,15 +4361,10 @@ def issue_create(
     """Interactive issue creation — sub-issue-first, per-project schema
     aware, with capability-adaptive fields and paired-card flow.
 
-    **Today's reality (2026-05-04)**: the Olympus project (#1) only exposes
-    `Status` as a single-select field. Initiative, Objective, Capability
-    Size, Business Value, Technical Risk, Target Quarter are all "decided,
-    not yet created" per Phase A carry-over #2. The per-project schema
-    discovery silently skips prompts for missing fields, so today operators
-    will see only the type, parent, Status, and confirm prompts. When the
-    operator runs the field-creation runbook in
-    `infiquetra-sdlc/docs/operations/operational-reference.md`, the
-    additional prompts light up automatically.
+    Current topology: Jeff Intent and Asgard use the intent flow; CAMPPS is
+    the active long-lived initiative board. The per-project schema discovery
+    silently skips prompts for missing fields, so operators only see prompts
+    for fields that exist on the selected live board.
 
     **`--web` flow caveat**: this calls `gh issue create --template <type>.yml --web`.
     `gh` accepts both flags but the `--template` may not always prefill
@@ -4203,9 +4422,7 @@ def issue_create(
         # Prefer the user's default_project if it's one of the matches
         default_project = defaults.get("default_project")
         for p in projects:
-            if (
-                p.get("name", "").lower() == (default_project or "").lower() or p.get("number") == 1
-            ):  # mount-olympus is #1; canonical fallback
+            if p.get("name", "").lower() == (default_project or "").lower():
                 project_name = next(
                     (
                         k
@@ -4216,9 +4433,14 @@ def issue_create(
                 )
                 break
         if not project_name:
-            # Just use the first match
+            # Use the first repo-mapped project match.
+            first_match = projects[0]
             project_name = next(
-                iter(config.get("project_mappings", {}).get("projects", {}).keys()),
+                (
+                    k
+                    for k, v in config.get("project_mappings", {}).get("projects", {}).items()
+                    if v.get("number") == first_match.get("number")
+                ),
                 None,
             )
 
@@ -4238,12 +4460,12 @@ def issue_create(
         if chosen:
             field_values["Objective"] = chosen
 
-        # Status (default Backlog or per-user default)
+        # Status (per-user default or active board entry status)
         opts = _project_field_options(project_name, "Status")
         chosen = _prompt_choice(
             "Status",
             opts,
-            default=defaults.get("default_status") or "Backlog",
+            default=defaults.get("default_status") or "Idea",
         )
         if chosen:
             field_values["Status"] = chosen
@@ -4353,8 +4575,9 @@ def main() -> None:
     board_add_p = board_sp.add_parser("add", help="Add issue/PR to project(s)")
     board_add_p.add_argument(
         "--project",
+        action="append",
         choices=PROJECT_CHOICES,
-        help="Target a specific project instead of repo-based default routing",
+        help="Target a specific project instead of repo-based default routing; repeatable",
     )
     board_add_p.add_argument("--repo", required=True, help="Repository name (without org)")
     board_add_p.add_argument("--number", required=True, type=int, help="Issue or PR number")
@@ -4476,6 +4699,17 @@ def main() -> None:
         action="store_true",
         help="Create the issue before a missing project-mapping PR merges",
     )
+    issue_create_prepared_p.add_argument(
+        "--skip-approval",
+        action="store_true",
+        help="Create even when approval_state is needs_operator_approval",
+    )
+
+    issue_approve_p = issue_sp.add_parser(
+        "approve",
+        help="Approve one or more prepared issue drafts after validation",
+    )
+    issue_approve_p.add_argument("drafts", nargs="+")
 
     # ===========================
     # LABELS
@@ -4610,9 +4844,7 @@ def main() -> None:
         "set-field",
         help="Set a single-select project field on a card",
     )
-    flow_setfield_p.add_argument(
-        "--project", required=True, help="Project name (e.g., mount-olympus)"
-    )
+    flow_setfield_p.add_argument("--project", required=True, help="Project name (e.g., campps)")
     flow_setfield_p.add_argument("--repo", required=True)
     flow_setfield_p.add_argument("--number", required=True, type=int)
     flow_setfield_p.add_argument(
@@ -4688,7 +4920,7 @@ def main() -> None:
             if args.action == "view":
                 board_view(args.project, args.status, fmt)
             elif args.action == "add":
-                board_add(args.repo, args.number, fmt, project_name=args.project)
+                board_add(args.repo, args.number, fmt, project_names=args.project)
             elif args.action == "move":
                 board_move(args.repo, args.number, args.status, fmt, project_name=args.project)
             elif args.action == "archive":
@@ -4735,7 +4967,10 @@ def main() -> None:
                     fmt=fmt,
                     confirm_plan=args.confirm_plan,
                     override_mapping=args.override_mapping,
+                    skip_approval=args.skip_approval,
                 )
+            elif args.action == "approve":
+                prepared_approve_batch([Path(draft) for draft in args.drafts], fmt=fmt)
 
         elif args.resource == "labels":
             if args.action == "sync-fields":

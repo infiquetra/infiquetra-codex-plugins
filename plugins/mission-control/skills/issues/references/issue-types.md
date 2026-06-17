@@ -78,20 +78,22 @@ If > 10 Capabilities: consider breaking into multiple Objectives or extending th
 |------|-------------|---------|
 | **Pilot** | Customer validation with specific participants | "Pilot: Platform Launch with 5 early adopters" |
 | **MVP** | Minimum viable product for initial launch | "MVP: Core Auth Integration" |
-| **Release** | Versioned delivery requiring coordination | "Release: Olympus v1.0" |
+| **Release** | Versioned delivery requiring coordination | "Release: CAMPPS v1.0" |
 | **Program** | OKR milestone or initiative phase | "Program: Q1 KR1 - User Adoption" |
 
-### Template Labels and Project Fields
-- Current template labels: `objective`, `hermes-not-actionable`
+### Coordination Labels and Project Fields
+- Objective is a non-actionable coordination type; active generated template docs no longer
+  include `objective.yml`.
+- If an objective issue is created manually, use labels `objective`, `hermes-not-actionable`.
 - Use the board's `Initiative` and `Objective` project fields for strategic grouping.
 - Do not apply `initiative:*` or `objective:*` labels to new work; those are legacy convention
   labels only.
-- See `templates-reference.md` for the generated label and field contract.
+- See `templates-reference.md` for the generated actionable and non-actionable template contract.
 
 ### Examples
 **Good**:
 - "Pilot: Platform Launch with 5 early adopters by March 15, 2026"
-- "Release: Olympus v1.0 general availability by April 30, 2026"
+- "Release: CAMPPS v1.0 general availability by April 30, 2026"
 - "MVP: Core auth integration complete by Feb 28"
 
 **Not an Objective**:
