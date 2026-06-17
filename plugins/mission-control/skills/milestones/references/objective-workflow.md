@@ -28,7 +28,7 @@ work items toward a common outcome.
 |------|-------------|---------|
 | Pilot | Customer or operator validation with explicit success criteria | `Pilot: Platform Launch (2026-04-15)` |
 | MVP | Minimum viable product or service slice | `MVP: Core Integration (2026-02-28)` |
-| Release | Versioned delivery requiring coordination | `Release: Olympus v1.0 (2026-05-30)` |
+| Release | Versioned delivery requiring coordination | `Release: CAMPPS v1.0 (2026-05-30)` |
 | Program | OKR or strategic initiative phase | `Program: Q1 KR1 - User Adoption (2026-03-31)` |
 
 ---
@@ -67,7 +67,7 @@ lightweight or exploratory Objectives where the Objective field and sub-issue tr
 
 ```bash
 python3 sdlc_manager.py board add --repo <repo> --number <N>
-python3 sdlc_manager.py flow set-field --project mount-olympus \
+python3 sdlc_manager.py flow set-field --project campps \
   --repo <repo> --number <N> \
   --field Objective --option "<Objective name>"
 ```
@@ -99,7 +99,7 @@ Child work flows through the target board:
 | Board | Flow |
 |-------|------|
 | Jeff Intent / Asgard | Idea -> Shaping -> Ready -> Active -> Verify -> Done |
-| Olympus | Backlog -> Ready -> Planning -> Assigned -> In Review -> Done / Closed |
+| CAMPPS | Idea -> Committed -> In Progress -> Done -> Parked |
 
 Progress can be read from:
 

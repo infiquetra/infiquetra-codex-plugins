@@ -1,13 +1,13 @@
 # mission-control
 
-SDLC management for Infiquetra's Jeff Intent, Asgard, and Mount Olympus boards. This plugin provides a complete interface for managing the development lifecycle — from issue creation to flow metrics — reading board and workflow configuration from `infiquetra-sdlc` and vendored fallbacks.
+SDLC management for Infiquetra's Jeff Intent, Asgard, and CAMPPS boards. This plugin provides a complete interface for managing the development lifecycle — from issue creation to flow metrics — reading board and workflow configuration from `infiquetra-sdlc` and vendored fallbacks.
 
 ## Overview
 
 All operations run locally via the `gh` CLI, providing:
 
-- **Project board operations** — view, move, add, archive, WIP analysis, standup prep across Jeff Intent, Asgard, and Olympus
-- **Issue creation** — prepared Asgard/Olympus handoff drafts with readiness checks, source artifact resolution, and confirmed creation
+- **Project board operations** — view, move, add, archive, WIP analysis, standup prep across Jeff Intent, Asgard, and CAMPPS
+- **Issue creation** — prepared Asgard handoff drafts for Asgard and CAMPPS work with readiness checks, source artifact resolution, approval gating, and confirmed creation
 - **Label management** — deploy, audit, sync initiative/objective fields, auto-label rules
 - **Flow metrics** — cycle time, throughput, WIP age using GitHub timeline events
 - **Rollout tracking** — gap analysis and full SDLC deployment to any Infiquetra repo
@@ -48,23 +48,24 @@ reviewed before GitHub mutation:
 
 ```bash
 python3 $SCRIPT issue prepare \
-  --repo hermes-claude-code-router \
+  --repo campps-platform \
   --type capability \
-  --team olympus \
-  --project mount-olympus \
+  --team asgard \
+  --project campps \
   --risk medium \
-  --title "Router prepared issue workflow" \
+  --title "CAMPPS prepared issue workflow" \
   --from docs/plans/example.md \
   --maturity plan-ready
 
+python3 $SCRIPT issue approve docs/sdlc-issue-drafts/<draft>.md
 python3 $SCRIPT issue create-prepared docs/sdlc-issue-drafts/<draft>.md
 ```
 
 Prepared drafts are written under `docs/sdlc-issue-drafts/` with a JSON sidecar. The sidecar
-includes handoff maturity and source artifact metadata when available. Creation renders a mutation
-plan before side effects, repairs missing labels/templates after confirmation, opens a mapping PR
-when the repo is not mapped to the requested project, and starts issues in safe statuses: Asgard
-`Shaping`, Mount Olympus `Backlog`.
+includes handoff maturity, approval state, source artifact metadata, and project-field values when
+available. Creation refuses drafts still marked `needs_operator_approval`, renders a mutation plan
+before side effects, repairs missing labels/templates after confirmation, opens a mapping PR when the
+repo is not mapped to the requested project, and starts prepared Asgard-owned work in `Shaping`.
 
 ## Codex Skills
 
@@ -113,7 +114,7 @@ mission-control uses a single shared CLI (`scripts/sdlc_manager.py`) at the plug
 
 ```bash
 # View board by column
-python3 $SCRIPT board view --project mount-olympus
+python3 $SCRIPT board view --project campps
 
 # Add issue to its default repo-mapped board
 python3 $SCRIPT board add --repo athena-service --number 42
@@ -121,28 +122,28 @@ python3 $SCRIPT board add --repo athena-service --number 42
 # Add or move issue on a specific board
 python3 $SCRIPT board add --project asgard --repo infiquetra-sdlc --number 42
 python3 $SCRIPT board move --project asgard --repo infiquetra-sdlc --number 42 --status "Active"
-python3 $SCRIPT board move --repo athena-service --number 42 --status "Assigned"
+python3 $SCRIPT board move --project campps --repo campps-platform --number 42 --status "In Progress"
 
 # Archive terminal workflow items (use --dry-run first)
-python3 $SCRIPT board archive --project mount-olympus --dry-run
+python3 $SCRIPT board archive --project campps --dry-run
 python3 $SCRIPT board archive --project asgard --dry-run
 
 # Check WIP counts vs limits
-python3 $SCRIPT board wip --project mount-olympus
+python3 $SCRIPT board wip --project campps
 
 # Standup prep (right-to-left board review)
-python3 $SCRIPT board standup --project mount-olympus
+python3 $SCRIPT board standup --project campps
 python3 $SCRIPT board standup --project jeff-intent
 
 # Discover all project fields and options
-python3 $SCRIPT board discover-fields --project mount-olympus
+python3 $SCRIPT board discover-fields --project campps
 ```
 
 ### Label Operations
 
 ```bash
 # Set initiative/objective project fields directly
-python3 $SCRIPT flow set-field --project mount-olympus \
+python3 $SCRIPT flow set-field --project campps \
   --repo athena-service --number 42 \
   --field Objective --option "platform-launch"
 
@@ -156,27 +157,27 @@ python3 $SCRIPT labels deploy --repo athena-service
 python3 $SCRIPT labels auto-label --repo athena-service --number 42
 
 # Create new field option on project board
-python3 $SCRIPT fields create-option --project mount-olympus --field initiative --option "new-initiative"
+python3 $SCRIPT fields create-option --project campps --field initiative --option "new-initiative"
 
 # Discover all field options
-python3 $SCRIPT fields discover --project mount-olympus
+python3 $SCRIPT fields discover --project campps
 ```
 
 ### Metrics Operations
 
 ```bash
 # Cycle time percentiles (uses timeline events — may take 30-60s)
-python3 $SCRIPT metrics cycle-time --project mount-olympus --days 30
-python3 $SCRIPT metrics cycle-time --project mount-olympus --type capability
+python3 $SCRIPT metrics cycle-time --project campps --days 30
+python3 $SCRIPT metrics cycle-time --project campps --type capability
 
 # Throughput by week
-python3 $SCRIPT metrics throughput --project mount-olympus --weeks 4
+python3 $SCRIPT metrics throughput --project campps --weeks 4
 
 # WIP age (fast)
-python3 $SCRIPT metrics wip-age --project mount-olympus
+python3 $SCRIPT metrics wip-age --project campps
 
 # Time in each column for specific item
-python3 $SCRIPT metrics column-time --project mount-olympus --number 42
+python3 $SCRIPT metrics column-time --project campps --number 42
 ```
 
 ### Milestone Operations
@@ -203,7 +204,7 @@ python3 $SCRIPT milestones link --repo athena-service --issue 42 --milestone 1
 ```bash
 # Show rollout status
 python3 $SCRIPT rollout status
-python3 $SCRIPT rollout status --team mount-olympus
+python3 $SCRIPT rollout status --team asgard
 
 # Gap analysis for a repo
 python3 $SCRIPT rollout gap-analysis --repo athena-service
@@ -227,12 +228,12 @@ Operator-facing GraphQL + REST helpers. See `skills/flow/SKILL.md` for the full 
 
 ```bash
 # Set Initiative or Objective on a card (project FIELDS, not labels)
-python3 $SCRIPT flow set-field --project mount-olympus \
-    --repo campps-mvp --number 42 \
-    --field Initiative --option olympus-quality
+python3 $SCRIPT flow set-field --project campps \
+    --repo campps-platform --number 42 \
+    --field Initiative --option campps-quality
 
 # List the live options on a project field (IDs rotate on rename)
-python3 $SCRIPT flow field-options --project mount-olympus --field Objective
+python3 $SCRIPT flow field-options --project campps --field Objective
 
 # Resolve which project a repo maps to
 python3 $SCRIPT flow discover-project --repo athena-service
@@ -240,14 +241,14 @@ python3 $SCRIPT flow discover-project --repo athena-service
 # Link child as native sub-issue of parent (cross-repo, idempotent)
 python3 $SCRIPT flow link-sub-issue \
     --parent-repo campps-context-library --parent-number 1 \
-    --child-repo campps-mvp --child-number 42
+    --child-repo campps-platform --child-number 42
 
 # Self-healing label create (404 → create; exists → no-op; auth/server errors raise)
-python3 $SCRIPT flow verify-label --repo campps-mvp \
+python3 $SCRIPT flow verify-label --repo campps-platform \
     --name high-priority --color D93F0B --description "High priority"
 
 # Pre-flight card body against the card_validator schema
-python3 $SCRIPT flow validate-card --repo campps-mvp --number 42
+python3 $SCRIPT flow validate-card --repo campps-platform --number 42
 ```
 
 ### Prepared Issue Workflow
@@ -257,8 +258,8 @@ python3 $SCRIPT flow validate-card --repo campps-mvp --number 42
 python3 $SCRIPT issue prepare \
     --repo hermes-claude-code-router \
     --type capability \
-    --team olympus \
-    --project mount-olympus \
+    --team asgard \
+    --project campps \
     --risk medium \
     --title "Prepared issue workflow" \
     --from docs/brainstorms/example.md \
@@ -294,7 +295,7 @@ python3 $SCRIPT issue create-prepared docs/sdlc-issue-drafts/<draft>.md --overri
 |---------|------|---------|
 | Jeff Intent | Jeff | Raw intent, approvals, personal/operator work, and shaping before team execution |
 | Asgard | Asgard | Rapid action, incubation, and mission-mode work close to Jeff |
-| Olympus | Mount Olympus | Primary engineering execution pipeline |
+| CAMPPS | Asgard-owned initiative board | Long-lived CAMPPS execution portfolio |
 
 ## WIP Limits
 
@@ -303,10 +304,8 @@ python3 $SCRIPT issue create-prepared docs/sdlc-issue-drafts/<draft>.md --overri
 | Jeff Intent / Shaping | 10 |
 | Jeff Intent / Active | 5 |
 | Asgard / Active | 5 |
-| Olympus / Ready | 10 |
-| Olympus / Planning | 3 |
-| Olympus / Assigned | 3 per assigned agent |
-| Olympus / In Review | 5 |
+| CAMPPS / Committed | 10 |
+| CAMPPS / In Progress | 10 |
 
 ## Metric Targets
 
@@ -319,4 +318,4 @@ python3 $SCRIPT issue create-prepared docs/sdlc-issue-drafts/<draft>.md --overri
 ## Related
 
 - **infiquetra-sdlc**: Source of SDLC configuration, issue templates, and process documentation
-- **olympus-blueprint**: Context repository for all capabilities
+- **campps-context-library**: Context repository for CAMPPS capabilities

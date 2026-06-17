@@ -11,18 +11,15 @@ file (which would be racy under pytest-xdist + leave orphans on crash).
 """
 
 import json
+import sys
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 
-import os
-import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 
-sys.path.insert(0, os.path.dirname(__file__))
-
-from import_helpers import load_sdlc_manager
-
-sdlc_manager = load_sdlc_manager()
+import sdlc_manager  # noqa: E402
 
 
 @pytest.fixture
@@ -113,12 +110,9 @@ def test_returns_empty_dict_when_all_three_fail(tmp_path, fake_vendored_path) ->
 
 def test_vendored_project_mappings_has_expected_canonical_state() -> None:
     """The vendored project-mappings.json must declare the canonical
-    org-wide state: Olympus is project #1; the repo list matches the
-    actual `gh repo list infiquetra` output as of the file's `_provenance`
-    date. If this test fails, either the vendored file was edited or the
-    org's repo set has drifted — both are events the operator should know
-    about. The expected list is captured here verbatim so drift is
-    visible in code review.
+    org-wide state: CAMPPS is project #4 and Mount Olympus is retired
+    historical context. If this test fails, either the vendored file was
+    edited or the canonical SDLC project topology changed.
 
     NOTE: This test reads the REAL vendored file (not the fixture) — it's
     the canonical-state guard, not a hermetic unit test."""
@@ -126,30 +120,30 @@ def test_vendored_project_mappings_has_expected_canonical_state() -> None:
     assert vendored.exists(), f"Vendored file missing at {vendored}"
     data = json.loads(vendored.read_text())
     assert data["organization"] == "infiquetra"
-    assert "mount-olympus" in data["projects"]
+    assert "campps" in data["projects"]
     assert "asgard" in data["projects"]
     assert "jeff-intent" in data["projects"]
-    olympus = data["projects"]["mount-olympus"]
-    assert olympus["number"] == 1
+    assert data["retired_projects"]["mount-olympus"]["status"] == "closed_retired_historical"
+    campps = data["projects"]["campps"]
+    assert campps["number"] == 4
     assert data["projects"]["asgard"]["number"] == 2
     assert data["projects"]["jeff-intent"]["number"] == 3
 
-    # Exact repo set from `gh repo list infiquetra --json name --jq '.[].name'`
-    # captured 2026-05-04. If the org adds/removes a repo, the vendored
-    # file needs updating + this test needs updating in the same PR — the
-    # symmetry forces the operator to re-verify.
     expected_repos = {
         "campps-context-library",
-        "campps-mvp",
-        "github-actions-runners",
-        "infiquetra-hermes-plugins",
-        "infiquetra-aws-infra",
-        "infiquetra-claude-plugins",
-        "infiquetra-sdlc",
-        "mimir",
-        "mimir-context-library",
+        "campps-platform",
+        "campps-contracts",
+        "campps-identity-access",
+        "campps-tenant-setup",
+        "campps-coppa-consent",
+        "campps-registration",
+        "campps-payments",
+        "campps-health-forms",
+        "campps-activities-achievements",
+        "campps-staff-management",
+        "campps-web-app",
     }
-    actual_repos = set(olympus["repositories"])
+    actual_repos = set(campps["repositories"])
     assert actual_repos == expected_repos, (
         f"Vendored repo list drifted from canonical. "
         f"Missing: {expected_repos - actual_repos}; "
@@ -157,27 +151,60 @@ def test_vendored_project_mappings_has_expected_canonical_state() -> None:
     )
 
 
-def test_sdlc_schema_external_override_wins(tmp_path, fake_schema_path) -> None:
+def test_sdlc_schema_remote_main_wins_over_local_and_vendored(tmp_path, fake_schema_path) -> None:
+    import base64
+
     sdlc_path = tmp_path / "infiquetra-sdlc"
     cfg_dir = sdlc_path / "config"
     cfg_dir.mkdir(parents=True)
-    override_data = {"schema_version": "override", "workflows": {}}
-    (cfg_dir / "sdlc-schema.json").write_text(json.dumps(override_data))
+    (cfg_dir / "sdlc-schema.json").write_text(
+        json.dumps({"schema_version": "local-stale", "workflows": {}})
+    )
     fake_schema_path.write_text(json.dumps({"schema_version": "vendored"}))
+    remote_data = {"schema_version": "remote-main", "workflows": {}}
+    fake_b64 = base64.b64encode(json.dumps(remote_data).encode()).decode()
 
-    result = sdlc_manager._resolve_sdlc_schema(sdlc_path)
+    with patch.object(sdlc_manager, "_gh", return_value=fake_b64) as gh:
+        result = sdlc_manager._resolve_sdlc_schema(sdlc_path)
 
-    assert result == override_data
+    assert result == remote_data
+    gh.assert_called_once()
+    assert "sdlc-schema.json?ref=main" in gh.call_args.args[0][1]
 
 
-def test_sdlc_schema_vendored_used_when_no_override(tmp_path, fake_schema_path) -> None:
+def test_sdlc_schema_vendored_used_when_remote_unavailable(tmp_path, fake_schema_path) -> None:
     fake_schema_path.write_text(
         json.dumps({"schema_version": "vendored", "workflows": {"intent_flow": {}}})
     )
 
-    result = sdlc_manager._resolve_sdlc_schema(tmp_path / "missing-sdlc")
+    with patch.object(
+        sdlc_manager,
+        "_gh",
+        side_effect=sdlc_manager.GhApiError("simulated failure"),
+    ):
+        result = sdlc_manager._resolve_sdlc_schema(tmp_path / "missing-sdlc")
 
     assert result["schema_version"] == "vendored"
+
+
+def test_sdlc_schema_local_used_only_when_remote_and_vendored_unavailable(
+    tmp_path, fake_schema_path
+) -> None:
+    sdlc_path = tmp_path / "infiquetra-sdlc"
+    cfg_dir = sdlc_path / "config"
+    cfg_dir.mkdir(parents=True)
+    local_data = {"schema_version": "local-last-resort", "workflows": {}}
+    (cfg_dir / "sdlc-schema.json").write_text(json.dumps(local_data))
+    assert not fake_schema_path.exists()
+
+    with patch.object(
+        sdlc_manager,
+        "_gh",
+        side_effect=sdlc_manager.GhApiError("simulated failure"),
+    ):
+        result = sdlc_manager._resolve_sdlc_schema(sdlc_path)
+
+    assert result == local_data
 
 
 def test_vendored_sdlc_schema_declares_current_live_boards() -> None:
@@ -199,32 +226,23 @@ def test_vendored_sdlc_schema_declares_current_live_boards() -> None:
     ]
 
 
-def test_schema_backed_status_order_includes_live_olympus_in_progress() -> None:
+def test_schema_backed_status_order_includes_live_campps_in_progress() -> None:
     config = {
         "sdlc_schema": {
-            "boards": {"olympus": {"workflow": "olympus_execution"}},
+            "boards": {"campps": {"workflow": "campps_initiative"}},
             "workflows": {
-                "olympus_execution": {
-                    "statuses": [
-                        "Backlog",
-                        "Ready",
-                        "Planning",
-                        "Assigned",
-                        "In Review",
-                        "Done",
-                        "Closed",
-                    ],
-                    "pause_states": ["Blocked"],
+                "campps_initiative": {
+                    "statuses": ["Idea", "Committed", "In Progress", "Done", "Parked"],
+                    "pause_states": ["Parked"],
                 }
             },
         }
     }
-    proj = {"board_key": "olympus", "workflow": "olympus_execution"}
+    proj = {"board_key": "campps", "workflow": "campps_initiative"}
 
-    order = sdlc_manager._status_order(config, "mount-olympus", proj)
+    order = sdlc_manager._status_order(config, "campps", proj)
 
-    assert order.index("Assigned") < order.index("In Progress") < order.index("In Review")
-    assert "Blocked" in order
+    assert order == ["Idea", "Committed", "In Progress", "Done", "Parked", "No Status"]
 
 
 def test_legacy_status_hint_points_to_current_status() -> None:

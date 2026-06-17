@@ -128,7 +128,7 @@ project board's `Initiative` and `Objective` fields directly via `flow set-field
 
 | Pattern | Color | Example |
 |---------|-------|---------|
-| `initiative:{name}` | `#0052CC` (blue) | `initiative:olympus-v1` |
+| `initiative:{name}` | `#0052CC` (blue) | `initiative:campps-v1` |
 | `objective:{name}` | `#0052CC` (blue) | `objective:platform-launch` |
 
 ---
@@ -204,7 +204,7 @@ canonical source of truth:
 Set fields directly:
 
 ```bash
-python3 sdlc_manager.py flow set-field --project mount-olympus \
+python3 sdlc_manager.py flow set-field --project campps \
   --repo <repo> --number <N> \
   --field Objective --option "platform-launch"
 ```
@@ -212,7 +212,7 @@ python3 sdlc_manager.py flow set-field --project mount-olympus \
 When creating a new initiative or objective, add the field option using `fields create-option`.
 
 Example label names:
-- `initiative:olympus-v1`
+- `initiative:campps-v1`
 - `initiative:platform-stability`
 - `objective:platform-launch`
 - `objective:q1-2026-mvp`

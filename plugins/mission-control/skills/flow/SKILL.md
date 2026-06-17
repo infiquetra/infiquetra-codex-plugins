@@ -1,7 +1,7 @@
 ---
 name: flow
 description: |
-  Operator-facing GraphQL + REST helpers for the Mount Olympus board. Wraps
+  Operator-facing GraphQL + REST helpers for the CAMPPS board. Wraps
   the GitHub APIs the orchestrator uses, so Jeff can do per-card work
   (set Initiative/Objective fields, link sub-issues, validate card bodies,
   self-heal labels, discover project mappings) without writing GraphQL by
@@ -11,7 +11,7 @@ when_to_use: |
   Use this skill when the user wants to:
 
   Set Initiative or Objective on a card (project FIELDS, not labels):
-  - "Set Initiative on this card to olympus-quality"
+  - "Set Initiative on this card to campps-quality"
   - "Mark this issue as part of the Auth MVP Objective"
   - "Update the Objective field on campps-mvp#42"
 
@@ -51,7 +51,7 @@ when_to_use: |
 
 # flow
 
-Operator-facing helpers over the GraphQL + REST APIs Mount Olympus uses.
+Operator-facing helpers over the GraphQL + REST APIs CAMPPS uses.
 Each command is a thin wrapper with idempotency + clear error messages.
 
 ## Commands
@@ -59,12 +59,12 @@ Each command is a thin wrapper with idempotency + clear error messages.
 ```bash
 # Set a single-select project field on a card
 sdlc_manager.py flow set-field \
-  --project mount-olympus --repo campps-mvp --number 42 \
-  --field Initiative --option olympus-quality
+  --project campps --repo campps-mvp --number 42 \
+  --field Initiative --option campps-quality
 
 # List the options on a project field (live discovery — IDs rotate)
 sdlc_manager.py flow field-options \
-  --project mount-olympus --field Objective
+  --project campps --field Objective
 
 # Resolve which project a repo maps to
 sdlc_manager.py flow discover-project --repo athena-service
@@ -96,14 +96,14 @@ sdlc_manager.py flow validate-card --repo campps-mvp --number 42
 
 ## Hard rules
 
-- **Never apply `objective:*` or `initiative:*` colon-prefixed labels.** Both are project FIELDS on the Olympus board (decided 2026-05-03; see [DECISIONS](../../../../infiquetra-sdlc/docs/engineering-journal/DECISIONS.md)). Use `flow set-field` instead.
+- **Never apply `objective:*` or `initiative:*` colon-prefixed labels.** Both are project FIELDS on the CAMPPS board (decided 2026-05-03; see [DECISIONS](../../../../infiquetra-sdlc/docs/engineering-journal/DECISIONS.md)). Use `flow set-field` instead.
 - **Field option IDs rotate on rename/recreate.** Never cache them. Every command that reads field state calls `flow field-options` (or its equivalent GraphQL query) at start.
 - **Verify-label distinguishes 404 from other errors.** A 401/403/5xx must NOT be silently treated as missing — that would create labels under the wrong auth context or mask real failures.
 - **Link-sub-issue requires an issue parent.** PRs can't be parents in GitHub's native sub-issue API; the command rejects them with a clear error.
 
 ## Where this fits in the broader workflow
 
-The Phase A carry-over #2 decision (Initiative + Objective as Olympus
+The Phase A carry-over #2 decision (Initiative + Objective as CAMPPS
 project fields) made `flow set-field` the canonical mechanism for hierarchy
 assignment. The blueprint-to-issue workflow's Step 8 calls into:
 
@@ -112,8 +112,8 @@ assignment. The blueprint-to-issue workflow's Step 8 calls into:
 
 `validate-card` is the pre-flight check before plan-review fires. If a card
 body doesn't pass `validate-card`, the orchestrator will reject it on the
-Ready → Planning transition; running this command before pushing the card
-to Ready saves a round-trip.
+target board's active-work transition; running this command before moving the
+card forward saves a round-trip.
 
 ## Authoritative source
 

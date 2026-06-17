@@ -31,6 +31,11 @@ Recommend `team-execution` when any of these are true:
 - deployment-sensitive work
 - explicit consensus or validator-gate need
 - broad independent fan-out
+- adversarial-confidence review need
+
+For size and risk signals, require a real code surface. Large docs-only or
+planning-only work can stay `inline` unless it is cross-repo, needs consensus,
+needs independent fan-out, or carries another explicit escalation signal.
 
 Otherwise recommend `inline`.
 

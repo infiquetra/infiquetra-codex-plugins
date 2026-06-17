@@ -49,19 +49,20 @@ def should_offer_team_execution(
     has_infra: bool,
     cross_repo: bool,
     deployment_sensitive: bool,
+    has_code_surface: bool = True,
 ) -> bool:
     """Decide whether the loop should offer team-execution."""
 
-    return any(
+    code_shaped = any(
         (
             file_count >= 8,
             phase_count >= 4,
             has_security,
             has_infra,
-            cross_repo,
             deployment_sensitive,
         )
     )
+    return (code_shaped and has_code_surface) or cross_repo
 
 
 def should_prompt_for_issue(*, has_issue: bool, is_trivial: bool, user_declined: bool) -> bool:
@@ -87,6 +88,8 @@ def recommend_execution_backend(
     deployment_sensitive: bool = False,
     needs_consensus: bool = False,
     broad_independent_fanout: bool = False,
+    adversarial_confidence: bool = False,
+    has_code_surface: bool = True,
     workflow_available: bool = True,
 ) -> dict[str, object]:
     """Recommend a Codex execution backend, mirroring operator-choice.md section 3.
@@ -113,14 +116,19 @@ def recommend_execution_backend(
             has_infra=has_infra,
             cross_repo=cross_repo,
             deployment_sensitive=deployment_sensitive,
+            has_code_surface=has_code_surface,
         )
         or needs_consensus
         or broad_independent_fanout
+        or adversarial_confidence
     )
 
     if team:
         recommended = "team-execution"
-        rationale = "size, risk, consensus, or broad fan-out signal -> team protocol fits"
+        rationale = (
+            "size, risk, consensus, fan-out, or adversarial-confidence signal -> "
+            "team protocol fits"
+        )
     else:
         recommended = "inline"
         rationale = "no escalation signal -> the agent does the work itself"
@@ -155,6 +163,8 @@ def _build_parser() -> argparse.ArgumentParser:
     backend.add_argument("--deployment-sensitive", action="store_true")
     backend.add_argument("--needs-consensus", action="store_true")
     backend.add_argument("--broad-fanout", action="store_true")
+    backend.add_argument("--adversarial-confidence", action="store_true")
+    backend.add_argument("--no-code-surface", action="store_true")
     backend.add_argument("--no-workflow", action="store_true")
 
     return parser
@@ -179,6 +189,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             deployment_sensitive=args.deployment_sensitive,
             needs_consensus=args.needs_consensus,
             broad_independent_fanout=args.broad_fanout,
+            adversarial_confidence=args.adversarial_confidence,
+            has_code_surface=not args.no_code_surface,
             workflow_available=not args.no_workflow,
         )
         print(json.dumps(result))

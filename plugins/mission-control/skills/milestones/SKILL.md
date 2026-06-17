@@ -93,7 +93,7 @@ Milestone title:
 |------|---------|
 | Pilot | `Pilot: Platform Launch (2026-04-15)` |
 | MVP | `MVP: Core Integration (2026-02-28)` |
-| Release | `Release: Olympus v1.0 (2026-05-30)` |
+| Release | `Release: CAMPPS v1.0 (2026-05-30)` |
 | Program | `Program: Q1 KR1 - User Adoption (2026-03-31)` |
 
 ## Objective Creation Workflow
@@ -108,7 +108,7 @@ Milestone title:
 Example field update:
 
 ```bash
-python3 sdlc_manager.py flow set-field --project mount-olympus \
+python3 sdlc_manager.py flow set-field --project campps \
   --repo <repo> --number <N> \
   --field Objective --option "<Objective name>"
 ```

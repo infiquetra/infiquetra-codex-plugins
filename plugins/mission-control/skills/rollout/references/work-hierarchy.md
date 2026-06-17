@@ -59,7 +59,7 @@ They flow through the target board:
 | Board | Flow |
 |-------|------|
 | Jeff Intent / Asgard | Idea -> Shaping -> Ready -> Active -> Verify -> Done |
-| Olympus | Backlog -> Ready -> Planning -> Assigned -> In Review -> Done / Closed |
+| CAMPPS | Idea -> Committed -> In Progress -> Done -> Parked |
 
 Use native GitHub sub-issues for parent/child structure. Do not rely on removed Beads/Dolt
 task state.

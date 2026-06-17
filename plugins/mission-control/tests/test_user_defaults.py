@@ -2,7 +2,6 @@
 and the first-run wizard `config init-defaults`."""
 
 import json
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -35,9 +34,9 @@ def test_load_user_defaults_returns_empty_when_file_missing(tmp_defaults_path) -
 
 def test_load_user_defaults_returns_dict_when_file_present(tmp_defaults_path) -> None:
     tmp_defaults_path.parent.mkdir(parents=True, exist_ok=True)
-    tmp_defaults_path.write_text('{"assignee": "namredips", "default_project": "mount-olympus"}')
+    tmp_defaults_path.write_text('{"assignee": "namredips", "default_project": "campps"}')
     data = sdlc_manager.load_user_defaults()
-    assert data == {"assignee": "namredips", "default_project": "mount-olympus"}
+    assert data == {"assignee": "namredips", "default_project": "campps"}
 
 
 def test_load_user_defaults_tolerates_malformed_json(tmp_defaults_path, capsys) -> None:
@@ -117,8 +116,8 @@ def test_save_user_defaults_is_atomic(tmp_defaults_path) -> None:
 def test_save_then_load_round_trips(tmp_defaults_path) -> None:
     payload = {
         "assignee": "namredips",
-        "default_project": "mount-olympus",
-        "default_status": "Backlog",
+        "default_project": "campps",
+        "default_status": "Idea",
         "preferred_repos": ["campps-mvp", "mimir"],
     }
     sdlc_manager.save_user_defaults(payload)
@@ -136,14 +135,14 @@ def test_init_defaults_non_interactive_seeds_from_gh_login(tmp_defaults_path) ->
         patch.object(sdlc_manager, "load_config") as mock_cfg,
     ):
         mock_cfg.return_value = {
-            "project_mappings": {"projects": {"mount-olympus": {"number": 1, "name": "Olympus"}}}
+            "project_mappings": {"projects": {"campps": {"number": 4, "name": "CAMPPS"}}}
         }
         sdlc_manager.config_init_defaults(non_interactive=True, fmt="text")
 
     saved = json.loads(tmp_defaults_path.read_text())
     assert saved["assignee"] == "namredips"
-    assert saved["default_project"] == "mount-olympus"  # auto-detected (single project)
-    assert saved["default_status"] == "Backlog"
+    assert saved["default_project"] == "campps"  # auto-detected (single project)
+    assert saved["default_status"] == "Idea"
     assert saved["default_priority"] == "medium-priority"
 
 
@@ -175,8 +174,8 @@ def test_init_defaults_non_interactive_skips_default_project_with_multiple_proje
         mock_cfg.return_value = {
             "project_mappings": {
                 "projects": {
-                    "olympus": {"number": 1},
-                    "strategic": {"number": 2},
+                    "asgard": {"number": 2},
+                    "campps": {"number": 4},
                 }
             }
         }

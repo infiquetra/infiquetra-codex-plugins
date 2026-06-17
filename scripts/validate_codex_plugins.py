@@ -4,8 +4,8 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import re
-import sys
 from argparse import ArgumentParser
 from pathlib import Path
 from typing import Any
@@ -54,7 +54,7 @@ LEGACY_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
 
 TARGET_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
     "saga": {
-        "version": "0.21.0",
+        "version": "0.22.1",
         "skills": (
             "office-hours",
             "ideate",
@@ -89,7 +89,7 @@ TARGET_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
         ),
     },
     "mission-control": {
-        "version": "2.0.0",
+        "version": "2.1.0",
         "skills": (
             "board",
             "flow",
@@ -138,6 +138,11 @@ ALLOWED_STATUSES = {"included", "proof-port", "deferred", "blocked", "unsupporte
 REQUIRED_CUTOVER_TERMS = ("trusted source", "allowlisted inventory", "pins", "rollback")
 VALIDATION_MODES = {"current", "target-fixture", "cutover"}
 TARGET_FIXTURE = Path("docs/validation/saga-family-target-inventory.json")
+ISSUE_CONTRACT_DIR = Path("plugins/mission-control/config/generated")
+ISSUE_CONTRACT_ARTIFACTS = (
+    Path("issue_contract_data.py"),
+    Path("issue_contract_shim.py"),
+)
 REQUIRED_SAGA_FAMILY_DOCS = (
     Path("docs/portability/source-baseline-saga-family.md"),
     Path("docs/portability/saga-family-capability-map.md"),
@@ -221,6 +226,7 @@ def validate_repository(root: Path, mode: str = "current") -> list[str]:
     validate_matrix(root, mode, errors)
     validate_provenance(root, expected_plugins, errors)
     validate_cutover(root, errors)
+    validate_issue_contract_parity(root, errors)
     if mode != "current" or expected_plugins is TARGET_EXPECTED_PLUGINS:
         validate_saga_family_docs(root, errors)
         validate_deletion_migration_map(root, errors)
@@ -669,6 +675,36 @@ def validate_cutover(root: Path, errors: list[str]) -> None:
     for term in REQUIRED_CUTOVER_TERMS:
         if term not in lower:
             errors.append(f"cutover doc missing `{term}` gate")
+
+
+def validate_issue_contract_parity(root: Path, errors: list[str]) -> None:
+    """Ensure vendored Mission Control issue-contract artifacts match sidecars."""
+
+    generated_dir = root / ISSUE_CONTRACT_DIR
+    check_script = generated_dir / "check_issue_contract_parity.py"
+    if not check_script.is_file():
+        errors.append(f"issue-contract parity check missing `{check_script.relative_to(root)}`")
+
+    for rel_artifact in ISSUE_CONTRACT_ARTIFACTS:
+        artifact = generated_dir / rel_artifact
+        sidecar = artifact.with_suffix(artifact.suffix + ".sha256")
+        if not artifact.is_file():
+            errors.append(f"issue-contract artifact missing `{artifact.relative_to(root)}`")
+            continue
+        if not sidecar.is_file():
+            errors.append(f"issue-contract hash sidecar missing `{sidecar.relative_to(root)}`")
+            continue
+        try:
+            actual = hashlib.sha256(artifact.read_bytes()).hexdigest()
+            expected = sidecar.read_text(encoding="utf-8").strip()
+        except OSError as exc:
+            errors.append(f"issue-contract artifact unreadable `{artifact.relative_to(root)}`: {exc}")
+            continue
+        if actual != expected:
+            errors.append(
+                f"issue-contract hash mismatch for `{artifact.relative_to(root)}`: "
+                f"expected {expected}, got {actual}"
+            )
 
 
 def extract_frontmatter_name(text: str) -> str | None:

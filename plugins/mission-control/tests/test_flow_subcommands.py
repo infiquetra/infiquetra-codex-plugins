@@ -9,7 +9,6 @@ End-to-end tests (real `gh` calls against a fixture project) are tracked
 as a P3 follow-up.
 """
 
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -187,7 +186,7 @@ def test_field_options_reads_live_from_graphql() -> None:
     ):
         mock_load.return_value = {
             "project_mappings": {
-                "projects": {"mount-olympus": {"number": 1, "name": "Olympus"}},
+                "projects": {"campps": {"number": 4, "name": "CAMPPS"}},
             }
         }
         mock_gql.return_value = {
@@ -200,8 +199,8 @@ def test_field_options_reads_live_from_graphql() -> None:
                                 "id": "FLD_kwabc",
                                 "name": "Initiative",
                                 "options": [
-                                    {"id": "opt1", "name": "olympus-quality"},
-                                    {"id": "opt2", "name": "olympus-performance"},
+                                    {"id": "opt1", "name": "campps-quality"},
+                                    {"id": "opt2", "name": "campps-performance"},
                                 ],
                             }
                         ]
@@ -209,14 +208,14 @@ def test_field_options_reads_live_from_graphql() -> None:
                 }
             }
         }
-        sdlc_manager.flow_field_options("mount-olympus", "Initiative", fmt="json")
+        sdlc_manager.flow_field_options("campps", "Initiative", fmt="json")
         # Verify it called the GraphQL query (no caching)
         assert mock_gql.called
         # Verify output contains both options with their (live) IDs
         out_payload = mock_out.call_args.args[0]
         names = [o["name"] for o in out_payload]
-        assert "olympus-quality" in names
-        assert "olympus-performance" in names
+        assert "campps-quality" in names
+        assert "campps-performance" in names
 
 
 def test_set_field_raises_with_helpful_message_on_unknown_option() -> None:
@@ -228,7 +227,7 @@ def test_set_field_raises_with_helpful_message_on_unknown_option() -> None:
     ):
         mock_load.return_value = {
             "project_mappings": {
-                "projects": {"mount-olympus": {"number": 1, "name": "Olympus"}},
+                "projects": {"campps": {"number": 4, "name": "CAMPPS"}},
             }
         }
         mock_gql.return_value = {
@@ -241,8 +240,8 @@ def test_set_field_raises_with_helpful_message_on_unknown_option() -> None:
                                 "id": "FLD_kwabc",
                                 "name": "Initiative",
                                 "options": [
-                                    {"id": "o1", "name": "olympus-quality"},
-                                    {"id": "o2", "name": "olympus-performance"},
+                                    {"id": "o1", "name": "campps-quality"},
+                                    {"id": "o2", "name": "campps-performance"},
                                 ],
                             }
                         ]
@@ -252,7 +251,7 @@ def test_set_field_raises_with_helpful_message_on_unknown_option() -> None:
         }
         with pytest.raises(RuntimeError) as exc:
             sdlc_manager.flow_set_field(
-                "mount-olympus",
+                "campps",
                 "campps-mvp",
                 42,
                 "Initiative",
@@ -262,5 +261,5 @@ def test_set_field_raises_with_helpful_message_on_unknown_option() -> None:
         msg = str(exc.value)
         assert "nonexistent-option" in msg
         # Helpful: includes the actual options + the discovery command hint
-        assert "olympus-quality" in msg or "olympus-performance" in msg
+        assert "campps-quality" in msg or "campps-performance" in msg
         assert "field-options" in msg

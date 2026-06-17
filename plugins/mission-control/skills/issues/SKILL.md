@@ -33,7 +33,7 @@ when_to_use: |
 
   Prepared issue creation:
   - "create an issue from the brainstorm", "handoff the plan as an issue"
-  - "create an Olympus issue from this text"
+  - "create a CAMPPS issue from this text"
   - "create an Asgard issue from these notes"
   - "turn this queue entry into an issue for the router repo"
 ---
@@ -79,34 +79,37 @@ They do not create Hermes-dispatchable task cards.
 Each actionable card must render the following exact H3 section headers in the GitHub issue body:
 
 - `### Objective`
-- `### Acceptance criteria`
+- `### Intent`
 - `### Out-of-scope / non-goals`
 - `### Files expected to change`
 - `### Tests to add or update`
+- `### Context library links`
+- `### Acceptance criteria`
 - `### Verification`
 
 Hermes validation expects these semantics:
 
-- `Acceptance criteria` includes at least one `- [ ]` checklist item.
+- `Context library links` is required; use `_none_` when no context applies.
+- `Acceptance criteria` includes at least one `- [ ]` checklist item and names a runnable check.
 - `Verification` includes exact commands, preferably in a fenced shell code block.
 - `Files expected to change` includes at least one path-like line.
 - Empty placeholder sections such as `_No response_` are invalid.
 
-Optional actionable sections are `Notes / conventions` and `Context library links`. Capability cards
+Optional actionable sections are `Notes / conventions` and risk-conditional fields. Capability cards
 also include optional `Capability size (human planning hint)`.
 
 ## Non-actionable Templates
 
-Objective, Exploration, and Context Update templates carry `hermes-not-actionable`. Do not present
-these as Hermes task cards or dispatch them directly to agents. Use them for coordination,
-research, or documentation context.
+Objective issues and the Exploration and Context Update templates carry `hermes-not-actionable`.
+Do not present these as Hermes task cards or dispatch them directly to agents. Use them for
+coordination, research, or documentation context.
 
 ## Core Operations
 
 ### Prepared Issue Draft from Source Text
 
 Use the prepared workflow when the user starts from rough text, notes, copied queue entries, or
-asks for an Asgard/Olympus issue that should be reviewed before mutation.
+asks for an Asgard-owned issue, including CAMPPS work, that should be reviewed before mutation.
 
 Use `mission-control:issues` for this path. `issue prepare` is the canonical
 non-mutating script mode. `--from` accepts a local path, GitHub issue/PR URL,
@@ -115,22 +118,23 @@ maturity.
 
 ```bash
 python3 sdlc_manager.py issue prepare \
-  --repo hermes-claude-code-router \
+  --repo campps-platform \
   --type capability \
-  --team olympus \
-  --project mount-olympus \
+  --team asgard \
+  --project campps \
   --risk medium \
   --title "Prepared issue workflow" \
   --from docs/plans/example.md \
   --maturity plan-ready
 
+python3 sdlc_manager.py issue approve docs/sdlc-issue-drafts/<draft>.md
 python3 sdlc_manager.py issue create-prepared docs/sdlc-issue-drafts/<draft>.md
 ```
 
 The prepared workflow writes a markdown draft and JSON sidecar under
-`docs/sdlc-issue-drafts/`. `issue create-prepared` re-runs readiness checks, renders the mutation
-plan, asks for confirmation, repairs missing labels/templates after confirmation, opens a mapping
-PR when needed, and only then creates the issue.
+`docs/sdlc-issue-drafts/`. `issue create-prepared` re-runs readiness checks, refuses drafts that still
+need operator approval, renders the mutation plan, asks for confirmation, repairs missing labels/templates
+after confirmation, opens a mapping PR when needed, and only then creates the issue.
 
 Prepared handoff drafts include `handoff_maturity` in the sidecar and a body section with the
 suggested next action. Maturity values are:
@@ -157,7 +161,7 @@ Natural-language routing rules:
 
 - "Create an issue from the brainstorm" -> search `docs/brainstorms/`, prepare, then
   create-prepared after review.
-- "Create an Olympus issue from this text" -> prepare with `--team olympus --project mount-olympus`,
+- "Create a CAMPPS issue from this text" -> prepare with `--team asgard --project campps`,
   then create-prepared after review.
 - "Create an Asgard issue from this text" -> prepare with `--team asgard --project asgard`, then
   create-prepared after review.
@@ -169,11 +173,11 @@ Natural-language routing rules:
 
 Safe starting statuses:
 
-- Asgard starts in `Shaping`.
-- Mount Olympus starts in `Backlog`.
+- Asgard prepared drafts start in `Shaping`.
+- CAMPPS board work tracks `Idea -> Committed -> In Progress -> Done -> Parked`.
 - Never auto-move a prepared issue to `Ready`.
 
-Summary: Asgard `Shaping`, Olympus `Backlog`.
+Summary: prepared CAMPPS issues are Asgard-owned drafts targeting the `campps` project.
 
 ### Create Issue with Template
 
@@ -231,7 +235,7 @@ Set project fields with the `flow` helpers after the issue is added to a board:
 python3 sdlc_manager.py flow set-field \
   --repo <repo> \
   --number <N> \
-  --project "Mount Olympus Operations" \
+  --project "CAMPPS Operations" \
   --field Status \
   --option Backlog
 ```
@@ -261,7 +265,7 @@ Issue can be created in any Infiquetra repo. Common repos:
 
 - `infiquetra-core`, `infiquetra-auth`, `infiquetra-infra`
 - `infiquetra-blueprint` — for Context Updates and Explorations
-- `infiquetra-claude-plugins`
+- `infiquetra-codex-plugins`
 
 If the user doesn't specify, ask which repo the work belongs to.
 
@@ -336,8 +340,8 @@ still uses milestones for that repository.
 `issue prepare --from <plan> --maturity plan-ready`. If multiple plans match, ask the user to
 choose.
 
-**"Create an Olympus issue from this text for the router repo"**
--> Prepare an Olympus draft with `issue prepare --team olympus --project mount-olympus`, review
+**"Create a CAMPPS issue from this text for the platform repo"**
+-> Prepare an Asgard-owned CAMPPS draft with `issue prepare --team asgard --project campps`, review
 readiness gaps, then use `issue create-prepared`.
 
 **"Create an Asgard issue from these notes"**
