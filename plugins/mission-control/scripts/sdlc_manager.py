@@ -2699,8 +2699,11 @@ _ISSUE_TYPES = (
     "context-update",
     "objective",
 )
-_TEAM_CHOICES = ("asgard", "olympus")
-_TEAM_SAFE_STATUSES = {"asgard": "Shaping", "olympus": "Backlog"}
+# Active prepared-issue teams (KTD17): Asgard (shaping/rapid-action profile) and
+# CAMPPS (strict actionable dispatch profile on the initiative execution board).
+# Mount Olympus is retired historical context and is not an active prepare target.
+_TEAM_CHOICES = ("asgard", "campps")
+_TEAM_SAFE_STATUSES = {"asgard": "Shaping", "campps": "Idea"}
 _DISPATCH_ACTIONABLE_TYPES = frozenset({"capability", "enhancement", "defect"})
 _ISSUE_TYPE_LABELS = {
     "capability": ["capability", "hermes-task", "needs-plan"],
@@ -3458,10 +3461,10 @@ def _readiness_for_prepared_issue(issue: PreparedIssue) -> PreparedReadiness:
             blocking.append("Missing target project")
         if not issue.risk:
             blocking.append("Missing author-visible risk metadata")
-    elif issue.team == "olympus":
+    elif issue.team == "campps":
         if issue.issue_type not in _DISPATCH_ACTIONABLE_TYPES:
             blocking.append(
-                f"Issue type {issue.issue_type!r} is not an Olympus dispatch-ready task type"
+                f"Issue type {issue.issue_type!r} is not a CAMPPS dispatch-ready task type"
             )
     elif issue.team == "asgard":
         required = {
