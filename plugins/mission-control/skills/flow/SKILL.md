@@ -96,7 +96,7 @@ sdlc_manager.py flow validate-card --repo campps-mvp --number 42
 
 ## Hard rules
 
-- **Never apply `objective:*` or `initiative:*` colon-prefixed labels.** Both are project FIELDS on the CAMPPS board (decided 2026-05-03; see [DECISIONS](../../../../infiquetra-sdlc/docs/engineering-journal/DECISIONS.md)). Use `flow set-field` instead.
+- **Never apply `objective:*` or `initiative:*` colon-prefixed labels.** Both are project FIELDS on the CAMPPS board (decided 2026-05-03; see [DECISIONS](https://github.com/infiquetra/infiquetra-sdlc/blob/main/docs/engineering-journal/DECISIONS.md)). Use `flow set-field` instead.
 - **Field option IDs rotate on rename/recreate.** Never cache them. Every command that reads field state calls `flow field-options` (or its equivalent GraphQL query) at start.
 - **Verify-label distinguishes 404 from other errors.** A 401/403/5xx must NOT be silently treated as missing — that would create labels under the wrong auth context or mask real failures.
 - **Link-sub-issue requires an issue parent.** PRs can't be parents in GitHub's native sub-issue API; the command rejects them with a clear error.
