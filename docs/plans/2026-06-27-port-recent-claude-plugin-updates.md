@@ -47,6 +47,10 @@ R6. Update manifests, marketplace inventory, README tables, portability docs, ge
 
 R7. Finish with both narrow targeted validation and broad final validation: plugin validator, generated-doc checks, targeted Saga/team-execution tests including adapted top-level upstream tests, and full pytest.
 
+R8. Port the full Claude `team-execution/agents` roster into Codex agent definitions, not only role prompts. Keep all reviewer, scanner, tester, monitor, and deploy-watcher identities available to team-execution.
+
+R9. Add a repeatable Claude-to-Codex porting procedure for future upstream refreshes, including source-range proof, surface classification, agent roster sync, version policy, validation gates, and review artifact updates.
+
 ## Key Technical Decisions
 
 KTD1. Source delta is commit-bounded, not date-vague: Use Claude `80e8731..aad9d6a`, with `1a1c1a5..aad9d6a` explicitly classified as docs-only ideation context. Re-check both `origin/main` refs before implementation. If upstream advances again, either extend the range deliberately or stop and refresh this plan.
@@ -68,6 +72,10 @@ KTD6. Team-execution cleanup is behavioral for Codex: Remove active references t
 KTD7. Version bumps must mean exposed behavior: Do not bump `deploy`, `home-lab-ops`, `mission-control`, `unifi`, or `redis-channel` solely because Claude agent frontmatter changed. If a version is bumped, the plan unit must also port the actual Codex-visible content behind that version.
 
 KTD8. Tests are part of the port, not follow-up: Every feature-bearing unit below includes the upstream or adapted tests needed to catch drift. Missing tests are a blocker, not a note.
+
+KTD9. Team-execution agents are Codex agent definitions: repo-managed source files live under `plugins/team-execution/agents/` and sync into `~/.codex/agents/`. The sync must be explicit, preserve unrelated local agents, and mark generated files so stale generated agents can be removed safely.
+
+KTD10. Model mapping is Codex-native, not Claude names copied as behavior: preserve Claude `opus`/`sonnet`/`haiku` lineage metadata, map them to Codex model and effort hints, and verify which fields Codex actually honors. If Codex TOML cannot pin model directly, team-execution passes model overrides at spawn time and keeps TOML effort/profile defaults.
 
 ## Implementation Units
 
@@ -183,17 +191,21 @@ Invalid specs fail before dispatch. Unavailable backends return explicit HALT/de
 
 Run `PYTHONPATH=. python3 -m pytest tests/test_outcome_*.py tests/test_outcome_backend_profile.py tests/test_outcome_graph_output.py -q` plus one end-to-end integration slice proving dispatch is load-bearing, not bypassed by fake harvest data.
 
-### U4. Port Team-Execution 2.2 Cleanup Into Codex Form
+### U4. Port Team-Execution 2.2 Cleanup And Codex Agent Roster
 
-Remove stale active tmux/pane guidance and align the Codex protocol with the native-agent-team cleanup.
+Remove stale active tmux/pane guidance and add the complete Codex-native team-execution agent roster.
+
+Codex agent roster addendum: port all 25 upstream Claude team-execution agents into Codex TOML definitions, then make team-execution select named Codex agents when delegated mode is available. Keep serial fallback for unavailable or backpressured agents, but do not reduce the source roster.
+
+Claude model lineage maps to Codex defaults as follows: `opus` reviewer agents use high reasoning and the strongest available model hint, `sonnet` tester agents use medium/high reasoning and the standard strong model hint, and `haiku` scanner/monitor agents use low/medium reasoning and the fast model hint. Tests must prove generated TOML parses and the sync layer preserves these hints or records the spawn-time override needed.
 
 **Goal:**
 
-Make Codex team-execution active docs match the post-2.2 model: no `/team-setup`, no pane behavior reference, no tmux setup path, while preserving Codex delegated/serial fallback.
+Make Codex team-execution active docs match post-2.2 model: no `/team-setup`, no pane behavior reference, no tmux setup path; full reviewer/scanner/tester/monitor roster is available as Codex agents with delegated and serial fallback semantics.
 
 **Requirements:**
 
-R3, R4, R6, R7.
+R3, R4, R6, R7, R8.
 
 **Dependencies:**
 
@@ -201,24 +213,23 @@ U1.
 
 **Files:**
 
-`plugins/team-execution/skills/team-execution/SKILL.md`, `plugins/team-execution/skills/team-execution/references/`, `plugins/team-execution/README.md`, `plugins/team-execution/CHANGELOG.md`, `plugins/team-execution/.codex-plugin/plugin.json`, `tests/test_validate_codex_plugins.py`, and new or adapted team-execution drift tests.
+`plugins/team-execution/agents/*.toml`, `plugins/team-execution/scripts/sync_codex_agents.py`, `plugins/team-execution/skills/team-execution/SKILL.md`, `plugins/team-execution/skills/team-execution/references/`, `plugins/team-execution/README.md`, `plugins/team-execution/CHANGELOG.md`, `plugins/team-execution/.codex-plugin/plugin.json`, `tests/test_validate_codex_plugins.py`, `tests/test_team_execution_agents.py`, new or adapted team-execution drift tests.
 
 **Approach:**
 
-Delete or retire `validator-pane-behavior.md` from active references. Update the skill reference list and README. Do not copy Claude `agents/` or `commands/`. Add a guard test equivalent to upstream release-triad/tmux cleanup tests that allows historical changelog mentions but blocks active-surface resurrection.
+Delete/retire `validator-pane-behavior.md` active references. Update skill reference list and README. Do not copy Claude `commands/`; transform the full Claude `agents/` roster into Codex `.toml` agent definitions plus sync tooling. Add guard tests equivalent to upstream release-triad/tmux cleanup, plus agent roster completeness, generated TOML parsing, dry-run sync, stale-generated-agent cleanup, and spawn-profile mapping tests.
 
 **Edge cases:**
 
-Existing docs that discuss old lineage can remain if clearly historical. Active skill guidance must not ask the user to use tmux panes or run a deleted setup command.
+Existing docs may discuss old lineage if clearly historical. Active skill guidance must not ask the user to use tmux panes or run deleted setup commands. Agent sync must not overwrite unrelated local `~/.codex/agents/*.toml` files.
 
 **Error / failure paths:**
 
-If validator docs still mention `validator-pane-behavior.md` after deletion, validation should fail.
+If validator docs still mention `validator-pane-behavior.md` deletion, validation fails. If an agent cannot be synced or spawned, team-execution records delegated-mode unavailability and falls back to serial role execution.
 
 **Verification:**
 
-Run `PYTHONPATH=. python3 -m pytest plugins/team-execution/tests tests/test_team_execution_plugin.py tests/test_team_emitter.py -q` plus a grep-based drift test over active surfaces.
-
+Run `PYTHONPATH=. python3 -m pytest plugins/team-execution/tests tests/test_team_execution_plugin.py tests/test_team_emitter.py tests/test_team_execution_agents.py -q` plus grep-based drift over active surfaces and a dry-run agent sync proof.
 ### U5. Update Codex Manifests, Marketplace, And Validation Inventory
 
 Bring metadata into sync with actual Codex behavior after U2-U4.
@@ -301,6 +312,18 @@ PYTHONPATH=. python3 -m pytest tests/test_outcome_backend_profile.py tests/test_
 PYTHONPATH=. python3 -m pytest -q
 ```
 
+## Repeatable Claude-To-Codex Port Procedure
+
+Use this checklist for every future `infiquetra-claude-plugins` refresh.
+
+1. Refresh and record source truth: fetch both repos, record the Claude range, Codex `origin/main`, local branch, dirty state, and exact plugin-bearing commits.
+2. Inventory the delta by surface: skills, references, scripts, tests, docs, agents, manifests, commands, hooks, MCP/apps, workflows, and changelogs.
+3. Classify every changed surface as `direct-port`, `codex-adapt`, `metadata-only`, `claude-only`, `deferred`, or `blocked`; update portability/provenance before implementation widens.
+4. For team-execution agent deltas, regenerate the full Codex TOML roster, update model/effort mapping, run dry-run sync, and verify no unrelated `~/.codex/agents` files would be touched.
+5. Port behavior in dependency order: shared scripts/references first, skills second, manifests/docs/README last. Do not bump versions until Codex-visible behavior exists and tests pass.
+6. Run targeted tests for each changed plugin, then `python3 scripts/validate_codex_plugins.py`, docs generation checks, and `PYTHONPATH=. python3 -m pytest -q`.
+7. Update the review artifact with unresolved portability risks, non-ported Claude-only surfaces, checks run, and exact residual follow-up.
+8. Commit only intended repo files; leave cache copies, local Codex config, synced generated agents, and unrelated user files untouched unless the task explicitly includes install/sync.
 ## Scope Boundaries
 
 - No full `infiquetra-claude-plugins` mirror.

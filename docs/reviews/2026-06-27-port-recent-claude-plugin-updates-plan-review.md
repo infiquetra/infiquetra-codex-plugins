@@ -14,13 +14,13 @@ status: accepted-after-codex-addendum
 | target path | `docs/plans/2026-06-27-port-recent-claude-plugin-updates.md` |
 | reviewed revision | working tree after Codex addendum on local `main`; source baseline verified against Codex `origin/main` `36d4a5dd0c431239b57444f66eba5fac27d0f3e9` |
 | blocked | `false` |
-| applied fixes | updated source range, requirement mapping, targeted gates, validation wording, Codex backend capability profile, and terminal-safe graph output default |
+| applied fixes | updated source range, requirement mapping, targeted gates, validation wording, Codex backend capability profile, terminal-safe graph output default, full team-execution Codex agent roster, and repeatable future port procedure |
 | review artifact path | `docs/reviews/2026-06-27-port-recent-claude-plugin-updates-plan-review.md` |
 | rubric phase | issue-phase implementation-readiness rubrics plus readiness-skeptic pass |
 
 ## Readiness Summary
 
-The plan is implementation-ready after fixing the stale source range, U3 requirement mapping, targeted test coverage, validation wording, Codex backend capability gating, and terminal output defaults.
+The plan is implementation-ready after fixing stale source range, U3 requirement mapping, targeted test coverage, validation wording, Codex backend capability gating, terminal output defaults, full team-execution agent-roster migration, and recurring port procedure.
 
 ## Findings Resolution
 
@@ -35,6 +35,8 @@ The plan is implementation-ready after fixing the stale source range, U3 require
 | P1 | resolved | Outcome backend menu now treats Codex `subagent` as conditional callable tooling with delegation authorization, not as Claude Workflow/fork/goal or always-available behavior. |
 | P2 | resolved | U3 now requires terminal-safe default `outcome graph` output and keeps Mermaid behind explicit export/docs path. |
 | P2 | resolved | U3 now rewrites `AskUserQuestion` references to Codex question-tool fallback wording rather than copying Claude host prose. |
+| P1 | resolved | Operator expanded scope: U4 now ports the full Claude team-execution agent roster into repo-managed Codex TOML definitions plus explicit sync tooling, instead of treating agents as role prompts only. |
+| P2 | resolved | Plan now includes a repeatable Claude-to-Codex refresh procedure for future regular ports. |
 
 ## Checks Run
 
@@ -54,4 +56,4 @@ The plan is implementation-ready after fixing the stale source range, U3 require
 
 ## Residual Risk
 
-Future outcome tests named in the plan do not exist until implementation adds/adapts them. The next executor should still re-check both upstream refs before starting implementation, as required by KTD1.
+Future outcome and team-execution agent tests named in the plan do not exist until implementation adds/adapts them. The next executor should still re-check both upstream refs before implementation, required KTD1.
