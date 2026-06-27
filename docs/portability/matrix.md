@@ -28,7 +28,7 @@ tool-specific orchestration.
 | `sdk-lifecycle` | deferred | yes | yes | Lifecycle automation needs design review for Codex usage model. | Inventory only for MVP. |
 | `slack` | deferred | yes | yes | Credentialed API client with workspace access; requires credential and dry-run policy review. | Do not port in MVP. |
 | `splunk` | deferred | yes | yes | Credentialed search client; requires separate auth and query-safety validation. | Do not port in MVP. |
-| `team-execution` | proof-port | yes | yes | Claude version depends on `TeamCreate`, but the Saga-family target replaces that primitive with Codex subagents when available and serial fallback otherwise. | Port protocol material as skills and references; convert agents to registries or prompt snippets; prove degraded serial mode. |
+| `team-execution` | proof-port | yes | yes | Claude version depends on `TeamCreate`, but the Saga-family target uses managed Codex agents when available and serial fallback otherwise. | Port protocol material as skills and references; convert agents into managed Codex TOML plus registries; prove degraded serial mode. |
 | `test-suite` | proof-port | yes | yes | Best first proof for skill plus bundled script packaging without external auth. | Port skill and runner, add dry-run and selected-check validation. |
 | `todoist-manager` | deferred | yes | yes | Credentialed productivity API client; not needed for MVP baseline. | Inventory only for MVP. |
 | `unifi` | included | yes | yes | Already visible in Codex cache and skill-plus-script payload is portable with confirmation gates. | Keep skills, references, and scripts. |

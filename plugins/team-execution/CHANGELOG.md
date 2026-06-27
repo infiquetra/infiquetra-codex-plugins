@@ -4,7 +4,7 @@ All notable changes to this plugin are documented here.
 
 ---
 
-## [Unreleased]
+## [2.2.0] - 2026-06-27
 
 ### Added
 

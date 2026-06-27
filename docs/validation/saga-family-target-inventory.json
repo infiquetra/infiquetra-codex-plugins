@@ -58,9 +58,10 @@
     },
     {
       "name": "team-execution",
-      "version": "2.0.0",
+      "version": "2.2.0",
       "skills": ["team-execution", "appsec-audit"],
-      "forbidden_active_dirs": [".claude-plugin", "commands", "agents"]
+      "forbidden_active_dirs": [".claude-plugin", "commands"],
+      "managed_active_dirs": ["agents/*.toml"]
     },
     {
       "name": "home-lab-ops",

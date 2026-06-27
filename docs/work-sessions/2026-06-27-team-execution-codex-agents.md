@@ -2,7 +2,7 @@
 
 Date: 2026-06-27
 Plan: `docs/plans/2026-06-27-port-recent-claude-plugin-updates.md`
-Unit: U4
+Units: U4, U5
 
 ## Built
 
@@ -35,4 +35,32 @@ Unit: U4
 
 ## Next Step
 
-Proceed to U5 metadata/inventory reconciliation after committing the U4 slice.
+Proceed to remaining non-team-execution plan units after committing the metadata
+reconciliation slice.
+
+## U5 Metadata Reconciliation
+
+- Bumped Codex team-execution metadata to `2.2.0` in manifest, validator
+  expectations, README/baseline tables, portability provenance, and target
+  inventory fixture.
+- Updated target fixture rules so `agents/` remains forbidden generally, while
+  team-execution explicitly allows managed `agents/*.toml`.
+- Refreshed `docs/saga/generated/lifecycle-facts.json` after the metadata
+  change.
+
+## U5 Checks
+
+- `python3 scripts/validate_codex_plugins.py`
+  - passed
+- `python3 scripts/validate_codex_plugins.py --mode target-fixture`
+  - passed
+- `python3 scripts/validate_codex_plugins.py --mode cutover`
+  - passed
+- `python3 scripts/build_saga_docs_facts.py --check`
+  - passed
+- `python3 scripts/render_saga_docs_assets.py --check`
+  - passed
+- `PYTHONPATH=. python3 -m pytest -q`
+  - 265 passed
+- `git diff --check`
+  - passed

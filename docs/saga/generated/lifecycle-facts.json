@@ -272,7 +272,7 @@
           "skill_path": "plugins/team-execution/skills/appsec-audit/SKILL.md"
         }
       ],
-      "version": "2.0.0"
+      "version": "2.2.0"
     }
   },
   "saga_routing": {

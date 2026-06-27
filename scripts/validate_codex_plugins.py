@@ -102,7 +102,7 @@ TARGET_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
         ),
     },
     "team-execution": {
-        "version": "2.0.0",
+        "version": "2.2.0",
         "skills": ("team-execution", "appsec-audit"),
     },
     "home-lab-ops": LEGACY_EXPECTED_PLUGINS["home-lab-ops"],
@@ -649,10 +649,17 @@ def validate_target_fixture_payload(
             f"target fixture {plugin_name} skills",
             errors,
         )
-        for forbidden in (".claude-plugin", "commands", "agents"):
+        forbidden_dirs = (".claude-plugin", "commands")
+        if plugin_name != "team-execution":
+            forbidden_dirs = (*forbidden_dirs, "agents")
+        for forbidden in forbidden_dirs:
             if forbidden in entry.get("forbidden_active_dirs", []):
                 continue
             errors.append(f"{path}: {plugin_name} must forbid active `{forbidden}` directories")
+        if plugin_name == "team-execution":
+            managed_dirs = entry.get("managed_active_dirs", [])
+            if "agents/*.toml" not in managed_dirs:
+                errors.append(f"{path}: team-execution must allow managed `agents/*.toml`")
 
     removed_plugins = set(payload.get("removed_plugins", []))
     compare_inventory(

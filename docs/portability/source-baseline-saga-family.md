@@ -38,7 +38,7 @@ markdown-only formatting test.
 | `config/` | Portable as package-local configuration when validation covers references. |
 | `tests/` | Portable after rewriting Claude prompt-alignment assertions to Codex surfaces. |
 | `commands/` | Command-origin source only. Convert behavior into skills, references, or scripts. Do not copy as active directories. |
-| `agents/` | Prompt lineage only. Convert into references or templates when useful. Do not copy as active directories. |
+| `agents/` | Claude markdown agents are lineage only. Convert into managed Codex TOML when explicitly in scope, or references/templates otherwise. Do not copy Claude agent files as active directories. |
 | `docs/` under a plugin | Lineage only unless a document is rewritten as Codex-safe reference material. |
 
 ## Source Root Inventory

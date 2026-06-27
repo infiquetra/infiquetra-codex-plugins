@@ -18,7 +18,7 @@ maintained source after validation.
 | `saga` | 0.21.0 | `saga:office-hours`, `saga:ideate`, `saga:product-review`, `saga:brainstorm`, `saga:spec`, `saga:implementation-spec`, `saga:strategy`, `saga:plan`, `saga:work`, `saga:qa`, `saga:investigate`, `saga:retro`, `saga:resume`, `saga:handoff`, `saga:founder-review`, `saga:ceo-review`, `saga:doc-review`, `saga:code-review`, `saga:optimize`, `saga:loop` |
 | `deploy` | 0.1.1 | `deploy:deploy-state`, `deploy:deploy`, `deploy:deploy-status`, `deploy:deploy-notes`, `deploy:deploy-hotfix` |
 | `mission-control` | 2.0.0 | `mission-control:board`, `mission-control:flow`, `mission-control:issues`, `mission-control:labels`, `mission-control:metrics`, `mission-control:milestones`, `mission-control:rollout` |
-| `team-execution` | 2.0.0 | `team-execution:team-execution`, `team-execution:appsec-audit` |
+| `team-execution` | 2.2.0 | `team-execution:team-execution`, `team-execution:appsec-audit` |
 | `home-lab-ops` | 1.0.0 | `home-lab-ops:ansible-preflight`, `home-lab-ops:inventory-sync`, `home-lab-ops:monitoring-guard`, `home-lab-ops:proxmox-operations`, `home-lab-ops:vault-helper` |
 | `python-toolkit` | 1.0.0 | `python-toolkit:python-patterns`, `python-toolkit:python-project-setup`, `python-toolkit:python-testing-patterns` |
 | `unifi` | 1.0.0 | `unifi:unifi-network`, `unifi:unifi-protect` |
