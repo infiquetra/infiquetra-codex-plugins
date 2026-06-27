@@ -2,7 +2,7 @@
 title: Port Recent Claude Plugin Updates Plan Review
 date: 2026-06-27
 type: review
-status: accepted
+status: accepted-after-codex-addendum
 ---
 
 # Port Recent Claude Plugin Updates Plan Review
@@ -12,15 +12,15 @@ status: accepted
 | Field | Value |
 | --- | --- |
 | target path | `docs/plans/2026-06-27-port-recent-claude-plugin-updates.md` |
-| reviewed revision | working tree after plan fixes on Codex `36d4a5dd0c431239b57444f66eba5fac27d0f3e9`; target file was untracked during review |
+| reviewed revision | working tree after Codex addendum on local `main`; source baseline verified against Codex `origin/main` `36d4a5dd0c431239b57444f66eba5fac27d0f3e9` |
 | blocked | `false` |
-| applied fixes | updated source range, requirement mapping, targeted gates, and validation wording |
+| applied fixes | updated source range, requirement mapping, targeted gates, validation wording, Codex backend capability profile, and terminal-safe graph output default |
 | review artifact path | `docs/reviews/2026-06-27-port-recent-claude-plugin-updates-plan-review.md` |
 | rubric phase | issue-phase implementation-readiness rubrics plus readiness-skeptic pass |
 
 ## Readiness Summary
 
-The plan is implementation-ready after fixing the stale source range, U3 requirement mapping, targeted test coverage, and validation wording.
+The plan is implementation-ready after fixing the stale source range, U3 requirement mapping, targeted test coverage, validation wording, Codex backend capability gating, and terminal output defaults.
 
 ## Findings Resolution
 
@@ -30,6 +30,11 @@ The plan is implementation-ready after fixing the stale source range, U3 require
 | P2 | resolved | U3 now maps to `R2, R3, R6, R7`, removing the unrelated team-execution `R4` requirement. |
 | P2 | resolved | U2, U3, U4, and final targeted gates now name the adapted top-level upstream tests instead of relying only on plugin test directories plus the full pytest sweep. |
 | P3 | resolved | R7 now requires both narrow targeted validation and broad final validation. |
+
+| P1 | resolved | Trust-but-verify addendum separates Codex `origin/main` baseline from local plan commit so executors do not mix source-review state with implementation baseline. |
+| P1 | resolved | Outcome backend menu now treats Codex `subagent` as conditional callable tooling with delegation authorization, not as Claude Workflow/fork/goal or always-available behavior. |
+| P2 | resolved | U3 now requires terminal-safe default `outcome graph` output and keeps Mermaid behind explicit export/docs path. |
+| P2 | resolved | U3 now rewrites `AskUserQuestion` references to Codex question-tool fallback wording rather than copying Claude host prose. |
 
 ## Checks Run
 
@@ -43,6 +48,10 @@ The plan is implementation-ready after fixing the stale source range, U3 require
 | `python3 scripts/render_saga_docs_assets.py --check` | pass |
 | `git diff --check` | pass |
 
+| `python3 scripts/validate_codex_plugins.py` after addendum | pass |
+| `PYTHONPATH=. python3 -m pytest -q` after addendum | 258 passed |
+| plain `python3 -m pytest -q` after addendum | collection/import failure without `PYTHONPATH=.` |
+
 ## Residual Risk
 
-This review did not run the full pytest suite because the target is an implementation plan, not code. The next executor should still re-check both upstream refs before starting implementation, as required by KTD1.
+Future outcome tests named in the plan do not exist until implementation adds/adapts them. The next executor should still re-check both upstream refs before starting implementation, as required by KTD1.

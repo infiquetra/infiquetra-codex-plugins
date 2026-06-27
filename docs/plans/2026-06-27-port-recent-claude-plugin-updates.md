@@ -15,7 +15,9 @@ The implementation should treat `infiquetra-claude-plugins` `80e8731..aad9d6a` a
 
 ## Problem Frame
 
-The Codex repo currently declares itself a Codex-native adapter, not a full mirror of Claude plugins. `README.md` lists `saga` at `0.22.1`, `team-execution` at `2.0.0`, and several baseline plugins that do not carry Claude agent surfaces. Upstream Claude `main` is now at `aad9d6a`; the plugin-bearing range through `1a1c1a5` ships Saga `0.38.0`, including OutcomeOrchestrator, followed by docs-only ideation commit `aad9d6a`. Codex `main` and `origin/main` are at `36d4a5d`.
+Codex addendum from trust-but-verify review: treat `origin/main` as the implementation baseline unless refreshed; local `main` may include this plan and review state.
+
+The Codex repo currently declares itself a Codex-native adapter, not a full mirror of Claude plugins. `README.md` lists `saga` at `0.22.1`, `team-execution` at `2.0.0`, and several baseline plugins that do not carry Claude agent surfaces. Upstream Claude `main` is now at `aad9d6a`; the plugin-bearing range through `1a1c1a5` ships Saga `0.38.0`, including OutcomeOrchestrator, followed by docs-only ideation commit `aad9d6a`. Codex `origin/main` is at `36d4a5d`; local `main` may include this plan commit and must be separated from implementation baseline.
 
 The risk is not missing a copy operation; the risk is importing Claude-only capabilities as if Codex can execute them, or bumping versions where Codex does not actually expose the changed surface.
 
@@ -53,7 +55,11 @@ KTD2. Codex adaptation beats mirroring: Copy or port behavior into `.codex-plugi
 
 KTD3. OutcomeOrchestrator is a new Codex skill, not a slash command: Port `plugins/saga/skills/outcome/SKILL.md` and the script/reference stack. Mine `commands/outcome.md` only for argument contract text where useful.
 
-KTD4. Backend menu must be capability-gated: Preserve the Outcome coordinator invariant that it routes and never executes leaf work. Map Claude-only backends such as Workflow/fork/goal to explicit unavailable or degraded Codex outcomes unless a Codex runtime capability is verified in tests.
+KTD4. Backend menu must be Codex capability-gated: Preserve the Outcome coordinator invariant that it routes and never executes leaf work. Map Claude-only backends Workflow/fork/goal to explicit unavailable or degraded Codex outcomes unless a Codex runtime capability is verified in tests. Treat `subagent` separately: Codex can expose subagent tooling, but use it only when the host exposes callable tooling and user/task context authorizes delegated work; otherwise halt/degrade visibly.
+
+KTD4a. Codex terminal output stays terminal-safe: default `outcome graph` output must be ASCII/table/prose, not Mermaid. Mermaid may remain only as an explicit export format or repository documentation artifact.
+
+Codex addendum: implement an explicit backend capability profile. `inline`, `team-execution`, and `manual` are the safe floor. `subagent` is conditional on callable Codex tooling and delegation authorization. Workflow/fork/goal remain unavailable unless tests prove a Codex equivalent. Default `outcome graph` output must be terminal-safe ASCII/table/prose; keep Mermaid only behind explicit export or docs paths.
 
 KTD5. Saga state stays Codex-native: Keep `.codex/saga` and other Codex paths when porting upstream `saga.py` and lifecycle changes; do not regress to `.claude/saga`.
 
@@ -86,6 +92,8 @@ None.
 `docs/portability/matrix.md`, `docs/portability/provenance.md`, `docs/engineering-journal/DECISIONS.md`, `docs/engineering-journal/LEARNINGS.md`, `README.md`.
 
 **Approach:**
+
+Codex addendum: before wiring dispatch, add backend-profile tests and graph-output tests. Replace `AskUserQuestion` prose with Codex question-tool fallback wording: use the tool only when available, otherwise ask a concise blocking question in chat.
 
 Update the source snapshot from the old June 6 catalog to the current Claude/Codex refs. Add a concise classification table: portable now, Codex-adapted, non-portable Claude-only, docs-only source context, and deferred pre-existing upstream differences. Treat `promote` and `redis-channel` as out of this recent-delta port unless the operator expands scope.
 
@@ -155,11 +163,13 @@ U2.
 
 **Files:**
 
-`plugins/saga/skills/outcome/SKILL.md`, `plugins/saga/references/outcome-spec.md`, `plugins/saga/scripts/outcome.py`, `plugins/saga/scripts/outcome_spec.py`, `plugins/saga/scripts/outcome_store.py`, `plugins/saga/scripts/outcome_dispatcher.py`, `plugins/saga/scripts/outcome_github.py`, `plugins/saga/scripts/outcome_liveness.py`, `plugins/saga/scripts/outcome_merge.py`, `plugins/saga/scripts/outcome_orchestrator.py`, `plugins/saga/scripts/outcome_projection.py`, `plugins/saga/scripts/outcome_report.py`, `plugins/saga/scripts/outcome_costs.py`, `plugins/saga/scripts/outcome_decompose.py`, `plugins/saga/scripts/outcome_worktrees.py`, `docs/saga/*`, `docs/saga/generated/lifecycle-facts.json`, and adapted upstream `test_outcome_*` suites.
+`plugins/saga/skills/outcome/SKILL.md`, `plugins/saga/references/outcome-spec.md`, `plugins/saga/scripts/outcome.py`, `plugins/saga/scripts/outcome_spec.py`, `plugins/saga/scripts/outcome_store.py`, `plugins/saga/scripts/outcome_dispatcher.py`, `plugins/saga/scripts/outcome_github.py`, `plugins/saga/scripts/outcome_liveness.py`, `plugins/saga/scripts/outcome_merge.py`, `plugins/saga/scripts/outcome_orchestrator.py`, `plugins/saga/scripts/outcome_projection.py`, `plugins/saga/scripts/outcome_report.py`, `plugins/saga/scripts/outcome_costs.py`, `plugins/saga/scripts/outcome_decompose.py`, `plugins/saga/scripts/outcome_worktrees.py`, `docs/saga/*`, `docs/saga/generated/lifecycle-facts.json`, adapted upstream `test_outcome_*` suites, and Codex backend-profile/graph-output drift tests.
 
 **Approach:**
 
-Port upstream modules in dependency order: spec, store/replay, command coordinator, dispatcher seam, completion/merge, decompose/worktrees, report/projection, backend degrade/liveness, economics, then integration. Replace Claude-only command references with Codex skill invocation guidance. Keep the coordinator invariant: it routes leaf work and prints native leaf re-entry instructions; it does not perform leaf implementation work.
+Codex addendum: before wiring dispatch, add backend-profile tests and graph-output tests. Replace `AskUserQuestion` prose with Codex question-tool fallback wording: use the tool only when available, otherwise ask a concise blocking question in chat.
+
+Port upstream modules in dependency order: spec, store/replay, command coordinator, dispatcher seam, completion/merge, decompose/worktrees, report/projection, backend degrade/liveness, economics, then integration. Replace Claude-only command references with Codex skill invocation guidance, and replace `AskUserQuestion` prose with Codex question-tool fallback wording: use the tool only when available, otherwise ask a concise blocking question in chat. Add Codex backend profile before wiring dispatch: `inline`, `team-execution`, and `manual` are the safe floor; `subagent` is conditional on callable Codex tooling and delegation authorization; Workflow/fork/goal stay unavailable unless proven by tests. Default `graph` output must be terminal-safe ASCII/table/prose; keep Mermaid only behind explicit export/docs path. Keep the coordinator invariant: it routes leaf work and prints native leaf re-entry instructions; it does not perform leaf implementation work.
 
 **Edge cases:**
 
@@ -171,7 +181,7 @@ Invalid specs fail before dispatch. Unavailable backends return explicit HALT/de
 
 **Verification:**
 
-Run `PYTHONPATH=. python3 -m pytest tests/test_outcome_*.py -q` plus one end-to-end integration slice proving dispatch is load-bearing, not bypassed by fake harvest data.
+Run `PYTHONPATH=. python3 -m pytest tests/test_outcome_*.py tests/test_outcome_backend_profile.py tests/test_outcome_graph_output.py -q` plus one end-to-end integration slice proving dispatch is load-bearing, not bypassed by fake harvest data.
 
 ### U4. Port Team-Execution 2.2 Cleanup Into Codex Form
 
@@ -287,6 +297,7 @@ python3 scripts/render_saga_docs_assets.py --check
 PYTHONPATH=. python3 -m pytest tests/test_saga_docs_package.py tests/test_saga_doc_formatting.py -q
 python3 scripts/validate_codex_plugins.py
 PYTHONPATH=. python3 -m pytest plugins/saga/tests plugins/team-execution/tests tests/test_outcome_*.py tests/test_workflow_emitter.py tests/test_operator_choice_drift.py tests/test_override_rate.py tests/test_team_emitter.py tests/test_team_execution_plugin.py tests/test_validate_codex_plugins.py -q
+PYTHONPATH=. python3 -m pytest tests/test_outcome_backend_profile.py tests/test_outcome_graph_output.py -q
 PYTHONPATH=. python3 -m pytest -q
 ```
 
