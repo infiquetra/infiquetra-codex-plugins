@@ -19,6 +19,25 @@ The plugin provides two related skills:
 Subagents are advisory evidence collectors. They do not authorize mutation,
 change scope, bypass confirmation, or make the final completion decision.
 
+## Codex Agent Surface
+
+The full upstream team-execution roster is ported as managed Codex agent TOML
+under `agents/*.toml`. Install or refresh the local Codex agent surface with:
+
+```bash
+python3 plugins/team-execution/scripts/sync_codex_agents.py --pretty
+python3 plugins/team-execution/scripts/sync_codex_agents.py --apply --pretty
+```
+
+The sync is dry-run by default. It installs or updates only managed
+team-execution agents, refuses to overwrite unmanaged local agents, and can
+remove stale managed agents with `--remove-stale`.
+
+Codex agent TOML carries `model_reasoning_effort`; Claude source model lineage
+is preserved as comments with a Codex model hint. Team-execution may use that
+hint for spawn-time routing when the active Codex host exposes model selection;
+otherwise the installed agent defaults apply.
+
 Team Execution participates in the Saga family by owning reviewer consensus,
 validator selection, and evidence capture. The full lifecycle guide is
 `../../docs/saga/README.md`.
@@ -100,13 +119,13 @@ python3 plugins/team-execution/scripts/protocol_probe.py \
 - `skills/team-execution/references/validator-execution-order.md`
 - `skills/team-execution/references/validator-evidence-state.md`
 - `skills/team-execution/references/validator-spawn-quirks.md`
-- `skills/team-execution/references/validator-pane-behavior.md`
 - `skills/team-execution/references/delegation-safety.md`
 
 ## Plugin Structure
 
 ```text
 team-execution/
+  agents/*.toml
 ├── .codex-plugin/plugin.json
 ├── skills/
 │   ├── appsec-audit/SKILL.md
@@ -114,6 +133,7 @@ team-execution/
 │       ├── SKILL.md
 │       └── references/
 ├── scripts/protocol_probe.py
+├── scripts/sync_codex_agents.py
 ├── tests/test_protocol_probe.py
 ├── README.md
 ├── PORTABILITY.md

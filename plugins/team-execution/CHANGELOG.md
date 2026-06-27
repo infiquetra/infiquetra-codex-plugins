@@ -4,6 +4,21 @@ All notable changes to this plugin are documented here.
 
 ---
 
+## [Unreleased]
+
+### Added
+
+- Added the full managed Codex TOML agent roster under `agents/*.toml`.
+- Added `scripts/sync_codex_agents.py` to dry-run and apply roster sync into
+  `~/.codex/agents` without overwriting unmanaged local agents.
+
+### Changed
+
+- Active Codex docs now describe named-agent delegated dispatch with serial
+  fallback instead of retired display-pane setup.
+
+---
+
 ## [2.0.0] - 2026-05-27
 
 ### Added

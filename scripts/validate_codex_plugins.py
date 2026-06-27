@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import hashlib
 import re
+import tomllib
 from argparse import ArgumentParser
 from pathlib import Path
 from typing import Any
@@ -198,10 +199,45 @@ LINEAGE_ALLOWED_PARTS = {
     "docs/portability/saga-family-capability-map.md",
     "docs/portability/saga-family-known-use-inventory.md",
 }
+TEAM_EXECUTION_AGENT_MARKER = '# managed_by = "infiquetra-codex-plugins/team-execution"'
+TEAM_EXECUTION_AGENT_ROSTER = {
+    "ai-usefulness-reviewer",
+    "api-compat-scanner",
+    "api-contract-tester",
+    "api-reviewer",
+    "architecture-reviewer",
+    "clarity-reviewer",
+    "code-quality-reviewer",
+    "concurrency-tester",
+    "dependency-scanner",
+    "deploy-watcher",
+    "devils-advocate-reviewer",
+    "event-flow-tester",
+    "github-actions-monitor",
+    "iac-cost-scanner",
+    "infra-reviewer",
+    "performance-tester",
+    "privacy-reviewer",
+    "runtime-monitor",
+    "scenario-tester",
+    "sdk-regression-tester",
+    "security-reviewer",
+    "security-scanner",
+    "smoke-tester",
+    "testing-reviewer",
+    "ui-regression-tester",
+}
+TEAM_EXECUTION_MODEL_HINTS = {
+    "opus": ("gpt-5.5", "high"),
+    "sonnet": ("gpt-5.4", "medium"),
+    "haiku": ("gpt-5.4-mini", "low"),
+}
 
 SCRIPT_FIELD_RE = re.compile(r"^\s*script:\s*(?P<path>\S+)\s*$", re.MULTILINE)
 PLUGIN_SCRIPT_RE = re.compile(r"(?P<path>plugins/[A-Za-z0-9_.-]+/[A-Za-z0-9_./-]+\.py)")
 MATRIX_ROW_RE = re.compile(r"^\|\s*`(?P<plugin>[^`]+)`\s*\|\s*(?P<status>[a-z-]+)\s*\|")
+SOURCE_MODEL_RE = re.compile(r'^# source_model = "(?P<model>[^"]+)"$', re.MULTILINE)
+CODEX_MODEL_HINT_RE = re.compile(r'^# codex_model_hint = "(?P<model>[^"]+)"$', re.MULTILINE)
 
 
 def validate_repository(root: Path, mode: str = "current") -> list[str]:
@@ -332,9 +368,15 @@ def validate_plugin(
         if not isinstance(interface, dict) or not interface.get("defaultPrompt"):
             errors.append(f"{plugin_name}: manifest interface.defaultPrompt is required")
 
-    for forbidden in (".claude-plugin", "commands", "agents"):
-        if (plugin_root / forbidden).exists():
-            errors.append(f"{plugin_name}: active Codex plugin must not contain `{forbidden}`")
+        for forbidden in (".claude-plugin", "commands"):
+            if (plugin_root / forbidden).exists():
+                errors.append(f"{plugin_name}: active Codex plugin must not contain `{forbidden}`")
+        agents_root = plugin_root / "agents"
+        if agents_root.exists():
+            if plugin_name == "team-execution":
+                validate_team_execution_agents(agents_root, errors)
+            else:
+                errors.append(f"{plugin_name}: active Codex plugin must not contain `agents`")
 
     portability = plugin_root / "PORTABILITY.md"
     if not portability.is_file():
@@ -374,6 +416,76 @@ def validate_plugin(
             continue
         validate_active_text(repo_root, markdown_path, text, errors)
         validate_script_references(repo_root, plugin_root, markdown_path, text, errors)
+
+
+def validate_team_execution_agents(agents_root: Path, errors: list[str]) -> None:
+    if not agents_root.is_dir():
+        errors.append("team-execution: `agents` must be a directory")
+        return
+
+    all_files = sorted(path for path in agents_root.iterdir() if path.is_file())
+    non_toml = [path.name for path in all_files if path.suffix != ".toml"]
+    if non_toml:
+        errors.append(
+            "team-execution: agents directory may contain only Codex TOML agents, "
+            f"unexpected={non_toml}"
+        )
+
+    toml_files = sorted(path for path in all_files if path.suffix == ".toml")
+    actual_roster = {path.stem for path in toml_files}
+    if actual_roster != TEAM_EXECUTION_AGENT_ROSTER:
+        errors.append(
+            "team-execution: agent roster mismatch "
+            f"missing={sorted(TEAM_EXECUTION_AGENT_ROSTER - actual_roster)} "
+            f"unexpected={sorted(actual_roster - TEAM_EXECUTION_AGENT_ROSTER)}"
+        )
+
+    for path in toml_files:
+        text = path.read_text(encoding="utf-8")
+        first_lines = text.splitlines()[:8]
+        if TEAM_EXECUTION_AGENT_MARKER not in first_lines:
+            errors.append(f"team-execution/{path.name}: missing managed marker")
+
+        source_model_match = SOURCE_MODEL_RE.search(text)
+        source_model = source_model_match.group("model") if source_model_match else None
+        if source_model is None:
+            errors.append(f"team-execution/{path.name}: missing source_model lineage")
+        elif source_model not in TEAM_EXECUTION_MODEL_HINTS:
+            errors.append(
+                f"team-execution/{path.name}: unsupported source_model `{source_model}`"
+            )
+
+        codex_model_match = CODEX_MODEL_HINT_RE.search(text)
+        codex_model_hint = codex_model_match.group("model") if codex_model_match else None
+        if codex_model_hint is None:
+            errors.append(f"team-execution/{path.name}: missing codex_model_hint lineage")
+
+        try:
+            payload = tomllib.loads(text)
+        except tomllib.TOMLDecodeError as exc:
+            errors.append(f"team-execution/{path.name}: invalid TOML: {exc}")
+            continue
+
+        if payload.get("name") != path.stem:
+            errors.append(f"team-execution/{path.name}: name must match filename stem")
+        if "model" in payload:
+            errors.append(
+                f"team-execution/{path.name}: use codex_model_hint lineage, not direct model pin"
+            )
+        developer_instructions = payload.get("developer_instructions")
+        if not isinstance(developer_instructions, str) or not developer_instructions.strip():
+            errors.append(f"team-execution/{path.name}: developer_instructions required")
+        if source_model in TEAM_EXECUTION_MODEL_HINTS:
+            expected_hint, expected_effort = TEAM_EXECUTION_MODEL_HINTS[source_model]
+            if codex_model_hint != expected_hint:
+                errors.append(
+                    f"team-execution/{path.name}: codex_model_hint must be `{expected_hint}`"
+                )
+            if payload.get("model_reasoning_effort") != expected_effort:
+                errors.append(
+                    f"team-execution/{path.name}: model_reasoning_effort must be "
+                    f"`{expected_effort}`"
+                )
 
 
 def validate_active_text(repo_root: Path, path: Path, text: str, errors: list[str]) -> None:

@@ -25,6 +25,21 @@ The Codex port has two runtime modes:
 The main thread always owns final verification, state writes, mutation
 confirmation, and the completion decision.
 
+## Codex Agent Roster
+
+The plugin ships the full upstream `team-execution` roster as managed Codex
+TOML definitions under `plugins/team-execution/agents/*.toml`.
+
+- Reviewer, scanner, tester, and monitor names in the registries map to the
+  matching Codex agent name when delegated mode is available.
+- Agent TOML records Claude source model lineage and Codex model hints. Use
+  `model_reasoning_effort` and `codex_model_hint` as dispatch hints only where
+  the active Codex host exposes that control; otherwise use the installed agent
+  defaults.
+- If a selected named agent is not installed, callable, safe to delegate, or the
+  host reports backpressure, switch that role to serial execution in the main
+  thread and record the fallback.
+
 ## References
 
 Load only the files needed for the request:
@@ -37,7 +52,6 @@ Load only the files needed for the request:
 - Validator order: `references/validator-execution-order.md`
 - Evidence state: `references/validator-evidence-state.md`
 - Validator dispatch behavior: `references/validator-spawn-quirks.md`
-- Retired display guidance: `references/validator-pane-behavior.md`
 - Delegation safety: `references/delegation-safety.md`
 
 ## Phase A: Team Planning
@@ -96,7 +110,9 @@ Run Phase B only after the plan is approved.
 1. Parse the approved `## Team Structure`, selected roles, runtime mode, state
    root, and gates.
 2. Complete the approved worker tasks. Keep changes scoped to the plan.
-3. Run reviewers using `references/consensus-protocol.md`.
+3. Run reviewers using `references/consensus-protocol.md`. In delegated mode,
+   dispatch the selected named Codex agents when installed and safe; in serial
+   mode, run the same role prompts in the main thread and mark evidence serial.
 4. If reviewer consensus fails, route fixes, repeat only the affected reviewers,
    and stop after 3 cycles with explicit residual risk.
 5. Run selected scanner validators after consensus or explicit override.
