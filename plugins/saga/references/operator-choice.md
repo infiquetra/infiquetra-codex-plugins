@@ -1,65 +1,33 @@
 # Operator-Choice Framework
 
-**Status:** Codex port contract
-**Companion:** [`saga-spec.md`](./saga-spec.md)
+**Status:** Codex port contract.
 
-Saga chooses how work should proceed; it does not execute another plugin's
-private API. The operator/model invokes the selected skill, and the receiving
-plugin owns its own state, confirmation, validation, and proof boundary.
+Codex Saga exposes exactly three execution choices:
 
-## Backends
-
-Codex Saga exposes exactly two execution choices:
-
-| Backend | Use When | Owner |
+| Backend | Use when | Owner |
 |---|---|---|
-| `inline` | The current Codex thread can safely perform the work directly. | Saga caller |
-| `team-execution` | The work needs reviewer consensus, validators, broad fan-out, cross-repo coordination, security/infra scrutiny, or deployment-sensitive gates. | `team-execution` |
+| `inline` | Current Codex thread can safely perform the work directly. | Saga caller |
+| `manual` | Automation is unsafe or unavailable; produce receipts and operator handoff. | Operator |
+| `team-execution` | Work needs reviewer consensus, validators, broad fan-out, cross-repo coordination, security/infra scrutiny, adversarial confidence, or deployment-sensitive gates. | `team-execution` |
 
-The source workflow fan-out backend is lineage only and is not executable in this
-Codex plugin.
+Source Workflow (`cc-workflows-ultracode`), fork, goal, and hook backends are lineage-only in this Codex plugin. They may appear in provenance, tests, or degradation receipts, but they are not active choices unless a future Codex capability proof and negative fallback tests land.
 
 ## Recommendation Rule
 
-Recommend `team-execution` when any of these are true:
+Recommend `team-execution` when any signal is true:
 
-- `file_count >= 8`
-- `phase_count >= 4`
-- security-sensitive work
-- infrastructure-sensitive work
-- cross-repository work
-- deployment-sensitive work
-- explicit consensus or validator-gate need
-- broad independent fan-out
-- adversarial-confidence review need
+- file count is at least 8
+- phase count is at least 4
+- security, infra, deployment-sensitive, cross-repo, consensus, broad fan-out, or adversarial-confidence signal exists
 
-For size and risk signals, require a real code surface. Large docs-only or
-planning-only work can stay `inline` unless it is cross-repo, needs consensus,
-needs independent fan-out, or carries another explicit escalation signal.
+Recommend `manual` when the next safe action is a proposal or operator handoff rather than an automated dispatch.
 
 Otherwise recommend `inline`.
 
-Always present the recommendation as a choice. If the question can be answered
-through Codex's structured input UI, use it; otherwise ask directly in chat with
-the recommended option first.
+`plugins/saga/scripts/lifecycle_state.py recommend-backend` is the runnable helper. It reports unsupported source backends explicitly with `source_workflow_excluded=true`.
 
-## Recording
+## State Fields
 
-Store the chosen value in the saga envelope as `orchestration_mode`.
+Saga records the effective backend in `orchestration_mode`, the recommendation in `orchestration_recommended`, the operator pick in `orchestration_operator_choice`, and any capability downgrade in `orchestration_downgrade`.
 
-Allowed values:
-
-- `inline`
-- `team-execution`
-
-`orchestration_ref` is empty for `inline`. For `team-execution`, it may point to
-the plan's `## Team Structure` section or the team-execution state/evidence
-root. Saga records the pointer; team-execution owns the run.
-
-## Boundaries
-
-- Saga may emit a handoff envelope or recommend a namespaced skill.
-- Saga must not import or call private implementation surfaces from
-  `deploy`, `mission-control`, or `team-execution`.
-- Subagents or delegated outputs cannot authorize mutation.
-- Receiving plugins must re-read and re-verify handoff content before mutation.
+`orchestration_ref` stays empty for `inline` and `manual`. For `team-execution`, it may point at a `## Team Structure` section or team-execution evidence root. Saga records the pointer; team-execution owns the run.

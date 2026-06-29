@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.41.0 - 2026-06-29
+
+- Add Codex-native `saga:outcome` and `saga:promote` skills after their scripts
+  and tests exist.
+- Port outcome spec/store/projection/report/dispatch/liveness/merge/worktree
+  helpers, completeness gate, shared status-card renderer, override-rate reader,
+  and promote scan with Codex state and backend gates.
+- Preserve Codex backend truth: active `inline`, `manual`, `team-execution`;
+  source Workflow, fork, goal, hooks remain inactive with negative capability
+  tests and visible degrade receipts.
+- Add the Codex-vs-Claude harness delta table for Saga 0.41 source drift.
+
 ## 0.22.1 - 2026-06-17
 
 - Update `recommend_execution_backend()` for the Codex backend set: large no-code-surface work

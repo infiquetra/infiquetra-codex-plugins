@@ -5,7 +5,7 @@
   "plugins": [
     {
       "name": "saga",
-      "version": "0.22.1",
+      "version": "0.41.0",
       "skills": [
         "office-hours",
         "ideate",
@@ -16,11 +16,13 @@
         "strategy",
         "plan",
         "work",
+        "outcome",
         "qa",
         "investigate",
         "retro",
         "resume",
         "handoff",
+        "promote",
         "founder-review",
         "ceo-review",
         "doc-review",
@@ -28,7 +30,11 @@
         "optimize",
         "loop"
       ],
-      "forbidden_active_dirs": [".claude-plugin", "commands", "agents"]
+      "forbidden_active_dirs": [
+        ".claude-plugin",
+        "commands",
+        "agents"
+      ]
     },
     {
       "name": "deploy",
@@ -40,7 +46,11 @@
         "deploy-notes",
         "deploy-hotfix"
       ],
-      "forbidden_active_dirs": [".claude-plugin", "commands", "agents"]
+      "forbidden_active_dirs": [
+        ".claude-plugin",
+        "commands",
+        "agents"
+      ]
     },
     {
       "name": "mission-control",
@@ -54,14 +64,26 @@
         "milestones",
         "rollout"
       ],
-      "forbidden_active_dirs": [".claude-plugin", "commands", "agents"]
+      "forbidden_active_dirs": [
+        ".claude-plugin",
+        "commands",
+        "agents"
+      ]
     },
     {
       "name": "team-execution",
       "version": "2.2.0",
-      "skills": ["team-execution", "appsec-audit"],
-      "forbidden_active_dirs": [".claude-plugin", "commands"],
-      "managed_active_dirs": ["agents/*.toml"]
+      "skills": [
+        "team-execution",
+        "appsec-audit"
+      ],
+      "forbidden_active_dirs": [
+        ".claude-plugin",
+        "commands"
+      ],
+      "managed_active_dirs": [
+        "agents/*.toml"
+      ]
     },
     {
       "name": "home-lab-ops",
@@ -73,7 +95,11 @@
         "proxmox-operations",
         "vault-helper"
       ],
-      "forbidden_active_dirs": [".claude-plugin", "commands", "agents"]
+      "forbidden_active_dirs": [
+        ".claude-plugin",
+        "commands",
+        "agents"
+      ]
     },
     {
       "name": "python-toolkit",
@@ -83,25 +109,55 @@
         "python-project-setup",
         "python-testing-patterns"
       ],
-      "forbidden_active_dirs": [".claude-plugin", "commands", "agents"]
+      "forbidden_active_dirs": [
+        ".claude-plugin",
+        "commands",
+        "agents"
+      ]
     },
     {
       "name": "unifi",
       "version": "1.0.0",
-      "skills": ["unifi-network", "unifi-protect"],
-      "forbidden_active_dirs": [".claude-plugin", "commands", "agents"]
+      "skills": [
+        "unifi-network",
+        "unifi-protect"
+      ],
+      "forbidden_active_dirs": [
+        ".claude-plugin",
+        "commands",
+        "agents"
+      ]
     },
     {
       "name": "test-suite",
       "version": "2.0.0",
-      "skills": ["run-quality-checks"],
-      "forbidden_active_dirs": [".claude-plugin", "commands", "agents"]
+      "skills": [
+        "run-quality-checks"
+      ],
+      "forbidden_active_dirs": [
+        ".claude-plugin",
+        "commands",
+        "agents"
+      ]
     }
   ],
-  "removed_plugins": ["blueprint-reviewer", "sdlc-manager"],
-  "required_namespace_proof": ["saga:plan", "saga:work", "saga:brainstorm"],
-  "required_state_roots": [".codex/saga/", ".codex/team-execution/"],
-  "mutation_gate_plugins": ["deploy", "mission-control"],
+  "removed_plugins": [
+    "blueprint-reviewer",
+    "sdlc-manager"
+  ],
+  "required_namespace_proof": [
+    "saga:plan",
+    "saga:work",
+    "saga:brainstorm"
+  ],
+  "required_state_roots": [
+    ".codex/saga/",
+    ".codex/team-execution/"
+  ],
+  "mutation_gate_plugins": [
+    "deploy",
+    "mission-control"
+  ],
   "required_docs": [
     "docs/portability/source-baseline-saga-family.md",
     "docs/portability/saga-family-capability-map.md",

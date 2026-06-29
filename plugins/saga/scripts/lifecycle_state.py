@@ -8,6 +8,16 @@ import json
 import sys
 from collections.abc import Sequence
 
+ORCHESTRATION_TIERS = ("inline", "manual", "team-execution")
+SOURCE_ONLY_ORCHESTRATION_TIERS = (
+    "cc-workflows-ultracode",
+    "workflow",
+    "source-workflow-fanout",
+    "fork",
+    "goal",
+    "hooks",
+)
+
 DESTINATION_ALIASES = {
     "plan": "plan-only",
     "plan only": "plan-only",
@@ -145,6 +155,56 @@ def recommend_execution_backend(
     }
 
 
+def _portable_fallback(fallback_mode: str) -> str:
+    if fallback_mode in ORCHESTRATION_TIERS:
+        return fallback_mode
+    return "inline"
+
+
+def recheck_orchestration_capability(
+    *,
+    orchestration_mode: str,
+    workflow_available: bool = False,
+    fallback_mode: str = "team-execution",
+) -> dict[str, object]:
+    """Recheck a stored orchestration tier against Codex capabilities."""
+
+    resumed = orchestration_mode or "inline"
+    if resumed in ORCHESTRATION_TIERS:
+        return {
+            "downgraded": False,
+            "from": resumed,
+            "to": resumed,
+            "note": "",
+            "workflow_available": workflow_available,
+            "source_backend_excluded": False,
+        }
+
+    if resumed in SOURCE_ONLY_ORCHESTRATION_TIERS:
+        target = _portable_fallback(fallback_mode)
+        note = (
+            f"{resumed} is a source-only backend in Codex; "
+            f"degraded to {target}."
+        )
+        return {
+            "downgraded": True,
+            "from": resumed,
+            "to": target,
+            "note": note,
+            "workflow_available": workflow_available,
+            "source_backend_excluded": True,
+        }
+
+    return {
+        "downgraded": True,
+        "from": resumed,
+        "to": "inline",
+        "note": f"unknown orchestration mode {resumed!r}; using inline.",
+        "workflow_available": workflow_available,
+        "source_backend_excluded": False,
+    }
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -166,6 +226,14 @@ def _build_parser() -> argparse.ArgumentParser:
     backend.add_argument("--adversarial-confidence", action="store_true")
     backend.add_argument("--no-code-surface", action="store_true")
     backend.add_argument("--no-workflow", action="store_true")
+
+    recheck = subparsers.add_parser(
+        "recheck-capability",
+        help="recheck a stored orchestration mode against Codex capabilities",
+    )
+    recheck.add_argument("--orchestration-mode", default="inline")
+    recheck.add_argument("--no-workflow", action="store_true")
+    recheck.add_argument("--fallback-mode", default="team-execution")
 
     return parser
 
@@ -192,6 +260,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             adversarial_confidence=args.adversarial_confidence,
             has_code_surface=not args.no_code_surface,
             workflow_available=not args.no_workflow,
+        )
+        print(json.dumps(result))
+        return 0
+    if args.command == "recheck-capability":
+        result = recheck_orchestration_capability(
+            orchestration_mode=args.orchestration_mode,
+            workflow_available=not args.no_workflow,
+            fallback_mode=args.fallback_mode,
         )
         print(json.dumps(result))
         return 0

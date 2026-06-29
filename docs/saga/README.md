@@ -25,7 +25,7 @@ Saga is not a one-plugin monolith. It is the lifecycle wrapper around four coope
 
 | Plugin | Owns | Typical moment |
 |---|---|---|
-| `saga` | lifecycle choice, local Saga state, durable lifecycle docs, handoff envelopes | choose and record the next lifecycle move |
+| `saga` | lifecycle choice, local Saga state, durable lifecycle docs, outcome orchestration, handoff envelopes, promotion proposals | choose and record the next lifecycle move |
 | `mission-control` | issues, comments, labels, milestones, project boards, project fields, rollout, metrics | create or mutate SDLC issue/project state |
 | `team-execution` | reviewer consensus, selected validators, delegated or serial evidence | add independent review and validation protocol |
 | `deploy` | tag promotion, rollback, hotfixes, deployment status, release-note previews | promote or inspect release state |
@@ -65,8 +65,9 @@ Saga writes and consumes durable repo artifacts rather than relying on chat memo
 | `docs/plans/` | `saga:plan` | `plan-ready` after review |
 | `docs/reviews/` | `saga:doc-review`, `saga:code-review` | readiness and code review evidence |
 | `docs/work-sessions/` | `saga:work` | `resume-ready` execution evidence |
+| `docs/outcomes/` | `saga:outcome` | durable outcome spec and receipts |
 
-Ignored local Saga state belongs under `.codex/saga/`. That cache helps resume work, but external owners remain authoritative.
+Ignored local Saga state belongs under `.codex/saga/`. That cache helps resume work and outcome reconciliation, but external owners remain authoritative. `saga:promote` scans source journals read-only and proposes context-library journal diffs behind explicit approval.
 
 ## Current Source Material
 

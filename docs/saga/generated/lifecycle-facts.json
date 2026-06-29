@@ -189,6 +189,12 @@
           "skill_path": "plugins/saga/skills/work/SKILL.md"
         },
         {
+          "description": "Coordinate a whole outcome as a durable Codex Saga DAG. Use for start, load, status, report, graph, advance, attend, export, and import of outcome subplots. The coordinator routes work and records receipts; it does not execute leaf work in-context.",
+          "name": "outcome",
+          "namespace": "saga:outcome",
+          "skill_path": "plugins/saga/skills/outcome/SKILL.md"
+        },
+        {
           "description": "Run a risk-driven Infiquetra acceptance-evidence QA gate on shipped work. Restores the work-thread saga, classifies the change into risk classes, runs acceptance checks (including browser behavior via the installed MCP), gathers evidence, assigns severity, derives a ship verdict, writes a durable QA artifact, advances the saga qa-track on pass, and routes by merge state \u2014 without fixing, committing, or deploying. Triggers on \"qa\", \"run QA\", \"does this actually work\", \"acceptance check\", \"ship-readiness\", or a /work or /code-review hand-in after merge.",
           "name": "qa",
           "namespace": "saga:qa",
@@ -217,6 +223,12 @@
           "name": "handoff",
           "namespace": "saga:handoff",
           "skill_path": "plugins/saga/skills/handoff/SKILL.md"
+        },
+        {
+          "description": "Promote select cross-repo transcendent learnings into the context-library engineering journal as proposed, gated, idempotent entries.",
+          "name": "promote",
+          "namespace": "saga:promote",
+          "skill_path": "plugins/saga/skills/promote/SKILL.md"
         },
         {
           "description": "CEO/founder-mode scope and ambition review. Rethink the problem, find the 10x product, challenge premises, expand or cut scope deliberately \u2014 across four committed modes (SCOPE EXPANSION, SELECTIVE EXPANSION, HOLD SCOPE, SCOPE REDUCTION). Fires upstream of execution on a /plan artifact, STRATEGY.md, /brainstorm output, or an ad-hoc scope question; produces a scope decision and routes deep rigor back to /doc-review and /code-review in a closed loop. Triggers on \"think bigger\", \"expand scope\", \"is this ambitious enough\", \"rethink this\", \"scope review\", or a /ceo-review invocation. Does not implement, record strategy, file issues, or change code.",
@@ -255,7 +267,7 @@
           "skill_path": "plugins/saga/skills/loop/SKILL.md"
         }
       ],
-      "version": "0.22.1"
+      "version": "0.41.0"
     },
     "team-execution": {
       "skills": [

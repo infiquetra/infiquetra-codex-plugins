@@ -17,11 +17,13 @@ EXPECTED_SKILLS = {
     "strategy",
     "plan",
     "work",
+    "outcome",
     "qa",
     "investigate",
     "retro",
     "resume",
     "handoff",
+    "promote",
     "founder-review",
     "ceo-review",
     "doc-review",
@@ -47,7 +49,7 @@ def test_manifest_and_skill_inventory_match_target_fixture() -> None:
     target = next(entry for entry in fixture["plugins"] if entry["name"] == "saga")
 
     assert manifest["name"] == "saga"
-    assert manifest["version"] == "0.22.1"
+    assert manifest["version"] == "0.41.0"
     assert set(target["skills"]) == EXPECTED_SKILLS
     assert {path.parent.name for path in (PLUGIN_ROOT / "skills").glob("*/SKILL.md")} == EXPECTED_SKILLS
     assert not (PLUGIN_ROOT / ".claude-plugin").exists()
@@ -59,8 +61,7 @@ def test_active_saga_text_has_no_old_host_or_command_only_surface() -> None:
     forbidden = (
         ".claude",
         "AskUserQuestion",
-        "cc-workflows-ultracode",
-        ".claude-plugin",
+            ".claude-plugin",
         "suggested_command",
         "/issue --prepare",
         "exactly three backends",
@@ -76,10 +77,11 @@ def test_active_saga_text_has_no_old_host_or_command_only_surface() -> None:
     assert offenders == {}
 
 
-def test_operator_choice_documents_two_codex_backends() -> None:
+def test_operator_choice_documents_codex_backends() -> None:
     text = (PLUGIN_ROOT / "references/operator-choice.md").read_text(encoding="utf-8")
 
     assert "`inline`" in text
     assert "`team-execution`" in text
-    assert "cc-workflows-ultracode" not in text
-    assert "Codex Saga exposes exactly two execution choices" in text
+    assert "manual" in text
+    assert "cc-workflows-ultracode" in text
+    assert "lineage" in text.lower() or "source" in text.lower()
