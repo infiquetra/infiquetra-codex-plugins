@@ -18,12 +18,14 @@ Each command keeps its plugin namespace. Generic names such as `plan` and `work`
 | `saga:plan` | Decide HOW to build settled requirements. | issue, requirements, repo evidence | `docs/plans/`, `.codex/saga/` | local ignored state | `saga:doc-review` |
 | `saga:doc-review` | Check implementation readiness. | plan, requirements, strategy, issue docs | `docs/reviews/` when needed | safe in-place doc fixes only | `saga:work` if no P0/P1 |
 | `saga:work` | Execute a reviewed plan to PR-ready. | plan, review, saga state, repo | code/docs/tests, `docs/work-sessions/`, `.codex/saga/` | git commits and PR actions only with confirmation | `saga:code-review`, then `saga:qa` |
+| `saga:outcome` | Coordinate a durable outcome DAG. | outcome spec, store, receipts, backend capability | `docs/outcomes/`, `.codex/saga/`, status cards | preview/propose only unless explicitly approved | native Saga leaf routes or `team-execution` |
 | `saga:code-review` | Review implementation at PR boundary. | merge-base diff, plan, review context | `docs/reviews/` | none | `saga:work` for fixes or `saga:qa` |
 | `saga:qa` | Gather acceptance evidence after shipped or PR-ready work. | work session, PR/merge state, app/repo evidence | QA artifact | none | `saga:handoff` or `saga:retro` |
 | `saga:investigate` | Diagnose bugs and root causes off-chain. | failure evidence, repo, logs | investigation report | optional trivial fix only when gated | `saga:work`, `saga:handoff`, or `saga:brainstorm` |
 | `saga:founder-review` | Challenge scope and ambition. | strategy, brainstorm, plan, scope ask | scope decision/review | none | `saga:plan` and `saga:doc-review` |
 | `saga:ceo-review` | Alias-style entry to founder review. | same as `saga:founder-review` | same as `saga:founder-review` | none | `saga:founder-review` flow |
 | `saga:optimize` | Run a bounded metric-improvement loop off-chain. | measurable target, repo evidence | optimization notes | docs/code only through explicit work path | `saga:work` or done |
+| `saga:promote` | Promote select cross-repo learnings. | workspace engineering journals, promotion ledger | proposed context-library journal diffs | context-library writes only after explicit approval | terminal |
 | `saga:handoff` | Convert durable artifacts into handoff context. | docs artifact, repo, target metadata | handoff envelope | none | `mission-control:issues` |
 | `saga:retro` | Capture learnings and lifecycle improvements. | completed work, reviews, sessions | `docs/engineering-journal/` or retro report | docs only | terminal or `saga:handoff` |
 | `saga:resume` | Reconstruct stale or interrupted lifecycle context. | `.codex/saga/`, docs, git, sessions | local context notes | none | relevant lifecycle command |

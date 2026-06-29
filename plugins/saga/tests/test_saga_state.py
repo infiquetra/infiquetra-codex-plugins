@@ -29,7 +29,7 @@ def quiet_git_runner(*_args: object, **_kwargs: object) -> SimpleNamespace:
 
 def test_saga_state_uses_codex_root(tmp_path: Path) -> None:
     assert saga.STATE_DIR == Path(".codex/saga")
-    assert saga.ORCHESTRATION_MODES == ("inline", "team-execution")
+    assert saga.ORCHESTRATION_MODES == ("inline", "manual", "team-execution")
 
     result = saga.save(
         tmp_path,

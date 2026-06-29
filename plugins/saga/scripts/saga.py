@@ -68,7 +68,7 @@ LIFECYCLE_PHASES = ("ideation", "brainstorm", "plan", "review", "work", "qa", "r
 PHASE_STATUSES = ("pending", "in_progress", "complete")
 STATUSES = ("active", "blocked", "paused", "handed-off", "done", "abandoned")
 DESTINATIONS = ("plan-only", "pr", "merge", "nonprod-deploy")
-ORCHESTRATION_MODES = ("inline", "team-execution")
+ORCHESTRATION_MODES = ("inline", "manual", "team-execution")
 
 # maturity is DERIVED at /handoff time from lifecycle_phase — never stored and never
 # surfaced by the generic engine (restore/scan). This is the contract mapping the future
@@ -149,6 +149,9 @@ class Saga:
     next_step: str = ""
     orchestration_mode: str = "inline"
     orchestration_ref: str = ""
+    orchestration_recommended: str = ""
+    orchestration_operator_choice: str = ""
+    orchestration_downgrade: str = ""
 
     # Pointers (link, never duplicate, another owner's state).
     issue_ref: str = ""  # owner/repo#N (empty for plan-only)
@@ -184,6 +187,7 @@ class Saga:
     blockers: str = ""
     open_questions: ListOrAbsent = ABSENT
     checks_run: ListOrAbsent = ABSENT
+    gate_verdicts: ListOrAbsent = ABSENT
     source: str = ""
 
     # Body sections (free-form prose).
@@ -211,6 +215,9 @@ FRONTMATTER_FIELDS: tuple[str, ...] = (
     "next_step",
     "orchestration_mode",
     "orchestration_ref",
+    "orchestration_recommended",
+    "orchestration_operator_choice",
+    "orchestration_downgrade",
     "issue_ref",
     "destination",
     "round",
@@ -232,6 +239,7 @@ FRONTMATTER_FIELDS: tuple[str, ...] = (
     "blockers",
     "open_questions",
     "checks_run",
+    "gate_verdicts",
     "source",
 )
 
@@ -247,6 +255,7 @@ _LIST_FIELDS = {
     "journal_refs",
     "open_questions",
     "checks_run",
+    "gate_verdicts",
 }
 
 
@@ -645,6 +654,9 @@ def _saga_summary(saga: Saga) -> dict[str, Any]:
         "branch": saga.branch,
         "orchestration_mode": saga.orchestration_mode,
         "orchestration_ref": saga.orchestration_ref,
+        "orchestration_recommended": saga.orchestration_recommended,
+        "orchestration_operator_choice": saga.orchestration_operator_choice,
+        "orchestration_downgrade": saga.orchestration_downgrade,
         "next_step": saga.next_step,
         "updated_at": saga.updated_at,
     }
@@ -664,6 +676,7 @@ def _tick_snapshot(saga: Saga) -> dict[str, Any]:
             "blockers": saga.blockers,
             "summary": saga.summary,
             "open_questions": _materialize(saga.open_questions),
+            "gate_verdicts": _materialize(saga.gate_verdicts),
             "rounds_seen": _materialize(saga.rounds_seen),
         }
     )
@@ -844,11 +857,14 @@ def scan(root: Path, *, max_candidates: int | None = None) -> list[dict[str, Any
                     "destination": saga.destination,
                     "issue_ref": saga.issue_ref,
                     "plan_path": saga.plan_path,
-                    "branch": saga.branch,
-                    "orchestration_mode": saga.orchestration_mode,
-                    "orchestration_ref": saga.orchestration_ref,
-                    "legacy": False,
-                }
+        "branch": saga.branch,
+        "orchestration_mode": saga.orchestration_mode,
+        "orchestration_ref": saga.orchestration_ref,
+        "orchestration_recommended": saga.orchestration_recommended,
+        "orchestration_operator_choice": saga.orchestration_operator_choice,
+        "orchestration_downgrade": saga.orchestration_downgrade,
+        "legacy": False,
+    }
             )
     candidates.sort(key=lambda c: envelope_sort_key(c["name"]), reverse=True)
     candidates.extend(_scan_legacy(root))
@@ -1001,6 +1017,33 @@ def aggregate_context(
     }
 
 
+_GATE_STATES: frozenset[str] = frozenset(
+    {"done", "in-progress", "blocked", "failed", "halted", "not-reached"}
+)
+
+
+def parse_gate_verdict(entry: str) -> tuple[str, str, str]:
+    """Parse a ``gate:state:ref`` receipt."""
+
+    first_colon = entry.find(":")
+    if first_colon == -1:
+        raise ValueError(f"gate_verdict entry has no colon separator: {entry!r}")
+    second_colon = entry.find(":", first_colon + 1)
+    if second_colon == -1:
+        raise ValueError(
+            f"gate_verdict entry needs gate:state:ref fields: {entry!r}"
+        )
+    gate = entry[:first_colon]
+    state = entry[first_colon + 1 : second_colon]
+    ref = entry[second_colon + 1 :]
+    if state not in _GATE_STATES:
+        raise ValueError(
+            f"unknown gate state {state!r}; expected one of "
+            f"{', '.join(sorted(_GATE_STATES))}"
+        )
+    return gate, state, ref
+
+
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
@@ -1035,6 +1078,10 @@ def _build_save_saga(args: argparse.Namespace) -> Saga:
         next_step=args.next_step,
         orchestration_mode=args.orchestration_mode,
         orchestration_ref=args.orchestration_ref,
+        orchestration_recommended=args.orchestration_recommended,
+        orchestration_operator_choice=args.orchestration_operator_choice
+        or args.orchestration_mode,
+        orchestration_downgrade=args.orchestration_downgrade,
         issue_ref=args.issue_ref,
         destination=args.destination,
         round=args.round or 0,
@@ -1052,6 +1099,7 @@ def _build_save_saga(args: argparse.Namespace) -> Saga:
         blockers=args.blockers,
         open_questions=_split_list(args.open_questions),
         checks_run=_split_list(args.checks_run),
+        gate_verdicts=ABSENT if args.gate_verdict is None else list(args.gate_verdict),
         source=args.source,
         summary=args.summary,
         decisions=args.decisions,
@@ -1076,6 +1124,9 @@ def _add_save_parser(sub: Any) -> None:
     p.add_argument("--destination", choices=list(DESTINATIONS), default="plan-only")
     p.add_argument("--orchestration-mode", choices=list(ORCHESTRATION_MODES), default="inline")
     p.add_argument("--orchestration-ref", default="")
+    p.add_argument("--orchestration-recommended", choices=list(ORCHESTRATION_MODES), default="")
+    p.add_argument("--orchestration-operator-choice", choices=list(ORCHESTRATION_MODES), default="")
+    p.add_argument("--orchestration-downgrade", default="")
     p.add_argument("--issue-ref", default="")
     p.add_argument("--next-step", default="")
     p.add_argument("--plan-path", default="")
@@ -1091,6 +1142,12 @@ def _add_save_parser(sub: Any) -> None:
     p.add_argument("--journal-refs", default=None, help="pipe-separated; omit = carry forward")
     p.add_argument("--open-questions", default=None, help="pipe-separated; omit = carry forward")
     p.add_argument("--checks-run", default=None, help="pipe-separated; omit = carry forward")
+    p.add_argument(
+        "--gate-verdict",
+        action="append",
+        default=None,
+        help="repeatable gate:state:ref receipt; omit = carry forward",
+    )
     p.add_argument("--blockers", default="")
     p.add_argument("--source", default="")
     p.add_argument("--summary", default="")

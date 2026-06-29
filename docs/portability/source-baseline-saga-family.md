@@ -90,3 +90,15 @@ The implementation must preserve these constraints:
   `commands`, or `agents` directories.
 - Saga and team-execution state must use ignored `.codex/saga/` and
   `.codex/team-execution/` roots, not `.claude/...`.
+
+## Saga 0.41 Parity Addendum
+
+| Field | Value |
+|---|---|
+| Source repo | `git@github.com:infiquetra/infiquetra-claude-plugins.git` |
+| Source commit | `b30e0f2ba7cd0cfdeaf97c1d4510c9a0468e96da` |
+| Codex baseline | `fce697c24bd17a49f70897de53d614adc8478947` |
+| Drift windows classified | `80e8731..aad9d6a`, `aad9d6a..origin/main` |
+| Codex treatment | `saga:outcome`, `saga:promote`, outcome scripts, completeness gate, status card, override-rate reader, and selected tests ported with Codex backend gates. |
+
+Source Workflow, fork, goal, hooks, command files, source manifests, and source agents remain lineage-only unless a future Codex capability proof and negative fallback tests activate them.
