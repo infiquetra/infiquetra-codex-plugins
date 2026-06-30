@@ -12,3 +12,5 @@ build/
 .codex/saga/
 .codex/team-execution/
 .codex/proofs/
+.neuralmind/
+graphify-out/
