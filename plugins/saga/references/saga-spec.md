@@ -119,7 +119,7 @@ construct a `Saga` (no default); all others have the listed default.
 | `status` | enum | — | `active` | Thread disposition (§4) — **MUST** be in `STATUSES`, **MUST NOT** be `pending`/`in_progress`. |
 | `next_step` | str | — | `""` | The one imperative resume anchor (top of `## Remaining`). |
 | `orchestration_mode` | enum | — | `inline` | How work runs — decision contract in `references/operator-choice.md`; **MUST** be in `ORCHESTRATION_MODES`. |
-| `orchestration_ref` | str | — | `""` | Pointer into the orchestration (team name, workflow id, …). |
+| `orchestration_ref` | str | — | `""` | Empty for `inline` / `manual`; for executable `team-execution`, points to a `## Team Structure` receipt or protected evidence root. |
 | `issue_ref` | str | — | `""` | `owner/repo#N` pointer; empty for plan-only / pre-issue work. |
 | `destination` | enum | — | `plan-only` | Routing intent — **MUST** be in `DESTINATIONS`. Mirrors `lifecycle_state`. |
 | `round` | int | — | `0` | Current PR/iteration round. |
@@ -213,7 +213,7 @@ phase_status: in_progress
 status: active
 next_step: "wire /resume to call saga.restore"
 orchestration_mode: team-execution
-orchestration_ref: "wf-saga-foundation"
+orchestration_ref: docs/plans/2026-06-02-saga-foundation.md#team-structure
 issue_ref: "infiquetra/infiquetra-codex-plugins#42"
 destination: pr
 round: 2
@@ -281,7 +281,7 @@ LIFECYCLE_PHASES   = ("ideation", "brainstorm", "plan", "review", "work", "qa", 
 PHASE_STATUSES     = ("pending", "in_progress", "complete")
 STATUSES           = ("active", "blocked", "paused", "handed-off", "done", "abandoned")
 DESTINATIONS       = ("plan-only", "pr", "merge", "nonprod-deploy")
-ORCHESTRATION_MODES = ("inline", "team-execution")
+ORCHESTRATION_MODES = ("inline", "manual", "team-execution")
 ```
 
 `destination` mirrors `lifecycle_state.normalize_destination`'s canonical set — use that helper to normalize

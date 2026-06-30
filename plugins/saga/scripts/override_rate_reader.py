@@ -162,8 +162,17 @@ def _parse_frontmatter_fields(text: str, fields: set[str]) -> dict[str, str]:
             key, _, raw_val = line.partition(":")
             key = key.strip()
             if key in fields:
-                result[key] = raw_val.strip()
+                result[key] = _unquote_scalar(raw_val.strip())
     return result
+
+
+def _unquote_scalar(value: str) -> str:
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+        inner = value[1:-1]
+        if value[0] == '"':
+            return inner.replace('\\"', '"').replace("\\\\", "\\")
+        return inner
+    return value
 
 
 def _all_latest_envelopes(root: Path) -> list[Path]:

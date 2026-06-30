@@ -166,12 +166,13 @@ do **not** reference named `ce-*` agents). Each lens returns findings in the sch
 `references/findings-schema.md`.
 
 **Operator-choice backend.** Offer the execution backend per `../../references/operator-choice.md` (the
-plugin-root decision contract). There are exactly two backends — `inline | team-execution`.
+plugin-root decision contract). There are exactly three active Codex backends — `inline | manual |
+team-execution`.
 Read the work shape, recommend the cheapest-correct backend and pre-select it,
 but surface the alternatives so escalation is one step. Escalate to `team-execution` for risky/consensus
-review (large diff, security, infra, cross-repo, deployment-sensitive); to `team-execution` for
-broad independent fan-out without elevated risk. Never offer source-only workflow backends in Codex.
-`inline` suits small diffs.
+review (large diff, security, infra, cross-repo, deployment-sensitive) or broad independent fan-out.
+Use `manual` when automation is unsafe or unavailable. Never offer source-only workflow backends in
+Codex. `inline` suits small diffs.
 
 **Search-before-recommending.** Before citing a fix pattern (concurrency, caching, auth, framework
 behavior), verify it is current best practice for the version in use — check for a built-in solution in
@@ -264,7 +265,7 @@ python3 plugins/saga/scripts/saga.py save \
   --kind <issue|task> \
   --id <the-existing-saga-id> \
   --review-paths docs/code-reviews/YYYY-MM-DD-<branch-or-pr>-code-review.md \
-  --orchestration-mode <inline|team-execution>
+  --orchestration-mode <inline|manual|team-execution>
 ```
 
 **If no saga was found in 5.1, SKIP this command entirely and say so** ("No work-thread saga found —

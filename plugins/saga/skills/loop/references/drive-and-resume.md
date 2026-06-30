@@ -59,11 +59,12 @@ Recommend the cheapest-correct backend, surface the alternatives, confirm, and r
 backend choice entirely to the destination command (which makes its own offer); `/loop` does not
 instruct it.
 
-### The inline phase-walk is the cross-host fallback
+### Serial Team Execution or explicit downgrade is the cross-host fallback
 
-When team-execution is unavailable, unsafe, or backpressured, Drive degrades cleanly to `loop`'s own
-**inline agent-sequential phase-walk**. Try the richer path when it is safe; fall back to inline with
-a one-line note. The phase-walk always works on any host.
+When Team Execution delegation is unavailable or backpressured, Drive uses **serial Team Execution**
+with the selected roles and validators. If Team Execution itself is unsafe or impossible, Drive halts
+for repair or records an explicit downgrade before using `loop`'s own agent-sequential phase-walk. The
+phase-walk always works on any host, but it must not silently preserve Team Execution metadata.
 
 ---
 

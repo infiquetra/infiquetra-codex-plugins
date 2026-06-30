@@ -79,3 +79,92 @@ def test_cli_rejects_source_only_backend(tmp_path: Path) -> None:
 
     assert result.returncode != 0
     assert "invalid choice" in result.stderr
+
+
+def test_cli_rejects_complete_team_execution_without_ref(tmp_path: Path) -> None:
+    script = Path(__file__).parents[1] / "scripts" / "saga.py"
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(script),
+            "save",
+            "--kind",
+            "task",
+            "--id",
+            "no-ref",
+            "--lifecycle-phase",
+            "plan",
+            "--phase-status",
+            "complete",
+            "--orchestration-mode",
+            "team-execution",
+        ],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 2
+    assert "missing orchestration_ref" in result.stderr
+
+
+def test_cli_allows_draft_team_execution_without_ref(tmp_path: Path) -> None:
+    script = Path(__file__).parents[1] / "scripts" / "saga.py"
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(script),
+            "save",
+            "--kind",
+            "task",
+            "--id",
+            "draft",
+            "--lifecycle-phase",
+            "plan",
+            "--phase-status",
+            "pending",
+            "--orchestration-mode",
+            "team-execution",
+        ],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+
+
+def test_cli_accepts_complete_team_execution_with_plan_ref(tmp_path: Path) -> None:
+    plan = tmp_path / "docs" / "plans" / "repair.md"
+    plan.parent.mkdir(parents=True)
+    plan.write_text("# Repair\n\n## Team Structure\n\nroles\n", encoding="utf-8")
+    script = Path(__file__).parents[1] / "scripts" / "saga.py"
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(script),
+            "save",
+            "--kind",
+            "task",
+            "--id",
+            "ready",
+            "--lifecycle-phase",
+            "plan",
+            "--phase-status",
+            "complete",
+            "--plan-path",
+            "docs/plans/repair.md",
+            "--orchestration-mode",
+            "team-execution",
+            "--orchestration-ref",
+            "docs/plans/repair.md#team-structure",
+        ],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0

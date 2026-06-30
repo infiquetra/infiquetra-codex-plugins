@@ -19,6 +19,14 @@ from typing import Any
 
 ROOT = Path(__file__).parent.parent
 SCRIPTS = ROOT / "plugins" / "saga" / "scripts"
+TEAM_REF = "docs/plans/x.md#team-structure"
+
+
+def _write_team_ref(repo_root: Path) -> str:
+    plan = repo_root / "docs" / "plans" / "x.md"
+    plan.parent.mkdir(parents=True, exist_ok=True)
+    plan.write_text("# X\n\n## Team Structure\n\nroles\n", encoding="utf-8")
+    return TEAM_REF
 
 
 def _load(name: str) -> ModuleType:
@@ -234,6 +242,7 @@ def test_advance_degrades_an_autonomous_cc_workflows_leaf_and_records_a_receipt(
     tmp_path: Path,
 ) -> None:
     repo = _repo(tmp_path)
+    _write_team_ref(repo)
     ENG.start(
         repo,
         "o",
@@ -244,6 +253,7 @@ def test_advance_degrades_an_autonomous_cc_workflows_leaf_and_records_a_receipt(
                 "title": "B",
                 "kind": "code",
                 "backend": "cc-workflows-ultracode",
+                "evidence": {"orchestration_ref": TEAM_REF},
             }
         ],
     )
@@ -265,6 +275,7 @@ def test_advance_degrades_an_autonomous_cc_workflows_leaf_and_records_a_receipt(
 
 def test_advance_halts_an_attended_unavailable_leaf(tmp_path: Path) -> None:
     repo = _repo(tmp_path)
+    _write_team_ref(repo)
     ENG.start(
         repo,
         "o",
@@ -275,6 +286,7 @@ def test_advance_halts_an_attended_unavailable_leaf(tmp_path: Path) -> None:
                 "title": "B",
                 "kind": "code",
                 "backend": "cc-workflows-ultracode",
+                "evidence": {"orchestration_ref": TEAM_REF},
             }
         ],
     )
@@ -293,6 +305,7 @@ def test_repeated_halt_appends_one_ledger_record_not_n(tmp_path: Path) -> None:
     # P2 regression: an attended leaf polling advance against a persistently-unavailable backend must
     # NOT grow the ledger by one halt record per tick (append-once on (halt, key)).
     repo = _repo(tmp_path)
+    _write_team_ref(repo)
     ENG.start(
         repo,
         "o",
@@ -303,6 +316,7 @@ def test_repeated_halt_appends_one_ledger_record_not_n(tmp_path: Path) -> None:
                 "title": "B",
                 "kind": "code",
                 "backend": "cc-workflows-ultracode",
+                "evidence": {"orchestration_ref": TEAM_REF},
             }
         ],
     )
@@ -328,6 +342,7 @@ def test_degrade_record_is_not_double_listed_after_a_crash(tmp_path: Path) -> No
     # P2 regression: a crash in the degrade->commit window (recovery re-runs the intent) must not
     # double-list the degradation (append-once on (degrade, key)).
     repo = _repo(tmp_path)
+    _write_team_ref(repo)
     ENG.start(
         repo,
         "o",
@@ -338,6 +353,7 @@ def test_degrade_record_is_not_double_listed_after_a_crash(tmp_path: Path) -> No
                 "title": "B",
                 "kind": "code",
                 "backend": "cc-workflows-ultracode",
+                "evidence": {"orchestration_ref": TEAM_REF},
             }
         ],
     )
@@ -377,7 +393,11 @@ def test_degrade_record_is_not_double_listed_after_a_crash(tmp_path: Path) -> No
     assert len(degrades) == 1 and len(commits) == 1  # one degrade, one dispatch — no double-list
 
 
-def test_cli_dispatch_dry_run_still_works(capsys: Any) -> None:
+def test_cli_dispatch_dry_run_still_works(
+    tmp_path: Path, monkeypatch: Any, capsys: Any
+) -> None:
     # the U4 dry-run CLI is unchanged by the U9 menu expansion
-    assert D.main(["o", "build", "team-execution"]) == 0
+    _write_team_ref(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    assert D.main(["o", "build", "team-execution", "--orchestration-ref", TEAM_REF]) == 0
     assert json.loads(capsys.readouterr().out)["status"] == "dispatched"

@@ -49,7 +49,7 @@ After the task list, pick how to execute from task count and dependency structur
 | **Parallel subagents** | 3+ tasks that pass the Parallel Safety Check below. Dispatch independent units simultaneously; run dependent units after their prerequisites complete. Requires plan-unit metadata. |
 
 This strategy choice (inline / serial / parallel **subagent dispatch**) is the *mechanical* "how do I run
-the units" decision and is independent of the **backend** choice below (`inline` / `team-execution` /
+the units" decision and is independent of the **backend** choice below (`inline` / `manual` /
 `team-execution`), which is the operator-choice contract for *which runtime owns the work*.
 
 ## Parallel Safety Check (required before parallel dispatch)
@@ -135,9 +135,12 @@ broad-independent-fanout, or adversarial-confidence review need independently re
 reachable backend **independent of which one won precedence**, so an overlap job (consensus AND
 fan-out) still offers both — escalation stays one step (operator-choice §3.3).
 
-Surface the recommendation with `Codex blocking question` (or channel-inline) pre-selecting `recommended`,
-listing `alternatives`. `source_workflow_excluded=true` means Codex has intentionally removed the
-source-only workflow backend from the offer. If the operator picks `team-execution` but it turns out
-unavailable or unsafe, fall back to `inline` with a one-line note. Record the operator's pick via
-the saga's `--orchestration-mode`
-(Phase 1.4) — that is the durable home for the choice (operator-choice §6).
+Surface the recommendation with `Codex blocking question` (or channel-inline) pre-selecting
+`recommended`, listing `alternatives`. `source_workflow_excluded=true` means Codex has intentionally
+removed the source-only workflow backend from the offer. If the operator picks `team-execution` but
+delegation is unavailable or backpressured, use serial Team Execution with the selected roles and
+validators. If Team Execution itself is unsafe or impossible, halt for repair or record an explicit
+`orchestration_downgrade` rationale before continuing through another backend. Record the operator's
+pick via `--orchestration-operator-choice`, the effective backend via `--orchestration-mode`, and the
+Team Execution receipt via `--orchestration-ref` (Phase 1.4) — those fields are the durable home for
+the choice (operator-choice §6).

@@ -173,6 +173,30 @@ journal sections. Then **read the committed `docs/*` the ticks point at** (`plan
 Reconcile the trajectory (all ticks) against the PR reality (`reviewDecision` / `mergedAt` / round) and
 the committed docs, then produce the reconstructed state:
 
+- **Team Execution repair check** — if any restored tick or durable artifact carries
+  `orchestration_mode=team-execution`, validate the restored ref before routing:
+
+  ```bash
+  python3 plugins/saga/scripts/team_execution_readiness.py validate \
+    --mode team-execution \
+    --ref <orchestration_ref> \
+    --context resume \
+    --plan-path docs/plans/YYYY-MM-DD-<topic>-plan.md
+  ```
+
+  Detect and name these contradictions: empty ref, missing Team Structure, generic-subagent evidence
+  presented as Team Execution, `inline-assist` or inline prose with Team Execution metadata, and stale
+  instruction roots.
+  Treat stale instruction roots conservatively: flag them only when the tick chain or committed
+  artifacts name an installed cache root such as `.codex/plugins/cache/...`, name a Saga or Team
+  Execution version older than the repo source being read, or otherwise point to non-repo
+  instructions. When stale instruction roots are suspected, reread current repo skill files before
+  routing.
+
+  If the ref is ready, route the reconstructed state to `/work` so it can enter Team Execution Phase B.
+  If the ref is blocked, repair Phase A, record an explicit `orchestration_downgrade` rationale, or
+  halt for the operator. Do not preserve Team Execution metadata while routing to an inline execution
+  path.
 - **phase / destination** — the current `lifecycle_phase` / `phase_status`, the `destination` class.
 - **blockers** — open vs cleared (a blocker a later tick or a merged PR resolved is **cleared**, not open).
 - **open questions** — open vs answered (snapshot semantics: an answered question dropped off a later tick).
@@ -263,6 +287,10 @@ unchanged for the record). `save` mints a new saga dir unconditionally for any i
 prefixed `saga_id` as `--id` re-derives `task-task-<slug>` and forks. The `--saga-id` override sidesteps
 both. Use the EXACT id `restore` reported (`issue-<N>` / `task-<slug>`). Carry `lifecycle_phase`
 **forward** (never clobber a consumer's phase); **never** set `next_round` (derived, §6.1):
+
+Before writing this tick, run the Phase 3a Team Execution readiness validation for any reconstructed
+`team-execution` state. The tick must carry repaired executable state, an explicit downgrade rationale,
+or a halted operator-facing blocker; it must not write a fresh metadata-only Team Execution re-entry.
 
 ```bash
 python3 plugins/saga/scripts/saga.py save \

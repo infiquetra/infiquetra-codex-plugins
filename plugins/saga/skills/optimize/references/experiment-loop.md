@@ -240,6 +240,6 @@ the run:
 
 The default loop is **serial**. For **independent experiment fan-out** — many hypotheses that do not share
 output — **OFFER** a backend per `../../../references/operator-choice.md` (§3.2: broad, independent,
-low-risk fan-out leans `team-execution`; risky-and-parallel leans `team-execution`). `/optimize`
-writes **no saga**, so the chosen backend is recorded **NARRATIVELY** in the strategy digest (operator-choice
-§6 — a non-saga-writer records the choice in prose, never via `saga.save`). Never auto-spawn a backend.
+low-risk fan-out leans `team-execution`; unsafe automation leans `manual`). `/optimize` writes **no
+saga**, so the chosen backend is recorded **NARRATIVELY** in the strategy digest (operator-choice §6 —
+a non-saga-writer records the choice in prose, never via `saga.save`). Never auto-spawn a backend.

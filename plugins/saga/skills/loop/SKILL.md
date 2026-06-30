@@ -245,7 +245,9 @@ python3 plugins/saga/scripts/lifecycle_state.py recommend-backend \
 Recommend the cheapest-correct backend, surface the alternatives (escalation one step), confirm with
 the operator, and record `--orchestration-mode` + `--orchestration-ref` in the routing tick (Phase 4)
 **only in this `/loop`-owned-offload case** — never on an ordinary single-skill route. If
-team-execution is unavailable, unsafe, or backpressured, fall back to `loop`'s own phase-walk.
+team-execution delegation is unavailable or backpressured, use serial Team Execution. If Team Execution
+itself is unsafe or impossible, halt for repair or record an explicit downgrade before using `loop`'s
+own phase-walk.
 
 ---
 

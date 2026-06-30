@@ -28,6 +28,15 @@ Otherwise recommend `inline`.
 
 ## State Fields
 
-Saga records the effective backend in `orchestration_mode`, the recommendation in `orchestration_recommended`, the operator pick in `orchestration_operator_choice`, and any capability downgrade in `orchestration_downgrade`.
+Saga records the effective backend in `orchestration_mode`, the recommendation in
+`orchestration_recommended`, the operator pick in `orchestration_operator_choice`, and any capability
+downgrade in `orchestration_downgrade`.
 
-`orchestration_ref` stays empty for `inline` and `manual`. For `team-execution`, it may point at a `## Team Structure` section or team-execution evidence root. Saga records the pointer; team-execution owns the run.
+`orchestration_operator_choice` is explicit operator provenance and must not be inferred from
+`orchestration_mode`. A mismatch between explicit operator choice and actual mode requires a non-empty
+`orchestration_downgrade` rationale.
+
+`orchestration_ref` stays empty for `inline` and `manual`. For executable `team-execution` contexts, it
+must point at a `## Team Structure` section or protected team-execution evidence root. Saga records the
+pointer; team-execution owns the run. Draft plans may carry an empty ref only until they are marked
+ready.

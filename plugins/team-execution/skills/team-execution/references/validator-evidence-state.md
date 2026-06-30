@@ -40,12 +40,24 @@ Use one JSON file per validator run:
   "findings": [],
   "status": "pass",
   "remediation_loop": 0,
-  "execution_mode": "delegated"
+  "execution_mode": "delegated",
+  "vehicle": "team-execution-delegated"
 }
 ```
 
 Serial fallback records the same fields, with `execution_mode` set to `serial`
-and an explicit note that consensus was not independently delegated.
+and `vehicle` set to `team-execution-serial`, plus an explicit note that
+consensus was not independently delegated.
+
+Gate-facing vehicle values:
+
+- `team-execution-delegated` — selected validator role ran as a delegated Codex agent.
+- `team-execution-serial` — selected validator role ran serially in the main thread.
+- `generic-subagent` — non-selected generic assistance; recordable context, not validator evidence.
+- `inline-assist` — inline helper work; recordable context, not validator evidence.
+
+Only `team-execution-delegated` and `team-execution-serial` satisfy Team Execution reviewer or
+validator gates.
 
 ## Evidence Rules
 

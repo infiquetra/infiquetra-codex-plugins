@@ -99,13 +99,15 @@ def recommend_execution_backend(
     needs_consensus: bool = False,
     broad_independent_fanout: bool = False,
     adversarial_confidence: bool = False,
+    manual_handoff: bool = False,
     has_code_surface: bool = True,
     workflow_available: bool = True,
 ) -> dict[str, object]:
     """Recommend a Codex execution backend, mirroring operator-choice.md section 3.
 
-    Codex exposes two Saga backends: ``inline`` and ``team-execution``. The
-    source-only workflow backend is deliberately not reachable in this port.
+    Codex exposes three Saga backends: ``inline``, ``manual``, and
+    ``team-execution``. The source-only workflow backend is deliberately not
+    reachable in this port.
 
     DELIBERATE DIVERGENCE from operator-choice section 3.1: that section frames
     the consensus signal as a **PLUS** on top of a size/risk trigger. Here a
@@ -133,7 +135,10 @@ def recommend_execution_backend(
         or adversarial_confidence
     )
 
-    if team:
+    if manual_handoff:
+        recommended = "manual"
+        rationale = "automation is unsafe or unavailable -> operator handoff"
+    elif team:
         recommended = "team-execution"
         rationale = (
             "size, risk, consensus, fan-out, or adversarial-confidence signal -> "
@@ -143,7 +148,7 @@ def recommend_execution_backend(
         recommended = "inline"
         rationale = "no escalation signal -> the agent does the work itself"
 
-    reachable = ["inline", "team-execution"]
+    reachable = ["inline", "manual", "team-execution"]
     alternatives = [backend for backend in reachable if backend != recommended]
 
     return {
@@ -224,6 +229,7 @@ def _build_parser() -> argparse.ArgumentParser:
     backend.add_argument("--needs-consensus", action="store_true")
     backend.add_argument("--broad-fanout", action="store_true")
     backend.add_argument("--adversarial-confidence", action="store_true")
+    backend.add_argument("--manual-handoff", action="store_true")
     backend.add_argument("--no-code-surface", action="store_true")
     backend.add_argument("--no-workflow", action="store_true")
 
@@ -258,6 +264,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             needs_consensus=args.needs_consensus,
             broad_independent_fanout=args.broad_fanout,
             adversarial_confidence=args.adversarial_confidence,
+            manual_handoff=args.manual_handoff,
             has_code_surface=not args.no_code_surface,
             workflow_available=not args.no_workflow,
         )

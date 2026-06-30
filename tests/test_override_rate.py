@@ -487,8 +487,7 @@ def test_real_saga_save_feeds_override_rate_reader(
     monkeypatch.chdir(tmp_path)
     _stub_saga_git(saga, monkeypatch)
 
-    # Decision 1: an OVERRIDE — operator chose cc-workflows-ultracode over the
-    # recommended team-execution. operator_choice auto-derives from --orchestration-mode.
+    # Decision 1: an OVERRIDE — operator explicitly chose team-execution over inline.
     assert (
         saga.main(
             [
@@ -503,6 +502,8 @@ def test_real_saga_save_feeds_override_rate_reader(
                 "team-execution",
                 "--orchestration-recommended",
                 "inline",
+                "--orchestration-operator-choice",
+                "team-execution",
             ]
         )
         == 0
@@ -521,6 +522,8 @@ def test_real_saga_save_feeds_override_rate_reader(
                 "--orchestration-mode",
                 "inline",
                 "--orchestration-recommended",
+                "inline",
+                "--orchestration-operator-choice",
                 "inline",
             ]
         )
@@ -544,7 +547,47 @@ def test_real_saga_save_feeds_override_rate_reader(
     assert "no data yet" not in report
     assert "50.0%" in report
 
-    # The override decision's operator_choice auto-derived from --orchestration-mode.
+    # The override decision's operator_choice is explicit, not inferred from mode.
     override_rec = next(r for r in records if r.recommended == "inline")
     assert override_rec.operator_choice == "team-execution"
     assert override_rec.actual_mode == "team-execution"
+
+
+def test_real_saga_save_without_operator_choice_is_excluded(
+    orr: ModuleType,
+    saga: ModuleType,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture,  # type: ignore[type-arg]
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A real saga tick with no explicit operator choice is not decision data."""
+    monkeypatch.chdir(tmp_path)
+    _stub_saga_git(saga, monkeypatch)
+
+    assert (
+        saga.main(
+            [
+                "save",
+                "--kind",
+                "task",
+                "--id",
+                "no-choice",
+                "--lifecycle-phase",
+                "plan",
+                "--orchestration-mode",
+                "team-execution",
+                "--orchestration-recommended",
+                "inline",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    summary, records = orr.read_override_rate(tmp_path)
+
+    assert summary.total_sagas == 1
+    assert summary.decisions_with_data == 0
+    assert summary.override_count == 0
+    assert summary.budget_exhaustion_count == 0
+    assert records[0].operator_choice == ""

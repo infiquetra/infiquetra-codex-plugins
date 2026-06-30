@@ -15,6 +15,11 @@ OFFER_SURFACES = (
     SAGA_ROOT / "skills" / "plan" / "SKILL.md",
     SAGA_ROOT / "skills" / "work" / "SKILL.md",
     SAGA_ROOT / "skills" / "outcome" / "SKILL.md",
+    SAGA_ROOT / "skills" / "code-review" / "SKILL.md",
+    SAGA_ROOT / "skills" / "founder-review" / "SKILL.md",
+    SAGA_ROOT / "skills" / "loop" / "SKILL.md",
+    SAGA_ROOT / "skills" / "work" / "references" / "execution-strategy.md",
+    SAGA_ROOT / "skills" / "loop" / "references" / "drive-and-resume.md",
 )
 
 
@@ -24,7 +29,7 @@ def _read(path: Path) -> str:
 
 def test_codex_operator_choice_names_active_backend_floor() -> None:
     body = _read(OPERATOR_CHOICE)
-    for backend in ("inline", "team-execution"):
+    for backend in ("inline", "manual", "team-execution"):
         assert backend in body
 
 
@@ -49,6 +54,31 @@ def test_offer_surfaces_do_not_advertise_source_workflow_as_active() -> None:
             assert phrase not in body, f"{path} advertises source Workflow as active"
 
 
+def test_offer_surfaces_do_not_revert_to_two_backend_wording() -> None:
+    forbidden_phrases = (
+        "exactly two backends",
+        "inline | team-execution",
+        "team-execution` / `team-execution",
+        "team-execution / team-execution",
+    )
+    for path in OFFER_SURFACES:
+        body = _read(path)
+        for phrase in forbidden_phrases:
+            assert phrase not in body, f"{path} has stale backend wording: {phrase}"
+
+
+def test_team_execution_unavailable_does_not_silently_fallback_inline() -> None:
+    forbidden_phrases = (
+        "fall back to `inline`",
+        "fall back to inline",
+        "fallback to inline",
+    )
+    for path in OFFER_SURFACES:
+        body = _read(path)
+        for phrase in forbidden_phrases:
+            assert phrase not in body, f"{path} silently falls back from Team Execution to inline"
+
+
 def test_recommend_backend_excludes_source_workflow() -> None:
     result = subprocess.run(
         [
@@ -69,5 +99,6 @@ def test_recommend_backend_excludes_source_workflow() -> None:
     )
     payload = json.loads(result.stdout)
     assert payload["recommended"] == "team-execution"
+    assert payload["alternatives"] == ["inline", "manual"]
     assert payload["source_workflow_excluded"] is True
     assert "source-workflow-fanout" in payload["unsupported_source_backends"]
