@@ -363,7 +363,110 @@ def test_normal_save_with_active_codex_mode_succeeds(
     restored = saga_mod.restore(tmp_path, "task-happy-codex-mode")
     assert restored is not None
     assert restored.orchestration_mode == "team-execution"
+    assert restored.orchestration_operator_choice == ""
     assert restored.orchestration_downgrade == ""
+
+
+def test_mode_operator_choice_mismatch_requires_downgrade(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    saga_mod = _load("saga.py")
+    monkeypatch.chdir(tmp_path)
+    rc = saga_mod.main(
+        [
+            "save",
+            "--kind",
+            "task",
+            "--id",
+            "mismatch",
+            "--orchestration-mode",
+            "inline",
+            "--orchestration-operator-choice",
+            "team-execution",
+        ]
+    )
+    assert rc == 2
+    assert saga_mod.restore(tmp_path, "task-mismatch") is None
+
+
+def test_mode_operator_choice_mismatch_with_downgrade_succeeds(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    saga_mod = _load("saga.py")
+    monkeypatch.chdir(tmp_path)
+    note = "Delegation unavailable; explicit downgrade to inline accepted."
+    rc = saga_mod.main(
+        [
+            "save",
+            "--kind",
+            "task",
+            "--id",
+            "mismatch-downgraded",
+            "--orchestration-mode",
+            "inline",
+            "--orchestration-operator-choice",
+            "team-execution",
+            "--orchestration-downgrade",
+            note,
+        ]
+    )
+    assert rc == 0
+    restored = saga_mod.restore(tmp_path, "task-mismatch-downgraded")
+    assert restored is not None
+    assert restored.orchestration_operator_choice == "team-execution"
+    assert restored.orchestration_downgrade == note
+
+
+def test_prior_team_execution_can_persist_explicit_inline_downgrade(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    saga_mod = _load("saga.py")
+    monkeypatch.chdir(tmp_path)
+    assert (
+        saga_mod.main(
+            [
+                "save",
+                "--kind",
+                "task",
+                "--id",
+                "prior-team",
+                "--lifecycle-phase",
+                "plan",
+                "--phase-status",
+                "pending",
+                "--orchestration-mode",
+                "team-execution",
+            ]
+        )
+        == 0
+    )
+
+    note = "Delegation unavailable; explicit downgrade to inline accepted."
+    rc = saga_mod.main(
+        [
+            "save",
+            "--kind",
+            "task",
+            "--id",
+            "prior-team",
+            "--lifecycle-phase",
+            "work",
+            "--orchestration-mode",
+            "inline",
+            "--orchestration-operator-choice",
+            "team-execution",
+            "--orchestration-downgrade",
+            note,
+        ]
+    )
+
+    assert rc == 0
+    restored = saga_mod.restore(tmp_path, "task-prior-team")
+    assert restored is not None
+    assert restored.lifecycle_phase == "work"
+    assert restored.orchestration_mode == "inline"
+    assert restored.orchestration_operator_choice == "team-execution"
+    assert restored.orchestration_downgrade == note
 
 
 def test_explicit_degrade_with_downgrade_note_succeeds(

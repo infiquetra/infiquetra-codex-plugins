@@ -4,8 +4,9 @@
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import json
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
@@ -63,16 +64,28 @@ def is_ignored(repo_root: Path, rel_path: str) -> bool:
 
     normalized = rel_path.strip("/")
     normalized_with_slash = f"{normalized}/"
+    ignored = False
     for raw_line in gitignore.read_text(encoding="utf-8").splitlines():
         line = raw_line.strip()
-        if not line or line.startswith("#") or line.startswith("!"):
+        if not line or line.startswith("#"):
             continue
-        pattern = line.strip("/")
-        if pattern in {normalized, normalized_with_slash, ".codex", ".codex/"}:
-            return True
-        if pattern.endswith("/") and normalized_with_slash.startswith(pattern):
-            return True
-    return False
+        negated = line.startswith("!")
+        pattern = line[1:] if negated else line
+        if _matches_ignore_pattern(pattern, normalized, normalized_with_slash):
+            ignored = not negated
+    return ignored
+
+
+def _matches_ignore_pattern(pattern: str, normalized: str, normalized_with_slash: str) -> bool:
+    cleaned = pattern.strip().lstrip("/").strip("/")
+    if not cleaned:
+        return False
+    cleaned_with_slash = f"{cleaned}/"
+    if cleaned in {normalized, ".codex"}:
+        return True
+    if normalized_with_slash.startswith(cleaned_with_slash):
+        return True
+    return fnmatch.fnmatch(normalized, cleaned) or fnmatch.fnmatch(normalized_with_slash, cleaned_with_slash)
 
 
 def select_state_root(repo_root: Path) -> dict[str, str | bool]:
@@ -92,12 +105,21 @@ def select_state_root(repo_root: Path) -> dict[str, str | bool]:
     }
 
 
+def vehicle_for_mode(mode: str) -> str:
+    """Return the gate-facing vehicle vocabulary for a Team Execution mode."""
+    if mode == "delegated":
+        return "team-execution-delegated"
+    return "team-execution-serial"
+
+
 def reviewer_artifacts(mode: str) -> list[dict[str, str]]:
+    vehicle = vehicle_for_mode(mode)
     return [
         {
             "role": reviewer,
             "artifact": f"reviewers/{reviewer}.json",
             "execution_mode": mode,
+            "vehicle": vehicle,
         }
         for reviewer in BASE_REVIEWERS
     ]
@@ -109,6 +131,7 @@ def validator_artifacts(
 ) -> tuple[list[dict[str, object]], list[dict[str, str]]]:
     artifacts: list[dict[str, object]] = []
     blockers: list[dict[str, str]] = []
+    vehicle = vehicle_for_mode(mode)
     for validator in validators:
         if validator.tool_status == "missing" and validator.required:
             status = "blocked"
@@ -133,6 +156,7 @@ def validator_artifacts(
                 "status": status,
                 "artifact": f"validators/{validator.name}.json",
                 "execution_mode": mode,
+                "vehicle": vehicle,
             }
         )
     return artifacts, blockers

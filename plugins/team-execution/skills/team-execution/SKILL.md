@@ -22,6 +22,13 @@ The Codex port has two runtime modes:
   runs each reviewer and validator role sequentially and records the limits of
   serial consensus.
 
+Evidence records also carry a gate-facing `vehicle`:
+
+- `team-execution-delegated` — the selected Team Execution role ran through a delegated Codex agent.
+- `team-execution-serial` — the selected Team Execution role ran serially in the main thread.
+- `generic-subagent` and `inline-assist` — useful assistance categories, but they do not satisfy
+  reviewer or validator gates unless converted into selected Team Execution role evidence.
+
 The main thread always owns final verification, state writes, mutation
 confirmation, and the completion decision.
 
@@ -112,7 +119,8 @@ Run Phase B only after the plan is approved.
 2. Complete the approved worker tasks. Keep changes scoped to the plan.
 3. Run reviewers using `references/consensus-protocol.md`. In delegated mode,
    dispatch the selected named Codex agents when installed and safe; in serial
-   mode, run the same role prompts in the main thread and mark evidence serial.
+   mode, run the same role prompts in the main thread and mark evidence with
+   `vehicle=team-execution-serial`.
 4. If reviewer consensus fails, route fixes, repeat only the affected reviewers,
    and stop after 3 cycles with explicit residual risk.
 5. Run selected scanner validators after consensus or explicit override.
@@ -142,7 +150,8 @@ not protected, use:
 ```
 
 State records should include selected roles, required tools, commands, evidence
-paths, findings, gate result, and remediation loop count. Redact secrets,
+paths, findings, gate result, remediation loop count, `execution_mode`, and
+`vehicle`. Redact secrets,
 tokens, credentials, production payloads, and protected operational data before
 writing state.
 

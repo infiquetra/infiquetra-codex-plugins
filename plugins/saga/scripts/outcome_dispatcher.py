@@ -28,6 +28,7 @@ House pattern (mirrors the other ``outcome_*`` modules): pure functions over exp
 
 from __future__ import annotations
 
+import importlib.util
 import sys
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
@@ -109,6 +110,31 @@ def dispatch(req: Any, *, available: Sequence[str] = DEFAULT_AVAILABLE) -> dict[
         raise DispatcherError(
             f"backend {backend!r} is not in the executor menu {outcome_spec.NODE_BACKENDS}"
         )
+    orchestration_ref = str(getattr(req, "orchestration_ref", "") or "").strip()
+    if backend == "team-execution":
+        readiness = _load_team_execution_readiness().validate_team_execution_ready(
+            Path(getattr(req, "repo_root", Path("."))),
+            orchestration_mode="team-execution",
+            orchestration_ref=orchestration_ref,
+            context="outcome-dispatch",
+            plan_path=_plan_path_from_ref(orchestration_ref),
+        )
+    else:
+        readiness = None
+    if readiness is not None and readiness.status == "blocked":
+        receipt = HaltReceipt(
+            outcome_id=str(req.outcome_id),
+            subplot_id=str(req.subplot_id),
+            backend=backend,
+            reason=(
+                f"team-execution not ready for outcome-dispatch: {readiness.reason}; "
+                f"{readiness.repair_hint}"
+            ),
+            available=tuple(available),
+        )
+        return {"status": "halt", "receipt": receipt.to_dict()}
+    if readiness is not None:
+        orchestration_ref = readiness.resolved_ref or orchestration_ref
     if backend not in tuple(available):
         receipt = HaltReceipt(
             outcome_id=str(req.outcome_id),
@@ -123,7 +149,7 @@ def dispatch(req: Any, *, available: Sequence[str] = DEFAULT_AVAILABLE) -> dict[
         )
         return {"status": "halt", "receipt": receipt.to_dict()}
     leaf_saga_id = f"leaf-{req.outcome_id}-{req.subplot_id}"
-    return {
+    result = {
         "status": "dispatched",
         "subplot_id": str(req.subplot_id),
         "backend": backend,
@@ -131,6 +157,9 @@ def dispatch(req: Any, *, available: Sequence[str] = DEFAULT_AVAILABLE) -> dict[
         # The R9 re-entry token OUT — a stable native handoff, not a drift-prone pasted prompt.
         "return_channel": f"/resume {leaf_saga_id}",
     }
+    if backend == "team-execution":
+        result["orchestration_ref"] = orchestration_ref
+    return result
 
 
 def make_dispatcher(*, available: Sequence[str] = DEFAULT_AVAILABLE) -> Callable[[Any], str]:
@@ -153,6 +182,22 @@ def _receipt_kwargs(receipt: dict[str, Any]) -> dict[str, Any]:
         "reason": receipt["reason"],
         "available": tuple(receipt["available"]),
     }
+
+
+def _plan_path_from_ref(ref: str) -> str:
+    path, _sep, _anchor = ref.partition("#")
+    return path if path.startswith("docs/plans/") else ""
+
+
+def _load_team_execution_readiness() -> Any:
+    path = Path(__file__).resolve().parent / "team_execution_readiness.py"
+    spec = importlib.util.spec_from_file_location("team_execution_readiness", path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Unable to load {path}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules.setdefault(spec.name, module)
+    spec.loader.exec_module(module)
+    return module
 
 
 # ---------------------------------------------------------------------------
@@ -358,6 +403,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("subplot_id")
     parser.add_argument("backend")
     parser.add_argument("--available", default=",".join(DEFAULT_AVAILABLE))
+    parser.add_argument("--orchestration-ref", default="")
     args = parser.parse_args(argv)
 
     @dataclass(frozen=True)
@@ -367,8 +413,16 @@ def main(argv: list[str] | None = None) -> int:
         title: str
         backend: str
         repo_root: Path
+        orchestration_ref: str = ""
 
-    req = _Req(args.outcome_id, args.subplot_id, args.subplot_id, args.backend, Path("."))
+    req = _Req(
+        args.outcome_id,
+        args.subplot_id,
+        args.subplot_id,
+        args.backend,
+        Path("."),
+        args.orchestration_ref,
+    )
     try:
         result = dispatch(req, available=tuple(a for a in args.available.split(",") if a))
     except DispatcherError as exc:

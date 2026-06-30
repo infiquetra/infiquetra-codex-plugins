@@ -24,7 +24,7 @@ def test_codex_backend_choices_exclude_source_workflow_backend() -> None:
     result = lifecycle_state.recommend_execution_backend(broad_independent_fanout=True)
 
     assert result["recommended"] == "team-execution"
-    assert result["alternatives"] == ["inline"]
+    assert result["alternatives"] == ["inline", "manual"]
     assert result["source_workflow_excluded"] is True
     assert "cc-workflows-ultracode" not in str(result)
     assert "source-workflow-fanout" in result["unsupported_source_backends"]
@@ -34,7 +34,14 @@ def test_inline_remains_default_for_low_risk_work() -> None:
     result = lifecycle_state.recommend_execution_backend()
 
     assert result["recommended"] == "inline"
-    assert result["alternatives"] == ["team-execution"]
+    assert result["alternatives"] == ["manual", "team-execution"]
+
+
+def test_manual_handoff_can_be_recommended() -> None:
+    result = lifecycle_state.recommend_execution_backend(manual_handoff=True)
+
+    assert result["recommended"] == "manual"
+    assert result["alternatives"] == ["inline", "team-execution"]
 
 
 def test_large_no_code_surface_stays_inline_without_coordination_signal() -> None:

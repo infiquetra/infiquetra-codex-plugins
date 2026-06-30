@@ -1,0 +1,228 @@
+{
+  "schema_version": 1,
+  "outcome_id": "team-execution-saga-orchestration-repair",
+  "spec_revision": 1,
+  "objective": "Implement the Team Execution and Saga orchestration repair requirements from docs/brainstorms/2026-06-30-team-execution-saga-orchestration-repair-requirements.md",
+  "nodes": [
+    {
+      "subplot_id": "plan",
+      "title": "Create implementation plan from reviewed requirements",
+      "kind": "non-code",
+      "state": "pending",
+      "backend": "inline",
+      "gated": false,
+      "risky": false,
+      "destructive": false,
+      "guarantee_tags": [],
+      "degrade_policy": "none",
+      "timeout_seconds": null,
+      "heartbeat_seconds": null,
+      "depends_on": [],
+      "leaf_saga_id": "",
+      "child_spec_ref": "",
+      "github": {},
+      "worktree": {},
+      "evidence": {
+        "requirements": "docs/brainstorms/2026-06-30-team-execution-saga-orchestration-repair-requirements.md",
+        "review": "docs/reviews/2026-06-30-team-execution-saga-orchestration-repair-requirements-doc-review.md",
+        "route": "saga:plan"
+      },
+      "cost": {}
+    },
+    {
+      "subplot_id": "phase-a-materialization",
+      "title": "Make saga plan materialize Team Execution Phase A receipts",
+      "kind": "code",
+      "state": "pending",
+      "backend": "team-execution",
+      "gated": true,
+      "risky": true,
+      "destructive": false,
+      "guarantee_tags": [
+        "team-execution-receipt",
+        "plan-readiness"
+      ],
+      "degrade_policy": "halt",
+      "timeout_seconds": null,
+      "heartbeat_seconds": null,
+      "depends_on": [
+        "plan"
+      ],
+      "leaf_saga_id": "",
+      "child_spec_ref": "",
+      "github": {},
+      "worktree": {},
+      "evidence": {
+        "orchestration_ref": "docs/plans/2026-06-30-team-execution-saga-orchestration-repair-plan.md#team-structure",
+        "requirements": [
+          "R1",
+          "R2",
+          "R3",
+          "R4",
+          "R5",
+          "R6",
+          "R7",
+          "R8",
+          "R9",
+          "R10"
+        ]
+      },
+      "cost": {}
+    },
+    {
+      "subplot_id": "phase-b-dispatch",
+      "title": "Route saga work and resume into Team Execution Phase B",
+      "kind": "code",
+      "state": "pending",
+      "backend": "team-execution",
+      "gated": true,
+      "risky": true,
+      "destructive": false,
+      "guarantee_tags": [
+        "phase-b-dispatch",
+        "resume-repair"
+      ],
+      "degrade_policy": "halt",
+      "timeout_seconds": null,
+      "heartbeat_seconds": null,
+      "depends_on": [
+        "plan"
+      ],
+      "leaf_saga_id": "",
+      "child_spec_ref": "",
+      "github": {},
+      "worktree": {},
+      "evidence": {
+        "orchestration_ref": "docs/plans/2026-06-30-team-execution-saga-orchestration-repair-plan.md#team-structure",
+        "requirements": [
+          "R11",
+          "R12",
+          "R13",
+          "R14",
+          "R15",
+          "R16",
+          "R28",
+          "R29",
+          "R30",
+          "R31",
+          "R32",
+          "R33",
+          "R34"
+        ]
+      },
+      "cost": {}
+    },
+    {
+      "subplot_id": "provenance-capability",
+      "title": "Add provenance and capability-gated serial fallback semantics",
+      "kind": "code",
+      "state": "pending",
+      "backend": "team-execution",
+      "gated": true,
+      "risky": true,
+      "destructive": false,
+      "guarantee_tags": [
+        "role-provenance",
+        "serial-fallback"
+      ],
+      "degrade_policy": "halt",
+      "timeout_seconds": null,
+      "heartbeat_seconds": null,
+      "depends_on": [
+        "plan"
+      ],
+      "leaf_saga_id": "",
+      "child_spec_ref": "",
+      "github": {},
+      "worktree": {},
+      "evidence": {
+        "orchestration_ref": "docs/plans/2026-06-30-team-execution-saga-orchestration-repair-plan.md#team-structure",
+        "requirements": [
+          "R17",
+          "R18",
+          "R19",
+          "R20",
+          "R21",
+          "R22",
+          "R23",
+          "R24",
+          "R25",
+          "R26",
+          "R27"
+        ]
+      },
+      "cost": {}
+    },
+    {
+      "subplot_id": "regression-validation",
+      "title": "Add regression tests and validation coverage for observed failure shapes",
+      "kind": "code",
+      "state": "pending",
+      "backend": "team-execution",
+      "gated": true,
+      "risky": true,
+      "destructive": false,
+      "guarantee_tags": [
+        "regression-coverage",
+        "validation-gates"
+      ],
+      "degrade_policy": "halt",
+      "timeout_seconds": null,
+      "heartbeat_seconds": null,
+      "depends_on": [
+        "phase-a-materialization",
+        "phase-b-dispatch",
+        "provenance-capability"
+      ],
+      "leaf_saga_id": "",
+      "child_spec_ref": "",
+      "github": {},
+      "worktree": {},
+      "evidence": {
+        "orchestration_ref": "docs/plans/2026-06-30-team-execution-saga-orchestration-repair-plan.md#team-structure",
+        "requirements": [
+          "R35",
+          "R36",
+          "R37",
+          "R38",
+          "R39",
+          "R40",
+          "R41"
+        ]
+      },
+      "cost": {}
+    },
+    {
+      "subplot_id": "docs-closeout",
+      "title": "Update docs and closeout evidence after implementation validation",
+      "kind": "non-code",
+      "state": "pending",
+      "backend": "inline",
+      "gated": false,
+      "risky": false,
+      "destructive": false,
+      "guarantee_tags": [],
+      "degrade_policy": "none",
+      "timeout_seconds": null,
+      "heartbeat_seconds": null,
+      "depends_on": [
+        "regression-validation"
+      ],
+      "leaf_saga_id": "",
+      "child_spec_ref": "",
+      "github": {},
+      "worktree": {},
+      "evidence": {
+        "requirements": [
+          "success-criteria",
+          "sources-research"
+        ]
+      },
+      "cost": {}
+    }
+  ],
+  "decision_trail": [],
+  "cost_rollup": {},
+  "created_at": "",
+  "updated_at": ""
+}

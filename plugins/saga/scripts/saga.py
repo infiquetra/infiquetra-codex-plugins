@@ -34,6 +34,7 @@ import os
 import re
 import subprocess  # nosec B404
 import sys
+import importlib.util
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field, fields
 from datetime import UTC, datetime
@@ -521,7 +522,13 @@ def _materialize(value: ListOrAbsent) -> list[Any]:
     return [] if isinstance(value, _Absent) else list(value)
 
 
-def _merge(prior: Saga | None, incoming: Saga, now: datetime) -> Saga:
+def _merge(
+    prior: Saga | None,
+    incoming: Saga,
+    now: datetime,
+    *,
+    explicit_scalars: set[str] | None = None,
+) -> Saga:
     """Full-snapshot merge: lists in ``incoming`` REPLACE prior; ABSENT carries forward.
 
     Scalar fields left at their dataclass default carry forward from the prior
@@ -534,6 +541,7 @@ def _merge(prior: Saga | None, incoming: Saga, now: datetime) -> Saga:
         created = now.isoformat()
 
     data: dict[str, Any] = {}
+    explicit_scalars = explicit_scalars or set()
     defaults = {f.name: f.default for f in fields(Saga)}
     for f in fields(Saga):
         name = f.name
@@ -555,7 +563,7 @@ def _merge(prior: Saga | None, incoming: Saga, now: datetime) -> Saga:
             data[name] = inc_value
             continue
         # Scalar carry-forward: if incoming left the default, inherit prior.
-        if inc_value == defaults.get(name):
+        if inc_value == defaults.get(name) and name not in explicit_scalars:
             data[name] = getattr(prior, name)
         else:
             data[name] = inc_value
@@ -593,6 +601,7 @@ def save(
     *,
     now: datetime | None = None,
     runner: Callable[..., Any] = subprocess.run,
+    explicit_scalars: set[str] | None = None,
 ) -> dict[str, Any]:
     """Persist a new immutable tick + refresh the derived index.
 
@@ -603,7 +612,8 @@ def save(
     """
     moment = now or _utc_now()
     prior = restore(root, saga.saga_id)
-    merged = _merge(prior, saga, moment)
+    merged = _merge(prior, saga, moment, explicit_scalars=explicit_scalars)
+    _validate_orchestration_state(root, merged)
 
     git = current_git_state(root, runner=runner)
     if not merged.branch and git["branch"]:
@@ -628,6 +638,54 @@ def save(
         "next_phase": _next_phase(merged.phase, merged.phase_status),
         "next_round": merged.next_round,
     }
+
+
+def _validate_orchestration_state(root: Path, saga: Saga) -> None:
+    if (
+        saga.orchestration_operator_choice
+        and saga.orchestration_operator_choice != saga.orchestration_mode
+        and not saga.orchestration_downgrade
+    ):
+        raise ValueError(
+            "orchestration_operator_choice differs from orchestration_mode without "
+            "orchestration_downgrade"
+        )
+    if saga.orchestration_mode != "team-execution":
+        return
+    context = _team_execution_readiness_context(saga)
+    readiness = _load_team_execution_readiness().validate_team_execution_ready(
+        root,
+        orchestration_mode=saga.orchestration_mode,
+        orchestration_ref=saga.orchestration_ref,
+        context=context,
+        plan_path=saga.plan_path,
+    )
+    if readiness.status == "blocked":
+        raise ValueError(
+            f"team-execution not ready for {context}: {readiness.reason}; "
+            f"{readiness.repair_hint}"
+        )
+
+
+def _team_execution_readiness_context(saga: Saga) -> str:
+    if saga.lifecycle_phase in {"plan", "review"}:
+        return "plan-ready" if saga.phase_status == "complete" else "draft-plan"
+    if saga.lifecycle_phase == "work":
+        return "work"
+    if saga.lifecycle_phase == "qa" and saga.phase_status == "complete":
+        return "qa-closeout"
+    return "draft-plan"
+
+
+def _load_team_execution_readiness() -> Any:
+    path = Path(__file__).resolve().parent / "team_execution_readiness.py"
+    spec = importlib.util.spec_from_file_location("team_execution_readiness", path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Unable to load {path}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules.setdefault(spec.name, module)
+    spec.loader.exec_module(module)
+    return module
 
 
 def _replace(saga: Saga, **changes: Any) -> Saga:
@@ -1079,8 +1137,7 @@ def _build_save_saga(args: argparse.Namespace) -> Saga:
         orchestration_mode=args.orchestration_mode,
         orchestration_ref=args.orchestration_ref,
         orchestration_recommended=args.orchestration_recommended,
-        orchestration_operator_choice=args.orchestration_operator_choice
-        or args.orchestration_mode,
+        orchestration_operator_choice=args.orchestration_operator_choice,
         orchestration_downgrade=args.orchestration_downgrade,
         issue_ref=args.issue_ref,
         destination=args.destination,
@@ -1177,13 +1234,28 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+def _explicit_save_scalars(argv: Sequence[str]) -> set[str]:
+    explicit: set[str] = set()
+    if not argv or argv[0] != "save":
+        return explicit
+    for token in argv[1:]:
+        if token == "--orchestration-mode" or token.startswith("--orchestration-mode="):
+            explicit.add("orchestration_mode")
+    return explicit
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     _migrate_legacy_state_dir()
-    args = parse_args(argv)
+    raw_argv = list(argv) if argv is not None else sys.argv[1:]
+    args = parse_args(raw_argv)
     root = Path.cwd()
 
     if args.command == "save":
-        result = save(root, _build_save_saga(args))
+        try:
+            result = save(root, _build_save_saga(args), explicit_scalars=_explicit_save_scalars(raw_argv))
+        except ValueError as exc:
+            print(str(exc), file=sys.stderr)
+            return 2
         print(json.dumps(result, indent=2))
         return 0
 

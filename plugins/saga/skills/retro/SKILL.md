@@ -252,8 +252,8 @@ The passes neither source had, all gated (`references/retro-passes.md`):
 - **(d) memory pruning** — propose curation of the `.codex` auto-memory (`MEMORY.md` + topic files) per
   the journal-rule + staleness + contradiction sweeps.
 
-A **big multi-file refactor** surfaced by any pass → **OFFER** a backend (team-execution /
-team-execution) per `../../references/operator-choice.md`. **Never auto-run** it.
+A **big multi-file refactor** surfaced by any pass → **OFFER** a backend per
+`../../references/operator-choice.md` (`inline`, `manual`, or `team-execution`). **Never auto-run** it.
 
 ---
 

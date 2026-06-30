@@ -170,13 +170,31 @@ chat memory alone as durable evidence after a resume.
 
 Offer the execution backend per `references/operator-choice.md` and the **runnable
 `recommend_execution_backend()` CLI call** in `references/execution-strategy.md`: compute the
-recommendation from the work shape, pre-select it, surface the alternatives (overlap offers both),
-confirm with the operator, and record what they picked via `--orchestration-mode`.
+recommendation from the work shape, pre-select it, surface the alternatives (including `manual`),
+confirm with the operator, and record what they picked via `--orchestration-operator-choice` and the
+effective backend via `--orchestration-mode`.
+
+If the effective backend is `team-execution`, validate the Phase A receipt after restore and before
+saving the work tick or mutating code:
+
+```bash
+python3 plugins/saga/scripts/team_execution_readiness.py validate \
+  --mode team-execution \
+  --ref <orchestration_ref> \
+  --context work \
+  --plan-path docs/plans/YYYY-MM-DD-<topic>-plan.md
+```
+
+When the result is ready, read the `## Team Structure` or protected evidence root and follow the
+Team Execution skill for Phase B. When the result is blocked, repair Phase A or halt for the operator;
+do not continue through the normal inline/subagent execution path with Team Execution metadata still
+attached.
 
 Then mint/advance the work-thread saga to `lifecycle_phase=work`. Set `--issue-ref` (the issue case — the
 saga-spec §11 `issue_ref`-adoption write), `--plan-path` whenever a plan exists, and save **on the work
 branch** — these are the identity keys a standalone `/code-review` matches on (`issue_ref` / `plan_path` /
-`branch`) to find and append to this exact thread:
+`branch`) to find and append to this exact thread. Include `--orchestration-ref` only for
+`team-execution`; omit it for `inline` and `manual`:
 
 ```bash
 python3 plugins/saga/scripts/saga.py save \
@@ -187,7 +205,10 @@ python3 plugins/saga/scripts/saga.py save \
   --phase-status in_progress \
   --plan-path docs/plans/YYYY-MM-DD-<topic>-plan.md \
   --destination <plan-only|pr|merge|nonprod-deploy> \
-  --orchestration-mode <inline|team-execution> \
+  --orchestration-recommended <inline|manual|team-execution> \
+  --orchestration-operator-choice <inline|manual|team-execution> \
+  --orchestration-mode <inline|manual|team-execution> \
+  --orchestration-ref docs/plans/YYYY-MM-DD-<topic>-plan.md#team-structure \
   --rounds-seen "1"
 ```
 
@@ -203,6 +224,11 @@ git-ignored, machine-local). Never set `next_round` — it is derived from `roun
 
 Execute **one meaningful phase at a time** per `references/execution-strategy.md`:
 
+- **Team Execution Phase B** — when Phase 1.4 validated `orchestration_mode=team-execution`, consume the
+  `## Team Structure` and run the Team Execution skill's execution protocol. Delegated Team Execution
+  is preferred when the runtime is available; serial Team Execution is the fallback when delegation is
+  absent or backpressured. A true fallback to `inline` requires an explicit recorded
+  `orchestration_downgrade` rationale before code mutation.
 - **Execution strategy** — inline / serial subagents / parallel subagents, chosen from task count and
   dependency structure, gated by the **Parallel Safety Check** (file-to-unit overlap → worktree
   isolation, or downgrade to serial when isolation is unavailable). Subagent dispatch passes each unit's

@@ -31,6 +31,7 @@ offline with no real git repo, no backend, and no wall clock; no I/O at import.
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import sys
@@ -79,6 +80,7 @@ class DispatchRequest:
     title: str
     backend: str
     repo_root: Path
+    orchestration_ref: str = ""
 
 
 def _default_dispatcher(req: DispatchRequest) -> str:
@@ -88,6 +90,16 @@ def _default_dispatcher(req: DispatchRequest) -> str:
     manual) are dispatcher implementations that arrive in U4/U9. The skeleton just allocates the
     handoff address; the leaf is executed by its own native saga, never here.
     """
+    if req.backend == "team-execution" and not req.orchestration_ref.strip():
+        raise outcome_dispatcher.BackendHaltError(
+            outcome_dispatcher.HaltReceipt(
+                outcome_id=req.outcome_id,
+                subplot_id=req.subplot_id,
+                backend=req.backend,
+                reason="missing orchestration_ref for team-execution dispatch",
+                available=outcome_dispatcher.DEFAULT_AVAILABLE,
+            )
+        )
     return f"leaf-{req.outcome_id}-{req.subplot_id}"
 
 
@@ -107,6 +119,62 @@ def _append_ledger_once(store: Any, record: dict[str, Any]) -> bool:
             return False
     outcome_store.append_ledger(store, record)
     return True
+
+
+def _team_execution_orchestration_ref(node: Any) -> str:
+    """Return the Team Execution receipt ref from node evidence, including the legacy alias."""
+    evidence = getattr(node, "evidence", {}) or {}
+    if not isinstance(evidence, dict):
+        return ""
+    return str(evidence.get("orchestration_ref") or evidence.get("team_execution_ref") or "").strip()
+
+
+def _validate_team_execution_orchestration_ref(
+    repo_root: Path,
+    *,
+    outcome_id: str,
+    subplot_id: str,
+    ref: str,
+    available: Sequence[str] | None,
+) -> tuple[str, outcome_dispatcher.HaltReceipt | None]:
+    result = _load_team_execution_readiness().validate_team_execution_ready(
+        repo_root,
+        orchestration_mode="team-execution",
+        orchestration_ref=ref,
+        context="outcome-dispatch",
+        plan_path=_plan_path_from_ref(ref),
+    )
+    if result.status == "blocked":
+        return (
+            "",
+            outcome_dispatcher.HaltReceipt(
+                outcome_id=outcome_id,
+                subplot_id=subplot_id,
+                backend="team-execution",
+                reason=(
+                    f"team-execution not ready for outcome-dispatch: {result.reason}; "
+                    f"{result.repair_hint}"
+                ),
+                available=tuple(available) if available is not None else outcome_dispatcher.DEFAULT_AVAILABLE,
+            ),
+        )
+    return (result.resolved_ref or ref, None)
+
+
+def _plan_path_from_ref(ref: str) -> str:
+    path, _sep, _anchor = ref.partition("#")
+    return path if path.startswith("docs/plans/") else ""
+
+
+def _load_team_execution_readiness() -> Any:
+    path = Path(__file__).resolve().parent / "team_execution_readiness.py"
+    spec = importlib.util.spec_from_file_location("team_execution_readiness", path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Unable to load {path}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules.setdefault(spec.name, module)
+    spec.loader.exec_module(module)
+    return module
 
 
 def _default_holder() -> str:
@@ -649,19 +717,38 @@ def _reconcile_once(
                 ).to_dict()
 
         key = f"dispatch:{sid}"
+        orchestration_ref = (
+            _team_execution_orchestration_ref(node)
+            if resolved_backend == "team-execution"
+            else ""
+        )
+        if resolved_backend == "team-execution":
+            orchestration_ref, ref_halt = _validate_team_execution_orchestration_ref(
+                Path(repo_root),
+                outcome_id=spec.outcome_id,
+                subplot_id=sid,
+                ref=orchestration_ref,
+                available=available,
+            )
+            if ref_halt is not None:
+                outcome_store.release_lease(store, f"dispatch-{sid}", holder)
+                receipt = ref_halt.to_dict()
+                _append_ledger_once(store, {"phase": "halt", "kind": "dispatch", "key": key, **receipt})
+                halted.append(receipt)
+                continue
         outcome_store.append_ledger(
             store, {"phase": "intent", "kind": "dispatch", "key": key, "subplot_id": sid}
         )
+        request = DispatchRequest(
+            outcome_id=spec.outcome_id,
+            subplot_id=sid,
+            title=node.title,
+            backend=resolved_backend,
+            repo_root=Path(repo_root),
+            orchestration_ref=orchestration_ref,
+        )
         try:
-            leaf_saga_id = dispatch(
-                DispatchRequest(
-                    outcome_id=spec.outcome_id,
-                    subplot_id=sid,
-                    title=node.title,
-                    backend=resolved_backend,
-                    repo_root=Path(repo_root),
-                )
-            )
+            leaf_saga_id = dispatch(request)
         except outcome_dispatcher.BackendHaltError as halt:
             # A dispatcher-raised HALT (legacy / a restricted injected dispatcher). Release the lock so a
             # later tick re-attempts + re-surfaces it; record the receipt durably; never abort the tick.
@@ -678,18 +765,18 @@ def _reconcile_once(
             # intent) cannot double-list the degradation.
             _append_ledger_once(store, {"phase": "degrade", "key": key, **degrade_receipt})
             degraded.append(degrade_receipt)
-        outcome_store.append_ledger(
-            store,
-            {
-                "phase": "commit",
-                "kind": "dispatch",
-                "key": key,
-                "subplot_id": sid,
-                "leaf_saga_id": leaf_saga_id,
-                "backend": resolved_backend,
-                "at": now(),  # dispatch timestamp for the U9 liveness check (R31)
-            },
-        )
+        commit_record = {
+            "phase": "commit",
+            "kind": "dispatch",
+            "key": key,
+            "subplot_id": sid,
+            "leaf_saga_id": leaf_saga_id,
+            "backend": resolved_backend,
+            "at": now(),  # dispatch timestamp for the U9 liveness check (R31)
+        }
+        if request.orchestration_ref:
+            commit_record["orchestration_ref"] = request.orchestration_ref
+        outcome_store.append_ledger(store, commit_record)
         dispatched.append(sid)
     return dispatched, halted, gated, degraded
 

@@ -195,6 +195,11 @@ table.
 **Deep adds (warranted only, never boilerplate):** High-Level Technical Design (HTD), Risk Analysis &
 Mitigation, Alternatives Considered, Success Metrics. Include only when the content earns the section.
 
+**Team Execution Phase A:** when the operator selects `team-execution`, the plan artifact must include a
+`## Team Structure` section or link a separate Team Execution artifact before the plan can be marked
+ready. The default receipt is the plan itself at `docs/plans/YYYY-MM-DD-<topic>-plan.md#team-structure`;
+use the existing `team_emitter.py` format when emitting a separate artifact.
+
 The plan must serve **three audiences**: the implementing agent (informed starting baseline), the
 reviewer (load-bearing decisions in one pass), the future reader (why the work was done).
 
@@ -246,13 +251,26 @@ nonprod-deploy**. This becomes the saga `--destination`.
 ### 5.2 Offer the execution backend
 
 Offer the execution backend per `references/operator-choice.md` (the decision contract). There are
-exactly two backends — `inline | team-execution`. Read the work shape,
+exactly three active Codex backends — `inline | manual | team-execution`. Read the work shape,
 **recommend the cheapest-correct** backend and pre-select it, but always surface the alternatives so
-escalation is one step. Escalate to `team-execution` for risky/consensus work (≥8 files, ≥4 phases,
-security, infra, cross-repo, deployment-sensitive, plus a needs-consensus signal); to
-`team-execution` for broad independent fan-out without elevated risk. Never offer source-only
-workflow backends in Codex.
-Confirm with the operator and record what they picked via `--orchestration-mode`.
+escalation is one step. Escalate to `team-execution` for risky/consensus work (>=8 files, >=4 phases,
+security, infra, cross-repo, deployment-sensitive, plus a needs-consensus signal) or broad independent
+fan-out. Use `manual` when automation is unsafe or unavailable and the next safe action is operator
+handoff. Never offer source-only workflow backends in Codex.
+Confirm with the operator and record what they picked via `--orchestration-operator-choice` and the
+effective backend via `--orchestration-mode`.
+
+If the operator selects `team-execution`, complete Phase A before saving the plan as ready: add
+`## Team Structure` to the plan or link a separate Team Execution artifact, then validate the pointer
+with:
+
+```bash
+python3 plugins/saga/scripts/team_execution_readiness.py validate \
+  --mode team-execution \
+  --ref docs/plans/YYYY-MM-DD-<topic>-plan.md#team-structure \
+  --context plan-ready \
+  --plan-path docs/plans/YYYY-MM-DD-<topic>-plan.md
+```
 
 ### 5.3 Write the saga tick
 
@@ -268,14 +286,18 @@ python3 plugins/saga/scripts/saga.py save \
   --destination <plan-only|pr|merge|nonprod-deploy> \
   --adr-refs "ADR-NNNN|ADR-MMMM" \
   --decisions "KTD1: rationale. KTD2: rationale." \
-  --orchestration-mode <inline|team-execution>
+  --orchestration-recommended <inline|manual|team-execution> \
+  --orchestration-operator-choice <inline|manual|team-execution> \
+  --orchestration-mode <inline|manual|team-execution> \
+  --orchestration-ref docs/plans/YYYY-MM-DD-<topic>-plan.md#team-structure
 ```
 
 `--id` is the only strictly required flag (`--kind` defaults to `issue`); for ad-hoc work pass
 `--kind task --id <slug>`. `--lifecycle-phase plan`, `--plan-path`, `--destination`, `--adr-refs`,
-`--decisions` (the KTD mirror), and `--orchestration-mode` carry the `/plan` consumer row from
-`references/saga-spec.md` §11. When resuming (Phase 0.3 matched), this appends a tick to the existing
-saga directory rather than minting a new one.
+`--decisions` (the KTD mirror), `--orchestration-recommended`, `--orchestration-operator-choice`, and
+`--orchestration-mode` carry the `/plan` consumer row from `references/saga-spec.md` §11. Include
+`--orchestration-ref` for `team-execution`; omit it for `inline` and `manual`. When resuming
+(Phase 0.3 matched), this appends a tick to the existing saga directory rather than minting a new one.
 
 ### 5.4 Route
 

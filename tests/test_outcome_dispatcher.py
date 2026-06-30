@@ -18,6 +18,7 @@ import pytest
 
 ROOT = Path(__file__).parent.parent
 SCRIPTS = ROOT / "plugins" / "saga" / "scripts"
+TEAM_REF = "docs/plans/x.md#team-structure"
 
 
 def _load(name: str) -> ModuleType:
@@ -37,25 +38,63 @@ OUTCOME = _load("outcome")
 STORE = _load("outcome_store")
 
 
-def _req(backend: str, *, outcome_id: str = "ship-x", subplot_id: str = "build") -> Any:
+def _req(
+    backend: str,
+    *,
+    outcome_id: str = "ship-x",
+    subplot_id: str = "build",
+    orchestration_ref: str = "",
+    repo_root: Path = Path("."),
+) -> Any:
     return SimpleNamespace(
         outcome_id=outcome_id,
         subplot_id=subplot_id,
         title="Build the thing",
         backend=backend,
-        repo_root=Path("."),
+        repo_root=repo_root,
+        orchestration_ref=orchestration_ref,
     )
+
+
+def _write_team_ref(repo_root: Path) -> str:
+    plan = repo_root / "docs" / "plans" / "x.md"
+    plan.parent.mkdir(parents=True, exist_ok=True)
+    plan.write_text("# X\n\n## Team Structure\n\nroles\n", encoding="utf-8")
+    return TEAM_REF
 
 
 # --------------------------------------------------------------------------- dispatch (R5/R6)
 
 
-def test_dispatch_team_execution_mints_leaf_with_return_channel() -> None:
-    out = D.dispatch(_req("team-execution"))
+def test_dispatch_team_execution_mints_leaf_with_return_channel(tmp_path: Path) -> None:
+    ref = _write_team_ref(tmp_path)
+    out = D.dispatch(_req("team-execution", orchestration_ref=ref, repo_root=tmp_path))
     assert out["status"] == "dispatched"
     assert out["backend"] == "team-execution"
+    assert out["orchestration_ref"] == ref
     assert out["leaf_saga_id"] == "leaf-ship-x-build"
     assert out["return_channel"] == "/resume leaf-ship-x-build"  # R9 re-entry token out
+
+
+def test_dispatch_team_execution_without_ref_halts() -> None:
+    out = D.dispatch(_req("team-execution"))
+
+    assert out["status"] == "halt"
+    assert out["receipt"]["backend"] == "team-execution"
+    assert "missing orchestration_ref" in out["receipt"]["reason"]
+
+
+def test_dispatch_team_execution_invalid_ref_halts(tmp_path: Path) -> None:
+    out = D.dispatch(
+        _req(
+            "team-execution",
+            orchestration_ref="docs/plans/does-not-exist.md#team-structure",
+            repo_root=tmp_path,
+        )
+    )
+
+    assert out["status"] == "halt"
+    assert "orchestration_ref target does not exist" in out["receipt"]["reason"]
 
 
 def test_dispatch_inline_is_available() -> None:
@@ -84,17 +123,26 @@ def test_dispatch_unknown_backend_is_rejected() -> None:
         D.dispatch(_req("magic-backend"))
 
 
-def test_custom_available_set() -> None:
+def test_custom_available_set(tmp_path: Path) -> None:
     # If team-execution is not in the available set, it too halts (the seam is data-driven).
-    assert D.dispatch(_req("team-execution"), available=("inline",))["status"] == "halt"
+    ref = _write_team_ref(tmp_path)
+    out = D.dispatch(
+        _req("team-execution", orchestration_ref=ref, repo_root=tmp_path),
+        available=("inline",),
+    )
+    assert out["status"] == "halt"
 
 
 # --------------------------------------------------------------------------- make_dispatcher adapter
 
 
-def test_make_dispatcher_returns_leaf_id_on_dispatch() -> None:
+def test_make_dispatcher_returns_leaf_id_on_dispatch(tmp_path: Path) -> None:
     disp = D.make_dispatcher()
-    assert disp(_req("team-execution")) == "leaf-ship-x-build"
+    ref = _write_team_ref(tmp_path)
+    assert (
+        disp(_req("team-execution", orchestration_ref=ref, repo_root=tmp_path))
+        == "leaf-ship-x-build"
+    )
 
 
 def test_make_dispatcher_raises_halt_with_receipt() -> None:
@@ -148,6 +196,59 @@ def repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 
 def test_advance_dispatches_team_execution_node(repo: Path) -> None:
+    _write_team_ref(repo)
+    OUTCOME.start(
+        repo,
+        "ship-x",
+        "Ship X",
+        nodes=[
+            {
+                "subplot_id": "build",
+                "title": "Build",
+                "backend": "team-execution",
+                "evidence": {"orchestration_ref": TEAM_REF},
+            }
+        ],
+    )
+    result = OUTCOME.advance(repo, "ship-x", dispatcher=D.make_dispatcher())
+    assert result.dispatched == ["build"]
+    assert OUTCOME.attend(repo, "ship-x", "build") == "/resume leaf-ship-x-build"
+    store = STORE.Store.for_outcome("ship-x", repo)
+    commits = [
+        rec
+        for rec in STORE.read_ledger(store)
+        if rec.get("phase") == "commit" and rec.get("key") == "dispatch:build"
+    ]
+    assert commits[0]["orchestration_ref"] == TEAM_REF
+
+
+def test_advance_dispatches_team_execution_alias_ref(repo: Path) -> None:
+    _write_team_ref(repo)
+    OUTCOME.start(
+        repo,
+        "ship-x",
+        "Ship X",
+        nodes=[
+            {
+                "subplot_id": "build",
+                "title": "Build",
+                "backend": "team-execution",
+                "evidence": {"team_execution_ref": TEAM_REF},
+            }
+        ],
+    )
+    result = OUTCOME.advance(repo, "ship-x", dispatcher=D.make_dispatcher())
+    assert result.dispatched == ["build"]
+    store = STORE.Store.for_outcome("ship-x", repo)
+    commits = [
+        rec
+        for rec in STORE.read_ledger(store)
+        if rec.get("phase") == "commit" and rec.get("key") == "dispatch:build"
+    ]
+    assert commits[0]["orchestration_ref"] == TEAM_REF
+
+
+def test_advance_team_execution_without_ref_halts(repo: Path) -> None:
     OUTCOME.start(
         repo,
         "ship-x",
@@ -155,8 +256,42 @@ def test_advance_dispatches_team_execution_node(repo: Path) -> None:
         nodes=[{"subplot_id": "build", "title": "Build", "backend": "team-execution"}],
     )
     result = OUTCOME.advance(repo, "ship-x", dispatcher=D.make_dispatcher())
-    assert result.dispatched == ["build"]
-    assert OUTCOME.attend(repo, "ship-x", "build") == "/resume leaf-ship-x-build"
+    assert result.dispatched == []
+    assert len(result.halted) == 1
+    assert "missing orchestration_ref" in result.halted[0]["reason"]
+
+
+def test_advance_team_execution_invalid_ref_halts(repo: Path) -> None:
+    OUTCOME.start(
+        repo,
+        "ship-x",
+        "Ship X",
+        nodes=[
+            {
+                "subplot_id": "build",
+                "title": "Build",
+                "backend": "team-execution",
+                "evidence": {"orchestration_ref": "docs/plans/does-not-exist.md#team-structure"},
+            }
+        ],
+    )
+    result = OUTCOME.advance(repo, "ship-x", dispatcher=D.make_dispatcher())
+    assert result.dispatched == []
+    assert len(result.halted) == 1
+    assert "orchestration_ref target does not exist" in result.halted[0]["reason"]
+
+
+def test_default_dispatcher_team_execution_without_ref_halts(repo: Path) -> None:
+    OUTCOME.start(
+        repo,
+        "ship-x",
+        "Ship X",
+        nodes=[{"subplot_id": "build", "title": "Build", "backend": "team-execution"}],
+    )
+    result = OUTCOME.advance(repo, "ship-x")
+    assert result.dispatched == []
+    assert len(result.halted) == 1
+    assert "missing orchestration_ref" in result.halted[0]["reason"]
 
 
 def test_advance_halts_visibly_on_unavailable_backend_no_silent_substitute(repo: Path) -> None:
@@ -192,12 +327,18 @@ def test_halt_does_not_leak_dispatch_lease_resurfaces_each_advance(repo: Path) -
 def test_halt_does_not_starve_other_runnable_leaves(repo: Path) -> None:
     # P2 regression: one HALT leaf must NOT abort the whole tick — independent runnable leaves still
     # dispatch in the same advance.
+    _write_team_ref(repo)
     OUTCOME.start(
         repo,
         "ship-x",
         "Ship X",
         nodes=[
-            {"subplot_id": "a", "title": "A", "backend": "team-execution"},
+            {
+                "subplot_id": "a",
+                "title": "A",
+                "backend": "team-execution",
+                "evidence": {"orchestration_ref": TEAM_REF},
+            },
             {"subplot_id": "b", "title": "B", "backend": "fork"},
         ],
     )
@@ -231,10 +372,15 @@ def test_cli_advance_uses_the_real_backend_seam(
 # --------------------------------------------------------------------------- CLI
 
 
-def test_cli_dispatch_dry_run(capsys: pytest.CaptureFixture[str]) -> None:
-    assert D.main(["ship-x", "build", "team-execution"]) == 0
+def test_cli_dispatch_dry_run(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _write_team_ref(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    assert D.main(["ship-x", "build", "team-execution", "--orchestration-ref", TEAM_REF]) == 0
     out = json.loads(capsys.readouterr().out)
     assert out["status"] == "dispatched" and out["return_channel"] == "/resume leaf-ship-x-build"
+    assert out["orchestration_ref"] == TEAM_REF
     assert D.main(["ship-x", "build", "fork"]) == 0
     halt = json.loads(capsys.readouterr().out)
     assert halt["status"] == "halt"

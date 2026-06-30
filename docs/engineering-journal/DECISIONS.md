@@ -1,5 +1,15 @@
 # Decisions
 
+## 2026-06-30: Team Execution Requires A Receipt Before Saga Can Execute It
+
+Saga keeps Team Execution as an active Codex backend, but `orchestration_mode=team-execution` is not executable by itself. Executable Team Execution requires an `orchestration_ref` that resolves to a `## Team Structure` section or a protected Team Execution evidence/state root.
+
+Planning materializes the receipt before a Team Execution plan is considered ready. Work, resume, outcome dispatch, and QA closeout validate the receipt before claiming Team Execution ran. Missing delegated subagents, unsafe delegation, or backpressure select serial Team Execution with the same roles and gates; inline execution is valid only when the operator chose inline or an explicit downgrade is recorded.
+
+Saga owns lifecycle-level provenance: recommendation, explicit operator choice, actual mode, ref, and downgrade. Team Execution owns role-level vehicle evidence such as `team-execution-delegated`, `team-execution-serial`, `generic-subagent`, and `inline-assist`; generic assistance does not satisfy reviewer or validator gates.
+
+Rejected: removing Team Execution from the Codex plugin, treating generic subagents as Team Execution reviewers, fabricating operator choice from actual mode, and minting Team Execution outcome leaves without a real receipt.
+
 ## 2026-06-17: Codex Active Plugin Parity Tracks CAMPPS And Codex Backends
 
 Mission Control now treats Jeff Intent, Asgard, and CAMPPS as the active board topology. Mount
@@ -7,10 +17,10 @@ Olympus remains vendored only as retired historical context and compatibility da
 #4 is the active long-lived initiative board for current CAMPPS routing, with `Idea -> Committed ->
 In Progress -> Done -> Parked` as its workflow.
 
-Saga keeps the Codex execution backend set to `inline` and `team-execution`. The source workflow
-fan-out backend remains lineage-only and unreachable in active Codex surfaces. Large no-code-surface
-work stays `inline` unless cross-repo, consensus, fan-out, deployment, security, infra, or
-adversarial-confidence signals require `team-execution`.
+Saga keeps the Codex execution backend set to `inline`, `manual`, and `team-execution`. The source
+workflow fan-out backend remains lineage-only and unreachable in active Codex surfaces. Large
+no-code-surface work stays `inline` unless cross-repo, consensus, fan-out, deployment, security, infra,
+or adversarial-confidence signals require `team-execution`; unsafe automation routes to `manual`.
 
 Rejected: porting Claude commands, agents, `.claude-plugin` manifests, GitHub Actions workflows, or
 the source workflow backend as active Codex surfaces.
