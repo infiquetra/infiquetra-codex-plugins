@@ -7,7 +7,7 @@ python3 scripts/validate_codex_plugins.py
 python3 scripts/validate_codex_plugins.py --mode target-fixture
 python3 scripts/prove_codex_plugin_profile.py --write-docs
 python3 plugins/test-suite/skills/run-quality-checks/scripts/test_runner.py --dry-run --checks pytest,ruff
-python3 -m pytest
+uv run python -m pytest
 ```
 
 Validation modes:

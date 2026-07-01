@@ -46,10 +46,11 @@ formatting contract. The rest of the Saga-family source baseline remains at the 
 |---|---:|---|---|---|
 | `saga` | 0.20.0 | Claude plugin at `abcc06b16763975d71e483a6dac768f4664d7b63` | `skills`, references, scripts, README, changelog, document-formatting test | Add Codex manifest; keep source-parity skill names behind the `saga` namespace; rewrite `.claude/saga` to `.codex/saga`; add Codex-native outcome/promote surfaces; omit command files, agent files, hooks, source-only backends, and Claude manifests. |
 | `deploy` | 0.1.1 | Claude plugin at `16de95c82ccb2ed80d7f11018e1c2e8247a80a7f` | deploy-state skill, scripts, README, changelog, command-origin behavior | Add Codex manifest; convert commands to skills; add dry-run, preview, exact-plan confirmation, auth-boundary, and proof-owned mutation safeguards; omit agent and command files. |
+| `discord-identity-assets` | 0.1.0 | Codex-born plugin grounded in home-lab Discord asset scripts and Norns/Mimir runbook evidence | New skill, references, deterministic CLI, tests, README, and portability notes | Keep Codex-native image generation in the skill; move reusable manifest, post-processing, Discord publish, API readback, redaction, and receipt behavior into tested scripts. |
 | `mission-control` | 2.0.0 | Claude plugin at `16de95c82ccb2ed80d7f11018e1c2e8247a80a7f` | `skills`, references, config, scripts, tests, README, changelog | Add Codex manifest; rewrite prompt-alignment tests for Codex; preserve dry-run and preview modes; add allowlist and exact-plan confirmation gates; omit command and agent files. |
 | `team-execution` | 2.2.0 | Claude plugin at `16de95c82ccb2ed80d7f11018e1c2e8247a80a7f` | `skills`, references, README, changelog, managed Codex agent TOML roster | Add Codex manifest; convert Claude agents into managed Codex TOML definitions plus registries; use Codex subagents only when available; provide tested serial fallback; omit command files and Claude markdown agents. |
 
 The prior SDLC and document-review plugin roots are now lineage and migration
 context only, not active plugin source. The active replacement inventory is
 `saga`, `deploy`, `mission-control`, `team-execution`, `home-lab-ops`,
-`python-toolkit`, `unifi`, and `test-suite`.
+`python-toolkit`, `unifi`, `test-suite`, and `discord-identity-assets`.

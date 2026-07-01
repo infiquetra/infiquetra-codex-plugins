@@ -36,6 +36,7 @@ def test_expected_plugin_set_is_saga_family_cutover():
         "deploy",
         "mission-control",
         "team-execution",
+        "discord-identity-assets",
         "home-lab-ops",
         "python-toolkit",
         "unifi",
@@ -63,12 +64,16 @@ def test_target_plugin_set_describes_saga_family_cutover():
         "deploy",
         "mission-control",
         "team-execution",
+        "discord-identity-assets",
         "home-lab-ops",
         "python-toolkit",
         "unifi",
         "test-suite",
     }
     assert {"plan", "work", "brainstorm"} <= set(TARGET_EXPECTED_PLUGINS["saga"]["skills"])
+    assert TARGET_EXPECTED_PLUGINS["discord-identity-assets"]["skills"] == (
+        "discord-identity-assets",
+    )
     assert {"blueprint-reviewer", "sdlc-manager"}.isdisjoint(TARGET_EXPECTED_PLUGINS)
 
 
@@ -81,13 +86,36 @@ def test_target_fixture_requires_namespace_proof():
         "removed_plugins": ["blueprint-reviewer", "sdlc-manager"],
         "required_namespace_proof": ["saga:plan", "saga:work"],
         "required_state_roots": [".codex/saga/", ".codex/team-execution/"],
-        "mutation_gate_plugins": ["deploy", "mission-control"],
+        "mutation_gate_plugins": ["deploy", "mission-control", "discord-identity-assets"],
     }
     errors: list[str] = []
 
     validate_target_fixture_payload(payload, REPO_ROOT / "fixture.json", errors)
 
     assert any("saga:brainstorm" in error for error in errors)
+
+
+def test_target_fixture_requires_discord_identity_assets_mutation_gate():
+    payload = {
+        "plugins": [
+            {
+                "name": name,
+                "version": spec["version"],
+                "skills": list(spec["skills"]),
+                "forbidden_active_dirs": [".claude-plugin", "commands", "agents"],
+            }
+            for name, spec in TARGET_EXPECTED_PLUGINS.items()
+        ],
+        "removed_plugins": ["blueprint-reviewer", "sdlc-manager"],
+        "required_namespace_proof": ["saga:plan", "saga:work", "saga:brainstorm"],
+        "required_state_roots": [".codex/saga/", ".codex/team-execution/"],
+        "mutation_gate_plugins": ["deploy", "mission-control"],
+    }
+    errors: list[str] = []
+
+    validate_target_fixture_payload(payload, REPO_ROOT / "fixture.json", errors)
+
+    assert any("discord-identity-assets" in error for error in errors)
 
 
 def test_compare_inventory_reports_missing_and_unexpected_items():
