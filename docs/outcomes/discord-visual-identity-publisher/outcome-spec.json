@@ -343,7 +343,9 @@
           "saga:qa"
         ],
         "work_session": "docs/work-sessions/2026-07-01-discord-visual-identity-publisher-work.md",
-        "outcome_report": "docs/outcomes/discord-visual-identity-publisher/report.md"
+        "outcome_report": "docs/outcomes/discord-visual-identity-publisher/report.md",
+        "plugin_pr": "infiquetra/infiquetra-codex-plugins#13",
+        "merge_commit": "b512f4a19df5520af8f5ba5ce7455c3d6f4ea1c7"
       },
       "cost": {}
     }
