@@ -1,0 +1,355 @@
+{
+  "schema_version": 1,
+  "outcome_id": "discord-visual-identity-publisher",
+  "spec_revision": 1,
+  "objective": "Implement the Discord Visual Identity Publisher requirements from docs/brainstorms/2026-07-01-discord-visual-identity-publisher-requirements.md",
+  "nodes": [
+    {
+      "subplot_id": "plan",
+      "title": "Create implementation plan from reviewed requirements",
+      "kind": "non-code",
+      "state": "pending",
+      "backend": "inline",
+      "gated": false,
+      "risky": false,
+      "destructive": false,
+      "guarantee_tags": [],
+      "degrade_policy": "none",
+      "timeout_seconds": null,
+      "heartbeat_seconds": null,
+      "depends_on": [],
+      "leaf_saga_id": "",
+      "child_spec_ref": "",
+      "github": {},
+      "worktree": {},
+      "evidence": {
+        "requirements": "docs/brainstorms/2026-07-01-discord-visual-identity-publisher-requirements.md",
+        "review": "docs/reviews/2026-07-01-discord-visual-identity-publisher-requirements-doc-review.md",
+        "plan": "docs/plans/2026-07-01-discord-visual-identity-publisher-plan.md",
+        "plan_review": "docs/reviews/2026-07-01-discord-visual-identity-publisher-plan-doc-review.md",
+        "source_ideation": "docs/ideation/2026-06-30-discord-visual-identity-publisher-ideation.md",
+        "route": "saga:plan"
+      },
+      "cost": {}
+    },
+    {
+      "subplot_id": "plugin-surface",
+      "title": "Create Codex plugin surface, manifest, skill, and portability metadata",
+      "kind": "code",
+      "state": "pending",
+      "backend": "team-execution",
+      "gated": true,
+      "risky": true,
+      "destructive": false,
+      "guarantee_tags": [
+        "codex-plugin-surface",
+        "portability-matrix"
+      ],
+      "degrade_policy": "halt",
+      "timeout_seconds": null,
+      "heartbeat_seconds": null,
+      "depends_on": [
+        "plan"
+      ],
+      "leaf_saga_id": "",
+      "child_spec_ref": "",
+      "github": {},
+      "worktree": {},
+      "evidence": {
+        "orchestration_ref": "docs/plans/2026-07-01-discord-visual-identity-publisher-plan.md#team-structure",
+        "requirements": [
+          "R1",
+          "R2",
+          "R3",
+          "R4"
+        ],
+        "work_session": "docs/work-sessions/2026-07-01-discord-visual-identity-publisher-work.md"
+      },
+      "cost": {}
+    },
+    {
+      "subplot_id": "manifest-contract",
+      "title": "Implement repo-local identity-asset manifest discovery and contract validation",
+      "kind": "code",
+      "state": "pending",
+      "backend": "team-execution",
+      "gated": true,
+      "risky": true,
+      "destructive": false,
+      "guarantee_tags": [
+        "manifest-contract",
+        "secret-free-config"
+      ],
+      "degrade_policy": "halt",
+      "timeout_seconds": null,
+      "heartbeat_seconds": null,
+      "depends_on": [
+        "plan"
+      ],
+      "leaf_saga_id": "",
+      "child_spec_ref": "",
+      "github": {},
+      "worktree": {},
+      "evidence": {
+        "orchestration_ref": "docs/plans/2026-07-01-discord-visual-identity-publisher-plan.md#team-structure",
+        "requirements": [
+          "R3",
+          "R4",
+          "R5",
+          "R6",
+          "R7",
+          "R8"
+        ],
+        "tests": "plugins/discord-identity-assets/tests/test_manifest_contract.py"
+      },
+      "cost": {}
+    },
+    {
+      "subplot_id": "asset-pipeline",
+      "title": "Implement deterministic asset post-processing, quality gates, prompts, and receipts",
+      "kind": "code",
+      "state": "pending",
+      "backend": "team-execution",
+      "gated": true,
+      "risky": true,
+      "destructive": false,
+      "guarantee_tags": [
+        "image-post-processing",
+        "prompt-records",
+        "receipt-schema"
+      ],
+      "degrade_policy": "halt",
+      "timeout_seconds": null,
+      "heartbeat_seconds": null,
+      "depends_on": [
+        "plan"
+      ],
+      "leaf_saga_id": "",
+      "child_spec_ref": "",
+      "github": {},
+      "worktree": {},
+      "evidence": {
+        "orchestration_ref": "docs/plans/2026-07-01-discord-visual-identity-publisher-plan.md#team-structure",
+        "requirements": [
+          "R9",
+          "R10",
+          "R11",
+          "R12",
+          "R13",
+          "R14",
+          "R15",
+          "R16",
+          "R27",
+          "R28"
+        ],
+        "tests": "plugins/discord-identity-assets/tests/test_asset_pipeline.py"
+      },
+      "cost": {}
+    },
+    {
+      "subplot_id": "discord-publish",
+      "title": "Implement secret-safe Discord publish and API verification boundary",
+      "kind": "code",
+      "state": "pending",
+      "backend": "team-execution",
+      "gated": true,
+      "risky": true,
+      "destructive": true,
+      "guarantee_tags": [
+        "credential-boundary",
+        "discord-api-readback",
+        "no-secret-logs"
+      ],
+      "degrade_policy": "halt",
+      "timeout_seconds": null,
+      "heartbeat_seconds": null,
+      "depends_on": [
+        "plan"
+      ],
+      "leaf_saga_id": "",
+      "child_spec_ref": "",
+      "github": {},
+      "worktree": {},
+      "evidence": {
+        "orchestration_ref": "docs/plans/2026-07-01-discord-visual-identity-publisher-plan.md#team-structure",
+        "requirements": [
+          "R17",
+          "R18",
+          "R19",
+          "R20",
+          "R21",
+          "R22",
+          "R23",
+          "R24",
+          "R25",
+          "R26"
+        ],
+        "tests": "plugins/discord-identity-assets/tests/test_discord_client.py"
+      },
+      "cost": {}
+    },
+    {
+      "subplot_id": "tests-and-docs",
+      "title": "Add mocked Discord tests, validation coverage, runbook, and plugin docs",
+      "kind": "code",
+      "state": "pending",
+      "backend": "team-execution",
+      "gated": true,
+      "risky": true,
+      "destructive": false,
+      "guarantee_tags": [
+        "mocked-discord-tests",
+        "runbook-checklist",
+        "validation-gates"
+      ],
+      "degrade_policy": "halt",
+      "timeout_seconds": null,
+      "heartbeat_seconds": null,
+      "depends_on": [
+        "plugin-surface",
+        "manifest-contract",
+        "asset-pipeline",
+        "discord-publish"
+      ],
+      "leaf_saga_id": "",
+      "child_spec_ref": "",
+      "github": {},
+      "worktree": {},
+      "evidence": {
+        "orchestration_ref": "docs/plans/2026-07-01-discord-visual-identity-publisher-plan.md#team-structure",
+        "requirements": [
+          "R27",
+          "R28",
+          "R29",
+          "D5"
+        ],
+        "tests": "plugins/discord-identity-assets/tests",
+        "code_review": "docs/reviews/2026-07-01-discord-visual-identity-publisher-code-review.md"
+      },
+      "cost": {}
+    },
+    {
+      "subplot_id": "mimir-dry-run",
+      "title": "Prepare and verify Mimir pilot dry run without live Discord mutation",
+      "kind": "non-code",
+      "state": "pending",
+      "backend": "manual",
+      "gated": true,
+      "risky": true,
+      "destructive": false,
+      "guarantee_tags": [
+        "mimir-dry-run",
+        "approval-plan"
+      ],
+      "degrade_policy": "halt",
+      "timeout_seconds": null,
+      "heartbeat_seconds": null,
+      "depends_on": [
+        "tests-and-docs"
+      ],
+      "leaf_saga_id": "",
+      "child_spec_ref": "",
+      "github": {},
+      "worktree": {},
+      "evidence": {
+        "requirements": [
+          "R30",
+          "R31",
+          "R32",
+          "R33",
+          "AE1",
+          "AE2",
+          "AE6"
+        ],
+        "target_repo": "team-mimir",
+        "dry_run_receipt": "team-mimir:docs/runbooks/discord-identity-assets/20260701-123831-mimir-dry-run.json",
+        "generate_receipt": "team-mimir:docs/runbooks/discord-identity-assets/20260701-123744-mimir-generate-only.json"
+      },
+      "cost": {}
+    },
+    {
+      "subplot_id": "mimir-live-proof",
+      "title": "Run approved Mimir live publish and capture Discord readback receipt",
+      "kind": "non-code",
+      "state": "pending",
+      "backend": "manual",
+      "gated": true,
+      "risky": true,
+      "destructive": true,
+      "guarantee_tags": [
+        "live-discord-mutation",
+        "api-readback-receipt"
+      ],
+      "degrade_policy": "halt",
+      "timeout_seconds": null,
+      "heartbeat_seconds": null,
+      "depends_on": [
+        "mimir-dry-run"
+      ],
+      "leaf_saga_id": "",
+      "child_spec_ref": "",
+      "github": {},
+      "worktree": {},
+      "evidence": {
+        "requirements": [
+          "R24",
+          "R25",
+          "R30",
+          "R31",
+          "SC3",
+          "SC4",
+          "SC5"
+        ],
+        "target_repo": "team-mimir",
+        "publish_receipt": "team-mimir:docs/runbooks/discord-identity-assets/20260701-125542-mimir-publish.json",
+        "target_pr": "infiquetra/team-mimir#51",
+        "merge_commit": "98b5c4148d219f315cd941d05dbaf20f04429c0f",
+        "remote_avatar_app_icon_hash": "83977c022e983f5b3a87c13904b0e02f",
+        "remote_banner_hash": "306d4838c7a8b54b9edbec6d1b0a56cf"
+      },
+      "cost": {}
+    },
+    {
+      "subplot_id": "closeout",
+      "title": "Run final review, QA, and closeout evidence for the reusable workflow",
+      "kind": "non-code",
+      "state": "pending",
+      "backend": "inline",
+      "gated": false,
+      "risky": false,
+      "destructive": false,
+      "guarantee_tags": [],
+      "degrade_policy": "none",
+      "timeout_seconds": null,
+      "heartbeat_seconds": null,
+      "depends_on": [
+        "mimir-live-proof"
+      ],
+      "leaf_saga_id": "",
+      "child_spec_ref": "",
+      "github": {},
+      "worktree": {},
+      "evidence": {
+        "requirements": [
+          "SC1",
+          "SC2",
+          "SC3",
+          "SC4",
+          "SC5",
+          "SC6"
+        ],
+        "routes": [
+          "saga:code-review",
+          "saga:qa"
+        ],
+        "work_session": "docs/work-sessions/2026-07-01-discord-visual-identity-publisher-work.md",
+        "outcome_report": "docs/outcomes/discord-visual-identity-publisher/report.md"
+      },
+      "cost": {}
+    }
+  ],
+  "decision_trail": [],
+  "cost_rollup": {},
+  "created_at": "",
+  "updated_at": ""
+}

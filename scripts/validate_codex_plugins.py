@@ -107,6 +107,10 @@ TARGET_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
         "version": "2.2.0",
         "skills": ("team-execution", "appsec-audit"),
     },
+    "discord-identity-assets": {
+        "version": "0.1.0",
+        "skills": ("discord-identity-assets",),
+    },
     "home-lab-ops": LEGACY_EXPECTED_PLUGINS["home-lab-ops"],
     "python-toolkit": LEGACY_EXPECTED_PLUGINS["python-toolkit"],
     "unifi": LEGACY_EXPECTED_PLUGINS["unifi"],
@@ -119,6 +123,7 @@ EXPECTED_PLUGINS = CURRENT_EXPECTED_PLUGINS
 
 CLAUDE_CATALOG = {
     "deploy",
+    "discord-identity-assets",
     "docs-generator",
     "home-lab-ops",
     "identity-toolkit",
@@ -685,8 +690,13 @@ def validate_target_fixture_payload(
         errors.append(f"target fixture missing state roots: {sorted(missing_state_roots)}")
 
     mutation_plugins = set(payload.get("mutation_gate_plugins", []))
-    if {"deploy", "mission-control"} - mutation_plugins:
-        errors.append("target fixture must require mutation gates for deploy and mission-control")
+    required_mutation_plugins = {"deploy", "mission-control", "discord-identity-assets"}
+    missing_mutation_plugins = required_mutation_plugins - mutation_plugins
+    if missing_mutation_plugins:
+        errors.append(
+            "target fixture missing mutation-gated plugins: "
+            f"{sorted(missing_mutation_plugins)}"
+        )
 
 
 def validate_saga_family_docs(root: Path, errors: list[str]) -> None:

@@ -1,5 +1,15 @@
 # Decisions
 
+## 2026-07-01: Discord Identity Assets Uses A Manifest-First Codex Boundary
+
+The Discord visual identity workflow becomes a new Codex plugin named `discord-identity-assets` with one active skill, a target-repo manifest at `identity/discord-identity-assets.yml`, and deterministic Python scripts for manifest validation, image post-processing, Discord publish, verification, and receipts. Codex-native `image_gen` remains an agent-guided action; packaged scripts do not attempt to invoke it.
+
+Target repositories own non-secret identity contracts and artifacts. The plugin resolves Discord tokens only from approved environment variable names at publish time, rejecting empty or suspicious material before HTTP, so it can integrate with vault conventions without making home-lab vault paths or plaintext secrets part of the reusable center.
+
+The Discord client should use official current-user/current-application semantics where possible, verify bot and application ownership before mutation, and keep a tested compatibility path for the legacy application-ID endpoint used by the old home-lab script. Mimir is the first live proof, staged as dry run, explicit prompt plus publish-plan approval, live publish, and target-repo receipt reconciliation.
+
+Rejected: copying home-lab hard-coded prompt/app registries, making Replicate the reusable generator, putting Discord Developer Portal provisioning in v1, using guild/admin tokens for bot-owned visual identity, and creating individual visual identities for the 31 headless Sons of Ivaldi.
+
 ## 2026-06-30: Team Execution Requires A Receipt Before Saga Can Execute It
 
 Saga keeps Team Execution as an active Codex backend, but `orchestration_mode=team-execution` is not executable by itself. Executable Team Execution requires an `orchestration_ref` that resolves to a `## Team Structure` section or a protected Team Execution evidence/state root.

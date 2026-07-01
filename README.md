@@ -11,6 +11,7 @@ Codex-ready plugin surface, currently:
 | `deploy` | 0.1.1 | active |
 | `mission-control` | 2.1.0 | active |
 | `team-execution` | 2.2.0 | active |
+| `discord-identity-assets` | 0.1.0 | proof port |
 | `home-lab-ops` | 1.0.0 | baseline |
 | `python-toolkit` | 1.0.0 | baseline |
 | `unifi` | 1.0.0 | baseline |
@@ -37,7 +38,7 @@ The operator-facing Saga family guide lives in `docs/saga/README.md`.
 ```bash
 python3 scripts/validate_codex_plugins.py
 python3 plugins/test-suite/skills/run-quality-checks/scripts/test_runner.py --dry-run --checks pytest,ruff
-python3 -m pytest
+uv run python -m pytest
 ```
 
 ## Source Policy

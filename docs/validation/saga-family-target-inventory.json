@@ -139,6 +139,18 @@
         "commands",
         "agents"
       ]
+    },
+    {
+      "name": "discord-identity-assets",
+      "version": "0.1.0",
+      "skills": [
+        "discord-identity-assets"
+      ],
+      "forbidden_active_dirs": [
+        ".claude-plugin",
+        "commands",
+        "agents"
+      ]
     }
   ],
   "removed_plugins": [
@@ -156,7 +168,8 @@
   ],
   "mutation_gate_plugins": [
     "deploy",
-    "mission-control"
+    "mission-control",
+    "discord-identity-assets"
   ],
   "required_docs": [
     "docs/portability/source-baseline-saga-family.md",
