@@ -1,6 +1,6 @@
 # Outcome: Implement the Discord Visual Identity Publisher requirements from docs/brainstorms/2026-07-01-discord-visual-identity-publisher-requirements.md
 
-**Outcome ID:** `discord-visual-identity-publisher` · **Revision:** 1 · **Progress:** 8/9 (89%)
+**Outcome ID:** `discord-visual-identity-publisher` · **Revision:** 1 · **Progress:** 9/9 (100%)
 
 ## Topology
 
@@ -14,7 +14,7 @@ flowchart TD
     tests-and-docs["tests-and-docs: done"]
     mimir-dry-run["mimir-dry-run: done"]
     mimir-live-proof["mimir-live-proof: done"]
-    closeout["closeout: ready"]
+    closeout["closeout: done"]
     plan --> plugin-surface
     plan --> manifest-contract
     plan --> asset-pipeline
@@ -44,7 +44,7 @@ flowchart TD
 | `tests-and-docs` | done | — | no data yet |
 | `mimir-dry-run` | done | — | no data yet |
 | `mimir-live-proof` | done | — | no data yet |
-| `closeout` | ready | — | no data yet |
+| `closeout` | done | — | no data yet |
 
 ## Cost rollup
 
