@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.0] - 2026-07-06
+
+### Changed
+- Both `unifi_network_client.py` and `unifi_protect_client.py` now route their HTTP request
+  through fleet-core's shared `retry_with_backoff` primitive (resolved via the vendored
+  `fleet_commons_shim`): a 429 is retried with jittered exponential backoff (honoring a
+  `Retry-After` hint) before falling through to the existing typed rate-limit error, instead
+  of surfacing the error on the very first 429.
+
 ## [1.0.0] - 2026-03-17
 
 ### Added

@@ -1,6 +1,6 @@
 {
   "name": "unifi",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "UniFi Network and Protect CLI skills for managing UDM devices, clients, VLANs, firewall rules, cameras, PTZ, and events.",
   "author": {
     "name": "Infiquetra",
