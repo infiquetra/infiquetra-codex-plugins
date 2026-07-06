@@ -94,6 +94,8 @@ def authorize_and_write(
     payload: dict[str, Any] | None = None,
     extra: dict[str, Any] | None = None,
     write_once: Callable[[Path, str], bool] = _write_once,
+    sleep: Callable[[float], None] = time.sleep,
+    retry_base_delay: float = 1.0,
 ) -> dict[str, Any]:
     """Authorize, idempotently write, and record ONE candidate board op.
 
@@ -129,10 +131,12 @@ def authorize_and_write(
     if target_state and "target_state" not in pay:
         pay["target_state"] = target_state
 
-    # (ii) Bounded retry.  board_writer raises → retry; key written only on SUCCESS.
+    # (ii) Bounded retry with exponential backoff between attempts — `gh` failures here are
+    #      dominated by transient 429/5xx, and back-to-back re-invocations just re-trip the limit.
+    #      `sleep` is injectable so tests stay instant.
     last_exc: Exception | None = None
     attempts_made = 0
-    for _ in range(max_attempts):
+    for attempt in range(max_attempts):
         attempts_made += 1
         try:
             board_writer(op_kind=op_kind, repo=repo, number=number, payload=pay)
@@ -140,6 +144,8 @@ def authorize_and_write(
             break
         except Exception as exc:  # noqa: BLE001
             last_exc = exc
+            if attempt < max_attempts - 1:
+                sleep(retry_base_delay * (2**attempt))
 
     if last_exc is not None:
         # All attempts exhausted — surface, do NOT write the ledger so the next tick retries.

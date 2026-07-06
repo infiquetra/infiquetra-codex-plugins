@@ -177,6 +177,7 @@ def reconcile_board(
     board_writer: Callable[..., None],
     now: Callable[[], float] = time.time,
     max_attempts: int = 3,
+    sleep: Callable[[float], None] = time.sleep,
     project: str = "operations",
     schema_path: Path | None = None,
     hold_issues: set[tuple[str, int]] | None = None,
@@ -312,6 +313,7 @@ def reconcile_board(
                     ledger_dir=ledger_dir,
                     now=now,
                     max_attempts=max_attempts,
+                    sleep=sleep,
                     payload=payload,
                     extra={"subplot_id": node.subplot_id},
                     write_once=store_module._write_once,  # noqa: SLF001

@@ -314,7 +314,7 @@ def test_ae8_retry_on_transient_failure_succeeds(tmp_path: Path) -> None:
         if call_count["n"] == 1 and op_kind == "set-field-status":
             raise RuntimeError("transient network error")
 
-    result = SYNC_MOD.reconcile_board(spec, store, board_writer=flaky_writer, max_attempts=3)
+    result = SYNC_MOD.reconcile_board(spec, store, board_writer=flaky_writer, max_attempts=3, sleep=lambda _s: None)
 
     sf_records = [r for r in result if r.get("op_kind") == "set-field-status"]
     assert sf_records and sf_records[0]["status"] == "written", (
@@ -341,7 +341,7 @@ def test_ae8_always_fails_surfaced_and_retryable(tmp_path: Path) -> None:
     def always_fail(*, op_kind: str, repo: str, number: int, payload: dict) -> None:
         raise RuntimeError("always fails")
 
-    result1 = SYNC_MOD.reconcile_board(spec, store, board_writer=always_fail, max_attempts=3)
+    result1 = SYNC_MOD.reconcile_board(spec, store, board_writer=always_fail, max_attempts=3, sleep=lambda _s: None)
 
     failed = [
         r for r in result1 if r.get("op_kind") == "set-field-status" and r["status"] == "failed"

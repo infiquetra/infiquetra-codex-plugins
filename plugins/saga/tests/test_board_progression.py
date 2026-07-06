@@ -101,6 +101,7 @@ def test_all_attempts_fail_writes_no_key(tmp_path: Path) -> None:
     """R18: writer raises through all attempts → 'failed', NO ledger key (retryable next tick)."""
     ld = _ledger(tmp_path)
     writer = RecordingWriter(fail_times=99)
+    slept: list[float] = []
     rec = BP.authorize_and_write(
         "set-field-status",
         "infiquetra/x",
@@ -109,10 +110,12 @@ def test_all_attempts_fail_writes_no_key(tmp_path: Path) -> None:
         board_writer=writer,
         ledger_dir=ld,
         max_attempts=3,
+        sleep=slept.append,
     )
     assert rec["status"] == "failed"
     assert rec["attempts"] == 3
     assert len(writer.calls) == 3
+    assert slept == [1.0, 2.0], "exponential backoff between attempts, none after the last"
     assert not list(ld.glob("*.json")), "no ledger key may be written when the op fails"
 
 
@@ -120,11 +123,19 @@ def test_retry_then_succeed(tmp_path: Path) -> None:
     """Bounded retry: first attempt fails, second succeeds → 'written', one ledger key."""
     ld = _ledger(tmp_path)
     writer = RecordingWriter(fail_times=1)
+    slept: list[float] = []
     rec = BP.authorize_and_write(
-        "set-field-status", "infiquetra/x", 42, "Done", board_writer=writer, ledger_dir=ld
+        "set-field-status",
+        "infiquetra/x",
+        42,
+        "Done",
+        board_writer=writer,
+        ledger_dir=ld,
+        sleep=slept.append,
     )
     assert rec["status"] == "written"
     assert rec["attempts"] == 2
+    assert slept == [1.0], "one backoff before the successful retry, none after success"
     assert len(list(ld.glob("*.json"))) == 1
 
 
