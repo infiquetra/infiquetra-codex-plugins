@@ -1,5 +1,22 @@
 # Learnings
 
+## 2026-07-06: Force Structured Agent Output With A Schema; Never Gate-Parse Prose
+
+**Evidence:** `plugins/saga/scripts/execution_spec.py` `_agent_schema_js`/`_agent_opts`,
+`tests/test_workflow_emitter.py::test_returns_units_emit_structured_output_schema`. The 0.64
+port run (`wf_12ad0962-7f7`) aborted twice at `__gate` on completed work: U1 returned fenced
+JSON inside prose, U3 returned pure `key: value` prose, U4 a bare brace block mid-prose.
+
+**Mechanism:** The emitted workflow's `__gate` accepted only a bare JSON dict as the agent's
+final text, but agents wrap results in prose in unbounded ways — parsing is a losing game
+played after the fact. The workflow harness already solves this at the source: passing
+`schema:` in `agent()` opts forces a validated StructuredOutput tool call, retried at the
+tool layer on mismatch. The emitter now derives that schema from each unit's `returns` keys;
+`__gate` stays as a backstop only.
+
+**Generalizable rule:** When a harness offers schema-forced output, demand structure at
+generation time instead of parsing it out of free text afterward.
+
 ## 2026-07-06: Verify-Panel Consensus Must Recompute Over Reporters, Not Declared N (U7)
 
 **Evidence:** `plugins/saga/scripts/execution_spec.py` `_emit_panel_reconciliation`

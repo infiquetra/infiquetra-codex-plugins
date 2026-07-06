@@ -1472,3 +1472,34 @@ def test_verify_fields_round_trip() -> None:
     assert serialized["pass_rule"] == "majority"
     assert serialized["iterate_to_consensus"] is True
     assert serialized["max_iterations"] == 10
+
+
+# ---------------------------------------------------------------------------
+# Structured-output schema: units with `returns` force a StructuredOutput schema
+# on their agent() call so __gate never parses a dict out of prose (the failure
+# that aborted the first 0.64 port run); units without `returns` get no schema.
+# ---------------------------------------------------------------------------
+
+
+def test_returns_units_emit_structured_output_schema() -> None:
+    mod = _load()
+    spec = mod.ExecutionSpec.from_dict(_valid_spec_dict())
+    script = mod.emit_workflow_script(spec)
+
+    schema_count = script.count('schema: {"type": "object"')
+    assert schema_count == 2, "U1 and U2 declare returns; U3 does not"
+    assert '"required": ["ready", "drift"]' in script
+    assert '"required": ["done", "files"]' in script
+    # Declared keys become schema properties; extra keys stay allowed.
+    assert '"properties": {"ready": {}, "drift": {}}' in script
+    assert '"additionalProperties": true' in script
+
+
+def test_schema_helper_none_without_returns() -> None:
+    mod = _load()
+    spec = mod.ExecutionSpec.from_dict(_valid_spec_dict())
+    u3 = spec.unit_by_id("U3")
+    assert mod._agent_schema_js(u3) is None
+    u1 = spec.unit_by_id("U1")
+    parsed = json.loads(mod._agent_schema_js(u1))
+    assert parsed["required"] == ["ready", "drift"]

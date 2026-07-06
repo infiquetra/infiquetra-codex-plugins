@@ -736,6 +736,39 @@ def _emit_panel_reconciliation(
         lines.append(f"{indent}}}")
 
 
+def _agent_schema_js(unit: Unit) -> str | None:
+    """JS `schema:` opt forcing the structured result envelope when the unit declares
+    ``returns`` keys.
+
+    With a schema the workflow harness makes the agent return a validated object via a
+    forced StructuredOutput tool call (retried at the tool layer on mismatch), so the
+    emitted ``__gate`` never has to parse a structured dict out of prose — the failure
+    mode that aborted the first 0.64 port run twice. ``__gate`` stays as a backstop.
+    """
+    if not unit.returns:
+        return None
+    schema: dict[str, Any] = {
+        "type": "object",
+        "properties": {key: {} for key in unit.returns},
+        "required": list(unit.returns),
+        "additionalProperties": True,
+    }
+    return json.dumps(schema)
+
+
+def _agent_opts(unit: Unit) -> list[str]:
+    """The shared ``agent()`` opts list for a unit's own call sites (not verifiers)."""
+    base = [
+        f"label: {_js_string(unit.label)}",
+        f"model: {_js_string(unit.tier.model)}",
+        f"effort: {_js_string(unit.tier.effort)}",
+    ]
+    schema_js = _agent_schema_js(unit)
+    if schema_js is not None:
+        base.append(f"schema: {schema_js}")
+    return base
+
+
 def _emit_thunk(lines: list[str], spec: ExecutionSpec, unit: Unit) -> None:
     """Append one thunk entry for ``unit`` inside a ``parallel([...])``.
 
@@ -745,11 +778,7 @@ def _emit_thunk(lines: list[str], spec: ExecutionSpec, unit: Unit) -> None:
     if unit.verify is not None and unit.verify.iterate_to_consensus:
         panel = unit.verify
         prompt = _agent_prompt(spec, unit)
-        opts = [
-            f"label: {_js_string(unit.label)}",
-            f"model: {_js_string(unit.tier.model)}",
-            f"effort: {_js_string(unit.tier.effort)}",
-        ]
+        opts = _agent_opts(unit)
 
         lines.append("  async () => {")
         lines.append("    let result;")
@@ -765,11 +794,7 @@ def _emit_thunk(lines: list[str], spec: ExecutionSpec, unit: Unit) -> None:
         lines.append("  },")
     else:
         prompt = _agent_prompt(spec, unit)
-        opts = [
-            f"label: {_js_string(unit.label)}",
-            f"model: {_js_string(unit.tier.model)}",
-            f"effort: {_js_string(unit.tier.effort)}",
-        ]
+        opts = _agent_opts(unit)
         lines.append("  () =>")
         lines.append("    agent(")
         lines.append(f"      {_js_string(prompt)},")
@@ -785,11 +810,7 @@ def _emit_verify_loop_singleton(
     assert panel is not None
     n = panel.n
     prompt = _agent_prompt(spec, unit)
-    opts = [
-        f"label: {_js_string(unit.label)}",
-        f"model: {_js_string(unit.tier.model)}",
-        f"effort: {_js_string(unit.tier.effort)}",
-    ]
+    opts = _agent_opts(unit)
 
     lines.append(f"let {var};")
     lines.append(
@@ -917,11 +938,7 @@ def emit_workflow_script(spec: ExecutionSpec) -> str:
             else:
                 lines.append(f"const {var} = await agent(")
                 prompt = _agent_prompt(spec, unit)
-                opts = [
-                    f"label: {_js_string(unit.label)}",
-                    f"model: {_js_string(unit.tier.model)}",
-                    f"effort: {_js_string(unit.tier.effort)}",
-                ]
+                opts = _agent_opts(unit)
                 lines.append(f"  {_js_string(prompt)},")
                 lines.append("  { " + ", ".join(opts) + " },")
                 lines.append(")")
