@@ -1,5 +1,23 @@
 # Decisions
 
+## 2026-07-06: The 0.64 Port Window Lands Fleet-Commons As A Codex fleet-core Plugin
+
+The upstream port window is commit-bounded at Claude `b30e0f2..9470edc` (saga 0.41.0 to 0.64.0), with per-plugin lineage baselines recorded because non-saga plugins were synced earlier than saga. The fleet-commons tier/retry substrate lands as a Codex `plugins/fleet-core` scripts-only plugin mirroring the upstream shape, with the shim resolution ladder rewritten Codex-native (env override, repo walk-up, `~/.codex` layout, fail-loud) instead of emulating Claude's `installed_plugins.json` rungs. `models.json` carries a dual palette: Claude tier names as lineage keys mapped to Codex models and effort ceilings. Saga versions to 0.64.0 as a parity label per the 0.41 precedent, with non-ported surfaces recorded in PORTABILITY.md.
+
+Rejected alternatives: vendoring fleet_commons into each plugin without a fleet-core plugin (structural divergence makes every future sync fan out copies); deferring the substrate (dependent features would hard-code tier/retry logic to be reworked later). Deferred by operator decision: remote gate transport (#379, waits on the redis-channel server-boundary proof), the `agy` plugin (own ecosystem), PreCompact spore and residency hooks (no Codex trigger), marketplace generation.
+
+Revisit when: Codex gains a hook/compaction seam, redis-channel gets its server-boundary proof, or upstream changes the fleet-commons distribution mechanism.
+
+Plan: `docs/plans/2026-07-06-port-claude-plugin-updates-to-0.64-plan.md`.
+
+## 2026-07-02: Discord Guild Art Extends The Existing Identity Assets Plugin
+
+Guild/server icon and image-banner publishing extends `discord-identity-assets` as a sibling target type instead of becoming a new plugin. Bot targets remain under `targets[]`; guild targets use schema v2 `guild_targets[]` with `guild_id_env` and `manage_guild_token_env` references so live guild IDs and tokens stay out of committed state.
+
+The plugin publishes guild icons and Discord guild image banners through the guild API only after signed publish-plan confirmation, token/guild preflight, prompt consistency, and API readback. Discord Server Profile banner color is a UI color setting, not an uploaded image surface for this workflow, so the plugin records `profile_banner_color` as manifest/runbook metadata and does not automate it.
+
+Deferred: server creation, channel/role provisioning, bot invites, Server Profile color automation, and generic team bootstrap orchestration.
+
 ## 2026-07-01: Discord Identity Assets Uses A Manifest-First Codex Boundary
 
 The Discord visual identity workflow becomes a new Codex plugin named `discord-identity-assets` with one active skill, a target-repo manifest at `identity/discord-identity-assets.yml`, and deterministic Python scripts for manifest validation, image post-processing, Discord publish, verification, and receipts. Codex-native `image_gen` remains an agent-guided action; packaged scripts do not attempt to invoke it.

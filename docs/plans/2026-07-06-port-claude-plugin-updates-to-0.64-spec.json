@@ -1,0 +1,96 @@
+{
+  "name": "port-claude-plugin-updates-to-0.64",
+  "description": "Selective re-implementation of infiquetra-claude-plugins b30e0f2..9470edc into Codex surfaces per docs/plans/2026-07-06-port-claude-plugin-updates-to-0.64-plan.md",
+  "units": [
+    {
+      "unit_id": "U1",
+      "label": "baseline-freeze-classification",
+      "tier": {"model": "sonnet", "effort": "medium"},
+      "prompt": "U1: Freeze the source baseline and write the 0.64 drift-classification artifact (after the operator commits the pending discord-identity-assets 0.2.0 work). Read the plan at docs/plans/2026-07-06-port-claude-plugin-updates-to-0.64-plan.md as your authoritative spec.",
+      "returns": ["status", "summary", "files_changed"],
+      "depends_on": [],
+      "files": ["docs/portability/codex-saga-064-drift-classification.md", "docs/portability/matrix.md", "docs/portability/provenance.md", "docs/engineering-journal/DECISIONS.md"]
+    },
+    {
+      "unit_id": "U2",
+      "label": "fleet-core-plugin-and-shim",
+      "tier": {"model": "opus", "effort": "high"},
+      "prompt": "U2: Create the Codex fleet-core plugin (tier palette, resolver, models.json dual palette, effort rider, retry_backoff) with the Codex-native shim resolution ladder, vendor the shim into consuming plugins, and add the drift test. Read the plan at docs/plans/2026-07-06-port-claude-plugin-updates-to-0.64-plan.md as your authoritative spec.",
+      "returns": ["status", "summary", "files_changed", "tests_run"],
+      "depends_on": ["U1"],
+      "files": ["plugins/fleet-core/", "plugins/saga/scripts/fleet_commons_shim.py", "plugins/team-execution/scripts/fleet_commons_shim.py", "plugins/mission-control/scripts/fleet_commons_shim.py", "plugins/unifi/skills/unifi-network/scripts/fleet_commons_shim.py", "plugins/unifi/skills/unifi-protect/scripts/fleet_commons_shim.py"]
+    },
+    {
+      "unit_id": "U3",
+      "label": "tier-effort-integration",
+      "tier": {"model": "opus", "effort": "high"},
+      "prompt": "U3: Route saga execution_spec tier merge/validation, team_emitter effort cascade, and the team-execution TOML roster + validator hints through the fleet-core palette. Read the plan at docs/plans/2026-07-06-port-claude-plugin-updates-to-0.64-plan.md as your authoritative spec.",
+      "returns": ["status", "summary", "files_changed", "tests_run"],
+      "depends_on": ["U2"],
+      "files": ["plugins/saga/scripts/execution_spec.py", "plugins/saga/scripts/team_emitter.py", "plugins/team-execution/scripts/sync_codex_agents.py", "plugins/team-execution/agents/", "scripts/validate_codex_plugins.py"]
+    },
+    {
+      "unit_id": "U4",
+      "label": "board-autonomy-and-issue-verbs",
+      "tier": {"model": "opus", "effort": "high"},
+      "prompt": "U4: Port the certificate-gated board-write loop (reversibility certificate, outcome board-sync, board_progression, schema-resolved status) and the paired mission-control issue-write verbs. Read the plan at docs/plans/2026-07-06-port-claude-plugin-updates-to-0.64-plan.md as your authoritative spec.",
+      "returns": ["status", "summary", "files_changed", "tests_run"],
+      "depends_on": ["U1", "U2"],
+      "files": ["plugins/saga/scripts/reversibility_certificate.py", "plugins/saga/scripts/outcome_board_sync.py", "plugins/saga/scripts/board_progression.py", "plugins/saga/scripts/outcome.py", "plugins/mission-control/scripts/sdlc_manager.py"]
+    },
+    {
+      "unit_id": "U5",
+      "label": "outcome-reconcile-from-objective",
+      "tier": {"model": "sonnet", "effort": "medium"},
+      "prompt": "U5: Port board-vs-saga reconciliation on resume and /outcome start --from-objective DAG seeding. Read the plan at docs/plans/2026-07-06-port-claude-plugin-updates-to-0.64-plan.md as your authoritative spec.",
+      "returns": ["status", "summary", "files_changed", "tests_run"],
+      "depends_on": ["U4"],
+      "files": ["plugins/saga/scripts/outcome_reconcile.py", "plugins/saga/scripts/outcome_github.py", "plugins/saga/scripts/outcome_edges.py", "plugins/saga/scripts/discover_subissues.py", "plugins/saga/scripts/outcome.py"]
+    },
+    {
+      "unit_id": "U6",
+      "label": "ship-ceremony-branch-refresh-telemetry",
+      "tier": {"model": "sonnet", "effort": "medium"},
+      "prompt": "U6: Port ship_ceremony.py with its follow-up fixes, the saga branch-refresh-on-save fix, gate-divergence telemetry, and the run-fact ledger. Read the plan at docs/plans/2026-07-06-port-claude-plugin-updates-to-0.64-plan.md as your authoritative spec.",
+      "returns": ["status", "summary", "files_changed", "tests_run"],
+      "depends_on": ["U1"],
+      "files": ["plugins/saga/scripts/ship_ceremony.py", "plugins/saga/scripts/saga.py", "plugins/saga/scripts/gate_divergence_reader.py", "plugins/saga/scripts/run_ledger.py"]
+    },
+    {
+      "unit_id": "U7",
+      "label": "evidence-manifests-verify-panels",
+      "tier": {"model": "opus", "effort": "high"},
+      "prompt": "U7: Port provenance manifests (verified vs adjudicated), manifest store/reader, completeness-gate updates, and verify-panel consensus recomputation over reporting verifiers. Read the plan at docs/plans/2026-07-06-port-claude-plugin-updates-to-0.64-plan.md as your authoritative spec.",
+      "returns": ["status", "summary", "files_changed", "tests_run"],
+      "depends_on": ["U3"],
+      "files": ["plugins/saga/scripts/provenance_manifest.py", "plugins/saga/scripts/manifest_store.py", "plugins/saga/scripts/manifest_reader.py", "plugins/saga/scripts/completeness_gate.py", "plugins/saga/scripts/execution_spec.py"]
+    },
+    {
+      "unit_id": "U8",
+      "label": "engine-routing-team-protocol",
+      "tier": {"model": "opus", "effort": "high"},
+      "prompt": "U8: Port engine capability routing gated to Codex backend truth, artifact-pointer passing, consensus hardening, and the resident-worker / evidence-absence protocol content adapted to serial fallback. Read the plan at docs/plans/2026-07-06-port-claude-plugin-updates-to-0.64-plan.md as your authoritative spec.",
+      "returns": ["status", "summary", "files_changed", "tests_run"],
+      "depends_on": ["U3", "U7"],
+      "files": ["plugins/saga/scripts/engine_registry.py", "plugins/saga/scripts/engine_resolver.py", "plugins/saga/scripts/engine_dispatch.py", "plugins/team-execution/scripts/artifact_pointer.py", "plugins/team-execution/skills/team-execution/SKILL.md"]
+    },
+    {
+      "unit_id": "U9",
+      "label": "mission-control-sync-unifi-retry",
+      "tier": {"model": "sonnet", "effort": "medium"},
+      "prompt": "U9: Behaviorally sync vendored mission-control (operations rename, create-prepared recovery, contents-API PUT fix, executor-profile lint) and adopt shared retry in the unifi clients. Read the plan at docs/plans/2026-07-06-port-claude-plugin-updates-to-0.64-plan.md as your authoritative spec.",
+      "returns": ["status", "summary", "files_changed", "tests_run"],
+      "depends_on": ["U2", "U4"],
+      "files": ["plugins/mission-control/scripts/sdlc_manager.py", "plugins/mission-control/config/project-mappings.json", "plugins/mission-control/scripts/executor_profile_lint.py", "plugins/unifi/skills/unifi-network/scripts/unifi_network_client.py", "plugins/unifi/skills/unifi-protect/scripts/unifi_protect_client.py"]
+    },
+    {
+      "unit_id": "U10",
+      "label": "manifests-inventory-final-validation",
+      "tier": {"model": "sonnet", "effort": "medium"},
+      "prompt": "U10: Align manifests, README, portability docs, validation inventory, and changelogs with the shipped surface; run full validation (validate_codex_plugins.py + pytest) and report. Read the plan at docs/plans/2026-07-06-port-claude-plugin-updates-to-0.64-plan.md as your authoritative spec.",
+      "returns": ["status", "summary", "files_changed", "validation_results"],
+      "depends_on": ["U2", "U3", "U4", "U5", "U6", "U7", "U8", "U9"],
+      "files": ["README.md", "docs/portability/matrix.md", "docs/portability/provenance.md", "docs/validation/saga-family-target-inventory.json", "scripts/validate_codex_plugins.py"]
+    }
+  ]
+}
