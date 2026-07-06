@@ -66,3 +66,14 @@ E501 is never enforced (pre-existing repo-wide condition, advisory).
 - Staleness: `git rev-list 979993c..HEAD --count` = 0 at report time.
 - Residual risks: consensus-protocol behavior lives in agent prompts (text drift-guards only);
   the two inherited upstream defects remain live behavior in both repos until fixed canonically.
+
+## Re-gate after fixes (ef67327)
+
+Findings #1 and #2 fixed in `ef67327`: behavioral tests for render_tier_table (6 tests) and
+exponential backoff (injectable `sleep`, delays 1s/2s, none after final attempt or success) in
+`authorize_and_write`, threaded through `reconcile_board`. Focused re-review of
+`979993c..ef6732761b958032c2e3c98c8e816feb50c7af3d` verdict: **pass** — backoff placement/arithmetic confirmed, all callers
+(CLI main, outcome_board_sync.py:307, outcome.py:734) safe with keyword-only defaults, artifact
+leaks nothing. Noted (accepted): the new test file sets FLEET_COMMONS_ROOT at module level,
+matching the sibling test_tier_resolver.py convention; resolution tests neutralize it via
+monkeypatch. Checks: 1264 passed, validator exit 0. Fresh reviewed revision: `ef6732761b958032c2e3c98c8e816feb50c7af3d`.
