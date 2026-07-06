@@ -108,7 +108,7 @@ TARGET_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
         "skills": ("team-execution", "appsec-audit"),
     },
     "discord-identity-assets": {
-        "version": "0.1.0",
+        "version": "0.2.0",
         "skills": ("discord-identity-assets",),
     },
     "home-lab-ops": LEGACY_EXPECTED_PLUGINS["home-lab-ops"],

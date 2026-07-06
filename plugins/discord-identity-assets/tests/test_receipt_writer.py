@@ -3,7 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from helpers import prepare_publishable_repo
+from helpers import prepare_publishable_guild_repo, prepare_publishable_repo
+from test_discord_client import MockGuildDiscord
 
 
 def test_verify_receipt_reads_required_fields(tmp_path: Path) -> None:
@@ -59,5 +60,35 @@ def test_publish_writes_secret_safe_runbook_checklist(tmp_path: Path) -> None:
     assert "plugins/discord-identity-assets/scripts" not in text
     assert "SCRIPT=<path-to-installed-discord_identity_assets.py>" in text
     assert "vault_discord_bot_token_mimir" in text
-    assert "Does not create Discord applications" in text
+    assert "does not create Discord applications" in text
     assert "Receipt records non-empty Discord readback identifiers" in text
+
+
+def test_verify_guild_publish_receipt_reads_icon_and_banner(tmp_path: Path) -> None:
+    mod, repo, plan = prepare_publishable_guild_repo(tmp_path)
+    result = mod.publish_assets(
+        repo,
+        "asgard",
+        plan["confirmation_id"],
+        do_publish=True,
+        kind="guild",
+        environ={"ASGARD_MANAGE_GUILD_TOKEN": "A" * 60, "ASGARD_GUILD_ID": "1503058365335736549"},
+        transport=MockGuildDiscord(),
+    )
+
+    verification = mod.verify_receipt(repo, Path(result["receipt"]["json"]))
+
+    assert verification["valid"] is True
+    assert verification["missing"] == []
+    assert verification["data"]["kind"] == "guild"
+
+
+def test_guild_runbook_describes_profile_color_as_metadata(tmp_path: Path) -> None:
+    mod, repo, _plan = prepare_publishable_guild_repo(tmp_path)
+
+    result = mod.publish_assets(repo, "asgard", do_publish=False, kind="guild")
+
+    text = (repo / result["runbook"]).read_text(encoding="utf-8")
+    assert "Server Profile color recommendation" in text
+    assert "does not automate that UI color setting" in text
+    assert "Publishes only the Discord server icon and image banner" in text

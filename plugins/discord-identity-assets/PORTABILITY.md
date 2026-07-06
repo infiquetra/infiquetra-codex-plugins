@@ -13,8 +13,9 @@ Codex differences:
 - Codex-native `image_gen` remains the generation mechanism; scripts do not call Replicate, OpenAI, or any image model.
 - Target repositories own `identity/discord-identity-assets.yml`; home-lab vault paths and hard-coded prompt dictionaries are not reusable state.
 - Discord tokens resolve from environment variables only at publish time.
-- Discord publish requires ownership preflight, signed publish-plan confirmation, API readback, redaction, and receipt writeback.
-- Guided Developer Portal provisioning, guild/server art, and broad team bootstrap orchestration are deferred.
+- Discord guild IDs also resolve from environment variables only at publish time, and receipts redact the resolved value.
+- Discord publish requires ownership preflight, signed publish-plan confirmation, API readback, redaction, and receipt writeback for bot and guild surfaces.
+- Guided Developer Portal provisioning, server creation, channel/role setup, Server Profile color automation, and broad team bootstrap orchestration are deferred.
 
 Validation:
 

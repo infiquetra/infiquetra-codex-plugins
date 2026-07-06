@@ -4,7 +4,7 @@ from pathlib import Path
 
 import yaml
 
-from helpers import load_module, make_repo, valid_manifest
+from helpers import load_module, make_guild_repo, make_repo, valid_guild_manifest, valid_manifest
 
 
 def test_postprocess_preserves_originals_and_writes_final_assets(tmp_path: Path) -> None:
@@ -68,6 +68,66 @@ def test_publish_requires_passed_prompt_consistency(tmp_path: Path) -> None:
             plan["confirmation_id"],
             do_publish=True,
             environ={"vault_discord_bot_token_mimir": "A" * 60},
+            transport=lambda *_args: (200, {}),
+        )
+    except mod.PublishError as exc:
+        assert "prompt consistency" in str(exc)
+    else:  # pragma: no cover
+        raise AssertionError("expected PublishError")
+
+
+def test_guild_postprocess_preserves_originals_and_writes_assets(tmp_path: Path) -> None:
+    mod = load_module()
+    repo = make_guild_repo(tmp_path)
+    icon_original = repo / "assets/discord/guilds/asgard/originals/icon.png"
+    original_hash = mod.sha256_file(icon_original)
+
+    result = mod.postprocess_assets(repo, "asgard", kind="guild")
+
+    assert mod.sha256_file(icon_original) == original_hash
+    assert result["kind"] == "guild"
+    assert result["assets"]["icon"]["width"] == 512
+    assert result["assets"]["icon"]["height"] == 512
+    assert result["assets"]["banner"]["width"] == 960
+    assert result["assets"]["banner"]["height"] == 540
+    prompt_record = yaml.safe_load((repo / "assets/discord/guilds/asgard/prompts.yml").read_text())
+    assert prompt_record["kind"] == "guild"
+    assert prompt_record["prompt_consistency"] == "pending"
+    assert prompt_record["profile_banner_color"] == "#2F555A"
+    assert (repo / result["receipt"]["json"]).is_file()
+    assert (repo / result["runbook"]).is_file()
+
+
+def test_guild_postprocess_rejects_icon_and_banner_same_final_path(tmp_path: Path) -> None:
+    mod = load_module()
+    manifest = valid_guild_manifest()
+    manifest["guild_targets"][0]["asset_paths"]["finals"]["banner"] = (
+        "assets/discord/guilds/asgard/icon.png"
+    )
+    repo = make_guild_repo(tmp_path, manifest)
+
+    try:
+        mod.postprocess_assets(repo, "asgard", kind="guild")
+    except mod.ManifestError as exc:
+        assert "guild icon and banner final paths" in str(exc)
+    else:  # pragma: no cover
+        raise AssertionError("expected ManifestError")
+
+
+def test_guild_publish_requires_passed_prompt_consistency(tmp_path: Path) -> None:
+    mod = load_module()
+    repo = make_guild_repo(tmp_path)
+    mod.postprocess_assets(repo, "asgard", kind="guild")
+    plan = mod.build_publish_plan(repo, "asgard", kind="guild")
+
+    try:
+        mod.publish_assets(
+            repo,
+            "asgard",
+            plan["confirmation_id"],
+            do_publish=True,
+            kind="guild",
+            environ={"ASGARD_MANAGE_GUILD_TOKEN": "A" * 60, "ASGARD_GUILD_ID": "1503058365335736549"},
             transport=lambda *_args: (200, {}),
         )
     except mod.PublishError as exc:

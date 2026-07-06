@@ -2,7 +2,7 @@
 
 The script uses Python standard-library HTTP and an injectable transport for tests.
 
-Live publish sequence:
+Bot live publish sequence:
 
 1. Resolve token from `token_env`.
 2. Reject suspicious token material before HTTP.
@@ -14,3 +14,16 @@ Live publish sequence:
 8. Verify readback identifiers are non-empty.
 
 Receipts record endpoint paths and returned identifiers, never authorization headers or token values.
+
+Guild live publish sequence:
+
+1. Resolve token from `manage_guild_token_env`.
+2. Resolve guild ID from `guild_id_env`; do not write the resolved value to receipts.
+3. Reject suspicious token or guild ID material before HTTP.
+4. `GET /users/@me`; verify `expected_actor_user_id` when configured.
+5. `GET /guilds/{guild_id}`; verify `name == discord.expected_guild_name` and capture `features`.
+6. `PATCH /guilds/{guild_id}` with `icon`.
+7. `PATCH /guilds/{guild_id}` with `banner` only when the guild reports `BANNER` support.
+8. Verify readback identifiers are non-empty for published surfaces.
+
+The script records redacted endpoint paths such as `/guilds/{guild_id}`. Server Profile color is not part of this API path and remains manifest/runbook metadata only.

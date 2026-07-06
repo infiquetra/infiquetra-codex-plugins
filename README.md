@@ -11,7 +11,7 @@ Codex-ready plugin surface, currently:
 | `deploy` | 0.1.1 | active |
 | `mission-control` | 2.1.0 | active |
 | `team-execution` | 2.2.0 | active |
-| `discord-identity-assets` | 0.1.0 | proof port |
+| `discord-identity-assets` | 0.2.0 | proof port |
 | `home-lab-ops` | 1.0.0 | baseline |
 | `python-toolkit` | 1.0.0 | baseline |
 | `unifi` | 1.0.0 | baseline |

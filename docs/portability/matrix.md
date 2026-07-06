@@ -16,7 +16,7 @@ tool-specific orchestration.
 | Plugin | Codex Status | Claude Lineage | Antigravity Lineage | Reason | Codex Treatment |
 |---|---|---|---|---|---|
 | `deploy` | proof-port | yes | no | Deployment operations are part of the Saga-family replacement and need Codex mutation gates before activation. | Port skills and scripts with dry-run, preview, exact-plan confirmation, auth provenance, and proof-owned mutation guards. |
-| `discord-identity-assets` | proof-port | no | no | Codex-born reusable Discord visual identity workflow extracted from home-lab scripts and Norns/Mimir operating evidence. | Add one Codex skill plus deterministic scripts for manifest validation, image post-processing, Discord upload/readback, receipt writeback, and secret-safe dry-run/live gates. |
+| `discord-identity-assets` | proof-port | no | no | Codex-born reusable Discord visual identity workflow extracted from home-lab scripts and Norns/Mimir operating evidence. | Add one Codex skill plus deterministic scripts for bot and guild manifest validation, image post-processing, Discord upload/readback, receipt writeback, and secret-safe dry-run/live gates. |
 | `docs-generator` | deferred | yes | yes | Documentation generation needs separate proof for repo-specific output conventions. | Reassess after `test-suite` proof and validation patterns settle. |
 | `home-lab-ops` | included | yes | yes | Already visible in Codex cache and mostly instruction/reference content. | Keep skills and references, omit top-level agent persona. |
 | `identity-toolkit` | deferred | yes | yes | Identity flows are higher risk and need fresh Codex-specific validation before porting. | Inventory only for MVP. |
