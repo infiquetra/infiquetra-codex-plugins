@@ -9,16 +9,20 @@ dev = [
   "pillow>=12.2.0",
   "pytest>=8.0.0",
   "pyyaml>=6.0.3",
+  "requests>=2.31.0",
+  "urllib3>=2.0.0",
 ]
 
 [tool.pytest.ini_options]
 testpaths = [
   "tests",
+  "plugins/fleet-core/tests",
   "plugins/mission-control/tests",
   "plugins/deploy/tests",
   "plugins/team-execution/tests",
   "plugins/saga/tests",
   "plugins/discord-identity-assets/tests",
+  "plugins/unifi/tests",
 ]
 python_files = ["test_*.py"]
 addopts = ["--import-mode=importlib"]
