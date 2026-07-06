@@ -4,6 +4,21 @@ All notable changes to this plugin are documented here.
 
 ---
 
+## [2.3.0] - 2026-07-06
+
+### Added
+- Add `artifact_pointer.py` and the artifact-pointer protocol (round-trip a pointer to an
+  external artifact; a pointer to a missing target is a typed failure, not a silent no-op).
+- Add resident-worker required-evidence-absence handling: `missing-output` and
+  `skipped-by-config` are distinguished, non-applicable evidence is excluded from consensus
+  rather than counted as a fabricated N/A vote (consensus dimension-exclusion hardening).
+- Add `test_agent_tier_sync.py`: three-way drift guard across the agent TOML roster, the
+  fleet-core tier palette, and `scripts/validate_codex_plugins.py`'s derived model hints.
+
+### Changed
+- Adopt fleet-core tier/effort resolution for the managed agent roster, replacing the
+  previously hard-coded `TEAM_EXECUTION_MODEL_HINTS` table with a palette-derived projection.
+
 ## [2.2.0] - 2026-06-27
 
 ### Added

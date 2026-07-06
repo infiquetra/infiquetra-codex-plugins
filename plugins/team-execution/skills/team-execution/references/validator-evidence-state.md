@@ -68,6 +68,13 @@ validator gates.
 - Include timestamps for remote CI and runtime checks.
 - Redact before writing state.
 
+## Required-Evidence Absence
+
+A required, non-skipped validator (or serial role) whose evidence record is **absent** at
+completion is a `missing-output` omission, not a silent pass — see `validator-execution-order.md`
+(Required-Evidence Absence). A `skipped-by-config` validator's absent evidence is expected and is
+reported under skipped validators, never treated as a `missing-output` trip.
+
 ## Completion Summary
 
 Final reports include selected validators, skipped validators, gate result,

@@ -59,6 +59,9 @@ Load only the files needed for the request:
 - Validator order: `references/validator-execution-order.md`
 - Evidence state: `references/validator-evidence-state.md`
 - Validator dispatch behavior: `references/validator-spawn-quirks.md`
+- Artifact pointers (receiver contract): `references/artifact-pointers.md`
+- Worker exit manifest: `references/worker-manifest.md`
+- External-engine workers (chaperone): `references/external-engine-workers.md`
 - Delegation safety: `references/delegation-safety.md`
 
 ## Phase A: Team Planning
@@ -133,6 +136,22 @@ Run Phase B only after the plan is approved.
 
 Do not claim completion while required validators are hard-failing or blocked
 unless the user explicitly accepts the residual risk.
+
+### Step B1: Artifact-pointer threshold (pointerize vs inline)
+
+When a spawn prompt would carry a large artifact (a full `git diff`, a changed-files summary),
+pass a typed **artifact pointer** instead of inlined bytes once the payload crosses this threshold,
+and let the receiver dereference it per `references/artifact-pointers.md`:
+
+- Pointerize when the artifact is `> 4 KB` AND it goes to `>= 2 recipients`.
+- Inline when the artifact is `<= 1 KB` or has a single recipient.
+- Between those bounds, use judgment; inlining is always the safe fallback.
+
+This is an advisory orchestrator rule applied by judgment, not a runtime-enforced gate. Git-object
+(`diff`) pointers only resolve for a receiver that shares the parent repo's `.git/objects`
+(same-cwd serial roles, linked-worktree children); when the receiver cannot run `git cat-file`
+against the parent repo (e.g. an external-engine disposable clone), fall back to inlined content
+for that receiver (capability-keyed KTD7 fallback).
 
 ## State And Evidence
 
