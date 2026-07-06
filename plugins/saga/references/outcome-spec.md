@@ -144,3 +144,51 @@ python3 plugins/saga/scripts/outcome_spec.py layers   docs/outcomes/<id>/outcome
 `validate` exits non-zero with a JSON `{"valid": false, "error": ...}` on a malformed spec; `layers`
 prints the topological layers. No I/O happens at import (pure functions), so the module is unit-testable
 offline — see `tests/test_outcome_spec.py`.
+
+## Seeding from a GitHub Objective (`start --from-objective`)
+
+`outcome.py nodes_from_objective(owner, repo, number)` builds node dicts directly from a GitHub
+Objective's sub-issues via `discover_subissues.fetch_objective` + `outcome_edges.edges_from_relationships`:
+one node per sub-issue (`kind` from a `non-code` label, else `code`), an authored terminal `state` for a
+closed sub-issue (`completed`->`done`, `not_planned`->`rejected` — structural spec state, never a
+committed status field or a completion event), a `github` provenance stamp (`{"repo", "issue",
+"sub_issue"}`) the reconcile/board-sync consumers resolve, and `depends_on` edges inferred from GitHub's
+`trackedIssues` relationship (a tracker depends on what it tracks).
+
+Edge inference is deliberately conservative: `edges_from_relationships` keeps only edges whose both
+endpoints are in the ingested set, drops a self-edge, and drops (and reports) any edge that would close a
+dependency cycle — so the produced spec always passes `OutcomeSpec.validate()`'s declared-target and
+Kahn-acyclicity checks. Dropped edges print to stderr as `{"dropped_edges": [...]}` rather than being
+silently discarded.
+
+## Board↔saga reconciliation (`outcome_reconcile`)
+
+Autonomous board-sync (`advance --autonomous`) writes the board but never re-reads it, so an outside
+writer who changes a saga-owned field while saga is at rest is invisible — and because a recorded
+idempotency key makes the next tick skip the op, the drift would persist silently. `outcome_reconcile`
+is the resume-time detector that closes that loop; it adds no writer and no new persistence, reading
+`outcome_board_sync`'s own ledger and re-driving any resolution through its existing writer.
+
+`detect(spec, store, board_reader=..., issue_reader=..., project=...)` classifies three per-issue views:
+
+- **asserted** — the latest of {ledger write record, `reconcile-override` record} per op family
+  (status, close), by timestamp — what saga last drove or the operator last accepted.
+- **expected** — recomputed from `derive_states` -> `outcome_board_sync._candidate_ops` -> the schema
+  status map, so a landed-but-unrecorded write is reconciled by recomputation.
+- **live** — the injected `board_reader` (`outcome_github.board_status`) and `issue_reader`
+  (`outcome_github.issue_close_info`).
+
+Only ledger-bearing issues are read — an issue with no recorded write is never probed, so a field saga
+never owned can never be a false positive. Records returned are `status-drift` / `external-close` /
+`external-reopen` drifts, `recovered` (a rewritten missing ledger key, informational), or `unreadable`
+(a field that could not be read this tick, never fatal).
+
+`decide()` / `apply_resolution()` implement the three resolutions (`accept-board`, `re-assert`, `hold`)
+described in the `/outcome` skill's Reconcile-on-wake section; `re-assert` always calls
+`reversibility_certificate.authorize_write` first (a GATE refuses, never bypassed).
+
+```bash
+python3 plugins/saga/scripts/outcome.py reconcile <id>
+python3 plugins/saga/scripts/outcome.py reconcile <id> --resolve <drift-id> --action accept-board|re-assert|hold
+python3 plugins/saga/scripts/outcome.py start <id> --from-objective <owner>/<repo>#<N>
+```

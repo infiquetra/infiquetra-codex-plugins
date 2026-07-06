@@ -214,6 +214,22 @@ checked-but-clean class is an empty `{}` map and scores 100; an absent class is 
 
 The score is **one signal**, not the gate: its inputs are LLM-assigned severities (principle 4).
 
+### 4.1b Provenance-manifest confidence input (advisory)
+
+When the change under QA carried delegated executions that recorded provenance manifests, pull
+the adjudicated verified ratio as a second, independent confidence signal alongside the health
+score:
+
+```bash
+python3 plugins/saga/scripts/manifest_reader.py --root <saga-manifests-dir> [--json]
+```
+
+The **adjudicated verified ratio** (`verified / (verified + inferred + not-checked)`, R16)
+measures how much of the delegated output's claim surface has been adjudicated `verified` rather
+than merely inferred or unchecked. It is advisory-only (R8): a low ratio tempers confidence in
+delegated findings but never itself fails a risk class. An empty manifest tree is "no data yet",
+not a zero.
+
 ### 4.2 Derive the ship verdict
 
 State **pass/fail per risk class**, then derive the overall **ship verdict** from the tier's blocking

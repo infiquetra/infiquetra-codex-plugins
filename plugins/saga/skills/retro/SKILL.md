@@ -181,6 +181,22 @@ dir; an **optional generic-sub-agent fan-out (one per session)** synthesizes the
 operator-choice, **never** via an `agents/` dir (this plugin has none; use generic `Explore` / `Task`).
 The orchestrator never reads a raw `.jsonl` or a skeleton file — paths only.
 
+**1.6 Provenance-manifest signals (read-only, advisory).** When the window covers delegated
+executions that recorded provenance manifests, run the manifest reader beside the other
+read-only telemetry to surface three signals — **parroting count** (claims a producer claimed
+`verified` that adjudication refuted or found unsupported), **disposition rate** (fraction
+landing `ran-as-requested` / `fell-back-to-claude` / `substituted-engine`), and the
+**adjudicated verified ratio** (`verified / (verified + inferred + not-checked)`):
+
+```bash
+python3 plugins/saga/scripts/manifest_reader.py --root <saga-manifests-dir> [--json]
+```
+
+The R7 parroting taxonomy is defined once in `provenance_manifest.py`, never redefined here.
+**Zero-data contract**: an empty or absent manifest tree is **"no data yet"** — carry it
+verbatim, never fabricate a rate. This pass is read-only and advisory-only: a low verified
+ratio or a nonzero parroting count is signal for the interview, never a gate.
+
 ---
 
 ## Phase 2 — Structured interview

@@ -32,6 +32,33 @@ import sys
 from pathlib import Path
 from typing import Any
 
+# Effort is a first-class, cascade-resolved field (U3, #363). The worker tier printed in
+# the emitted ``## Team Structure`` is honored through the canonical fleet-core palette so
+# a segment effort above the resident model's ceiling is clamped (with the clamp surfaced)
+# rather than emitted as an un-runnable tier. Loaded via the vendored shim so team_emitter
+# never re-declares the vocabulary (KTD2/KTD3).
+_SCRIPTS_DIR = Path(__file__).resolve().parent
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
+
+import fleet_commons_shim  # noqa: E402
+
+_tier_palette = fleet_commons_shim.load("tier_palette")
+
+
+def _resolved_tier_cell(model: str, effort: str) -> str:
+    """Render ``model/effort`` for a worker row, clamping effort to the model ceiling.
+
+    The palette's ``clamp_effort_to_model`` returns the runnable effort plus an optional
+    note; when the authored/merged effort exceeds the model's real ceiling the cell shows
+    the clamped tier with a ``(clamped from <effort>)`` marker so the cascade decision is
+    visible, never silently swallowed.
+    """
+    runnable, note = _tier_palette.clamp_effort_to_model(model, effort)
+    if note is not None:
+        return f"{model}/{runnable} (clamped from {effort})"
+    return f"{model}/{runnable}"
+
 # The base reviewer set the team-execution protocol always requires.
 # These are the three mandatory base reviewers from the SKILL.md template.
 _BASE_REVIEWERS: list[tuple[str, str]] = [
@@ -115,7 +142,7 @@ def emit_team_structure(spec: Any) -> str:
     for seg in segments:
         agent = f"`{seg.resident_id}`"
         units = ", ".join(seg.unit_ids)
-        tier = f"{seg.tier.model}/{seg.tier.effort}"
+        tier = _resolved_tier_cell(seg.tier.model, seg.tier.effort)
         deps = ", ".join(seg.depends_on) if seg.depends_on else "—"
         lines.append(f"| {agent} | {units} | {tier} | bypassPermissions | {deps} |")
     lines.append("")

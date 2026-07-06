@@ -42,17 +42,28 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-# Tier vocabulary (Epic 0 tier rule R1). The emitter does not invent tiers; it only
-# validates that authored tiers are drawn from these closed sets so a typo
+# Tier vocabulary (Epic 0 tier rule R1) is sourced from the canonical fleet-core palette
+# (U3, KTD2/KTD3) — never re-declared here. The emitter does not invent tiers; it only
+# validates that authored tiers are drawn from the palette's closed sets so a typo
 # ("opus-high", "med") fails emit rather than silently producing an un-runnable script.
-MODELS = ("opus", "sonnet", "haiku")
-EFFORTS = ("low", "medium", "high")
+# Loading through ``fleet_commons_shim`` keeps every consumer on one registry-derived
+# ordering; MODELS is strongest-first, EFFORTS weakest-first ({#tier-vocab-ordering}).
+_SCRIPTS_DIR = Path(__file__).resolve().parent
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
+
+import fleet_commons_shim  # noqa: E402
+
+_tier_palette = fleet_commons_shim.load("tier_palette")
+MODELS: tuple[str, ...] = _tier_palette.MODELS
+EFFORTS: tuple[str, ...] = _tier_palette.EFFORTS
 
 # Models cheap enough that the structuredoutput-budget lesson MUST be baked into the
 # generated agent prompt. An opus/high agent has budget headroom; a haiku or a
 # sonnet/low agent over a large surface is exactly the case the lesson guards
-# (workflow_structuredoutput_budget: brevity + mandatory emit + skim + batch).
-_CHEAP_MODELS = ("haiku",)
+# (workflow_structuredoutput_budget: brevity + mandatory emit + skim + batch). The
+# palette owns this set (``CHEAP_MODELS``); this stays a private alias for saga.
+_CHEAP_MODELS = _tier_palette.CHEAP_MODELS
 
 # refute-N pass rules (KTD3 / KTD5). A finding survives unless refuted per this rule:
 # majority => >= ceil(N/2) verifiers refute; unanimous => all N refute.
@@ -222,6 +233,14 @@ class Tier:
             raise SpecError(f"{where}: model {self.model!r} not in {MODELS}")
         if self.effort not in EFFORTS:
             raise SpecError(f"{where}: effort {self.effort!r} not in {EFFORTS}")
+        # HALT on an effort above the model's real ceiling (U3, KTD3): a haiku/xhigh unit
+        # would emit an un-runnable dispatch, so fail loudly rather than clamp silently.
+        if not _tier_palette.supports_effort(self.model, self.effort):
+            ceiling = _tier_palette.effort_ceiling(self.model)
+            raise SpecError(
+                f"{where}: effort {self.effort!r} exceeds {self.model!r} ceiling "
+                f"{ceiling!r} (KTD3 -- effort over the model ceiling is un-runnable)"
+            )
 
     @property
     def is_cheap(self) -> bool:
@@ -612,6 +631,111 @@ def _verifier_prompt(unit: Unit) -> str:
     return "\n\n".join(parts)
 
 
+def _emit_panel_reconciliation(
+    lines: list[str],
+    unit: Unit,
+    result_var: str,
+    name_prefix: str,
+    indent: str,
+    *,
+    direct_throw: bool,
+) -> None:
+    """Emit a refute-N panel's verdict-collection + consensus-recompute block (R5).
+
+    Single source of truth for the reconciliation shared by ``_emit_thunk``,
+    ``_emit_verify_loop_singleton``, and ``_emit_verify_panel`` -- three hand-maintained
+    copies is exactly the drift risk this helper exists to kill. ``name_prefix`` disambiguates
+    the one-shot panel's top-level ``const`` names (unit-scoped, e.g. ``"U1_"``) from the
+    iterate sites' block-scoped bare names. ``direct_throw`` selects the one-shot panel's
+    immediate throw-if-refuted consumer instead of the iterate loop's break-if-accepted /
+    throw-at-max-iterations consumer; callers own their enclosing loop.
+
+    Consensus is recomputed over the verifiers that actually REPORTED, not the declared ``n``:
+    a null verdict, or one lacking a usable ``.refuted`` array, is a runtime-missing verifier,
+    NOT an N/A vote. Excluding it (rather than fabricating a non-refuting vote) keeps a degraded
+    panel from silently passing a unit its reporting verifiers would refute, and matches
+    team-execution's dimension-exclusion semantics.
+    """
+    panel = unit.verify
+    assert panel is not None
+    n = panel.n
+    floor = (n + 1) // 2  # quorum floor, baked as a literal per panel
+    verifier_prompt = _verifier_prompt(unit)
+    verifier_opts = [
+        f"label: {_js_string(unit.label + ' verifier')}",
+        f"model: {_js_string(unit.tier.model)}",
+        f"effort: {_js_string(unit.tier.effort)}",
+    ]
+
+    verdicts_var = f"{name_prefix}verdicts"
+    reported_var = f"{name_prefix}reported"
+    missing_idx_var = f"{name_prefix}missing_idx"
+    refute_count_var = f"{name_prefix}refute_count"
+    threshold_var = f"{name_prefix}threshold"
+    refuted_var = f"{name_prefix}refuted"
+
+    lines.append(f"{indent}const {verdicts_var} = await parallel([")
+    for _ in range(n):
+        lines.append(f"{indent}  () => agent(")
+        lines.append(f"{indent}    {_js_string(verifier_prompt)},")
+        lines.append(f"{indent}    {{ " + ", ".join(verifier_opts) + f", input: {result_var} }},")
+        lines.append(f"{indent}  ),")
+    lines.append(f"{indent}])")
+    lines.append(
+        f"{indent}const {reported_var} = {verdicts_var}.filter((v) => "
+        f"v != null && Array.isArray(v.refuted))"
+    )
+    lines.append(
+        f"{indent}const {missing_idx_var} = {verdicts_var}.map((v, i) => "
+        f"(v == null || !Array.isArray(v.refuted) ? i + 1 : null)).filter((i) => i != null)"
+    )
+    lines.append(
+        f"{indent}const {refute_count_var} = {reported_var}.filter((v) => "
+        f"v.refuted.length > 0).length"
+    )
+    if panel.pass_rule == "majority":
+        lines.append(
+            f"{indent}const {threshold_var} = "
+            f"Math.max(1, Math.ceil({reported_var}.length / 2))  // majority over reporters"
+        )
+    else:
+        lines.append(
+            f"{indent}const {threshold_var} = "
+            f"Math.max(1, {reported_var}.length)  // unanimous over reporters"
+        )
+    lines.append(f"{indent}const {refuted_var} = {refute_count_var} >= {threshold_var}")
+    lines.append(f"{indent}if ({missing_idx_var}.length > 0) {{")
+    lines.append(
+        f"{indent}  console.error(`verify panel over {unit.unit_id}: "
+        f"${{{missing_idx_var}.length}}/{n} verifier(s) missing "
+        f'(runtime-failure: #${{{missing_idx_var}.join(", #")}}); '
+        f"verdict computed over ${{{reported_var}.length}}/{n}` +"
+    )
+    lines.append(
+        f"{indent}      ({reported_var}.length < {floor} ? "
+        f'" — UNDER-STRENGTH (quorum floor {floor})" : ""))'
+    )
+    lines.append(f"{indent}}}")
+
+    throw_line = (
+        f"throw new Error(`verifier-disagreement: Unit {unit.unit_id} refuted by "
+        f"${{{refute_count_var}}}/${{{reported_var}.length}} reporting verifiers "
+        f"(${{{missing_idx_var}.length}} missing)`)"
+    )
+    if direct_throw:
+        lines.append(f"{indent}if ({refuted_var}) {{")
+        lines.append(f"{indent}  {throw_line}")
+        lines.append(f"{indent}}}")
+        lines.append("")
+    else:
+        lines.append(f"{indent}if (!{refuted_var}) {{")
+        lines.append(f"{indent}  break")
+        lines.append(f"{indent}}}")
+        lines.append(f"{indent}if (iter === {panel.max_iterations}) {{")
+        lines.append(f"{indent}  {throw_line}")
+        lines.append(f"{indent}}}")
+
+
 def _emit_thunk(lines: list[str], spec: ExecutionSpec, unit: Unit) -> None:
     """Append one thunk entry for ``unit`` inside a ``parallel([...])``.
 
@@ -620,17 +744,9 @@ def _emit_thunk(lines: list[str], spec: ExecutionSpec, unit: Unit) -> None:
     """
     if unit.verify is not None and unit.verify.iterate_to_consensus:
         panel = unit.verify
-        n = panel.n
-        threshold = (n + 1) // 2 if panel.pass_rule == "majority" else n
-        verifier_prompt = _verifier_prompt(unit)
         prompt = _agent_prompt(spec, unit)
         opts = [
             f"label: {_js_string(unit.label)}",
-            f"model: {_js_string(unit.tier.model)}",
-            f"effort: {_js_string(unit.tier.effort)}",
-        ]
-        verifier_opts = [
-            f"label: {_js_string(unit.label + ' verifier')}",
             f"model: {_js_string(unit.tier.model)}",
             f"effort: {_js_string(unit.tier.effort)}",
         ]
@@ -643,27 +759,7 @@ def _emit_thunk(lines: list[str], spec: ExecutionSpec, unit: Unit) -> None:
         lines.append("        { " + ", ".join(opts) + " },")
         lines.append("      )")
         lines.append(f"      {_emit_gate_call(unit, 'result')}")
-        lines.append("      const verdicts = await parallel([")
-        for _ in range(n):
-            lines.append("        () => agent(")
-            lines.append(f"          {_js_string(verifier_prompt)},")
-            lines.append("          { " + ", ".join(verifier_opts) + ", input: result },")
-            lines.append("        ),")
-        lines.append("      ])")
-        lines.append(
-            "      const refute_count = verdicts.filter((v) => v && v.refuted "
-            "&& v.refuted.length > 0).length"
-        )
-        lines.append(f"      const refuted = refute_count >= {threshold}  // {panel.pass_rule}")
-        lines.append("      if (!refuted) {")
-        lines.append("        break")
-        lines.append("      }")
-        lines.append(f"      if (iter === {panel.max_iterations}) {{")
-        lines.append(
-            f"        throw new Error(`verifier-disagreement: Unit {unit.unit_id} refuted by "
-            f"${{refute_count}} verifiers`)"
-        )
-        lines.append("      }")
+        _emit_panel_reconciliation(lines, unit, "result", "", "      ", direct_throw=False)
         lines.append("    }")
         lines.append("    return result")
         lines.append("  },")
@@ -688,16 +784,9 @@ def _emit_verify_loop_singleton(
     panel = unit.verify
     assert panel is not None
     n = panel.n
-    threshold = (n + 1) // 2 if panel.pass_rule == "majority" else n
-    verifier_prompt = _verifier_prompt(unit)
     prompt = _agent_prompt(spec, unit)
     opts = [
         f"label: {_js_string(unit.label)}",
-        f"model: {_js_string(unit.tier.model)}",
-        f"effort: {_js_string(unit.tier.effort)}",
-    ]
-    verifier_opts = [
-        f"label: {_js_string(unit.label + ' verifier')}",
         f"model: {_js_string(unit.tier.model)}",
         f"effort: {_js_string(unit.tier.effort)}",
     ]
@@ -713,27 +802,7 @@ def _emit_verify_loop_singleton(
     lines.append("    { " + ", ".join(opts) + " },")
     lines.append("  )")
     lines.append(f"  {_emit_gate_call(unit, var)}")
-    lines.append("  const verdicts = await parallel([")
-    for _ in range(n):
-        lines.append("    () => agent(")
-        lines.append(f"      {_js_string(verifier_prompt)},")
-        lines.append("      { " + ", ".join(verifier_opts) + f", input: {var} }},")
-        lines.append("    ),")
-    lines.append("  ])")
-    lines.append(
-        "  const refute_count = verdicts.filter((v) => v && v.refuted "
-        "&& v.refuted.length > 0).length"
-    )
-    lines.append(f"  const refuted = refute_count >= {threshold}  // {panel.pass_rule}")
-    lines.append("  if (!refuted) {")
-    lines.append("    break")
-    lines.append("  }")
-    lines.append(f"  if (iter === {panel.max_iterations}) {{")
-    lines.append(
-        f"    throw new Error(`verifier-disagreement: Unit {unit.unit_id} refuted by "
-        f"${{refute_count}} verifiers`)"
-    )
-    lines.append("  }")
+    _emit_panel_reconciliation(lines, unit, var, "", "  ", direct_throw=False)
     lines.append("}")
     lines.append("")
 
@@ -743,50 +812,25 @@ def _emit_verify_panel(lines: list[str], unit: Unit, var: str) -> None:
 
     Renders a ``parallel([...])`` of ``unit.verify.n`` verifier ``agent()`` calls over the
     unit's result (each at the SAME ``{model, effort}`` tier as the unit per R4), then a
-    PANEL-LEVEL pass-rule verdict: count the verifiers that returned at least one refutation
-    and compare to the threshold -- ``majority`` => ``>= ceil(N/2)`` verifiers refuted;
-    ``unanimous`` => all N refuted. (This is a panel-level signal, not per-finding survival:
-    a generic emitter cannot match findings across verifiers, so it surfaces "did enough
-    skeptics refute anything" for the operator/runtime to act on.) The resulting
-    ``<var>_refuted`` boolean is CONSUMED: when set, the script ``log()``s a review warning so
-    a refuted unit result is surfaced rather than silently relied upon.
+    PANEL-LEVEL pass-rule verdict recomputed over the verifiers that actually REPORTED (R5):
+    count the reporting verifiers that returned at least one refutation and compare to a
+    threshold derived from the reporter count -- ``majority`` => ``>= ceil(reporters/2)``
+    refuted; ``unanimous`` => all reporters refuted. Runtime-missing verifiers (null / no
+    ``.refuted`` array) are excluded rather than counted as non-refuting N/A votes. (This is a
+    panel-level signal, not per-finding survival: a generic emitter cannot match findings
+    across verifiers, so it surfaces "did enough skeptics refute anything" for the operator/
+    runtime to act on.) The resulting ``<var>_refuted`` boolean is CONSUMED: when set, the
+    script throws so a refuted unit result is surfaced rather than silently relied upon.
     """
     panel = unit.verify
     assert panel is not None  # caller guards this
     n = panel.n
-    threshold = (n + 1) // 2 if panel.pass_rule == "majority" else n
-    verifier_prompt = _verifier_prompt(unit)
-    opts = [
-        f"label: {_js_string(unit.label + ' verifier')}",
-        f"model: {_js_string(unit.tier.model)}",
-        f"effort: {_js_string(unit.tier.effort)}",
-    ]
 
     lines.append(f"// verify: refute-{n} panel over {unit.unit_id} (pass_rule: {panel.pass_rule};")
     lines.append(
-        f"// panel-level: the unit result is refuted when >= {threshold} of {n} verifiers refute)"
+        f"// panel-level: refuted when >= threshold of the REPORTING verifiers refute (of {n}))"
     )
-    lines.append(f"const {var}_verdicts = await parallel([")
-    for _ in range(n):
-        lines.append("  () => agent(")
-        lines.append(f"    {_js_string(verifier_prompt)},")
-        lines.append("    { " + ", ".join(opts) + f", input: {var} }},")
-        lines.append("  ),")
-    lines.append("])")
-    # Pass-rule reconciliation: count verifiers that refuted at least one finding.
-    lines.append(
-        f"const {var}_refute_count = {var}_verdicts.filter((v) => v && v.refuted "
-        f"&& v.refuted.length > 0).length"
-    )
-    lines.append(f"const {var}_refuted = {var}_refute_count >= {threshold}  // {panel.pass_rule}")
-    # Consume the verdict: surface a refuted unit result instead of relying on it silently.
-    lines.append(f"if ({var}_refuted) {{")
-    lines.append(
-        f"  throw new Error(`verifier-disagreement: Unit {unit.unit_id} refuted by "
-        f"${{{var}_refute_count}} verifiers`)"
-    )
-    lines.append("}")
-    lines.append("")
+    _emit_panel_reconciliation(lines, unit, var, f"{var}_", "", direct_throw=True)
 
 
 def _agent_prompt(spec: ExecutionSpec, unit: Unit) -> str:
@@ -1120,10 +1164,15 @@ def segment_units(spec: ExecutionSpec) -> list[Segment]:
         units = seg["units"]
         unit_ids = [u.unit_id for u in units]
 
-        # Calculate max tier: upgrade-only max of its members' tiers
-        best_model_idx = min(MODELS.index(u.tier.model) for u in units)
-        best_effort_idx = max(EFFORTS.index(u.tier.effort) for u in units)
-        seg_tier = Tier(model=MODELS[best_model_idx], effort=EFFORTS[best_effort_idx])
+        # Segment tier is the upgrade-only merge of its members' tiers, computed through
+        # the palette's ladder primitive (U3): ``strongest("model", ...)`` picks the
+        # strongest model, ``strongest("effort", ...)`` the highest effort — no raw
+        # ``.index()`` arithmetic, so the two opposite-direction vocabularies can never be
+        # mis-merged ({#tier-vocab-ordering}).
+        seg_tier = Tier(
+            model=_tier_palette.strongest("model", [u.tier.model for u in units]),
+            effort=_tier_palette.strongest("effort", [u.tier.effort for u in units]),
+        )
 
         # Collapse depends_on graph
         seg_deps: list[str] = []

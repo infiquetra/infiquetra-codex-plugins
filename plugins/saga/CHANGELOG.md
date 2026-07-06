@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.64.0 - 2026-07-06
+
+Parity version label for the Claude `b30e0f2..9470edc` port window (matches the 0.41 precedent
+of labeling the number to upstream parity while `PORTABILITY.md` records the non-ported
+surfaces; see KTD6). Selected surfaces landed this cycle:
+
+- Add certificate-gated board-write loop: `reversibility_certificate.py`, `outcome_board_sync.py`,
+  `board_progression.py` — only allow-listed board operations may write autonomously; everything
+  else stays propose-only behind explicit operator confirmation.
+- Add outcome reconciliation and `/outcome start --from-objective` GitHub Objective sub-issue
+  DAG seeding (`outcome_reconcile.py`, `outcome_github.py`, `outcome_edges.py`).
+- Add `ship_ceremony.py` (open-PR/`--saga-id`/auto-close), branch-refresh-on-save with
+  default-branch protection, gate-divergence instrumentation (`gate_divergence_reader.py`), and
+  an append-only, hash-chained, telemetry-only run-fact ledger (`run_ledger.py`).
+- Add provenance manifest stack (verified vs. adjudicated): `provenance_manifest.py`,
+  `manifest_store.py`, `manifest_reader.py`, wired into `completeness_gate.py`; verify-panel
+  consensus now recomputes over verifiers that actually reported rather than fabricating
+  N/A votes for failed or non-applicable members.
+- Add capability-gated engine routing (`engine_registry.py`, `engine_resolver.py`,
+  `engine_dispatch.py`): advisory resolution returns "unresolvable" rather than guessing; run
+  mode halts rather than substitutes an unproven backend.
+- Adopt fleet-core tier/effort resolution in `execution_spec.py` and `team_emitter.py`,
+  replacing the previously hard-coded model-hint table.
+- Out of scope this cycle (recorded, not silently dropped): PreCompact spore/residency hooks,
+  remote gate approval transport (deferred to redis-channel, upstream #379), `agy`, marketplace
+  generation, Workflow wave-thunk retry wrapping.
+
 ## 0.41.0 - 2026-06-29
 
 - Add Codex-native `saga:outcome` and `saga:promote` skills after their scripts

@@ -161,6 +161,19 @@ a lens that has no real work on this diff.
 
 ## Phase 3 — Review (fan-out)
 
+**B.0 — Skip re-verifying adjudicated-verified claims (advisory).** When the diff under review
+carries delegated-output provenance manifests, read them before spawning lenses:
+
+```bash
+python3 plugins/saga/scripts/manifest_reader.py --root <saga-manifests-dir> [--json]
+```
+
+A claim whose underlying evidence is already **attested** by an adjudication pass
+(`Claim.adjudication` present) landing `AdjudicatedStatus.VERIFIED` needs no fresh lens pass over
+the same ground — do not relitigate it. This is advisory (R8): it narrows redundant re-work, it
+never suppresses a lens that would examine *new* surface, and an absent manifest tree changes
+nothing.
+
 Spawn the selected lenses as **generic agents** (`Explore`/`Task` — this plugin has no `agents/` dir, so
 do **not** reference named `ce-*` agents). Each lens returns findings in the schema defined by
 `references/findings-schema.md`.

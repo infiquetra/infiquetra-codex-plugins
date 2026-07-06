@@ -6,7 +6,20 @@
 - Base source commit: `16de95c82ccb2ed80d7f11018e1c2e8247a80a7f`
 - Latest imported source commit: `abcc06b16763975d71e483a6dac768f4664d7b63`
 - Saga 0.41 parity source commit: `b30e0f2ba7cd0cfdeaf97c1d4510c9a0468e96da`
+- Saga 0.64 parity source commit: `9470edc` (window `b30e0f2..9470edc`, 2026-07-06 port cycle)
 - Port status: Codex-native proof port
+
+## 0.64 Parity Additions (Version Is A Label, Not Full Upstream Parity)
+
+The 0.64.0 version tracks upstream lineage numbering (KTD6, same precedent as 0.41); this file
+records what actually ported. Landed this cycle: the certificate-gated board-write loop
+(reversibility certificate, outcome board-sync, board progression), outcome reconciliation and
+`--from-objective` DAG seeding, ship ceremony with branch-refresh-on-save and gate-divergence
+instrumentation, an append-only run-fact ledger, the provenance manifest stack (verified vs.
+adjudicated) with verify-panel dimension-exclusion consensus, and capability-gated engine
+routing. Not ported this cycle: PreCompact spore/residency hooks, remote gate approval
+transport (deferred to redis-channel), `agy`, marketplace generation, Workflow wave-thunk
+retry wrapping.
 
 ## Codex Port Shape
 

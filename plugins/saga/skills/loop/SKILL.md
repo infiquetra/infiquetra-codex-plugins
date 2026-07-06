@@ -59,7 +59,9 @@ not a competitor to any of them.
 5. **Own only the handoff envelope.** `/loop` owns routing + the handoff envelope
    (`handoff_envelope.py`). `mission-control` owns issues / boards / comments; `deploy` owns
    deploy mutation; the journal owns durable decisions. `/loop` points at those owners; it never
-   reimplements them.
+   reimplements them. Autonomous board writes are the **certificate-gated** province of
+   `outcome advance --autonomous` / `board_progression.py` (default-GATE reversibility envelope);
+   `/loop` itself reads state derived-on-read and **never writes the board** (#344 boundary).
 6. **Gate before routing, never block on a stub.** The one HARD gate routes to `/doc-review`
    (shipped) — block routing to `/work` on unresolved P0/P1 unless overridden with a recorded
    rationale. The route to shipped **`/qa`** is **advisory** (it is a gate-only node that produces a

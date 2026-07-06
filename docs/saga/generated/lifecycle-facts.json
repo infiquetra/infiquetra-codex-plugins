@@ -88,7 +88,7 @@
     "mission-control": {
       "skills": [
         {
-          "description": "Manage the Infiquetra GitHub Projects boards: Jeff Intent, Asgard, and CAMPPS. Handles board views, status moves, item adds, terminal-item archive, WIP analysis, field discovery, and standup preparation.",
+          "description": "Manage the Infiquetra GitHub Projects boards: Operations, Asgard, and CAMPPS. Handles board views, status moves, item adds, terminal-item archive, WIP analysis, field discovery, and standup preparation.",
           "name": "board",
           "namespace": "mission-control:board",
           "skill_path": "plugins/mission-control/skills/board/SKILL.md"
@@ -112,7 +112,7 @@
           "skill_path": "plugins/mission-control/skills/labels/SKILL.md"
         },
         {
-          "description": "Flow metrics and analysis for Infiquetra project boards using GitHub timeline events. Provides cycle time, throughput, WIP age, per-status time breakdowns, and interpretation guidance across Jeff Intent, Asgard, and CAMPPS.",
+          "description": "Flow metrics and analysis for Infiquetra project boards using GitHub timeline events. Provides cycle time, throughput, WIP age, per-status time breakdowns, and interpretation guidance across Operations, Asgard, and CAMPPS.",
           "name": "metrics",
           "namespace": "mission-control:metrics",
           "skill_path": "plugins/mission-control/skills/metrics/SKILL.md"
@@ -130,7 +130,7 @@
           "skill_path": "plugins/mission-control/skills/rollout/SKILL.md"
         }
       ],
-      "version": "2.1.0"
+      "version": "2.2.0"
     },
     "saga": {
       "skills": [
@@ -267,7 +267,7 @@
           "skill_path": "plugins/saga/skills/loop/SKILL.md"
         }
       ],
-      "version": "0.41.0"
+      "version": "0.64.0"
     },
     "team-execution": {
       "skills": [
@@ -284,7 +284,7 @@
           "skill_path": "plugins/team-execution/skills/appsec-audit/SKILL.md"
         }
       ],
-      "version": "2.2.0"
+      "version": "2.3.0"
     }
   },
   "saga_routing": {

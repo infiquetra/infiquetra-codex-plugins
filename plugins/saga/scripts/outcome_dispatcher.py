@@ -313,7 +313,12 @@ def degrade_decision(
             backend,
             f"{backend} unavailable but the leaf is guarantee-bearing -> HALT even when away (R23)",
         )
-    if had_side_effect:
+    # The certificate is the single authority on the side-effect fact (KTD8): route the value through
+    # ``reversibility_certificate.side_effected`` so this decision and the board writer read the SAME
+    # fact rather than each re-deriving it.
+    import reversibility_certificate  # noqa: PLC0415
+
+    if reversibility_certificate.side_effected(had_side_effect):
         return (
             "halt",
             backend,
