@@ -1,5 +1,43 @@
 # Learnings
 
+## 2026-07-06: Verify-Panel Consensus Must Recompute Over Reporters, Not Declared N (U7)
+
+**Evidence:** `plugins/saga/scripts/execution_spec.py` `_emit_panel_reconciliation`
+(new single-source helper), `plugins/saga/tests/test_verify_panel_robustness.py`.
+Ported from `infiquetra-claude-plugins@9470edc`.
+
+**Mechanism:** The old emitted refute-N panel compared `refute_count` against a threshold
+baked over the declared `n`. A verifier that crashed or returned a malformed verdict
+resolved to a `null`/shapeless slot that was silently counted as a *non-refuting* N/A vote,
+so a degraded panel could pass a unit its reporting skeptics would have refuted. The port
+filters verdicts to reporters (`v != null && Array.isArray(v.refuted)`), recomputes the
+pass-rule threshold over the reporter count (`Math.max(1, Math.ceil(k/2))` majority,
+`Math.max(1, k)` unanimous), and annotates UNDER-STRENGTH below the baked quorum floor —
+excluding runtime-missing members instead of fabricating votes. The three emission sites
+(thunk, iterate singleton, one-shot panel) were collapsed into one helper to kill the same
+three-copy drift risk the verifier-opts helper already guards.
+
+**Generalizable rule:** When aggregating a quorum over delegated agents, absence is not a
+vote — recompute the threshold over the members that actually reported, and `max(1, …)`-guard
+the all-missing case so `0 >= ceil(0/2)` cannot vacuously pass.
+
+## 2026-07-06: Provenance-Manifest Trio Ports Clean; Only the CLI Root Path Is Host-Specific (U7)
+
+**Evidence:** `plugins/saga/scripts/{provenance_manifest,manifest_store,manifest_reader}.py`,
+ported from `9470edc`. Only edit beyond a verbatim copy: `manifest_reader.py --root` default
+`.claude/saga-manifests` → `.codex/saga-manifests`.
+
+**Mechanism:** The manifest schema is pure stdlib and leans only on already-Codex-adapted
+siblings (`outcome_store.resolve_common_dir/_safe_name/_atomic_write`, `execution_spec`,
+`completeness_gate`), so it needed no path rewrites of its own. The `Disposition` wire value
+`fell-back-to-claude` and the `ProducerKind.CC_WORKFLOWS` label were kept verbatim: they are
+serialized evidence strings shared across the ecosystem, so changing them would break
+round-trip fidelity for zero behavioral gain in a repo with no stored manifests to migrate.
+
+**Generalizable rule:** For a ported evidence/serialization schema, adapt only the host-path
+*resolution* seams; leave wire-format enum values alone unless a stored corpus forces a
+migration — schema fidelity beats cosmetic host-renaming.
+
 ## 2026-05-27: Test Suite Is a Useful First Proof Port
 
 `test-suite` exercises the skill-plus-script boundary without requiring credentials,

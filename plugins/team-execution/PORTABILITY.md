@@ -41,3 +41,14 @@ Codex TOML surface.
 
 The source display setup and host-specific command entrypoints are lineage only in this repo. The
 Codex port replaces display-pane behavior with evidence grouping and bounded delegation notes.
+
+## 2.3.0 Additions (2026-07-06 Port Cycle)
+
+Ported from Claude window `b30e0f2..9470edc`: the artifact-pointer protocol (round-trip a
+pointer to an external artifact; a pointer to a missing target is a typed failure), resident-
+worker required-evidence-absence handling (`missing-output` vs. `skipped-by-config` distinguished
+and excluded from consensus rather than fabricated as N/A votes), and adoption of fleet-core's
+tier/effort resolution for the managed agent roster in place of the previously hard-coded
+`TEAM_EXECUTION_MODEL_HINTS` table. `test_agent_tier_sync.py` guards the three-way agreement
+between the roster TOML, the fleet-core palette, and the validator's derived hints. Claude
+Workflow/`TeamCreate` backends remain lineage-only negative-gated surfaces (not executable here).

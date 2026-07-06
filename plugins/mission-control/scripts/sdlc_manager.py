@@ -242,7 +242,7 @@ _VENDORED_PROJECT_MAPPINGS_PATH = (
     Path(__file__).resolve().parent.parent / "config" / "project-mappings.json"
 )
 _VENDORED_SDLC_SCHEMA_PATH = Path(__file__).resolve().parent.parent / "config" / "sdlc-schema.json"
-PROJECT_CHOICES = ("campps", "asgard", "jeff-intent")
+PROJECT_CHOICES = ("campps", "asgard", "operations")
 LIVE_LEGACY_STATUS_ALIASES = {
     "In Progress": "Assigned",
     "In Development": "Assigned",
@@ -662,6 +662,14 @@ def _graphql(query: str, variables: dict | None = None) -> dict:
     return cast(dict, data.get("data", {}))
 
 
+def _issue_or_pull_request_node(repo_data: dict[str, Any]) -> dict[str, Any] | None:
+    """Return the resolved Issue/PullRequest union node, if present."""
+    node = repo_data.get("issueOrPullRequest")
+    if isinstance(node, dict):
+        return cast(dict[str, Any], node)
+    return None
+
+
 def _rest_get(path: str) -> Any:
     """Execute a REST GET via gh CLI."""
     result = _gh(["api", path])
@@ -678,6 +686,18 @@ def _rest_patch(path: str, body: dict) -> Any:
     """Execute a REST PATCH via gh CLI."""
     result = _gh(["api", "--method", "PATCH", path, "--input", "-"], input_data=json.dumps(body))
     return json.loads(result)
+
+
+def _rest_put(path: str, body: dict) -> Any:
+    """Execute a REST PUT via gh CLI."""
+    result = _gh(["api", "--method", "PUT", path, "--input", "-"], input_data=json.dumps(body))
+    return json.loads(result)
+
+
+def _rest_delete(path: str) -> Any:
+    """Execute a REST DELETE via gh CLI. May return empty body (e.g. 204 No Content)."""
+    result = _gh(["api", "--method", "DELETE", path])
+    return json.loads(result) if result else ""
 
 
 # ===========================
@@ -708,8 +728,11 @@ def _warn(msg: str) -> None:
 QUERY_GET_ITEM_NODE_ID = """
 query($org: String!, $repo: String!, $number: Int!) {
   repository(owner: $org, name: $repo) {
-    issue(number: $number) { id number title }
-    pullRequest(number: $number) { id number title }
+    issueOrPullRequest(number: $number) {
+      __typename
+      ... on Issue { id number title }
+      ... on PullRequest { id number title }
+    }
   }
 }
 """
@@ -817,8 +840,11 @@ query($org: String!, $number: Int!) {
 QUERY_GET_ITEM_LABELS = """
 query($org: String!, $repo: String!, $number: Int!) {
   repository(owner: $org, name: $repo) {
-    issue(number: $number) { labels(first: 30) { nodes { name } } }
-    pullRequest(number: $number) { labels(first: 30) { nodes { name } } }
+    issueOrPullRequest(number: $number) {
+      __typename
+      ... on Issue { labels(first: 30) { nodes { name } } }
+      ... on PullRequest { labels(first: 30) { nodes { name } } }
+    }
   }
 }
 """
@@ -984,21 +1010,34 @@ def board_add(
     config: dict | None = None,
     project_name: str | None = None,
     project_names: list[str] | None = None,
+    strict: bool = False,
 ) -> None:
     """Add issue/PR to correct project(s).
 
-    Project resolution precedence:
-      1. ``project_names`` — explicit repeatable project list.
-      2. ``project_name`` — single explicit project, for older callers.
-      3. neither given — repo-based project mapping.
+    Native Projects-v2 multi-membership: one item node id is added to each
+    resolved project as an independent membership (not a clone). Each project
+    keeps its own per-board Status.
 
-    Each project add is fault-isolated so one failing project does not prevent
-    the remaining independent memberships.
+    Project resolution precedence (first non-empty wins):
+      1. ``project_names`` — explicit list of named projects (repeatable
+         ``--project`` on the CLI). Order-preserving de-dup; add to exactly
+         those boards.
+      2. ``project_name`` — a single explicit named project (back-compat).
+      3. neither given — fall back to ``get_projects_for_repo`` (the repo ->
+         project mapping), unchanged.
+
+    Per-project fault isolation: one project's add failing is captured in the
+    results and does not abort adds to the remaining projects — unless
+    ``strict`` is set, in which case the first failure is raised so a caller
+    (e.g. the prepared-issue post-create resume path) can record a resumable
+    error instead of silently swallowing it.
     """
     if not config:
         config = load_config()
 
     if project_names:
+        # Explicit multi-membership: resolve each named project, order-
+        # preserving de-dup so a repeated --project doesn't add twice.
         seen: set[str] = set()
         ordered: list[str] = []
         for name in project_names:
@@ -1022,8 +1061,8 @@ def board_add(
 
     # Get item node ID
     data = _graphql(QUERY_GET_ITEM_NODE_ID, {"org": ORG, "repo": repo, "number": number})
-    repo_data = data.get("repository", {})
-    item_data = repo_data.get("issue") or repo_data.get("pullRequest")
+    repo_data = data.get("repository") or {}
+    item_data = _issue_or_pull_request_node(repo_data)
     if not item_data:
         _error(f"Could not find issue/PR #{number} in {ORG}/{repo}")
         sys.exit(1)
@@ -1047,6 +1086,8 @@ def board_add(
                 results.extend(sync_results)
         except Exception as e:
             results.append(f"Failed to add to '{proj['name']}': {e}")
+            if strict:
+                raise RuntimeError(f"Failed to add to '{proj['name']}': {e}") from e
 
     _out("\n".join(results), fmt)
 
@@ -1293,8 +1334,8 @@ def board_discover_fields(project_name: str, fmt: str) -> None:
 def _get_item_labels(repo: str, number: int) -> list[str]:
     """Get label names for an issue."""
     data = _graphql(QUERY_GET_ITEM_LABELS, {"org": ORG, "repo": repo, "number": number})
-    repo_data = data.get("repository", {})
-    item_data = repo_data.get("issue") or repo_data.get("pullRequest")
+    repo_data = data.get("repository") or {}
+    item_data = _issue_or_pull_request_node(repo_data)
     if not item_data:
         return []
     return [n["name"] for n in item_data.get("labels", {}).get("nodes", [])]
@@ -2016,10 +2057,10 @@ def rollout_deploy_templates(repo: str, fmt: str) -> None:
             body["sha"] = sha
 
         try:
-            if not sha:
-                _rest_post(api_path, body)
-            else:
-                _rest_patch(api_path, body)
+            # GitHub's contents API is PUT-only for both create and update; the
+            # presence of "sha" in the body is what distinguishes update from
+            # create server-side. POST/PATCH are not valid verbs for this endpoint.
+            _rest_put(api_path, body)
             results.append(f"OK: {template_path.name}")
         except Exception as e:
             results.append(f"FAIL: {template_path.name}: {e}")
@@ -2212,6 +2253,66 @@ def flow_discover_project(repo: str, fmt: str) -> None:
         print(f"\n{repo} maps to:")
         for p in projects:
             print(f"  - {p['name']} (#{p['number']})")
+
+
+# ===========================
+# ISSUE WRITE VERBS (U4/#279) — certificate-gated autonomous board writes
+# ===========================
+# These verbs are the mission-control half of the saga /outcome board-sync loop. They are the ONLY
+# board-mutating operations saga drives autonomously, and each is bounded to a reversibility-authorized
+# op-kind by ``saga/scripts/reversibility_certificate.py`` (default-GATE). Each verb is idempotent so
+# the consumer's bounded retry (and its separate idempotency ledger) is safe to re-drive.
+
+
+def issue_close(repo: str, number: int, fmt: str = "text") -> None:
+    """Close a GitHub issue. Idempotent: re-closing an already-closed issue succeeds."""
+    _rest_patch(f"repos/{ORG}/{repo}/issues/{number}", {"state": "closed"})
+    _out({"action": "closed", "repo": repo, "number": number}, fmt)
+
+
+def issue_reopen(repo: str, number: int, fmt: str = "text") -> None:
+    """Reopen a closed GitHub issue. Idempotent: re-opening an open issue succeeds."""
+    _rest_patch(f"repos/{ORG}/{repo}/issues/{number}", {"state": "open"})
+    _out({"action": "reopened", "repo": repo, "number": number}, fmt)
+
+
+def issue_comment(repo: str, number: int, body: str, fmt: str = "text") -> None:
+    """Post a comment on a GitHub issue.
+
+    Plain POST — the consumer's idempotency ledger (KTD4) ensures one comment per meaningful
+    transition; the verb just posts.
+    """
+    result = _rest_post(f"repos/{ORG}/{repo}/issues/{number}/comments", {"body": body})
+    _out(
+        {"action": "commented", "repo": repo, "number": number, "comment_id": result.get("id")},
+        fmt,
+    )
+
+
+def issue_label_add(repo: str, number: int, label: str, fmt: str = "text") -> None:
+    """Add a label to a GitHub issue. Idempotent: GitHub no-ops a label already present (200)."""
+    _rest_post(f"repos/{ORG}/{repo}/issues/{number}/labels", {"labels": [label]})
+    _out({"action": "label_added", "repo": repo, "number": number, "label": label}, fmt)
+
+
+def issue_label_remove(repo: str, number: int, label: str, fmt: str = "text") -> None:
+    """Remove a label from a GitHub issue. Idempotent: treats 404 (label already absent) as success.
+
+    The label is URL-encoded into the path — label names routinely contain spaces
+    (``good first issue``) or ``/``, which would otherwise yield a malformed/mis-targeted path. The 404
+    catch is deliberately broad (a 404 for the wrong issue/repo is also treated as a no-op) — a
+    documented idempotency tradeoff; distinguishing the causes would need an extra existence probe.
+    """
+    from urllib.parse import quote  # noqa: PLC0415
+
+    label_seg = quote(label, safe="")
+    try:
+        _rest_delete(f"repos/{ORG}/{repo}/issues/{number}/labels/{label_seg}")
+    except ApiNotFoundError:
+        # Label was already absent — idempotent success.
+        _out({"action": "label_remove_noop", "repo": repo, "number": number, "label": label}, fmt)
+        return
+    _out({"action": "label_removed", "repo": repo, "number": number, "label": label}, fmt)
 
 
 def flow_link_sub_issue(
@@ -3857,6 +3958,63 @@ def _print_mutation_plan(plan: MutationPlan) -> None:
         print(f"  - {step.action}: {step.detail}")
 
 
+def _read_sidecar_payload(draft_path: Path) -> dict[str, Any]:
+    sidecar_path = draft_path.with_suffix(".json")
+    payload = json.loads(sidecar_path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise RuntimeError(f"Prepared issue sidecar {sidecar_path} is not a JSON object")
+    return cast(dict[str, Any], payload)
+
+
+def _prepared_project_item_exists(
+    project_name: str, repo: str, number: int, config: dict[str, Any]
+) -> bool:
+    """Check whether the created issue is already a project item.
+
+    Used by the post-create resume path so a re-run that already succeeded at
+    the board-add step (but failed later) does not attempt a duplicate add.
+    """
+    project_number = get_project_config(config, project_name)["number"]
+    _, items = get_project_items(project_number)
+    return any(
+        item.get("content", {}).get("number") == number
+        and item.get("content", {}).get("repository", {}).get("name") == repo
+        for item in items
+    )
+
+
+def _post_create_pending_state(draft_path: Path) -> dict[str, Any] | None:
+    """Read a resumable post-create state from the sidecar, if one is pending.
+
+    Recovery fix: `issue create-prepared` used to create the GitHub issue and
+    then run board-add/Status as a single unrecoverable block — if either
+    step failed after the issue was created, the sidecar was never updated and
+    a re-run would create a SECOND duplicate issue. This reads the sidecar's
+    `post_create_pending` state (set right after issue creation, before the
+    remaining steps run) so a re-run resumes at the first incomplete step
+    instead of recreating the issue.
+    """
+    payload = _read_sidecar_payload(draft_path)
+    if payload.get("state") != "post_create_pending":
+        return None
+    url = str(payload.get("created_issue_url") or "")
+    number = payload.get("created_issue_number")
+    if not url or not isinstance(number, int):
+        raise RuntimeError("Prepared issue post-create state is missing created issue URL/number")
+    remaining = payload.get("remaining_steps")
+    if not isinstance(remaining, list) or not all(isinstance(step, str) for step in remaining):
+        remaining = ["board-add", "status"]
+    return {
+        "created_issue_url": url,
+        "created_issue_number": number,
+        "remaining_steps": remaining,
+        "mapping_pr_url": payload.get("mapping_pr_url"),
+        "pending_mapping": payload.get("pending_mapping", False),
+        "mutation_summary": payload.get("mutation_summary", []),
+        "created_at": payload.get("created_at") or datetime.now(UTC).isoformat(),
+    }
+
+
 def issue_create_prepared(
     draft_path: Path,
     fmt: str,
@@ -3943,20 +4101,94 @@ def issue_create_prepared(
                 _out({**result, "mutation_plan": plan_payload}, fmt)
             return result
 
-    url, number = _create_github_issue(issue)
-    board_add(issue.repo, number, fmt="text", config=config, project_name=issue.project)
-    flow_set_field(issue.project, issue.repo, number, "Status", issue.status, fmt="text")
-    _append_created_issue_to_draft(draft_path, url, number)
+    # Post-create recovery: if a prior run created the GitHub issue but failed
+    # before finishing board-add/Status, `_post_create_pending_state` resumes
+    # from the sidecar's `post_create_pending` state instead of creating a
+    # SECOND duplicate issue for the same draft.
+    resume_state = _post_create_pending_state(draft_path)
+    if resume_state:
+        url = str(resume_state["created_issue_url"])
+        number = int(resume_state["created_issue_number"])
+        remaining_steps = list(resume_state["remaining_steps"])
+        mapping_pr_url = (
+            str(resume_state["mapping_pr_url"]) if resume_state.get("mapping_pr_url") else None
+        )
+        pending_mapping = bool(resume_state.get("pending_mapping"))
+        created_at = str(resume_state["created_at"])
+        mutation_summary = resume_state.get("mutation_summary") or [
+            asdict(step) for step in plan.steps
+        ]
+    else:
+        url, number = _create_github_issue(issue)
+        created_at = datetime.now(UTC).isoformat()
+        mutation_summary = [asdict(step) for step in plan.steps]
+        pending_mapping = bool(mapping_pr_url and override_mapping)
+        remaining_steps = ["board-add", "status"]
+        _append_created_issue_to_draft(draft_path, url, number)
+        _update_sidecar_state(
+            draft_path,
+            {
+                "state": "post_create_pending",
+                "created_issue_url": url,
+                "created_issue_number": number,
+                "created_at": created_at,
+                "remaining_steps": remaining_steps,
+                "mutation_summary": mutation_summary,
+                "mapping_pr_url": mapping_pr_url,
+                "pending_mapping": pending_mapping,
+            },
+        )
+
+    try:
+        if "board-add" in remaining_steps:
+            if _prepared_project_item_exists(issue.project, issue.repo, number, config):
+                remaining_steps = [step for step in remaining_steps if step != "board-add"]
+            else:
+                board_add(
+                    issue.repo,
+                    number,
+                    fmt="text",
+                    config=config,
+                    project_name=issue.project,
+                    strict=True,
+                )
+                remaining_steps = [step for step in remaining_steps if step != "board-add"]
+            _update_sidecar_state(draft_path, {"remaining_steps": remaining_steps})
+
+        if "status" in remaining_steps:
+            flow_set_field(issue.project, issue.repo, number, "Status", issue.status, fmt="text")
+            remaining_steps = [step for step in remaining_steps if step != "status"]
+            _update_sidecar_state(draft_path, {"remaining_steps": remaining_steps})
+    except Exception as e:
+        _update_sidecar_state(
+            draft_path,
+            {
+                "state": "post_create_pending",
+                "created_issue_url": url,
+                "created_issue_number": number,
+                "created_at": created_at,
+                "remaining_steps": remaining_steps,
+                "mutation_summary": mutation_summary,
+                "mapping_pr_url": mapping_pr_url,
+                "pending_mapping": pending_mapping,
+            },
+        )
+        remaining = ", ".join(remaining_steps) or "none"
+        raise RuntimeError(
+            f"Created issue {url}, but post-create steps failed: {e}. Remaining steps: {remaining}."
+        ) from e
+
     _update_sidecar_state(
         draft_path,
         {
             "state": "created",
             "created_issue_url": url,
             "created_issue_number": number,
-            "created_at": datetime.now(UTC).isoformat(),
-            "mutation_summary": [asdict(step) for step in plan.steps],
+            "created_at": created_at,
+            "remaining_steps": [],
+            "mutation_summary": mutation_summary,
             "mapping_pr_url": mapping_pr_url,
-            "pending_mapping": bool(mapping_pr_url and override_mapping),
+            "pending_mapping": pending_mapping,
         },
     )
     result = {"created": True, "url": url, "number": number, "mapping_pr_url": mapping_pr_url}
@@ -4364,7 +4596,7 @@ def issue_create(
     """Interactive issue creation — sub-issue-first, per-project schema
     aware, with capability-adaptive fields and paired-card flow.
 
-    Current topology: Jeff Intent and Asgard use the intent flow; CAMPPS is
+    Current topology: Operations and Asgard use the intent flow; CAMPPS is
     the active long-lived initiative board. The per-project schema discovery
     silently skips prompts for missing fields, so operators only see prompts
     for fields that exist on the selected live board.
@@ -4714,6 +4946,35 @@ def main() -> None:
     )
     issue_approve_p.add_argument("drafts", nargs="+")
 
+    # U4 (#279): issue write verbs — close / reopen / comment / label-add / label-remove.
+    # The certificate-gated /outcome board-sync loop drives these; each is idempotent.
+    issue_close_p = issue_sp.add_parser("close", help="Close a GitHub issue (idempotent)")
+    issue_close_p.add_argument("--repo", required=True)
+    issue_close_p.add_argument("--number", required=True, type=int)
+
+    issue_reopen_p = issue_sp.add_parser("reopen", help="Reopen a closed GitHub issue (idempotent)")
+    issue_reopen_p.add_argument("--repo", required=True)
+    issue_reopen_p.add_argument("--number", required=True, type=int)
+
+    issue_comment_p = issue_sp.add_parser("comment", help="Post a comment on a GitHub issue")
+    issue_comment_p.add_argument("--repo", required=True)
+    issue_comment_p.add_argument("--number", required=True, type=int)
+    issue_comment_p.add_argument("--body", required=True)
+
+    issue_label_add_p = issue_sp.add_parser(
+        "label-add", help="Add a label to a GitHub issue (idempotent)"
+    )
+    issue_label_add_p.add_argument("--repo", required=True)
+    issue_label_add_p.add_argument("--number", required=True, type=int)
+    issue_label_add_p.add_argument("--label", required=True)
+
+    issue_label_remove_p = issue_sp.add_parser(
+        "label-remove", help="Remove a label from a GitHub issue (idempotent — 404 = success)"
+    )
+    issue_label_remove_p.add_argument("--repo", required=True)
+    issue_label_remove_p.add_argument("--number", required=True, type=int)
+    issue_label_remove_p.add_argument("--label", required=True)
+
     # ===========================
     # LABELS
     # ===========================
@@ -4974,6 +5235,17 @@ def main() -> None:
                 )
             elif args.action == "approve":
                 prepared_approve_batch([Path(draft) for draft in args.drafts], fmt=fmt)
+            # U4 (#279): issue write verbs
+            elif args.action == "close":
+                issue_close(args.repo, args.number, fmt)
+            elif args.action == "reopen":
+                issue_reopen(args.repo, args.number, fmt)
+            elif args.action == "comment":
+                issue_comment(args.repo, args.number, args.body, fmt)
+            elif args.action == "label-add":
+                issue_label_add(args.repo, args.number, args.label, fmt)
+            elif args.action == "label-remove":
+                issue_label_remove(args.repo, args.number, args.label, fmt)
 
         elif args.resource == "labels":
             if args.action == "sync-fields":

@@ -34,6 +34,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
+import re
 import sys
 import time
 from collections.abc import Callable, Sequence
@@ -339,6 +340,67 @@ def _starter_nodes() -> list[dict[str, Any]]:
     ]
 
 
+def _ingest_state(state: Any, state_reason: Any) -> str:
+    """Map a GitHub issue state+reason to an authored ``Node.state`` (#375 KTD2).
+
+    OPEN -> ``pending``; CLOSED+NOT_PLANNED -> ``rejected``; any other CLOSED -> ``done``. This is
+    structural authored spec state (permitted), never a committed status field or a completion event.
+    """
+    if str(state or "").upper() != "CLOSED":
+        return "pending"
+    return "rejected" if str(state_reason or "").upper() == "NOT_PLANNED" else "done"
+
+
+def nodes_from_objective(
+    owner: str, repo: str, number: int, *, runner: Callable[..., Any] | None = None
+) -> tuple[list[dict[str, Any]], list[dict[str, str]], str]:
+    """Build outcome node dicts from a GitHub Objective's sub-issues (#375 U3).
+
+    Returns ``(nodes, dropped_edges, objective_title)``. Each node carries ``subplot_id=sub-<N>``, a
+    ``kind`` from the sub-issue's labels (``non-code`` label -> ``non-code``, else ``code``), an authored
+    ``state`` from the sub-issue's state+reason, a ``github`` provenance stamp the reconcile/board-sync
+    consumers read, and ``depends_on`` from the inferred (cycle-safe) edges.
+    """
+    import discover_subissues  # noqa: PLC0415
+    import outcome_edges  # noqa: PLC0415
+
+    data = discover_subissues.fetch_objective(owner, repo, number, runner=runner)
+    subissues = data.get("subissues", []) or []
+    depends_on_by_subplot, dropped = outcome_edges.edges_from_relationships(subissues)
+
+    repo_full = f"{owner}/{repo}"
+    nodes: list[dict[str, Any]] = []
+    for sub in subissues:
+        n = sub["number"]
+        sid = f"sub-{n}"
+        labels = [str(x).lower() for x in (sub.get("labels") or [])]
+        kind = "non-code" if "non-code" in labels else "code"
+        node: dict[str, Any] = {
+            "subplot_id": sid,
+            "title": sub.get("title") or sid,
+            "kind": kind,
+            "state": _ingest_state(sub.get("state"), sub.get("state_reason")),
+            # Stamp the sub-issue's OWN number (fully-qualified) so reconcile/board-sync resolve it,
+            # never the parent Objective (#375 KTD4/R5).
+            "github": {"repo": repo_full, "issue": f"{repo_full}#{n}", "sub_issue": n},
+        }
+        deps = depends_on_by_subplot.get(sid)
+        if deps:
+            node["depends_on"] = deps
+        nodes.append(node)
+
+    objective_title = str((data.get("parent") or {}).get("title") or "")
+    return nodes, dropped, objective_title
+
+
+def _parse_objective_ref(ref: str) -> tuple[str, str, int]:
+    """Parse ``<owner>/<repo>#<N>`` into ``(owner, repo, number)`` (#375 U4)."""
+    m = re.fullmatch(r"(?P<owner>[^/]+)/(?P<repo>[^#]+)#(?P<number>\d+)", ref.strip())
+    if not m:
+        raise OutcomeError(f"--from-objective must be '<owner>/<repo>#<N>', got {ref!r}")
+    return m.group("owner"), m.group("repo"), int(m.group("number"))
+
+
 def resume(
     repo_root: Path, outcome_id: str, *, runner: Callable[..., Any] | None = None
 ) -> dict[str, Any]:
@@ -485,6 +547,12 @@ class AdvanceResult:
     degraded: list[dict[str, Any]] = field(
         default_factory=list
     )  # leaves degraded one rung autonomous+away (U9/R23)
+    board_synced: list[dict[str, Any]] = field(
+        default_factory=list
+    )  # per-tick autonomous board-sync records (U4/#279 — only when autonomous=True)
+    drift: list[dict[str, Any]] = field(
+        default_factory=list
+    )  # per-tick board<->saga drift/recovered records (#295 — only when autonomous=True)
     skipped_busy: bool = False  # coordinator lease held by another tick -> no-op (R13)
     ticks: int = 1
     status: dict[str, Any] = field(default_factory=dict)
@@ -500,10 +568,29 @@ class AdvanceResult:
             "costs": self.costs,
             "gated": self.gated,
             "degraded": self.degraded,
+            "board_synced": self.board_synced,
+            "drift": self.drift,
             "skipped_busy": self.skipped_busy,
             "ticks": self.ticks,
             "status": self.status,
         }
+
+
+def _default_board_writer(
+    repo_root: Path,
+    *,
+    project: str = "operations",
+    runner: Callable[..., Any] | None = None,
+) -> Callable[..., None]:
+    """Re-export of ``board_progression.default_board_writer`` (#344 KTD6).
+
+    The production board_writer (the ``OpKind`` → ``sdlc_manager.py`` verb mapping) lives in
+    ``board_progression`` so the skill consumers (`/work`, `/loop`) can reach it through the CLI.
+    Kept here so ``advance``'s call sites and any test references remain valid.
+    """
+    import board_progression as _m  # noqa: PLC0415
+
+    return _m.default_board_writer(repo_root, project=project, runner=runner)
 
 
 def advance(
@@ -521,6 +608,11 @@ def advance(
     gate_factory: Callable[[Any, Any], Callable[[str], bool]] | None = None,
     available: Sequence[str] | None = None,
     attending: bool = True,
+    autonomous: bool = False,
+    board_writer: Callable[..., None] | None = None,
+    board_reader: Callable[[str], str] | None = None,
+    issue_reader: Callable[[str], dict[str, str]] | None = None,
+    project: str = "operations",
     holder: str | None = None,
     lease_ttl: float = DEFAULT_LEASE_TTL,
     now: Callable[[], float] = time.time,
@@ -556,6 +648,8 @@ def advance(
     all_harvested: list[str] = []
     all_gated: list[str] = []
     all_degraded: list[dict[str, Any]] = []
+    all_board_synced: list[dict[str, Any]] = []
+    all_drift: list[dict[str, Any]] = []
     merge_runs: list[Any] = []
     worktree_runs: list[Any] = []
     liveness_runs: list[Any] = []
@@ -600,6 +694,52 @@ def advance(
                 # Materialize the realized-cost rollup into spec.cost_rollup AFTER dispatch/harvest so it
                 # reflects this tick's completions (U10/R24). The U8 report renders spec.cost_rollup.
                 cost_runs.append(cost_processor(spec, store))
+            if autonomous:
+                # Autonomous board-sync (U4/#279): reconcile each leaf's derived state to the
+                # reversibility-authorized board ops. The default-GATE certificate + the separate
+                # idempotency ledger bound it; it only fires on the explicit autonomous path, and runs
+                # under the coordinator lease so board-sync is serialized per outcome.
+                import outcome_board_sync  # noqa: PLC0415
+                import outcome_github  # noqa: PLC0415
+                import outcome_reconcile  # noqa: PLC0415
+
+                _bw = (
+                    board_writer
+                    if board_writer is not None
+                    else _default_board_writer(repo_root, project=project)
+                )
+                _br = (
+                    board_reader
+                    if board_reader is not None
+                    else (lambda ref: outcome_github.board_status(ref, project=project))
+                )
+                _ir = issue_reader if issue_reader is not None else outcome_github.issue_close_info
+
+                # #295 U5/KTD2: DETECT board<->saga drift BEFORE any board write. A detected drift
+                # withholds that issue's ops (hold_issues) so the write never acts on a board that
+                # moved underneath saga; a detection failure degrades to a note, never wedges the tick.
+                try:
+                    drift_records = outcome_reconcile.detect(
+                        spec, store, board_reader=_br, issue_reader=_ir, project=project, now=now
+                    )
+                except Exception as exc:  # noqa: BLE001 — best-effort; never tick-fatal
+                    drift_records = [{"kind": "unreadable", "error": str(exc)}]
+                all_drift.extend(drift_records)
+                hold_issues = {
+                    (str(r["repo"]), int(r["number"]))
+                    for r in drift_records
+                    if r.get("kind") in outcome_reconcile.DRIFT_KINDS
+                }
+                all_board_synced.extend(
+                    outcome_board_sync.reconcile_board(
+                        spec,
+                        store,
+                        board_writer=_bw,
+                        now=now,
+                        project=project,
+                        hold_issues=hold_issues,
+                    )
+                )
             if not loop:
                 break
             if not tick_dispatched:
@@ -619,6 +759,8 @@ def advance(
         costs=cost_runs,
         gated=sorted(set(all_gated)),
         degraded=all_degraded,
+        board_synced=all_board_synced,
+        drift=all_drift,
         ticks=ticks,
         status=status(repo_root, outcome_id, spec=spec, store=store),
     )
@@ -1013,7 +1155,13 @@ def main(argv: list[str] | None = None) -> int:
 
     p_start = sub.add_parser("start", help="create the branch-local spec + store")
     p_start.add_argument("outcome_id")
-    p_start.add_argument("objective")
+    p_start.add_argument("objective", nargs="?", default=None)
+    p_start.add_argument(
+        "--from-objective",
+        metavar="<owner>/<repo>#<N>",
+        default=None,
+        help="seed the DAG from a GitHub Objective's sub-issues (#375)",
+    )
 
     p_advance = sub.add_parser("advance", help="run a reconcile tick (dispatch the ready frontier)")
     p_advance.add_argument("outcome_id")
@@ -1022,6 +1170,11 @@ def main(argv: list[str] | None = None) -> int:
         "--autonomous",
         action="store_true",
         help="operator is away — an unavailable backend degrades one rung instead of HALTing (R23)",
+    )
+    p_advance.add_argument(
+        "--project",
+        default="operations",
+        help="target mission-control board/workflow for autonomous board-sync (U4/#326)",
     )
     p_advance.add_argument(
         "--host-capable",
@@ -1087,6 +1240,19 @@ def main(argv: list[str] | None = None) -> int:
     p_promote.add_argument("subplot_id")
     p_promote.add_argument("child_spec_ref")
 
+    p_reconcile = sub.add_parser(
+        "reconcile",
+        help="detect board<->saga drift for this outcome (#295); --resolve to apply a decision",
+    )
+    p_reconcile.add_argument("outcome_id")
+    p_reconcile.add_argument("--project", default="operations")
+    p_reconcile.add_argument(
+        "--resolve", metavar="DRIFT_ID", help="apply --action to the drift with this id"
+    )
+    p_reconcile.add_argument(
+        "--action", choices=("accept-board", "re-assert", "hold"), help="resolution for --resolve"
+    )
+
     args = parser.parse_args(argv)
     # Resolve the repo root to an absolute, symlink-collapsed path. The default is ``.`` (relative),
     # and a relative/symlinked root would make the worktree registry paths diverge from git's absolute
@@ -1095,7 +1261,17 @@ def main(argv: list[str] | None = None) -> int:
     root = Path(args.repo_root).resolve()
     try:
         if args.command == "start":
-            spec = start(root, args.outcome_id, args.objective)
+            if args.from_objective:
+                owner, repo, number = _parse_objective_ref(args.from_objective)
+                nodes, dropped, objective_title = nodes_from_objective(owner, repo, number)
+                objective = args.objective or objective_title or args.from_objective
+                spec = start(root, args.outcome_id, objective, nodes=nodes)
+                if dropped:
+                    print(json.dumps({"dropped_edges": dropped}), file=sys.stderr)
+            else:
+                if not args.objective:
+                    raise OutcomeError("start requires an objective (or --from-objective)")
+                spec = start(root, args.outcome_id, args.objective)
             print(json.dumps({"started": spec.outcome_id, "nodes": len(spec.nodes)}))
         elif args.command == "advance":
             # The production /outcome advance routes through the REAL backend seam (R5/R6), the REAL
@@ -1124,6 +1300,8 @@ def main(argv: list[str] | None = None) -> int:
                 gate_factory=lambda spec, store: outcome_decompose.make_dispatch_gate(store, spec),
                 available=avail,
                 attending=not args.autonomous,
+                autonomous=args.autonomous,
+                project=args.project,
             )
             out = result.to_dict()
             if args.persist:
@@ -1201,6 +1379,41 @@ def main(argv: list[str] | None = None) -> int:
             bundle = json.loads(Path(args.path).read_text(encoding="utf-8"))
             spec = import_bundle(root, bundle)
             print(json.dumps({"imported": spec.outcome_id, "nodes": len(spec.nodes)}))
+        elif args.command == "reconcile":
+            # #295 U5: explicit board<->saga drift detection (read-only on the world; no lease).
+            import outcome_github  # noqa: PLC0415
+            import outcome_reconcile  # noqa: PLC0415
+
+            spec = load_spec(root, args.outcome_id)
+            store = _store(root, args.outcome_id)
+
+            def _br(ref: str) -> str:
+                return outcome_github.board_status(ref, project=args.project)
+
+            drift = outcome_reconcile.detect(
+                spec,
+                store,
+                board_reader=_br,
+                issue_reader=outcome_github.issue_close_info,
+                project=args.project,
+            )
+            if args.resolve:
+                if not args.action:
+                    raise OutcomeError("--resolve requires --action")
+                match = next((d for d in drift if d.get("drift_id") == args.resolve), None)
+                if match is None:
+                    print(
+                        json.dumps({"ok": False, "error": f"no live drift id {args.resolve!r}"}),
+                        file=sys.stderr,
+                    )
+                    return 1
+                writer = _default_board_writer(root, project=args.project)
+                resolved = outcome_reconcile.apply_resolution(
+                    match, args.action, store=store, board_writer=writer
+                )
+                print(json.dumps({"resolved": resolved}))
+            else:
+                print(json.dumps({"drift": drift}))
     except (OutcomeError, outcome_spec.OutcomeSpecError, outcome_store.OutcomeStoreError) as exc:
         print(json.dumps({"ok": False, "error": str(exc)}), file=sys.stderr)
         return 1

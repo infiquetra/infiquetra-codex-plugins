@@ -9,4 +9,6 @@ Target repo runbooks should answer:
 - what Discord readback proved;
 - what remains out of scope.
 
-Do not include token values, vault contents, authorization headers, or browser session details.
+For guild targets, runbooks should also name the guild ID environment variable, Manage Guild token environment variable, expected guild name, required `BANNER` feature for image banners, and any Server Profile color recommendation.
+
+Do not include token values, guild ID values, vault contents, authorization headers, or browser session details.

@@ -1,12 +1,12 @@
 # mission-control
 
-SDLC management for Infiquetra's Jeff Intent, Asgard, and CAMPPS boards. This plugin provides a complete interface for managing the development lifecycle — from issue creation to flow metrics — reading board and workflow configuration from `infiquetra-sdlc` and vendored fallbacks.
+SDLC management for Infiquetra's Operations, Asgard, and CAMPPS boards. This plugin provides a complete interface for managing the development lifecycle — from issue creation to flow metrics — reading board and workflow configuration from `infiquetra-sdlc` and vendored fallbacks.
 
 ## Overview
 
 All operations run locally via the `gh` CLI, providing:
 
-- **Project board operations** — view, move, add, archive, WIP analysis, standup prep across Jeff Intent, Asgard, and CAMPPS
+- **Project board operations** — view, move, add, archive, WIP analysis, standup prep across Operations, Asgard, and CAMPPS
 - **Issue creation** — prepared Asgard handoff drafts for Asgard and CAMPPS work with readiness checks, source artifact resolution, approval gating, and confirmed creation
 - **Label management** — deploy, audit, sync initiative/objective fields, auto-label rules
 - **Flow metrics** — cycle time, throughput, WIP age using GitHub timeline events
@@ -133,7 +133,7 @@ python3 $SCRIPT board wip --project campps
 
 # Standup prep (right-to-left board review)
 python3 $SCRIPT board standup --project campps
-python3 $SCRIPT board standup --project jeff-intent
+python3 $SCRIPT board standup --project operations
 
 # Discover all project fields and options
 python3 $SCRIPT board discover-fields --project campps
@@ -293,7 +293,7 @@ python3 $SCRIPT issue create-prepared docs/sdlc-issue-drafts/<draft>.md --overri
 
 | Project | Team | Purpose |
 |---------|------|---------|
-| Jeff Intent | Jeff | Raw intent, approvals, personal/operator work, and shaping before team execution |
+| Operations | Jeff | Raw intent, approvals, personal/operator work, and shaping before team execution |
 | Asgard | Asgard | Rapid action, incubation, and mission-mode work close to Jeff |
 | CAMPPS | Asgard-owned initiative board | Long-lived CAMPPS execution portfolio |
 
@@ -301,8 +301,8 @@ python3 $SCRIPT issue create-prepared docs/sdlc-issue-drafts/<draft>.md --overri
 
 | Board / Column | Limit |
 |--------|-------|
-| Jeff Intent / Shaping | 10 |
-| Jeff Intent / Active | 5 |
+| Operations / Shaping | 10 |
+| Operations / Active | 5 |
 | Asgard / Active | 5 |
 | CAMPPS / Committed | 10 |
 | CAMPPS / In Progress | 10 |

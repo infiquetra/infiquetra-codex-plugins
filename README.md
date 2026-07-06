@@ -7,14 +7,15 @@ Codex-ready plugin surface, currently:
 
 | Plugin | Version | Status |
 |---|---:|---|
-| `saga` | 0.41.0 | active |
+| `saga` | 0.64.0 | active |
 | `deploy` | 0.1.1 | active |
-| `mission-control` | 2.1.0 | active |
-| `team-execution` | 2.2.0 | active |
-| `discord-identity-assets` | 0.1.0 | proof port |
+| `mission-control` | 2.2.0 | active |
+| `team-execution` | 2.3.0 | active |
+| `fleet-core` | 0.5.0 | active (library) |
+| `discord-identity-assets` | 0.2.0 | proof port |
 | `home-lab-ops` | 1.0.0 | baseline |
 | `python-toolkit` | 1.0.0 | baseline |
-| `unifi` | 1.0.0 | baseline |
+| `unifi` | 1.1.0 | baseline |
 | `test-suite` | 2.0.0 | proof port |
 
 `mission-control` replaces the prior SDLC surface, and Saga-family review flows

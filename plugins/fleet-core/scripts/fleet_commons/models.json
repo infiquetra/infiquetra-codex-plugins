@@ -1,0 +1,15 @@
+{
+  "_comment": "Canonical model/effort registry (#370), Codex dual-palette adaptation (KTD3). tier_palette.py derives the ordered MODELS/EFFORTS tuples from these explicit rank/rung indices at import — this file is the single source of vocabulary ordering. ORDERING IS LOAD-BEARING: rank 0 is the strongest model, rung 0 is the weakest effort. effort_ceiling is the strongest effort a model actually runs (haiku clamps below xhigh). The Claude tier names (fable/opus/sonnet/haiku) remain the lineage vocabulary so upstream code diffs cleanly; each row also carries its active Codex mapping (codex_model + codex_effort) so a single registry drives both the lineage tier and the Codex model actually dispatched. TEAM_EXECUTION_MODEL_HINTS in scripts/validate_codex_plugins.py is derived from these codex_model/codex_effort pairs, not hand-maintained. Grow the vocabulary here, never with a second bare literal elsewhere — see plugins/fleet-core/references/tier-palette.md.",
+  "models": {
+    "fable": { "rank": 0, "effort_ceiling": "xhigh", "codex_model": "gpt-5.5", "codex_effort": "xhigh" },
+    "opus": { "rank": 1, "effort_ceiling": "xhigh", "codex_model": "gpt-5.5", "codex_effort": "high" },
+    "sonnet": { "rank": 2, "effort_ceiling": "xhigh", "codex_model": "gpt-5.4", "codex_effort": "medium" },
+    "haiku": { "rank": 3, "effort_ceiling": "high", "codex_model": "gpt-5.4-mini", "codex_effort": "low" }
+  },
+  "efforts": {
+    "low": { "rung": 0 },
+    "medium": { "rung": 1 },
+    "high": { "rung": 2 },
+    "xhigh": { "rung": 3 }
+  }
+}

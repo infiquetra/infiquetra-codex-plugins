@@ -41,6 +41,7 @@ def test_expected_plugin_set_is_saga_family_cutover():
         "python-toolkit",
         "unifi",
         "test-suite",
+        "fleet-core",
     }
     assert EXPECTED_PLUGINS is CURRENT_EXPECTED_PLUGINS
     assert EXPECTED_PLUGINS is TARGET_EXPECTED_PLUGINS
@@ -69,6 +70,7 @@ def test_target_plugin_set_describes_saga_family_cutover():
         "python-toolkit",
         "unifi",
         "test-suite",
+        "fleet-core",
     }
     assert {"plan", "work", "brainstorm"} <= set(TARGET_EXPECTED_PLUGINS["saga"]["skills"])
     assert TARGET_EXPECTED_PLUGINS["discord-identity-assets"]["skills"] == (

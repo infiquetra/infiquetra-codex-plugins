@@ -155,6 +155,7 @@ def test_create_prepared_refuses_unapproved_then_succeeds_after_approval(tmp_pat
             "_create_github_issue",
             return_value=("https://github.com/infiquetra/campps-platform/issues/7", 7),
         ),
+        patch.object(sdlc_manager, "_prepared_project_item_exists", return_value=False),
         patch.object(sdlc_manager, "board_add"),
         patch.object(sdlc_manager, "flow_set_field"),
     ):
@@ -178,6 +179,7 @@ def test_create_prepared_skip_approval_bypasses_gate(tmp_path) -> None:
             "_create_github_issue",
             return_value=("https://github.com/infiquetra/campps-platform/issues/9", 9),
         ),
+        patch.object(sdlc_manager, "_prepared_project_item_exists", return_value=False),
         patch.object(sdlc_manager, "board_add"),
         patch.object(sdlc_manager, "flow_set_field"),
     ):
@@ -225,6 +227,7 @@ def test_create_prepared_creates_issue_and_marks_draft(tmp_path) -> None:
             "_create_github_issue",
             return_value=("https://github.com/infiquetra/campps-platform/issues/42", 42),
         ),
+        patch.object(sdlc_manager, "_prepared_project_item_exists", return_value=False),
         patch.object(sdlc_manager, "board_add") as mock_board,
         patch.object(sdlc_manager, "flow_set_field") as mock_status,
     ):
@@ -237,6 +240,7 @@ def test_create_prepared_creates_issue_and_marks_draft(tmp_path) -> None:
         fmt="text",
         config=_mapped_config(),
         project_name="campps",
+        strict=True,
     )
     mock_status.assert_called_once_with(
         "campps",
@@ -291,6 +295,7 @@ def test_override_mapping_creates_issue_and_records_pending_mapping(tmp_path) ->
             "_create_github_issue",
             return_value=("https://github.com/infiquetra/campps-platform/issues/42", 42),
         ),
+        patch.object(sdlc_manager, "_prepared_project_item_exists", return_value=False),
         patch.object(sdlc_manager, "board_add"),
         patch.object(sdlc_manager, "flow_set_field"),
     ):
@@ -324,6 +329,7 @@ def test_missing_labels_and_templates_are_deployed_after_confirmation(tmp_path) 
             "_create_github_issue",
             return_value=("https://github.com/infiquetra/campps-platform/issues/42", 42),
         ),
+        patch.object(sdlc_manager, "_prepared_project_item_exists", return_value=False),
         patch.object(sdlc_manager, "board_add"),
         patch.object(sdlc_manager, "flow_set_field"),
     ):
@@ -363,3 +369,80 @@ def test_mapping_pr_uses_temporary_worktree(tmp_path) -> None:
     written_path = mock_write.call_args.args[0]
     assert written_path != mapping_path
     assert written_path.name == "project-mappings.json"
+
+
+def test_create_prepared_resumes_post_create_pending_without_recreating_issue(tmp_path) -> None:
+    """Recovery fix: if the GitHub issue was already created on a prior run
+    (sidecar left in `post_create_pending`), a re-run must resume the
+    remaining steps instead of calling `_create_github_issue` again — a
+    duplicate issue is the failure mode this guards against."""
+    draft = _ready_draft(tmp_path)
+    sdlc_manager.prepared_approve_batch([draft], fmt="text")
+
+    sidecar_path = draft.with_suffix(".json")
+    sidecar = json.loads(sidecar_path.read_text())
+    sidecar.update(
+        {
+            "state": "post_create_pending",
+            "created_issue_url": "https://github.com/infiquetra/campps-platform/issues/42",
+            "created_issue_number": 42,
+            "created_at": "2026-07-01T00:00:00+00:00",
+            "remaining_steps": ["status"],
+            "mutation_summary": [],
+            "mapping_pr_url": None,
+            "pending_mapping": False,
+        }
+    )
+    sidecar_path.write_text(json.dumps(sidecar))
+
+    with (
+        patch.object(sdlc_manager, "load_config", return_value=_mapped_config()),
+        patch.object(sdlc_manager, "_repo_missing_labels", return_value=[]),
+        patch.object(sdlc_manager, "_repo_missing_templates", return_value=[]),
+        patch.object(sdlc_manager, "_create_github_issue") as mock_create,
+        patch.object(sdlc_manager, "_prepared_project_item_exists", return_value=True),
+        patch.object(sdlc_manager, "board_add") as mock_board,
+        patch.object(sdlc_manager, "flow_set_field") as mock_status,
+    ):
+        result = sdlc_manager.issue_create_prepared(draft, fmt="text", auto_confirm=True)
+
+    mock_create.assert_not_called()
+    mock_board.assert_not_called()
+    mock_status.assert_called_once_with(
+        "campps", "campps-platform", 42, "Status", "Shaping", fmt="text"
+    )
+    assert result["created"] is True
+    assert result["number"] == 42
+
+    final_sidecar = json.loads(sidecar_path.read_text())
+    assert final_sidecar["state"] == "created"
+    assert final_sidecar["remaining_steps"] == []
+
+
+def test_create_prepared_resume_records_pending_state_on_repeated_failure(tmp_path) -> None:
+    """A post-create step that keeps failing must keep the sidecar resumable
+    (state stays `post_create_pending`) rather than losing the created-issue
+    reference."""
+    draft = _ready_draft(tmp_path)
+    sdlc_manager.prepared_approve_batch([draft], fmt="text")
+
+    with (
+        patch.object(sdlc_manager, "load_config", return_value=_mapped_config()),
+        patch.object(sdlc_manager, "_repo_missing_labels", return_value=[]),
+        patch.object(sdlc_manager, "_repo_missing_templates", return_value=[]),
+        patch.object(
+            sdlc_manager,
+            "_create_github_issue",
+            return_value=("https://github.com/infiquetra/campps-platform/issues/42", 42),
+        ),
+        patch.object(sdlc_manager, "_prepared_project_item_exists", return_value=False),
+        patch.object(sdlc_manager, "board_add", side_effect=RuntimeError("boom")),
+        patch.object(sdlc_manager, "flow_set_field"),
+    ):
+        with pytest.raises(RuntimeError, match="boom"):
+            sdlc_manager.issue_create_prepared(draft, fmt="text", auto_confirm=True)
+
+    sidecar = json.loads(draft.with_suffix(".json").read_text())
+    assert sidecar["state"] == "post_create_pending"
+    assert sidecar["created_issue_number"] == 42
+    assert sidecar["remaining_steps"] == ["board-add", "status"]

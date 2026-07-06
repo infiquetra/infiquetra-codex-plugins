@@ -1,0 +1,207 @@
+"""Tests for /outcome start --from-objective ingestion (#375, ported for U5).
+
+Offline: a fake ``runner`` returns fixture GraphQL JSON, so the whole ingestion path (query ->
+normalize -> edge inference -> node assembly -> spec) runs with no live ``gh``.
+"""
+
+from __future__ import annotations
+
+import importlib.util
+import json
+import sys
+from pathlib import Path
+from types import ModuleType
+from typing import Any
+
+ROOT = Path(__file__).parents[1]
+SCRIPTS = ROOT / "scripts"
+
+
+def _load(name: str) -> ModuleType:
+    if str(SCRIPTS) not in sys.path:
+        sys.path.insert(0, str(SCRIPTS))
+    spec = importlib.util.spec_from_file_location(name, SCRIPTS / f"{name}.py")
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+SPEC_MOD = _load("outcome_spec")
+STORE_MOD = _load("outcome_store")
+_load("outcome_orchestrator")
+_load("outcome_dispatcher")
+_load("outcome_merge")
+_load("outcome_worktrees")
+_load("outcome_decompose")
+ENG = _load("outcome")
+_load("reversibility_certificate")
+_load("outcome_board_sync")
+DISC = _load("discover_subissues")
+EDGES = _load("outcome_edges")
+
+
+class _FakeResult:
+    def __init__(self, stdout: str) -> None:
+        self.returncode = 0
+        self.stdout = stdout
+        self.stderr = ""
+
+
+def _sub(
+    number: int,
+    title: str,
+    *,
+    state: str = "OPEN",
+    state_reason: str | None = None,
+    labels: list[str] | None = None,
+    tracked: list[int] | None = None,
+) -> dict[str, Any]:
+    return {
+        "number": number,
+        "title": title,
+        "state": state,
+        "stateReason": state_reason,
+        "url": f"https://github.com/o/r/issues/{number}",
+        "labels": {"nodes": [{"name": name} for name in (labels or [])]},
+        "assignees": {"nodes": []},
+        "trackedIssues": {"nodes": [{"number": t} for t in (tracked or [])]},
+    }
+
+
+def _runner_for(subs: list[dict[str, Any]], *, parent_title: str = "Objective X") -> Any:
+    payload = {
+        "data": {
+            "repository": {
+                "issue": {
+                    "number": 100,
+                    "title": parent_title,
+                    "state": "OPEN",
+                    "subIssues": {"totalCount": len(subs), "nodes": subs},
+                }
+            }
+        }
+    }
+
+    def _run(cmd: list[str], **kwargs: Any) -> _FakeResult:
+        return _FakeResult(json.dumps(payload))
+
+    return _run
+
+
+# --------------------------------------------------------------------------- outcome_edges
+
+
+def test_edges_from_relationships_maps_blocked_by_to_depends_on() -> None:
+    subissues = [
+        {"number": 1, "blocked_by": []},
+        {"number": 2, "blocked_by": [1]},
+    ]
+    depends_on, dropped = EDGES.edges_from_relationships(subissues)
+    assert depends_on == {"sub-2": ["sub-1"]}
+    assert dropped == []
+
+
+def test_edges_from_relationships_drops_dangling() -> None:
+    subissues = [{"number": 1, "blocked_by": [999]}]
+    depends_on, dropped = EDGES.edges_from_relationships(subissues)
+    assert depends_on == {}
+    assert dropped == [{"reason": "dangling", "from": "sub-1", "to": "sub-999"}]
+
+
+def test_edges_from_relationships_drops_self_edge() -> None:
+    subissues = [{"number": 1, "blocked_by": [1]}]
+    depends_on, dropped = EDGES.edges_from_relationships(subissues)
+    assert depends_on == {}
+    assert dropped == [{"reason": "self", "from": "sub-1", "to": "sub-1"}]
+
+
+def test_edges_from_relationships_drops_cycle() -> None:
+    # 1 blocked_by 2, 2 blocked_by 1 -> the second edge closes a cycle and is dropped.
+    subissues = [
+        {"number": 1, "blocked_by": [2]},
+        {"number": 2, "blocked_by": [1]},
+    ]
+    depends_on, dropped = EDGES.edges_from_relationships(subissues)
+    assert depends_on == {"sub-1": ["sub-2"]}
+    assert dropped == [{"reason": "cycle", "from": "sub-2", "to": "sub-1"}]
+
+
+# --------------------------------------------------------------------------- nodes_from_objective
+
+
+def test_nodes_from_objective_builds_nodes_with_kind_and_github_stamp() -> None:
+    subs = [
+        _sub(1, "Design", labels=["non-code"]),
+        _sub(2, "Build", tracked=[1]),
+    ]
+    nodes, dropped, title = ENG.nodes_from_objective(
+        "o", "r", 100, runner=_runner_for(subs, parent_title="Ship It")
+    )
+    assert title == "Ship It"
+    assert dropped == []
+    by_sid = {n["subplot_id"]: n for n in nodes}
+    assert by_sid["sub-1"]["kind"] == "non-code"
+    assert by_sid["sub-2"]["kind"] == "code"
+    assert by_sid["sub-2"]["depends_on"] == ["sub-1"]
+    assert by_sid["sub-1"]["github"] == {"repo": "o/r", "issue": "o/r#1", "sub_issue": 1}
+
+
+def test_nodes_from_objective_ingest_state_completed_and_not_planned() -> None:
+    subs = [
+        _sub(1, "Done leaf", state="CLOSED", state_reason="COMPLETED"),
+        _sub(2, "Rejected leaf", state="CLOSED", state_reason="NOT_PLANNED"),
+        _sub(3, "Open leaf", state="OPEN"),
+    ]
+    nodes, _dropped, _title = ENG.nodes_from_objective("o", "r", 100, runner=_runner_for(subs))
+    by_sid = {n["subplot_id"]: n for n in nodes}
+    assert by_sid["sub-1"]["state"] == "done"
+    assert by_sid["sub-2"]["state"] == "rejected"
+    assert by_sid["sub-3"]["state"] == "pending"
+
+
+def test_nodes_from_objective_produces_a_validatable_spec() -> None:
+    subs = [_sub(1, "A"), _sub(2, "B", tracked=[1])]
+    nodes, _dropped, title = ENG.nodes_from_objective("o", "r", 100, runner=_runner_for(subs))
+    spec = SPEC_MOD.OutcomeSpec.from_dict({"outcome_id": "demo", "objective": title, "nodes": nodes})
+    spec.validate()  # must not raise
+
+
+# --------------------------------------------------------------------------- _parse_objective_ref
+
+
+def test_parse_objective_ref_valid() -> None:
+    assert ENG._parse_objective_ref("infiquetra/foo#42") == ("infiquetra", "foo", 42)
+
+
+def test_parse_objective_ref_rejects_malformed() -> None:
+    try:
+        ENG._parse_objective_ref("not-a-ref")
+    except ENG.OutcomeError:
+        pass
+    else:
+        raise AssertionError("expected OutcomeError")
+
+
+# --------------------------------------------------------------------------- _ingest_state
+
+
+def test_ingest_state_open_is_pending() -> None:
+    assert ENG._ingest_state("OPEN", None) == "pending"
+
+
+def test_ingest_state_closed_completed_is_done() -> None:
+    assert ENG._ingest_state("CLOSED", "COMPLETED") == "done"
+
+
+def test_ingest_state_closed_not_planned_is_rejected() -> None:
+    assert ENG._ingest_state("CLOSED", "NOT_PLANNED") == "rejected"
+
+
+# --------------------------------------------------------------------------- CLI wiring
+
+
+def test_main_start_requires_objective_or_from_objective(tmp_path: Path) -> None:
+    rc = ENG.main(["--repo-root", str(tmp_path), "start", "demo"])
+    assert rc == 1

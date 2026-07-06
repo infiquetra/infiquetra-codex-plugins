@@ -195,6 +195,17 @@ table.
 **Deep adds (warranted only, never boilerplate):** High-Level Technical Design (HTD), Risk Analysis &
 Mitigation, Alternatives Considered, Success Metrics. Include only when the content earns the section.
 
+**External-engine delegation (capability routing, opt-in):** a Unit may declare an `engine` (explicit
+key, e.g. `codex`) or a `capability` (e.g. `adversarial-review`), mutually exclusive, when its work is
+a good fit to offload to an external engine as advisory evidence. At plan time, preview the routing
+with `engine_resolver.resolve({"role_kind": "worker", "capability": <value>}, mode="advisory",
+registry=...)` against `references/engine-registry.yaml`, and record the previewed
+`{engine_id, variant}` as the baseline a run-time substitution is compared against (KTD4,
+team-execution `references/external-engine-workers.md` §4). The engine is never a gatekeeper: its
+output is advisory evidence the host driving session verifies (see `references/engine-dispatch.md`),
+and on the Codex host Claude-only autonomous delegation surfaces (Workflow/TeamCreate) are
+negative-gated — delegation runs inline/serially or via team-execution's chaperone.
+
 **Team Execution Phase A:** when the operator selects `team-execution`, the plan artifact must include a
 `## Team Structure` section or link a separate Team Execution artifact before the plan can be marked
 ready. The default receipt is the plan itself at `docs/plans/YYYY-MM-DD-<topic>-plan.md#team-structure`;

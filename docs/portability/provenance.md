@@ -42,11 +42,25 @@ Saga itself was later refreshed to
 `infiquetra-claude-plugins@abcc06b16763975d71e483a6dac768f4664d7b63` for the 0.20.0 document
 formatting contract. The rest of the Saga-family source baseline remains at the 2026-06-06 snapshot.
 
+Saga, team-execution, mission-control, unifi, and deploy are, as of 2026-07-06,
+mid-port against a further commit-bounded window
+`infiquetra-claude-plugins@b30e0f2ba7cd0cfdeaf97c1d4510c9a0468e96da..9470edca65b1db06d2f7562eeb2d5a9e48c34dec`
+(saga 0.41.0 to 0.64.0 parity target). This window is frozen per KTD1 in
+`docs/plans/2026-07-06-port-claude-plugin-updates-to-0.64-plan.md` even though
+upstream `origin/main` has since moved to `43646b3e1b57979ce6e144c59bef2de9f88e09c8`.
+The row values below still reflect the last-landed source versions; each row
+updates in the unit that actually ports that plugin's 0.64-window behavior. See
+`docs/portability/codex-saga-064-drift-classification.md` for the full
+per-surface classification, and the new `fleet-core` plugin this window
+introduces (source `infiquetra-claude-plugins` `fleet-core` 0.5.0, a
+fleet-commons tier/retry substrate shared by saga, team-execution,
+mission-control, and unifi).
+
 | Plugin | Source Version | Source | Copied Assets Planned | Codex Differences Required |
 |---|---:|---|---|---|
 | `saga` | 0.20.0 | Claude plugin at `abcc06b16763975d71e483a6dac768f4664d7b63` | `skills`, references, scripts, README, changelog, document-formatting test | Add Codex manifest; keep source-parity skill names behind the `saga` namespace; rewrite `.claude/saga` to `.codex/saga`; add Codex-native outcome/promote surfaces; omit command files, agent files, hooks, source-only backends, and Claude manifests. |
 | `deploy` | 0.1.1 | Claude plugin at `16de95c82ccb2ed80d7f11018e1c2e8247a80a7f` | deploy-state skill, scripts, README, changelog, command-origin behavior | Add Codex manifest; convert commands to skills; add dry-run, preview, exact-plan confirmation, auth-boundary, and proof-owned mutation safeguards; omit agent and command files. |
-| `discord-identity-assets` | 0.1.0 | Codex-born plugin grounded in home-lab Discord asset scripts and Norns/Mimir runbook evidence | New skill, references, deterministic CLI, tests, README, and portability notes | Keep Codex-native image generation in the skill; move reusable manifest, post-processing, Discord publish, API readback, redaction, and receipt behavior into tested scripts. |
+| `discord-identity-assets` | 0.2.0 | Codex-born plugin grounded in home-lab Discord asset scripts and Norns/Mimir runbook evidence | Skill, references, deterministic CLI, tests, README, and portability notes | Keep Codex-native image generation in the skill; move reusable bot/guild manifest, post-processing, Discord publish, API readback, redaction, and receipt behavior into tested scripts. |
 | `mission-control` | 2.0.0 | Claude plugin at `16de95c82ccb2ed80d7f11018e1c2e8247a80a7f` | `skills`, references, config, scripts, tests, README, changelog | Add Codex manifest; rewrite prompt-alignment tests for Codex; preserve dry-run and preview modes; add allowlist and exact-plan confirmation gates; omit command and agent files. |
 | `team-execution` | 2.2.0 | Claude plugin at `16de95c82ccb2ed80d7f11018e1c2e8247a80a7f` | `skills`, references, README, changelog, managed Codex agent TOML roster | Add Codex manifest; convert Claude agents into managed Codex TOML definitions plus registries; use Codex subagents only when available; provide tested serial fallback; omit command files and Claude markdown agents. |
 

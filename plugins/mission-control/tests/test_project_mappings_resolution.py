@@ -122,12 +122,12 @@ def test_vendored_project_mappings_has_expected_canonical_state() -> None:
     assert data["organization"] == "infiquetra"
     assert "campps" in data["projects"]
     assert "asgard" in data["projects"]
-    assert "jeff-intent" in data["projects"]
+    assert "operations" in data["projects"]
     assert data["retired_projects"]["mount-olympus"]["status"] == "closed_retired_historical"
     campps = data["projects"]["campps"]
     assert campps["number"] == 4
     assert data["projects"]["asgard"]["number"] == 2
-    assert data["projects"]["jeff-intent"]["number"] == 3
+    assert data["projects"]["operations"]["number"] == 3
 
     expected_repos = {
         "campps-context-library",
@@ -212,8 +212,8 @@ def test_vendored_sdlc_schema_declares_current_live_boards() -> None:
     assert vendored.exists(), f"Vendored schema missing at {vendored}"
     data = json.loads(vendored.read_text())
 
-    assert data["boards"]["jeff_intent"]["status"] == "active"
-    assert data["boards"]["jeff_intent"]["live_creation"] == "created_2026-05-29_project_3"
+    assert data["boards"]["operations"]["status"] == "active"
+    assert data["boards"]["operations"]["live_creation"] == "created_2026-05-29_project_3"
     assert data["boards"]["asgard"]["status"] == "active"
     assert data["boards"]["asgard"]["live_creation"] == "created_2026-05-29_project_2"
     assert data["workflows"]["intent_flow"]["statuses"] == [

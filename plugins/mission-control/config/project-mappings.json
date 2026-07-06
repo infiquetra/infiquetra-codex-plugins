@@ -1,6 +1,6 @@
 {
   "_comment": "External override of the vendored canonical project mapping (read FIRST by load_config -> _resolve_project_mappings, per the documented resolution order). Adds the CAMPPS initiative board (Project #4) so `board add` routes campps-* repos there and `discover-project` resolves them. Project node IDs are best-effort; field/option IDs are NEVER cached here (fetched live).",
-  "_provenance": "campps board (Project #4, id PVT_kwDODdfJoc4BanD0) registered 2026-06-16 as the active execution board for the CAMPPS Phase-1a build (see docs/process/board-topology.md). campps-context-library moved from the former Olympus board to campps (it is the campps board's home repo). Asgard/Jeff-Intent ids carried from the vendored canonical (verified 2026-05-29). Mount Olympus Project #1 was retired from active routing on 2026-06-17.",
+  "_provenance": "campps board (Project #4, id PVT_kwDODdfJoc4BanD0) registered 2026-06-16 as the active execution board for the CAMPPS Phase-1a build (see docs/process/board-topology.md). campps-context-library moved from the former Olympus board to campps (it is the campps board's home repo). Asgard/Operations ids carried from the vendored canonical (verified 2026-05-29). Project #3 was renamed Jeff Intent -> Operations on 2026-06-27, mirroring the canonical rename in infiquetra-sdlc; the project number, node id, and shared intent_flow workflow are unchanged. Mount Olympus Project #1 was retired from active routing on 2026-06-17.",
   "organization": "infiquetra",
   "projects": {
     "asgard": {
@@ -11,11 +11,11 @@
       "workflow": "intent_flow",
       "repositories": []
     },
-    "jeff-intent": {
+    "operations": {
       "number": 3,
       "id": "PVT_kwDODdfJoc4BZLMK",
-      "name": "Jeff Intent",
-      "board_key": "jeff_intent",
+      "name": "Operations",
+      "board_key": "operations",
       "workflow": "intent_flow",
       "repositories": []
     },

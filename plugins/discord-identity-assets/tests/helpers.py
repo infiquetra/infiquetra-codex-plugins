@@ -81,6 +81,45 @@ def valid_manifest(bot_user_id: str = "1486896133660868758") -> dict:
     }
 
 
+def valid_guild_manifest(
+    *,
+    guild_id_env: str = "ASGARD_GUILD_ID",
+    token_env: str = "ASGARD_MANAGE_GUILD_TOKEN",
+    expected_actor_user_id: str = "1466648500124123146",
+) -> dict:
+    return {
+        "schema_version": 2,
+        "targets": [],
+        "guild_targets": [
+            {
+                "id": "asgard",
+                "display_name": "Asgard",
+                "prompt_sources": ["README.md"],
+                "prompts": {"icon": "bright hall icon", "banner": "wide hall banner"},
+                "profile_banner_color": "#2F555A",
+                "asset_paths": {
+                    "originals": {
+                        "icon": "assets/discord/guilds/asgard/originals/icon.png",
+                        "banner": "assets/discord/guilds/asgard/originals/banner.png",
+                    },
+                    "finals": {
+                        "icon": "assets/discord/guilds/asgard/icon.png",
+                        "banner": "assets/discord/guilds/asgard/banner.png",
+                    },
+                    "prompt_record": "assets/discord/guilds/asgard/prompts.yml",
+                },
+                "discord": {
+                    "expected_guild_name": "Asgard",
+                },
+                "guild_id_env": guild_id_env,
+                "manage_guild_token_env": token_env,
+                "expected_actor_user_id": expected_actor_user_id,
+                "evidence": {"receipt_dir": "docs/runbooks/discord-identity-assets"},
+            }
+        ],
+    }
+
+
 def make_image(path: Path, size: tuple[int, int], color: tuple[int, int, int]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     Image.new("RGB", size, color).save(path, format="PNG")
@@ -94,6 +133,21 @@ def make_repo(tmp_path: Path, manifest: dict | None = None) -> Path:
     return tmp_path
 
 
+def make_guild_repo(tmp_path: Path, manifest: dict | None = None) -> Path:
+    write_yaml(tmp_path / "identity/discord-identity-assets.yml", manifest or valid_guild_manifest())
+    make_image(
+        tmp_path / "assets/discord/guilds/asgard/originals/icon.png",
+        (1200, 900),
+        (10, 90, 90),
+    )
+    make_image(
+        tmp_path / "assets/discord/guilds/asgard/originals/banner.png",
+        (1800, 800),
+        (20, 100, 120),
+    )
+    return tmp_path
+
+
 def prepare_publishable_repo(tmp_path: Path):
     mod = load_module()
     repo = make_repo(tmp_path)
@@ -103,4 +157,16 @@ def prepare_publishable_repo(tmp_path: Path):
     prompt_record["prompt_consistency"] = "passed"
     prompt_path.write_text(yaml.safe_dump(prompt_record, sort_keys=False), encoding="utf-8")
     plan = mod.build_publish_plan(repo, "mimir")
+    return mod, repo, plan
+
+
+def prepare_publishable_guild_repo(tmp_path: Path):
+    mod = load_module()
+    repo = make_guild_repo(tmp_path)
+    mod.postprocess_assets(repo, "asgard", kind="guild")
+    prompt_path = repo / "assets/discord/guilds/asgard/prompts.yml"
+    prompt_record = yaml.safe_load(prompt_path.read_text(encoding="utf-8"))
+    prompt_record["prompt_consistency"] = "passed"
+    prompt_path.write_text(yaml.safe_dump(prompt_record, sort_keys=False), encoding="utf-8")
+    plan = mod.build_publish_plan(repo, "asgard", kind="guild")
     return mod, repo, plan
