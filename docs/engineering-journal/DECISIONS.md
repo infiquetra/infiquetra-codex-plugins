@@ -10,6 +10,26 @@ Revisit when: Codex gains a hook/compaction seam, redis-channel gets its server-
 
 Plan: `docs/plans/2026-07-06-port-claude-plugin-updates-to-0.64-plan.md`.
 
+## 2026-07-06: Baseline Freeze Holds At `9470edc` Despite Further Upstream Drift
+
+U1 baseline-freeze verification found Claude `origin/main` had already moved to
+`43646b3` (past the plan's `9470edc` boundary) by the time discord-identity-assets
+0.2.0 and this plan landed. Per KTD1, the window is not silently extended:
+implementation units U2 through U9 read only the `b30e0f2..9470edc` delta (31
+commits, 141 files, confirmed by direct diff). Chasing `43646b3` requires a
+deliberate plan amendment with its own commit-bounded window, not an in-flight
+scope change during port execution.
+
+Rejected alternative: quietly picking up the newer upstream commits while
+implementing, since "more current" felt strictly better — rejected because it
+mixes evidence from two different upstream snapshots into one classification
+and breaks the reproducibility the commit-bounded window is meant to guarantee.
+
+Revisit when: the 0.64 port window closes and a new cycle is opened against a
+fresh upstream ref.
+
+Artifact: `docs/portability/codex-saga-064-drift-classification.md`.
+
 ## 2026-07-02: Discord Guild Art Extends The Existing Identity Assets Plugin
 
 Guild/server icon and image-banner publishing extends `discord-identity-assets` as a sibling target type instead of becoming a new plugin. Bot targets remain under `targets[]`; guild targets use schema v2 `guild_targets[]` with `guild_id_env` and `manage_guild_token_env` references so live guild IDs and tokens stay out of committed state.

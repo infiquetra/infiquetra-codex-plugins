@@ -44,7 +44,7 @@ LEGACY_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
         ),
     },
     "unifi": {
-        "version": "1.0.0",
+        "version": "1.1.0",
         "skills": ("unifi-network", "unifi-protect"),
     },
     "test-suite": {
@@ -55,7 +55,7 @@ LEGACY_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
 
 TARGET_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
     "saga": {
-        "version": "0.41.0",
+        "version": "0.64.0",
         "skills": (
             "office-hours",
             "ideate",
@@ -92,7 +92,7 @@ TARGET_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
         ),
     },
     "mission-control": {
-        "version": "2.1.0",
+        "version": "2.2.0",
         "skills": (
             "board",
             "flow",
@@ -104,12 +104,17 @@ TARGET_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
         ),
     },
     "team-execution": {
-        "version": "2.2.0",
+        "version": "2.3.0",
         "skills": ("team-execution", "appsec-audit"),
     },
     "discord-identity-assets": {
         "version": "0.2.0",
         "skills": ("discord-identity-assets",),
+    },
+    "fleet-core": {
+        "version": "0.5.0",
+        "skills": (),
+        "library": True,
     },
     "home-lab-ops": LEGACY_EXPECTED_PLUGINS["home-lab-ops"],
     "python-toolkit": LEGACY_EXPECTED_PLUGINS["python-toolkit"],
@@ -234,11 +239,28 @@ TEAM_EXECUTION_AGENT_ROSTER = {
     "testing-reviewer",
     "ui-regression-tester",
 }
-TEAM_EXECUTION_MODEL_HINTS = {
-    "opus": ("gpt-5.5", "high"),
-    "sonnet": ("gpt-5.4", "medium"),
-    "haiku": ("gpt-5.4-mini", "low"),
-}
+def _derive_model_hints() -> dict[str, tuple[str, str]]:
+    """Derive the lineage->``(codex_model, codex_effort)`` hint map from the fleet-core palette.
+
+    U3: the validator's expectations become a single palette-derived projection instead of a
+    second hand-maintained copy of the registry — the roster TOMLs, the palette, and this
+    validator are then guaranteed to agree by construction (three-way drift guard). A failure
+    to load the palette is fatal for validation, surfaced as an ImportError rather than a
+    silently stale literal.
+    """
+    import sys
+
+    fleet_scripts = _REPO_ROOT_FOR_HINTS / "plugins" / "fleet-core" / "scripts"
+    if str(fleet_scripts) not in sys.path:
+        sys.path.insert(0, str(fleet_scripts))
+    import fleet_commons_shim  # noqa: PLC0415
+
+    palette = fleet_commons_shim.load("tier_palette")
+    return {model: palette.codex_tier(model) for model in palette.MODELS}
+
+
+_REPO_ROOT_FOR_HINTS = Path(__file__).resolve().parent.parent
+TEAM_EXECUTION_MODEL_HINTS = _derive_model_hints()
 
 SCRIPT_FIELD_RE = re.compile(r"^\s*script:\s*(?P<path>\S+)\s*$", re.MULTILINE)
 PLUGIN_SCRIPT_RE = re.compile(r"(?P<path>plugins/[A-Za-z0-9_.-]+/[A-Za-z0-9_./-]+\.py)")
@@ -362,6 +384,8 @@ def validate_plugin(
         errors.append(f"{plugin_name}: missing plugin directory")
         return
 
+    is_library_plugin = expected.get("library", False)
+
     manifest_path = plugin_root / ".codex-plugin" / "plugin.json"
     manifest = load_json(manifest_path, errors)
     if manifest is not None:
@@ -369,11 +393,12 @@ def validate_plugin(
             errors.append(f"{plugin_name}: manifest name mismatch")
         if manifest.get("version") != expected["version"]:
             errors.append(f"{plugin_name}: manifest version must be {expected['version']}")
-        if manifest.get("skills") not in ("skills", "./skills/"):
-            errors.append(f"{plugin_name}: manifest skills path must resolve to skills")
-        interface = manifest.get("interface")
-        if not isinstance(interface, dict) or not interface.get("defaultPrompt"):
-            errors.append(f"{plugin_name}: manifest interface.defaultPrompt is required")
+        if not is_library_plugin:
+            if manifest.get("skills") not in ("skills", "./skills/"):
+                errors.append(f"{plugin_name}: manifest skills path must resolve to skills")
+            interface = manifest.get("interface")
+            if not isinstance(interface, dict) or not interface.get("defaultPrompt"):
+                errors.append(f"{plugin_name}: manifest interface.defaultPrompt is required")
 
         for forbidden in (".claude-plugin", "commands"):
             if (plugin_root / forbidden).exists():
@@ -388,6 +413,10 @@ def validate_plugin(
     portability = plugin_root / "PORTABILITY.md"
     if not portability.is_file():
         errors.append(f"{plugin_name}: missing PORTABILITY.md")
+
+    if is_library_plugin:
+        # Scripts-only library plugin (e.g. fleet-core): no skills surface to validate.
+        return
 
     skills_root = plugin_root / "skills"
     expected_skills = set(expected["skills"])

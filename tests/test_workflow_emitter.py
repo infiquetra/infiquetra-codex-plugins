@@ -746,8 +746,10 @@ def test_verify_panel_emits_n_verifier_agents_and_majority_check() -> None:
     assert script.count("() => agent(") == 3
     # The verifiers are adversarial skeptics over the unit's output (refute, not redo).
     assert "REFUTE-N VERIFIER" in script
-    # Majority pass-rule reconciliation: a finding survives unless >= ceil(3/2)=2 refute.
-    assert "U2_refute_count >= 2" in script
+    # Majority pass-rule reconciliation: computed over reporting verifiers at runtime,
+    # not a baked literal, so failed/non-applicable verifiers don't get fabricated votes.
+    assert "U2_threshold = Math.max(1, Math.ceil(U2_reported.length / 2))" in script
+    assert "U2_refuted = U2_refute_count >= U2_threshold" in script
     assert "majority" in script
     # The verifier tier == the unit tier (R4): U2 is sonnet/high -> verifiers are too.
     assert 'label: "build verifier"' in script
@@ -763,8 +765,10 @@ def test_unanimous_verify_panel_requires_all_to_refute() -> None:
     first["verify"] = {"n": 3, "pass_rule": "unanimous"}
     spec = mod.ExecutionSpec.from_dict(data)
     script = mod.emit_workflow_script(spec)
-    # Unanimous: a finding survives unless ALL N refute -> threshold == n == 3.
-    assert "U1_refute_count >= 3" in script
+    # Unanimous: computed over reporting verifiers at runtime (threshold == count of
+    # reporters, not a baked N), so a missing verifier doesn't force a false refutation.
+    assert "U1_threshold = Math.max(1, U1_reported.length)" in script
+    assert "U1_refuted = U1_refute_count >= U1_threshold" in script
     assert "unanimous" in script
 
 
@@ -811,7 +815,8 @@ def test_layered_spec_with_verify_panel_full_emission() -> None:
     # N=3 verifier agent() calls for C's panel.
     assert "C_verdicts = await parallel([" in script
     assert script.count("() => agent(") == 3
-    assert "C_refute_count >= 2" in script
+    assert "C_threshold = Math.max(1, Math.ceil(C_reported.length / 2))" in script
+    assert "C_refuted = C_refute_count >= C_threshold" in script
     # Every unit's model/effort tier is present.
     assert 'model: "sonnet"' in script
     assert 'model: "opus"' in script

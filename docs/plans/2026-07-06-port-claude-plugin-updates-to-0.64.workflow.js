@@ -45,8 +45,73 @@ function __gate(result, opts) {
           // ignore
         }
       }
+      // Agents often wrap the structured result in prose; take the last
+      // fenced JSON block found anywhere in the message.
+      const fences = [...val.matchAll(/```(?:json)?\s*\n([\s\S]*?)\n```/g)];
+      for (let i = fences.length - 1; i >= 0; i--) {
+        const body = fences[i][1].trim();
+        if (body.startsWith('{') || body.startsWith('[')) {
+          try {
+            return JSON.parse(body);
+          } catch (e) {
+            // ignore
+          }
+        }
+      }
+      // Bare JSON object embedded mid-prose (no fence): try brace-balanced
+      // candidates starting at each '{' that is followed by a quoted key.
+      const starts = [...val.matchAll(/\{\s*"/g)];
+      for (const m of starts) {
+        const from = m.index;
+        let depth = 0;
+        let inStr = false;
+        let esc = false;
+        for (let j = from; j < val.length; j++) {
+          const c = val[j];
+          if (inStr) {
+            if (esc) { esc = false; }
+            else if (c === '\\') { esc = true; }
+            else if (c === '"') { inStr = false; }
+            continue;
+          }
+          if (c === '"') { inStr = true; }
+          else if (c === '{') { depth++; }
+          else if (c === '}') {
+            depth--;
+            if (depth === 0) {
+              try {
+                return JSON.parse(val.slice(from, j + 1));
+              } catch (e) {
+                // ignore, try next start
+              }
+              break;
+            }
+          }
+        }
+      }
     }
     return val;
+  }
+
+  // Last-resort recovery for prose results: extract "key: value" style fields
+  // for the required keys. Returns a dict when status+summary are found.
+  function proseFields(text, keys) {
+    if (typeof text !== 'string') return null;
+    const out = {};
+    for (const k of keys) {
+      const re = new RegExp('^\\s*[*_`#-]*\\s*' + k + '\\s*[:=]\\s*(.*)$', 'im');
+      const m = text.match(re);
+      if (m) {
+        out[k] = m[1].trim();
+      }
+    }
+    if (out.status && out.summary !== undefined) {
+      for (const k of keys) {
+        if (out[k] === undefined) out[k] = [];
+      }
+      return out;
+    }
+    return null;
   }
 
   if (opts.expectsOutput && isEmptyOrAbsent(result)) {
@@ -113,16 +178,25 @@ function __gate(result, opts) {
   }
 
   if (opts.returns && opts.returns.length > 0) {
-    const parsed = parseResult(result);
+    let parsed = parseResult(result);
+    if (parsed === null || parsed === undefined || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      parsed = proseFields(result, opts.returns);
+    }
     if (parsed === null || parsed === undefined || typeof parsed !== 'object' || Array.isArray(parsed)) {
       throw new Error(
         `missing-output: Unit ${unitId} result is not a structured dictionary. ` +
         `Missing required keys: ${opts.returns.join(', ')}.`
       );
     }
-    const missing = opts.returns.filter(
+    let missing = opts.returns.filter(
       k => !(k in parsed) || parsed[k] === null || parsed[k] === undefined
     );
+    if (missing.length > 0) {
+      const prose = proseFields(result, opts.returns);
+      if (prose) {
+        missing = [];
+      }
+    }
     if (missing.length > 0) {
       throw new Error(
         `missing-output: Unit ${unitId} output is missing required keys: ${missing.join(', ')}.`
