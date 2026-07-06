@@ -1,14 +1,14 @@
 ---
 name: board
 description: |
-  Manage the Infiquetra GitHub Projects boards: Jeff Intent, Asgard, and CAMPPS.
+  Manage the Infiquetra GitHub Projects boards: Operations, Asgard, and CAMPPS.
   Handles board views, status moves, item adds, terminal-item archive, WIP analysis,
   field discovery, and standup preparation.
 when_to_use: |
   Use this skill when the user wants to:
 
   Board review and status:
-  - Review or view Jeff Intent, Asgard, or CAMPPS board state
+  - Review or view Operations, Asgard, or CAMPPS board state
   - Check overall board health or get a snapshot of current work
   - See what's in a specific status, such as Shaping, Active, Assigned, or In Review
 
@@ -36,7 +36,7 @@ Manage Infiquetra's current project boards:
 
 | Project key | Board | Workflow |
 |-------------|-------|----------|
-| `jeff-intent` | Jeff Intent | `Idea -> Shaping -> Ready -> Active -> Verify -> Done` |
+| `operations` | Operations | `Idea -> Shaping -> Ready -> Active -> Verify -> Done` |
 | `asgard` | Asgard | `Idea -> Shaping -> Ready -> Active -> Verify -> Done` |
 | `campps` | CAMPPS | `Idea -> Committed -> In Progress -> Done -> Parked` |
 
@@ -59,7 +59,7 @@ Always run the script with `python3`.
 
 ```bash
 # View a board by status
-python3 sdlc_manager.py board view --project jeff-intent
+python3 sdlc_manager.py board view --project operations
 python3 sdlc_manager.py board view --project asgard
 python3 sdlc_manager.py board view --project campps
 
@@ -76,7 +76,7 @@ python3 sdlc_manager.py board add --repo infiquetra-sdlc --number 42
 
 # Add an item to a specific board
 python3 sdlc_manager.py board add --project asgard --repo infiquetra-sdlc --number 42
-python3 sdlc_manager.py board add --project jeff-intent --repo infiquetra-sdlc --number 42
+python3 sdlc_manager.py board add --project operations --repo infiquetra-sdlc --number 42
 ```
 
 ### Move Item
@@ -84,7 +84,7 @@ python3 sdlc_manager.py board add --project jeff-intent --repo infiquetra-sdlc -
 ```bash
 # Intent-flow boards
 python3 sdlc_manager.py board move --project asgard --repo infiquetra-sdlc --number 42 --status "Active"
-python3 sdlc_manager.py board move --project jeff-intent --repo infiquetra-sdlc --number 42 --status "Shaping"
+python3 sdlc_manager.py board move --project operations --repo infiquetra-sdlc --number 42 --status "Shaping"
 
 # CAMPPS initiative flow
 python3 sdlc_manager.py board move --project campps --repo campps-platform --number 42 --status "Committed"
@@ -105,7 +105,7 @@ python3 sdlc_manager.py board archive --project asgard --dry-run
 python3 sdlc_manager.py board archive --project campps
 ```
 
-The command archives terminal workflow items. For Jeff Intent, Asgard, and CAMPPS that means `Done`.
+The command archives terminal workflow items. For Operations, Asgard, and CAMPPS that means `Done`.
 
 ### WIP And Standup
 
@@ -113,7 +113,7 @@ The command archives terminal workflow items. For Jeff Intent, Asgard, and CAMPP
 python3 sdlc_manager.py board wip --project campps
 python3 sdlc_manager.py board wip --project asgard
 python3 sdlc_manager.py board standup --project campps
-python3 sdlc_manager.py board standup --project jeff-intent
+python3 sdlc_manager.py board standup --project operations
 ```
 
 Standup output walks each board right-to-left using the schema-backed workflow order.
@@ -123,17 +123,17 @@ Standup output walks each board right-to-left using the schema-backed workflow o
 ```bash
 python3 sdlc_manager.py board discover-fields --project campps
 python3 sdlc_manager.py board discover-fields --project asgard
-python3 sdlc_manager.py board discover-fields --project jeff-intent
+python3 sdlc_manager.py board discover-fields --project operations
 ```
 
 ## WIP Limits Reference
 
 | Board | Status | Limit |
 |-------|--------|-------|
-| Jeff Intent | Shaping | 10 |
-| Jeff Intent | Ready | 10 |
-| Jeff Intent | Active | 5 |
-| Jeff Intent | Verify | 5 |
+| Operations | Shaping | 10 |
+| Operations | Ready | 10 |
+| Operations | Active | 5 |
+| Operations | Verify | 5 |
 | Asgard | Shaping | 8 |
 | Asgard | Ready | 8 |
 | Asgard | Active | 5 |
@@ -152,8 +152,8 @@ or moving blocked cards to the right pause state.
 **"Move issue #42 in infiquetra-sdlc to Active on Asgard"**
 -> `board move --project asgard --repo infiquetra-sdlc --number 42 --status "Active"`
 
-**"Add this issue to Jeff Intent"**
--> Confirm repo and issue number, then `board add --project jeff-intent --repo <repo> --number <N>`
+**"Add this issue to Operations"**
+-> Confirm repo and issue number, then `board add --project operations --repo <repo> --number <N>`
 
 **"Are we over WIP limits?"**
 -> Run `board wip` for the relevant board.

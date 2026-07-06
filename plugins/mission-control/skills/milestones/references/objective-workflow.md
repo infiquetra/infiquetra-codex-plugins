@@ -98,7 +98,7 @@ Child work flows through the target board:
 
 | Board | Flow |
 |-------|------|
-| Jeff Intent / Asgard | Idea -> Shaping -> Ready -> Active -> Verify -> Done |
+| Operations / Asgard | Idea -> Shaping -> Ready -> Active -> Verify -> Done |
 | CAMPPS | Idea -> Committed -> In Progress -> Done -> Parked |
 
 Progress can be read from:

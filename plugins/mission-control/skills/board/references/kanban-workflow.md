@@ -11,7 +11,7 @@ truth is `$INFIQUETRA_SDLC_PATH/config/sdlc-schema.json`, with prose context in
 
 | Project key | Board | Purpose |
 |-------------|-------|---------|
-| `jeff-intent` | Jeff Intent | Raw operator intent, approvals, personal/operator work, and shaping |
+| `operations` | Operations | Raw operator intent, approvals, personal/operator work, and shaping |
 | `asgard` | Asgard | Jeff-proximal rapid action, incubation, and mission-mode work |
 | `campps` | CAMPPS | Long-lived CAMPPS initiative execution board |
 
@@ -22,7 +22,7 @@ a separate board.
 
 ## Workflows
 
-### Jeff Intent And Asgard
+### Operations And Asgard
 
 ```
 Idea -> Shaping -> Ready -> Active -> Verify -> Done
@@ -32,7 +32,7 @@ Idea -> Shaping -> Ready -> Active -> Verify -> Done
 |--------|---------|
 | Idea | Captured thought or opportunity. Not shaped enough for execution. |
 | Shaping | Intent is being clarified, scoped, or turned into an actionable card. |
-| Ready | Work is shaped enough to route or start. Jeff Intent must name a target team before promotion. |
+| Ready | Work is shaped enough to route or start. Operations must name a target team before promotion. |
 | Active | The owner is working the card. |
 | Verify | Outcome is being checked before closure or promotion. |
 | Done | Completed or intentionally closed for this board. |
@@ -70,10 +70,10 @@ not in the core Status workflow.
 
 | Board | Status | Limit |
 |-------|--------|-------|
-| Jeff Intent | Shaping | 10 |
-| Jeff Intent | Ready | 10 |
-| Jeff Intent | Active | 5 |
-| Jeff Intent | Verify | 5 |
+| Operations | Shaping | 10 |
+| Operations | Ready | 10 |
+| Operations | Active | 5 |
+| Operations | Verify | 5 |
 | Asgard | Shaping | 8 |
 | Asgard | Ready | 8 |
 | Asgard | Active | 5 |
@@ -92,7 +92,7 @@ Walk right-to-left through the relevant board:
 
 | Board | Review order |
 |-------|--------------|
-| Jeff Intent / Asgard | Done -> Verify -> Active -> Ready -> Shaping -> Idea |
+| Operations / Asgard | Done -> Verify -> Active -> Ready -> Shaping -> Idea |
 | CAMPPS | Parked -> Done -> In Progress -> Committed -> Idea |
 
 Ask:
@@ -109,7 +109,7 @@ Ask:
 
 ### Raw Intent From Jeff
 
-1. Capture on Jeff Intent as `Idea`.
+1. Capture on Operations as `Idea`.
 2. Shape until target team and context pack are clear.
 3. Move to `Ready`.
 4. Route to Asgard, CAMPPS, Jeff, or External/Deferred based on target team.
@@ -135,7 +135,7 @@ Cycle time starts when active ownership begins:
 
 | Board | Start | Terminal |
 |-------|-------|----------|
-| Jeff Intent / Asgard | Active | Done |
+| Operations / Asgard | Active | Done |
 | CAMPPS | In Progress | Done |
 
 Legacy Mount Olympus timeline values may still include `Assigned`, `In Review`, or

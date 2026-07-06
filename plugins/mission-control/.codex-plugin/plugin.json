@@ -1,7 +1,7 @@
 {
   "name": "mission-control",
-  "version": "2.1.0",
-  "description": "SDLC management for Jeff Intent, Asgard, and CAMPPS: prepared issue drafts, board schemas, labels, project fields, sub-issues, metrics, and card validation.",
+  "version": "2.2.0",
+  "description": "SDLC management for Operations, Asgard, and CAMPPS: prepared issue drafts, board schemas, labels, project fields, sub-issues, metrics, and card validation.",
   "author": {
     "name": "Infiquetra",
     "email": "hello@infiquetra.com",
@@ -20,13 +20,13 @@
     "sub-issues",
     "campps",
     "asgard",
-    "jeff-intent"
+    "operations"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "Mission Control",
     "shortDescription": "Infiquetra SDLC issue, board, label, and metrics workflows.",
-    "longDescription": "Provides Codex skills and bundled scripts for prepared issue drafts, GitHub Projects boards, labels, milestones, flow metrics, rollout checks, and card validation across Jeff Intent, Asgard, and CAMPPS.",
+    "longDescription": "Provides Codex skills and bundled scripts for prepared issue drafts, GitHub Projects boards, labels, milestones, flow metrics, rollout checks, and card validation across Operations, Asgard, and CAMPPS.",
     "developerName": "Infiquetra",
     "category": "Productivity",
     "capabilities": [

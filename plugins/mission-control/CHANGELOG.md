@@ -1,5 +1,32 @@
 # Changelog — mission-control
 
+## 2.2.0 - 2026-07-06
+
+### Added
+- Added `executor_profile_lint.py`: a standalone CLI that validates a program issue's
+  "Recommended Executor Profile" block (model/effort membership, above-sonnet-requires-
+  justification) against the fleet-core tier palette, resolved through the vendored
+  `fleet_commons_shim`.
+
+### Fixed
+- Fixed `issue create-prepared` post-create recovery: if the GitHub issue was created but a
+  later board-add or Status-set step failed, the sidecar is now left in a resumable
+  `post_create_pending` state (remaining steps + created issue reference) instead of losing
+  track of the created issue, so a re-run resumes rather than creating a duplicate issue.
+- Fixed the GitHub contents API template-deploy path to always use `PUT` (the only verb that
+  endpoint accepts for both create and update); it previously issued `POST`/`PATCH`, which are
+  invalid for `contents/{path}` and would fail against the live API.
+- Fixed the `issueOrPullRequest` GraphQL lookups (item node id, item labels) to use the
+  `issueOrPullRequest(number:)` union field instead of separate `issue`/`pullRequest` fields,
+  and to null-safe the `repository` node so a deleted/inaccessible repo does not crash the
+  lookup.
+
+### Changed
+- Renamed the `jeff-intent` project board to `operations` across config, scripts, and skill
+  guidance (GitHub Project #3 was renamed Jeff Intent -> Operations on 2026-06-27; the project
+  number, node id, and shared `intent_flow` workflow are unchanged, so existing cards stay on
+  the board). `--project jeff-intent` is no longer accepted; use `--project operations`.
+
 ## 2.1.0 - 2026-06-17
 
 ### Added
