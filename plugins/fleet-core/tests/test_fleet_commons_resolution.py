@@ -131,6 +131,7 @@ def test_codex_cache_rung_picks_highest_semver(
 def test_cache_installed_consumer_finds_codex_marketplace_source(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    monkeypatch.delenv("FLEET_COMMONS_ROOT", raising=False)
     codex_home = tmp_path / "codex"
     marketplace_fleet = (
         codex_home
