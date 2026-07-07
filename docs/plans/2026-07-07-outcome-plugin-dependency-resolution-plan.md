@@ -76,7 +76,7 @@ Replace the two mission-control path assumptions with the resolver while preserv
 
 **Files:** `plugins/saga/scripts/outcome_board_sync.py`, `plugins/saga/scripts/board_progression.py`, `plugins/saga/tests/test_outcome_board_sync.py`, `plugins/saga/tests/test_board_progression.py`.
 
-**Approach:** Change `_default_schema_path()` to use the dependency resolver for `mission-control/config/sdlc-schema.json`. Change `default_board_writer()` to resolve `mission-control/scripts/sdlc_manager.py` once when the writer factory is created. Keep the existing injected `schema_path`, `board_writer`, and `runner` seams so tests and callers can still bypass filesystem resolution.
+**Approach:** Change `_default_schema_path()` to use the dependency resolver for `mission-control/config/sdlc-schema.json`. Change `default_board_writer()` to resolve `mission-control/scripts/sdlc_manager.py` lazily on first write and cache it for subsequent writes, so dependency-resolution failures still flow through the existing per-op board-write error path. Keep the existing injected `schema_path`, `board_writer`, and `runner` seams so tests and callers can still bypass filesystem resolution.
 
 **Patterns to follow:** `outcome_board_sync.reconcile_board()` already converts schema resolution failures into failed records for ready/dispatched leaves; `board_progression.authorize_and_write()` owns safety and retry and must remain unchanged.
 
