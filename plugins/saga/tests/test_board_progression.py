@@ -52,6 +52,49 @@ def _ledger(tmp_path: Path) -> Path:
     return d
 
 
+def test_default_board_writer_resolves_installed_cache_sibling(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """#18: the writer must invoke sibling mission-control, not repo_root/plugins/mission-control."""
+    market = tmp_path / "cache" / "infiquetra-codex-plugins"
+    saga = market / "saga" / "0.64.0"
+    scripts = saga / "scripts"
+    scripts.mkdir(parents=True)
+    (saga / ".codex-plugin").mkdir()
+    (saga / ".codex-plugin" / "plugin.json").write_text('{"name": "saga"}\n')
+    mission = market / "mission-control" / "2.2.0"
+    sdlc = mission / "scripts" / "sdlc_manager.py"
+    sdlc.parent.mkdir(parents=True)
+    sdlc.write_text("# mission-control\n")
+    (mission / ".codex-plugin").mkdir()
+    (mission / ".codex-plugin" / "plugin.json").write_text('{"name": "mission-control"}\n')
+
+    for name in ("board_progression.py", "plugin_dependency_resolver.py"):
+        (scripts / name).write_bytes((SCRIPTS / name).read_bytes())
+    spec = importlib.util.spec_from_file_location("bp_installed_cache", scripts / "board_progression.py")
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    monkeypatch.syspath_prepend(str(scripts))
+    spec.loader.exec_module(module)
+
+    calls: list[list[str]] = []
+
+    class Result:
+        returncode = 0
+        stderr = ""
+
+    def runner(cmd: list[str], **_kwargs: Any) -> Result:
+        calls.append(cmd)
+        return Result()
+
+    writer = module.default_board_writer(tmp_path / "consumer-repo", runner=runner)
+    writer(op_kind="sub-issue-close", repo="infiquetra/team-freya", number=35, payload={})
+
+    assert calls
+    assert calls[0][1] == str(sdlc)
+    assert "consumer-repo/plugins/mission-control" not in calls[0][1]
+
+
 # ---------------------------------------------------------------------------
 # Core mechanism
 # ---------------------------------------------------------------------------

@@ -114,13 +114,16 @@ def _board_sync_dir(store: Any) -> Path:
 
 
 def _default_schema_path() -> Path:
-    """The default ``sdlc-schema.json`` location, derived from this module's own file path.
+    """The default ``sdlc-schema.json`` location, resolved from the Codex plugin environment.
 
-    Module-file-relative, not ``repo_root``-relative (KTD3) — so ``reconcile_board``'s existing
-    test call sites (no ``schema_path`` passed, ``tmp_path`` stores) keep resolving correctly
-    without threading a repo root through the test seam.
+    The schema belongs to the sibling ``mission-control`` plugin. Resolve it from source checkout,
+    local marketplace, or installed-cache layouts instead of assuming it lives under this Saga root.
     """
-    return Path(__file__).resolve().parents[2] / "mission-control" / "config" / "sdlc-schema.json"
+    import plugin_dependency_resolver as _resolver  # noqa: PLC0415
+
+    return _resolver.resolve_plugin_file(
+        "mission-control", "config/sdlc-schema.json", from_file=__file__
+    )
 
 
 def _resolve_status_map(schema_path: Path, project: str) -> dict[str, str]:

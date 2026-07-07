@@ -202,8 +202,13 @@ def default_board_writer(
     path engages.
     """
     import subprocess  # noqa: PLC0415
+    import plugin_dependency_resolver as _resolver  # noqa: PLC0415
 
-    sdlc = str(repo_root / "plugins" / "mission-control" / "scripts" / "sdlc_manager.py")
+    sdlc = str(
+        _resolver.resolve_plugin_file(
+            "mission-control", "scripts/sdlc_manager.py", from_file=__file__
+        )
+    )
     run = runner if runner is not None else subprocess.run
 
     def _writer(*, op_kind: str, repo: str, number: int, payload: dict[str, Any]) -> None:

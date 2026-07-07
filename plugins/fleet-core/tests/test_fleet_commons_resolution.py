@@ -124,8 +124,46 @@ def test_codex_cache_rung_picks_highest_semver(
     isolated_shim = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(isolated_shim)
     resolved, rung = isolated_shim.resolve_root()
-    assert rung == 3
+    assert rung == 4
     assert resolved == high  # 0.10.0 > 0.4.0 by semver tuple, not string
+
+
+def test_cache_installed_consumer_finds_codex_marketplace_source(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    codex_home = tmp_path / "codex"
+    marketplace_fleet = (
+        codex_home
+        / ".tmp"
+        / "marketplaces"
+        / "infiquetra-codex-plugins"
+        / "plugins"
+        / "fleet-core"
+    )
+    (marketplace_fleet / "scripts" / "fleet_commons").mkdir(parents=True)
+    monkeypatch.setenv("CODEX_HOME", str(codex_home))
+
+    cache_saga_scripts = (
+        codex_home
+        / "plugins"
+        / "cache"
+        / "infiquetra-codex-plugins"
+        / "saga"
+        / "0.64.0"
+        / "scripts"
+    )
+    cache_saga_scripts.mkdir(parents=True)
+    shim_copy = cache_saga_scripts / "fleet_commons_shim.py"
+    shim_copy.write_bytes(_SHIM_PATH.read_bytes())
+    spec = importlib.util.spec_from_file_location("shim_cache_consumer", shim_copy)
+    assert spec is not None and spec.loader is not None
+    cache_shim = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(cache_shim)
+
+    resolved, rung = cache_shim.resolve_root()
+
+    assert rung == 3
+    assert resolved == marketplace_fleet
 
 
 def test_fail_loud_when_nothing_resolves(
@@ -147,7 +185,12 @@ def test_fail_loud_when_nothing_resolves(
 
 def test_no_claude_rung_emulated(shim: ModuleType) -> None:
     # The Codex shim must not carry the Claude host rungs.
-    assert set(shim.RUNG_NAMES.values()) == {"env-override", "repo-walk-up", "codex-cache"}
+    assert set(shim.RUNG_NAMES.values()) == {
+        "env-override",
+        "repo-walk-up",
+        "codex-marketplace-source",
+        "codex-cache",
+    }
     # No Claude-host functional rung: the registry file is never read and the Claude cache env
     # var is never consulted in actual code. (The module docstring may reference them as the
     # dropped rungs — so we scan executable code only, not the docstring/comments.)
