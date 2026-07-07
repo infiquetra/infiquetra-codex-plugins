@@ -17,10 +17,13 @@ recorded in ``docs/portability/codex-saga-064-drift-classification.md``:
    through.
 2. Repo-checkout walk-up from this file: an ancestor holding both
    ``.agents/plugins/marketplace.json`` (the Codex repo marker) and ``plugins/fleet-core/``.
-3. ``~/.codex`` plugin-cache layout: ``$CODEX_HOME/plugins/cache/<marketplace>/fleet-core/<highest
+3. Codex local marketplace source: ``$CODEX_HOME/.tmp/marketplaces/*/plugins/fleet-core`` or the
+   equivalent bundled/curated marketplace source path. This supports library plugins that are
+   available in the marketplace but not separately installed into the cache.
+4. ``~/.codex`` plugin-cache layout: ``$CODEX_HOME/plugins/cache/<marketplace>/fleet-core/<highest
    semver>/`` (``CODEX_HOME`` defaults to ``~/.codex``). Any shape surprise is a rung miss, never
    a crash.
-4. Fail loud with an actionable message.
+5. Fail loud with an actionable message.
 
 Set ``FLEET_COMMONS_DEBUG=1`` to print ``fleet-commons: rung=<n> (<name>) root=<path>`` to
 stderr on every successful resolve (subprocess-observable provenance).
@@ -34,12 +37,18 @@ import sys
 from pathlib import Path
 from types import ModuleType
 
-RUNG_NAMES = {1: "env-override", 2: "repo-walk-up", 3: "codex-cache"}
+RUNG_NAMES = {
+    1: "env-override",
+    2: "repo-walk-up",
+    3: "codex-marketplace-source",
+    4: "codex-cache",
+}
 
 _FAIL_MESSAGE = (
     "fleet-commons: could not resolve a fleet-core root (tried FLEET_COMMONS_ROOT, repo walk-up "
-    "for .agents/plugins/marketplace.json, and the ~/.codex plugin-cache layout). Fix: install "
-    "the fleet-core plugin from the infiquetra-codex-plugins marketplace, or set "
+    "for .agents/plugins/marketplace.json, CODEX_HOME/.tmp marketplace sources, and the ~/.codex "
+    "plugin-cache layout). Fix: install the fleet-core plugin from the infiquetra-codex-plugins "
+    "marketplace, refresh the local marketplace source, or set "
     "FLEET_COMMONS_ROOT to a checkout's plugins/fleet-core directory."
 )
 
@@ -89,6 +98,27 @@ def _rung_codex_cache() -> Path | None:
     return None
 
 
+def _rung_codex_marketplace_source() -> Path | None:
+    home = _codex_home()
+    roots = [
+        home / ".tmp" / "marketplaces",
+        home / ".tmp" / "bundled-marketplaces",
+    ]
+    candidates: list[Path] = []
+    for root in roots:
+        if not root.is_dir():
+            continue
+        try:
+            candidates.extend(child / "plugins" / "fleet-core" for child in root.iterdir())
+        except OSError:
+            continue
+    candidates.append(home / ".tmp" / "plugins" / "plugins" / "fleet-core")
+    for candidate in sorted(candidates):
+        if _is_valid_root(candidate):
+            return candidate
+    return None
+
+
 def resolve_root() -> tuple[Path, int]:
     """Resolve the fleet-core root; returns ``(root, rung)`` or raises RuntimeError."""
     resolved: tuple[Path, int] | None = None
@@ -108,8 +138,10 @@ def resolve_root() -> tuple[Path, int]:
             if marketplace.is_file() and _is_valid_root(candidate):
                 resolved = (candidate, 2)
                 break
-    if resolved is None and (root := _rung_codex_cache()) is not None:
+    if resolved is None and (root := _rung_codex_marketplace_source()) is not None:
         resolved = (root, 3)
+    if resolved is None and (root := _rung_codex_cache()) is not None:
+        resolved = (root, 4)
     if resolved is None:
         raise RuntimeError(_FAIL_MESSAGE)
     if os.environ.get("FLEET_COMMONS_DEBUG") == "1":

@@ -1,5 +1,13 @@
 # Decisions
 
+## 2026-07-07: Saga Resolves Sibling Plugins From The Codex Plugin Environment
+
+Saga outcome board-sync depends on mission-control, and several plugins depend on fleet-core, but those are sibling plugin dependencies, not files under the consumer repository. Runtime resolution should therefore start from the executing script's plugin environment: source checkout or local marketplace `plugins/<name>` siblings first, then installed-cache marketplace versions, with explicit env overrides only for fleet-core.
+
+Rejected: hardcoding `/Users/jefcox/...` paths, requiring every outcome consumer repo to vendor mission-control, or weakening the board-sync certificate to route around a missing path. The fix must keep board-write authorization and idempotency unchanged while resolving the correct dependency root.
+
+Plan: `docs/plans/2026-07-07-outcome-plugin-dependency-resolution-plan.md`.
+
 ## 2026-07-06: The 0.64 Port Window Lands Fleet-Commons As A Codex fleet-core Plugin
 
 The upstream port window is commit-bounded at Claude `b30e0f2..9470edc` (saga 0.41.0 to 0.64.0), with per-plugin lineage baselines recorded because non-saga plugins were synced earlier than saga. The fleet-commons tier/retry substrate lands as a Codex `plugins/fleet-core` scripts-only plugin mirroring the upstream shape, with the shim resolution ladder rewritten Codex-native (env override, repo walk-up, `~/.codex` layout, fail-loud) instead of emulating Claude's `installed_plugins.json` rungs. `models.json` carries a dual palette: Claude tier names as lineage keys mapped to Codex models and effort ceilings. Saga versions to 0.64.0 as a parity label per the 0.41 precedent, with non-ported surfaces recorded in PORTABILITY.md.

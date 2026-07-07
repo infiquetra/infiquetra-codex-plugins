@@ -112,6 +112,34 @@ def _leaf(sid: str, issue: str = "infiquetra/x#42") -> dict[str, Any]:
     return {"subplot_id": sid, "title": sid, "kind": "code", "github": {"issue": issue}}
 
 
+def test_default_schema_path_resolves_installed_cache_sibling(tmp_path: Path) -> None:
+    """#18: installed-cache Saga must resolve sibling mission-control, not saga/mission-control."""
+    market = tmp_path / "cache" / "infiquetra-codex-plugins"
+    saga = market / "saga" / "0.64.0"
+    scripts = saga / "scripts"
+    scripts.mkdir(parents=True)
+    (saga / ".codex-plugin").mkdir()
+    (saga / ".codex-plugin" / "plugin.json").write_text('{"name": "saga"}\n')
+    mission = market / "mission-control" / "2.2.0"
+    schema = mission / "config" / "sdlc-schema.json"
+    schema.parent.mkdir(parents=True)
+    schema.write_text(json.dumps({"saga_lifecycle": {"phase_board_map": {}}}))
+    (mission / ".codex-plugin").mkdir()
+    (mission / ".codex-plugin" / "plugin.json").write_text('{"name": "mission-control"}\n')
+
+    for name in ("outcome_board_sync.py", "plugin_dependency_resolver.py"):
+        (scripts / name).write_bytes((SCRIPTS / name).read_bytes())
+    spec = importlib.util.spec_from_file_location("sync_installed_cache", scripts / "outcome_board_sync.py")
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.path.insert(0, str(scripts))
+    try:
+        spec.loader.exec_module(module)
+        assert module._default_schema_path() == schema
+    finally:
+        sys.path.remove(str(scripts))
+
+
 class RecordingWriter:
     """Fake board_writer: records calls, never touches GitHub."""
 

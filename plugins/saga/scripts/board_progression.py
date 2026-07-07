@@ -202,12 +202,18 @@ def default_board_writer(
     path engages.
     """
     import subprocess  # noqa: PLC0415
+    import plugin_dependency_resolver as _resolver  # noqa: PLC0415
 
-    sdlc = str(repo_root / "plugins" / "mission-control" / "scripts" / "sdlc_manager.py")
     run = runner if runner is not None else subprocess.run
+    resolved_sdlc: Path | None = None
 
     def _writer(*, op_kind: str, repo: str, number: int, payload: dict[str, Any]) -> None:
-        base = ["python3", sdlc]
+        nonlocal resolved_sdlc
+        if resolved_sdlc is None:
+            resolved_sdlc = _resolver.resolve_plugin_file(
+                "mission-control", "scripts/sdlc_manager.py", from_file=__file__
+            )
+        base = ["python3", str(resolved_sdlc)]
         n = str(number)
         # The mission-control verbs prepend ORG to build ``repos/{ORG}/{repo}/...``, so they need the
         # BARE repo name. The caller passes an owner-qualified repo ("infiquetra/saga") for the
