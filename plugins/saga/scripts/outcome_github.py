@@ -27,6 +27,24 @@ from typing import Any
 # Canonical PR completion states. ``unknown`` is the safe degraded value (gh down / ref missing).
 PR_STATES = ("merged", "closed", "open", "unknown")
 ISSUE_STATES = ("closed", "open", "unknown")
+_QUALIFIED_REF = re.compile(r"(?P<owner>[^/]+)/(?P<repo>[^#/]+)#(?P<number>\d+)")
+
+
+def _qualified_ref_parts(ref: str) -> tuple[str, str, str] | None:
+    """Return ``(owner, repo, number)`` for the canonical ``owner/repo#N`` shape."""
+    match = _QUALIFIED_REF.fullmatch(str(ref).strip())
+    if not match:
+        return None
+    return match["owner"], match["repo"], match["number"]
+
+
+def _gh_target(ref: str) -> list[str]:
+    """Translate a canonical ref into the target arguments accepted by ``gh``."""
+    parts = _qualified_ref_parts(ref)
+    if parts is None:
+        return [str(ref)]
+    owner, repo, number = parts
+    return [number, "--repo", f"{owner}/{repo}"]
 
 
 def _run_gh(args: list[str], *, runner: Callable[..., Any] | None = None) -> tuple[int, str, str]:
@@ -56,7 +74,9 @@ def pr_state(pr_ref: str, *, runner: Callable[..., Any] | None = None) -> str:
     ``merged`` requires a real merge (``mergedAt`` set), so a PR that is CLOSED-unmerged reads
     ``closed`` (a NEGATIVE terminal, R32), never ``merged``. Any read failure -> ``unknown``.
     """
-    rc, out, _err = _run_gh(["pr", "view", str(pr_ref), "--json", "state,mergedAt"], runner=runner)
+    rc, out, _err = _run_gh(
+        ["pr", "view", *_gh_target(pr_ref), "--json", "state,mergedAt"], runner=runner
+    )
     if rc != 0 or not out:
         return "unknown"
     try:
@@ -79,7 +99,9 @@ def pr_state(pr_ref: str, *, runner: Callable[..., Any] | None = None) -> str:
 
 def issue_state(issue_ref: str, *, runner: Callable[..., Any] | None = None) -> str:
     """Canonical state of an issue: ``closed`` / ``open`` / ``unknown`` (any read failure -> unknown)."""
-    rc, out, _err = _run_gh(["issue", "view", str(issue_ref), "--json", "state"], runner=runner)
+    rc, out, _err = _run_gh(
+        ["issue", "view", *_gh_target(issue_ref), "--json", "state"], runner=runner
+    )
     if rc != 0 or not out:
         return "unknown"
     try:
@@ -104,7 +126,7 @@ def board_status(issue_ref: str, *, project: str, runner: Callable[..., Any] | N
     class (#295 U1); it adds no GraphQL and no mission-control surface.
     """
     rc, out, _err = _run_gh(
-        ["issue", "view", str(issue_ref), "--json", "projectItems"], runner=runner
+        ["issue", "view", *_gh_target(issue_ref), "--json", "projectItems"], runner=runner
     )
     if rc != 0 or not out:
         return ""
@@ -145,10 +167,11 @@ def _closed_by(issue_ref: str, *, runner: Callable[..., Any] | None = None) -> s
     events would otherwise drop the close), and the LAST ``closed`` event is selected AFTER the
     concatenation (never per-page). Any failure → "".
     """
-    m = re.fullmatch(r"(?P<owner>[^/]+)/(?P<repo>[^#/]+)#(?P<number>\d+)", str(issue_ref).strip())
-    if not m:
+    parts = _qualified_ref_parts(issue_ref)
+    if parts is None:
         return ""
-    path = f"repos/{m['owner']}/{m['repo']}/issues/{m['number']}/events"
+    owner, repo, number = parts
+    path = f"repos/{owner}/{repo}/issues/{number}/events"
     rc, out, _err = _run_gh(["api", path, "--paginate"], runner=runner)
     if rc != 0 or not out:
         return ""
@@ -178,7 +201,7 @@ def issue_close_info(issue_ref: str, *, runner: Callable[..., Any] | None = None
     open/closed semantics.
     """
     rc, out, _err = _run_gh(
-        ["issue", "view", str(issue_ref), "--json", "state,stateReason"], runner=runner
+        ["issue", "view", *_gh_target(issue_ref), "--json", "state,stateReason"], runner=runner
     )
     state = "unknown"
     reason = "unknown"
@@ -214,7 +237,9 @@ def base_ref_oid(pr_ref: str, *, runner: Callable[..., Any] | None = None) -> st
     and as reference/telemetry. The authoritative stale-tree guard is GitHub itself, via the
     ``--match-head-commit`` CAS on ``gh pr merge`` — not a local compare of this value.
     """
-    rc, out, _err = _run_gh(["pr", "view", str(pr_ref), "--json", "baseRefOid"], runner=runner)
+    rc, out, _err = _run_gh(
+        ["pr", "view", *_gh_target(pr_ref), "--json", "baseRefOid"], runner=runner
+    )
     if rc != 0 or not out:
         return ""
     try:
@@ -227,7 +252,9 @@ def base_ref_oid(pr_ref: str, *, runner: Callable[..., Any] | None = None) -> st
 def head_ref_oid(pr_ref: str, *, runner: Callable[..., Any] | None = None) -> str:
     """The PR head commit SHA (``headRefOid``); "" on any failure. Used for the ``--match-head-commit``
     CAS so GitHub rejects a squash if the head moved since (a stale tree cannot be merged)."""
-    rc, out, _err = _run_gh(["pr", "view", str(pr_ref), "--json", "headRefOid"], runner=runner)
+    rc, out, _err = _run_gh(
+        ["pr", "view", *_gh_target(pr_ref), "--json", "headRefOid"], runner=runner
+    )
     if rc != 0 or not out:
         return ""
     try:
@@ -240,7 +267,7 @@ def head_ref_oid(pr_ref: str, *, runner: Callable[..., Any] | None = None) -> st
 def merge_state(pr_ref: str, *, runner: Callable[..., Any] | None = None) -> str:
     """GitHub's mergeStateStatus, lowercased to MERGE_STATES; "unknown" on any failure (R34)."""
     rc, out, _err = _run_gh(
-        ["pr", "view", str(pr_ref), "--json", "mergeStateStatus"], runner=runner
+        ["pr", "view", *_gh_target(pr_ref), "--json", "mergeStateStatus"], runner=runner
     )
     if rc != 0 or not out:
         return "unknown"
@@ -273,7 +300,7 @@ def branch_exists(branch: str, *, runner: Callable[..., Any] | None = None) -> b
 
 def update_branch(pr_ref: str, *, runner: Callable[..., Any] | None = None) -> bool:
     """Update the PR branch with its base (the R12 rebase-then-reverify step). True iff it succeeded."""
-    rc, _out, _err = _run_gh(["pr", "update-branch", str(pr_ref)], runner=runner)
+    rc, _out, _err = _run_gh(["pr", "update-branch", *_gh_target(pr_ref)], runner=runner)
     return rc == 0
 
 
@@ -290,7 +317,7 @@ def squash_merge(
     given, ``--match-head-commit`` makes GitHub reject the merge if the PR head moved since (a CAS on
     the head), so a stale tree cannot be squashed.
     """
-    args = ["pr", "merge", str(pr_ref), "--squash"]
+    args = ["pr", "merge", *_gh_target(pr_ref), "--squash"]
     if expected_head:
         args += ["--match-head-commit", expected_head]
     rc, _out, _err = _run_gh(args, runner=runner)
