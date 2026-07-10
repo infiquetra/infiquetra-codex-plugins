@@ -1,5 +1,37 @@
 # Decisions
 
+## 2026-07-10: Verified Workflows Replaces Team Execution And Future Ports Are Contract-Gated
+
+The Codex adapter no longer models reviewer and validator execution as a Claude-style peer team. The canonical package becomes `verified-workflows` `1.0.0`, with `verified-workflows:run`, Saga mode `verified-workflow`, `## Workflow Structure`, canonical Verified Workflows state and receipt vocabulary, and a root-owned DAG. The root Codex thread owns spawn, follow-up, wait, integration, remediation routing, and adjudication.
+
+Readers accept centralized legacy Team Execution aliases, but new serializers emit only canonical vocabulary and append-only historical artifacts are never rewritten.
+
+All 25 logical role IDs remain stable, but job semantics are separated from five execution profiles: `review-max`, `review-high`, `test-medium`, `scan-low`, and `monitor-low`. Agent-lenses have default and allowed risk-adjustable classes plus required-or-preferred independence; deterministic validators bind scripts and evidence schemas without an LLM class. A workflow receipt binds logical role, selected class/profile, hook-observed model, installed-profile digest, role/lens digest, child/task identity, and result.
+
+The profile digest is accepted proof of expected effort because current hooks report model but not reasoning effort. Required role evidence, no unresolved blocker, required validator success, and root verification are authoritative; numeric scores are supporting evidence only.
+
+Future Claude-to-Codex imports must follow `docs/portability/claude-to-codex-plugin-port-runbook.md` and carry a versioned, closed-schema JSON manifest validated by `scripts/port_contract.py`. The manifest binds its runbook digest, the historical Codex plan base and approved execution-base preservation inventory, frozen Claude refs and exact pathspec-scoped source inventory, the current Codex capability-snapshot digest, per-path treatment, preserved Codex-only invariants, staged target/test evidence, version policy, review, isolated install, fresh-session proof, and rollback. Classification blocks source work, per-unit evidence blocks integration, and complete cutover evidence blocks release.
+
+Generated classification drift, missing source or Codex-drift rows, active Claude-only primitives, or incomplete evidence fail the corresponding gate.
+
+Cross-plugin old/new vocabulary lives in one fleet-core compatibility registry consumed through each plugin's normal shim; Saga and Verified Workflows do not import each other. Cutover proves both clean installation and seeded old-to-new migration. Exact restoration material remains in a protected uncommitted rollback bundle, while committed evidence contains only sanitized inventories and hashes.
+
+Rejected: retaining the Team Execution name as the canonical Codex identity, globally replacing historical/upstream names, maintaining 25 manually coupled model profiles, collapsing roles without equivalence fixtures, requiring peer-to-peer agent messaging, or relying on a prose-only port checklist.
+
+Plan: `docs/plans/2026-07-10-codex-plugin-model-execution-modernization-plan.md`.
+
+## 2026-07-10: Execute The Modernization Through Codex-Native Subagents
+
+The model/execution modernization plan runs with Saga's `inline` backend and direct Codex subagents, not Team Execution. `inline` identifies the root Codex thread as the runtime owner; it does not prohibit the existing `/work` mechanics for serial or parallel generic subagents. The root owns Saga state, integration, Git, installed-state mutation, final verification, and completion decisions, while bounded children perform requested-read-only exploration, one-writer implementation slices, fresh-context review, and focused validation under root-owned mutation checks.
+
+The preferred execution policy is Sol/max for the root coordinator, Terra/medium for explorers, Sol/high for implementation and judgment-heavy review, Terra/medium for validators, and Luna/low for deterministic scans. The root selection is explicit. Child model, effort, named-agent, and sandbox selections are preferences until the active spawn surface returns readback or a selected custom-agent profile is proved by runtime receipt; an installed file or prompt request alone is not enforcement. Ultra is not used because this plan already defines explicit bounded fan-out.
+
+Concurrency uses the lower of host-advertised capacity and `agents.max_threads`. U1-U7 prefer parent `workspace-write`; requested-read-only waves use pre/post worktree snapshots, fresh-context reviewers and validators use `fork_turns=none`, shared-worktree writes remain single-writer, and pre-existing path overlap pauses the unit until ownership is resolved. Real-profile mutation is root-only in U8 after isolated proof. Team Execution profiles, receipts, gates, consensus, and advisory logic are systems under test in U3/U4/U7/U8 and never accept their own implementation.
+
+Rejected: serial Team Execution as the bootstrap protocol, treating generic Codex children as Team Execution evidence, or adding another permanent orchestration plugin solely to run this plan.
+
+Plan: `docs/plans/2026-07-10-codex-plugin-model-execution-modernization-plan.md`.
+
 ## 2026-07-10: Modernize Codex Model And Execution Truth Before The Next Claude Import
 
 The next port cycle is commit-bounded at Codex `788902513e48ea95fd0504ac3c850c8c02e5d920` and Claude `38742ece89880a6b140be237edad6d3f13c97b54`, a focused `9470edc..38742ece` window of 156 files across fleet-core, Saga, team-execution, and their tests. The cycle first separates lifecycle state, continuation, dispatch vehicle, role identity, model/effort policy, and hooks; it then modernizes fleet-core, activates and attests Team Execution, repairs Saga's real-launch boundary, and only then imports the Claude engine/trust/reconciliation delta.

@@ -1,12 +1,13 @@
 # Doc Review: Codex Plugin Model, Execution, and Upstream Modernization Plan
 
-Readiness summary: the plan is implementation-ready and remains `plan-only` pending explicit execution approval. Every actionable P0-P3 finding was safe-fixed in place; no finding remains open. Blocked: NO.
+Readiness summary: this is the historical review of the pre-amendment plan merged in PR #22. The current materially amended plan was reviewed in `docs/reviews/2026-07-10-codex-plugin-model-execution-modernization-plan-doc-review-r3.md`; use that artifact for the current verdict. Blocked: SUPERSEDED.
 
 ## Review-Result Contract
 
 - Target: `docs/plans/2026-07-10-codex-plugin-model-execution-modernization-plan.md`
-- Reviewed revision: working tree (plan is uncommitted; repository HEAD `788902513e48ea95fd0504ac3c850c8c02e5d920`)
-- Blocked status: NOT blocked
+- Reviewed revision: PR #22 planning revision, merged as `718e8353dd90fe4a9a44d197741c40920d1926f2`
+- Current plan status: materially amended and re-reviewed in round 3
+- Blocked status: SUPERSEDED by the round-three review
 - Review type: plan readiness-skeptic plus compatibility, security, and operations passes; no formal idea/issue/spec rubric phase applies
 - Linked origin: `docs/plans/2026-06-27-port-recent-claude-plugin-updates.md`
 - Linked Saga: `task-port-recent-claude-plugin-updates`
@@ -53,7 +54,7 @@ Readiness summary: the plan is implementation-ready and remains `plan-only` pend
 
 ## Remaining Findings
 
-None at P0, P1, P2, or P3.
+None remained in the reviewed PR #22 revision. The later Codex-native execution and port-contract amendments are evaluated by the round-three review artifact linked above.
 
 ## Residual Risk / Limited Evidence
 
