@@ -9,6 +9,19 @@
 - Saga 0.64 parity source commit: `9470edc` (window `b30e0f2..9470edc`, 2026-07-06 port cycle)
 - Port status: Codex-native proof port
 
+## Current Port Contract
+
+The approved 2026-07-10 cycle freezes Claude
+`9470edca65b1db06d2f7562eeb2d5a9e48c34dec..38742ece89880a6b140be237edad6d3f13c97b54`,
+Codex historical plan base `788902513e48ea95fd0504ac3c850c8c02e5d920`, and approved execution base
+`3f639109b06ed2634d5333a58fb200b06e36dbbe`. The closed per-path contract is
+`../../docs/portability/ports/2026-07-10-saga-07517.json`; it preserves current `0.65.0` Codex
+behavior while targeting source-lineage version `0.75.17`. U1 does not claim that later import,
+workflow, hook, or release units have landed.
+
+Saga remains the maintained Codex authority for lifecycle, continuation, outcome state, routing,
+and handoffs. Historical classifications are evidence, not current capability authority.
+
 ## 0.64 Parity Additions (Version Is A Label, Not Full Upstream Parity)
 
 The 0.64.0 version tracks upstream lineage numbering (KTD6, same precedent as 0.41); this file

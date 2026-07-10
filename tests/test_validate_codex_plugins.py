@@ -10,6 +10,7 @@ from scripts.validate_codex_plugins import (
     compare_inventory,
     validate_relative_file,
     validate_repository,
+    validate_port_contract,
     validate_target_fixture_payload,
 )
 
@@ -26,8 +27,19 @@ def test_target_fixture_validates_without_active_cutover():
     assert validate_repository(REPO_ROOT, mode="target-fixture") == []
 
 
-def test_cutover_validates_after_u8():
-    assert validate_repository(REPO_ROOT, mode="cutover") == []
+def test_cutover_is_blocked_until_u8_release_evidence_exists():
+    errors = validate_repository(REPO_ROOT, mode="cutover")
+
+    assert any("port contract (cutover)" in error for error in errors)
+    assert any("cutover requires" in error for error in errors)
+
+
+def test_current_and_target_fixture_run_classification_port_gate():
+    errors: list[str] = []
+
+    validate_port_contract(REPO_ROOT, "classification", errors)
+
+    assert errors == []
 
 
 def test_expected_plugin_set_is_saga_family_cutover():

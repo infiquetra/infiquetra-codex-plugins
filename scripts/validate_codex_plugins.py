@@ -130,6 +130,7 @@ CLAUDE_CATALOG = {
     "deploy",
     "discord-identity-assets",
     "docs-generator",
+    "fleet-core",
     "home-lab-ops",
     "identity-toolkit",
     "marketplace-lister",
@@ -292,10 +293,29 @@ def validate_repository(root: Path, mode: str = "current") -> list[str]:
     validate_provenance(root, expected_plugins, errors)
     validate_cutover(root, errors)
     validate_issue_contract_parity(root, errors)
+    validate_port_contract(root, "cutover" if mode == "cutover" else "classification", errors)
     if mode != "current" or expected_plugins is TARGET_EXPECTED_PLUGINS:
         validate_saga_family_docs(root, errors)
         validate_deletion_migration_map(root, errors)
     return errors
+
+
+def validate_port_contract(root: Path, stage: str, errors: list[str]) -> None:
+    """Run the offline staged source-port gate without depending on the Claude checkout."""
+
+    try:
+        from scripts import port_contract
+    except ImportError:
+        import port_contract  # type: ignore[no-redef]
+
+    path = root / port_contract.DEFAULT_MANIFEST
+    try:
+        manifest = port_contract.load_manifest(path)
+    except port_contract.ContractError as exc:
+        errors.append(f"port contract: {exc}")
+        return
+    for error in port_contract.validate_manifest(root, manifest, stage=stage):
+        errors.append(f"port contract ({stage}): {error}")
 
 
 def validate_marketplace(

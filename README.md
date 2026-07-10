@@ -31,6 +31,9 @@ The operator-facing Saga family guide lives in `docs/saga/README.md`.
 - `plugins/<name>/skills/` is the active Codex skill surface.
 - `.agents/plugins/marketplace.json` is the repo-local marketplace.
 - `docs/portability/matrix.md` records what is included, deferred, blocked, or unsupported.
+- `docs/portability/claude-to-codex-plugin-port-runbook.md` is the mandatory human procedure
+  for every upstream import; the cycle JSON under `docs/portability/ports/` is the exhaustive
+  machine contract and must pass `classification` before source-derived behavior changes.
 - `docs/cutover/cache-replacement.md` records the gates before repo-managed installs replace cached copies.
 - `scripts/validate_codex_plugins.py` checks manifests, inventory, stale host paths, and bundled script boundaries.
 
@@ -46,3 +49,8 @@ uv run python -m pytest
 
 Treat this repo as the source of truth after validation and cutover. Do not edit
 installed Codex cache copies as maintained source.
+
+For a Claude-origin import, follow the mandatory
+[Claude-to-Codex plugin port runbook](docs/portability/claude-to-codex-plugin-port-runbook.md).
+The runbook owns judgment and stop rules; its bound JSON manifest owns exact source and Codex-drift
+coverage, staged evidence, and release gates.

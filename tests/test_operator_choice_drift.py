@@ -27,10 +27,26 @@ def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8").lower()
 
 
-def test_codex_operator_choice_names_active_backend_floor() -> None:
+def test_codex_operator_choice_separates_runtime_dimensions() -> None:
     body = _read(OPERATOR_CHOICE)
-    for backend in ("inline", "manual", "team-execution"):
-        assert backend in body
+    for dimension in (
+        "lifecycle and state",
+        "continuation",
+        "workflow mode",
+        "step vehicle",
+        "role identity",
+        "execution-class control",
+        "hooks",
+    ):
+        assert dimension in body
+
+
+def test_operator_choice_does_not_claim_dynamic_child_selection() -> None:
+    body = _read(OPERATOR_CHOICE)
+
+    assert "does not expose per-child profile, model, effort, or sandbox selection" in body
+    assert "no such readback" in body
+    assert "generic subagent output remains generic evidence" in body
 
 
 def test_harness_delta_records_inactive_source_backends() -> None:

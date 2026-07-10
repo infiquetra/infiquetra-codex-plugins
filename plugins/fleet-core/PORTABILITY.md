@@ -7,6 +7,17 @@
 - Upstream version at window close: 0.5.0
 - Port status: Codex-native proof port (new Codex plugin, no prior baseline)
 
+## Current Port Contract
+
+The approved 2026-07-10 cycle freezes the next source window at
+`9470edca65b1db06d2f7562eeb2d5a9e48c34dec..38742ece89880a6b140be237edad6d3f13c97b54`
+and targets fleet-core `0.8.4`. The per-path treatment and preservation obligations live in
+`../../docs/portability/ports/2026-07-10-saga-07517.json`. This U1 record does not claim that U2
+behavior or the U8 version cutover has landed.
+
+Fleet-core is the maintained authority for shared Codex model, effort, cost, proof, and workflow
+compatibility policy. Consumer shims are synchronized derivatives; installed cache is never source.
+
 ## Codex Port Shape
 
 `fleet-core` is a scripts-only library plugin: it has no skills, commands, or agents. It is the

@@ -1,11 +1,13 @@
 # Portability Matrix
 
-Verified: 2026-06-06
+Verified: 2026-07-10
 
 Source snapshot:
 
-- Claude catalog: 17 plugin directories from `infiquetra-claude-plugins` at `16de95c82ccb2ed80d7f11018e1c2e8247a80a7f`
+- Focused Claude import source: 10 plugin directories at `38742ece89880a6b140be237edad6d3f13c97b54`;
+  the active contract limits the import to `fleet-core`, `saga`, `team-execution`, and root `tests`
 - Antigravity catalog: 15 plugin directories from `infiquetra-antigravity-plugins` at `c0c4d04a253e7ee4a6b5407600c8144eea3d781f`
+- Codex portability catalog: 19 tracked identities, including Codex-born and historical deferred rows
 
 Allowed Codex statuses: `included`, `proof-port`, `deferred`, `blocked`, `unsupported`.
 
@@ -18,6 +20,7 @@ tool-specific orchestration.
 | `deploy` | proof-port | yes | no | Deployment operations are part of the Saga-family replacement and need Codex mutation gates before activation. | Port skills and scripts with dry-run, preview, exact-plan confirmation, auth provenance, and proof-owned mutation guards. |
 | `discord-identity-assets` | proof-port | no | no | Codex-born reusable Discord visual identity workflow extracted from home-lab scripts and Norns/Mimir operating evidence. | Add one Codex skill plus deterministic scripts for bot and guild manifest validation, image post-processing, Discord upload/readback, receipt writeback, and secret-safe dry-run/live gates. |
 | `docs-generator` | deferred | yes | yes | Documentation generation needs separate proof for repo-specific output conventions. | Reassess after `test-suite` proof and validation patterns settle. |
+| `fleet-core` | proof-port | yes | no | Shared Codex model, effort, cost, proof, and compatibility policy for the current modernization. | Keep policy canonical in `plugins/fleet-core`; consumer shims are synchronized derivatives. Port only contract-classified source rows. |
 | `home-lab-ops` | included | yes | yes | Already visible in Codex cache and mostly instruction/reference content. | Keep skills and references, omit top-level agent persona. |
 | `identity-toolkit` | deferred | yes | yes | Identity flows are higher risk and need fresh Codex-specific validation before porting. | Inventory only for MVP. |
 | `marketplace-lister` | deferred | yes | yes | Marketplace mechanics differ by host and should wait for Codex marketplace validation. | Revisit after this repo is installed from a trusted source. |
@@ -29,14 +32,26 @@ tool-specific orchestration.
 | `sdk-lifecycle` | deferred | yes | yes | Lifecycle automation needs design review for Codex usage model. | Inventory only for MVP. |
 | `slack` | deferred | yes | yes | Credentialed API client with workspace access; requires credential and dry-run policy review. | Do not port in MVP. |
 | `splunk` | deferred | yes | yes | Credentialed search client; requires separate auth and query-safety validation. | Do not port in MVP. |
-| `team-execution` | proof-port | yes | yes | Claude version depends on `TeamCreate`, but the Saga-family target uses managed Codex agents when available and serial fallback otherwise. | Port protocol material as skills and references; convert agents into managed Codex TOML plus registries; prove degraded serial mode. |
+| `team-execution` | proof-port | yes | yes | Active legacy Codex package and frozen Claude lineage for the planned package migration. | Preserve the current package unchanged during development; adapt classified behavior into unpublished `verified-workflows`, then activate exactly one identity only after cutover proof. |
 | `test-suite` | proof-port | yes | yes | Best first proof for skill plus bundled script packaging without external auth. | Port skill and runner, add dry-run and selected-check validation. |
 | `todoist-manager` | deferred | yes | yes | Credentialed productivity API client; not needed for MVP baseline. | Inventory only for MVP. |
 | `unifi` | included | yes | yes | Already visible in Codex cache and skill-plus-script payload is portable with confirmation gates. | Keep skills, references, and scripts. |
 
 ## Notes
 
-- Count differences are intentional. The active Codex inventory has 9 active plugins, not the full Claude catalog.
-- The prior SDLC and document-review plugin roots are superseded by `saga`, `team-execution`, and `mission-control`.
-- `team-execution` is no longer blocked as a target. Its Codex design must prove subagent and serial fallback behavior before activation.
+- Count differences are intentional. The active Codex marketplace has 10 plugins, not the full portability catalog.
+- The prior SDLC and document-review plugin roots are superseded by `saga`, legacy `team-execution`, and `mission-control`.
+- `team-execution` remains the only active workflow package before cutover. `verified-workflows` is the
+  canonical target identity, but it must not be published or installed alongside the legacy package.
 - The `sdlc-manager` rollout field named `claude_md` is retained because it is part of the existing SDLC tracking data model, not a Codex plugin host dependency.
+
+## Maintained Source Authority
+
+| Surface | Authority | Rule |
+|---|---|---|
+| Vendored `mission-control` behavior | `infiquetra-claude-plugins` | Change the canonical copy first, then synchronize this adapter. |
+| Codex adapters and Codex-born plugins | This repository | Upstream commits are lineage inputs, not maintained Codex source. |
+| Shared execution policy and proof | `plugins/fleet-core` | Consumer shims remain synchronized derivatives. |
+| Saga lifecycle and continuation | `plugins/saga` | Preserve existing Codex behavior while applying classified upstream changes. |
+| Workflow package migration | Claude `team-execution` as input; Codex `verified-workflows` as target | Do not claim activation before the cutover gate. |
+| Installed cache, profiles, and hook trust | Installed-state evidence only | Never edit or import them as maintained source. |

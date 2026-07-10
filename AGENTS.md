@@ -5,7 +5,8 @@
 `infiquetra-codex-plugins` is the Codex-native adapter repo for selected Infiquetra
 plugins. It is **not** a full mirror of `infiquetra-claude-plugins`; it carries the
 Codex-ready plugin surface (`saga`, `deploy`, `mission-control`, `team-execution`,
-`home-lab-ops`, `python-toolkit`, `unifi`, `test-suite`). `mission-control` replaces
+`fleet-core`, `discord-identity-assets`, `home-lab-ops`, `python-toolkit`, `unifi`,
+`test-suite`). `mission-control` replaces
 the prior SDLC surface and the Saga family replaces the prior document-review surface.
 See [README.md](README.md) for the full plugin/version table and layout.
 
@@ -22,6 +23,10 @@ bundled-script boundaries. Run it before opening a PR.
 
 ## Repo-Specific Rules
 
+- The Claude-to-Codex port runbook at
+  `docs/portability/claude-to-codex-plugin-port-runbook.md` is mandatory for every
+  new import or refresh. Bootstrap or load the cycle's JSON port manifest and pass
+  its `classification` gate before changing source-derived behavior.
 - **This repo is the source of truth after validation and cutover.** Do NOT edit the
   installed Codex cache copies (`.codex/...`) as if they were maintained source — they
   are frozen proof/cache snapshots.

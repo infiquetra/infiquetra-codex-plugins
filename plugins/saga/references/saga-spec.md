@@ -118,8 +118,8 @@ construct a `Saga` (no default); all others have the listed default.
 | `phase_status` | enum | — | `pending` | Phase completion (§4) — **MUST** be in `PHASE_STATUSES`. |
 | `status` | enum | — | `active` | Thread disposition (§4) — **MUST** be in `STATUSES`, **MUST NOT** be `pending`/`in_progress`. |
 | `next_step` | str | — | `""` | The one imperative resume anchor (top of `## Remaining`). |
-| `orchestration_mode` | enum | — | `inline` | How work runs — decision contract in `references/operator-choice.md`; **MUST** be in `ORCHESTRATION_MODES`. |
-| `orchestration_ref` | str | — | `""` | Empty for `inline` / `manual`; for executable `team-execution`, points to a `## Team Structure` receipt or protected evidence root. |
+| `orchestration_mode` | enum | — | `inline` | Legacy v1 workflow recommendation — migration contract in `references/operator-choice.md`; **MUST** be in the accepted v1 `ORCHESTRATION_MODES` until U5. It is not the complete runtime capability model. |
+| `orchestration_ref` | str | — | `""` | Empty for `inline` / `manual`; for legacy `team-execution`, points to a `## Team Structure` receipt or protected evidence root. Legacy evidence is readable but does not attest a new Verified Workflow run. |
 | `issue_ref` | str | — | `""` | `owner/repo#N` pointer; empty for plan-only / pre-issue work. |
 | `destination` | enum | — | `plan-only` | Routing intent — **MUST** be in `DESTINATIONS`. Mirrors `lifecycle_state`. |
 | `round` | int | — | `0` | Current PR/iteration round. |
@@ -286,6 +286,23 @@ ORCHESTRATION_MODES = ("inline", "manual", "team-execution")
 
 `destination` mirrors `lifecycle_state.normalize_destination`'s canonical set — use that helper to normalize
 user-facing labels (`deploy` -> `nonprod-deploy`, etc.) before storing.
+
+### 4.1 Runtime capability dimensions
+
+`ORCHESTRATION_MODES` is the accepted legacy v1 parser enum, not a menu of every Codex feature. The
+current capability contract separates:
+
+- Saga lifecycle/state;
+- current-turn or explicitly bound Goal continuation;
+- inline, manual, legacy Team Execution, or planned Verified Workflow mode;
+- inline, deterministic-tool, generic-subagent, or attested named-profile step vehicle;
+- generic or logical-role-attested identity;
+- profile model/effort policy and its independent readback evidence; and
+- hook observation/persistence behavior.
+
+Goal, hooks, fork, source Workflow, and subagents are not additional values in this v1 enum. New
+serializers remain on the v1 vocabulary until U5 implements read-old/write-new fields and central
+legacy aliases; callers must not infer availability from a feature flag or boolean.
 
 ---
 

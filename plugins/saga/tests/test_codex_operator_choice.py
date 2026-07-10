@@ -77,11 +77,20 @@ def test_active_saga_text_has_no_old_host_or_command_only_surface() -> None:
     assert offenders == {}
 
 
-def test_operator_choice_documents_codex_backends() -> None:
+def test_operator_choice_documents_separate_codex_capability_dimensions() -> None:
     text = (PLUGIN_ROOT / "references/operator-choice.md").read_text(encoding="utf-8")
 
-    assert "`inline`" in text
-    assert "`team-execution`" in text
-    assert "manual" in text
-    assert "cc-workflows-ultracode" in text
-    assert "lineage" in text.lower() or "source" in text.lower()
+    for dimension in (
+        "Lifecycle and state",
+        "Continuation",
+        "Workflow mode",
+        "Step vehicle",
+        "Role identity",
+        "Execution-class control",
+        "Hooks",
+    ):
+        assert dimension in text
+    assert "per-child profile, model, effort, or sandbox" in text
+    assert "generic subagent output remains generic evidence" in text
+    assert "Ultra is a root orchestration control" in text
+    assert "Source `cc-workflows-ultracode`, fork, Goal, hooks, and generic subagents" in text

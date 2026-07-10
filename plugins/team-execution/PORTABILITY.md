@@ -6,6 +6,18 @@
 - Source commit: `16de95c82ccb2ed80d7f11018e1c2e8247a80a7f`
 - Port status: Codex-native proof port
 
+## Current Port Contract And Target Identity
+
+The approved 2026-07-10 cycle freezes upstream `team-execution` changes inside
+`9470edca65b1db06d2f7562eeb2d5a9e48c34dec..38742ece89880a6b140be237edad6d3f13c97b54`
+and records every treatment in `../../docs/portability/ports/2026-07-10-saga-07517.json`.
+`team-execution` `2.3.0` remains the only active Codex workflow package during development.
+
+The canonical target is the unpublished `verified-workflows` `1.0.0` package. It will own DAGs,
+logical roles, execution classes, validators, gates, and receipts. Team Execution remains source
+lineage and a centralized legacy-read alias after cutover; this U1 note does not claim that the new
+package, five profiles, hooks, installed-state migration, or release proof exists yet.
+
 ## Codex Port Shape
 
 This port keeps the portable reviewer, validator, consensus, and evidence rules from

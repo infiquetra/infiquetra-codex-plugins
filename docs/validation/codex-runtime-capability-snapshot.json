@@ -1,0 +1,192 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-07-10T16:10:52Z",
+  "refs": {
+    "codex": {
+      "historical_plan_base": "788902513e48ea95fd0504ac3c850c8c02e5d920",
+      "execution_base": "3f639109b06ed2634d5333a58fb200b06e36dbbe",
+      "observed_origin_main": "fbd400183c2de70115cbaadc4c301b03d759527d"
+    },
+    "claude": {
+      "source_base": "9470edca65b1db06d2f7562eeb2d5a9e48c34dec",
+      "source_target": "38742ece89880a6b140be237edad6d3f13c97b54",
+      "observed_head": "46fefb6f17f0c9d0d63858978536d3369ab57dfe",
+      "observed_main": "46fefb6f17f0c9d0d63858978536d3369ab57dfe",
+      "observed_origin_main": "46fefb6f17f0c9d0d63858978536d3369ab57dfe",
+      "target_reachable": true
+    }
+  },
+  "runtime": {
+    "codex_cli_version": "0.144.1",
+    "effective_parent_permission_mode": {
+      "sandbox_mode": "danger-full-access",
+      "approval_policy": "never"
+    },
+    "configured_max_threads": 6,
+    "configured_max_threads_source": "config",
+    "configured_max_depth": 1,
+    "configured_max_depth_source": "config",
+    "host_total_slots": 4,
+    "effective_total_slots": 4,
+    "effective_max_children": 3,
+    "session_fact_source": "session-tool-contract"
+  },
+  "configured_defaults": {
+    "model": "gpt-5.6-sol",
+    "model_reasoning_effort": "max"
+  },
+  "catalog": {
+    "source": "refreshed",
+    "normalized_sha256": "cab542b9fc6f07bc2eaf282a6ebe85b4b4b1a807a68fb22e51b11863d146d511",
+    "models": [
+      {
+        "slug": "gpt-5.6-sol",
+        "default_effort": "low",
+        "supported_efforts": ["low", "medium", "high", "xhigh", "max", "ultra"],
+        "visibility": "list",
+        "supported_in_api": true
+      },
+      {
+        "slug": "gpt-5.6-terra",
+        "default_effort": "medium",
+        "supported_efforts": ["low", "medium", "high", "xhigh", "max", "ultra"],
+        "visibility": "list",
+        "supported_in_api": true
+      },
+      {
+        "slug": "gpt-5.6-luna",
+        "default_effort": "medium",
+        "supported_efforts": ["low", "medium", "high", "xhigh", "max"],
+        "visibility": "list",
+        "supported_in_api": true
+      },
+      {
+        "slug": "gpt-5.5",
+        "default_effort": "medium",
+        "supported_efforts": ["low", "medium", "high", "xhigh"],
+        "visibility": "list",
+        "supported_in_api": true
+      },
+      {
+        "slug": "gpt-5.4",
+        "default_effort": "medium",
+        "supported_efforts": ["low", "medium", "high", "xhigh"],
+        "visibility": "list",
+        "supported_in_api": true
+      },
+      {
+        "slug": "gpt-5.4-mini",
+        "default_effort": "medium",
+        "supported_efforts": ["low", "medium", "high", "xhigh"],
+        "visibility": "list",
+        "supported_in_api": true
+      },
+      {
+        "slug": "gpt-5.3-codex-spark",
+        "default_effort": "high",
+        "supported_efforts": ["low", "medium", "high", "xhigh"],
+        "visibility": "list",
+        "supported_in_api": false
+      },
+      {
+        "slug": "codex-auto-review",
+        "default_effort": "medium",
+        "supported_efforts": ["low", "medium", "high", "xhigh"],
+        "visibility": "hide",
+        "supported_in_api": true
+      }
+    ]
+  },
+  "features": {
+    "multi_agent": {"stage": "stable", "enabled": true},
+    "hooks": {"stage": "stable", "enabled": true},
+    "goals": {"stage": "stable", "enabled": true},
+    "plugins": {"stage": "stable", "enabled": true}
+  },
+  "custom_agents": {
+    "builtins": ["default", "worker", "explorer"],
+    "required_fields": ["name", "description", "developer_instructions"],
+    "optional_config_fields": [
+      "nickname_candidates",
+      "model",
+      "model_reasoning_effort",
+      "sandbox_mode",
+      "mcp_servers",
+      "skills.config"
+    ],
+    "repo_managed_source_count": 25,
+    "installed_custom_agent_count": 4,
+    "installed_team_execution_managed_count": 0,
+    "installed_verified_workflows_managed_count": 0
+  },
+  "collaboration": {
+    "spawn": {
+      "available": true,
+      "request_fields": ["fork_turns", "message", "task_name"],
+      "per_child_agent_type": false,
+      "per_child_model": false,
+      "per_child_effort": false,
+      "per_child_sandbox": false,
+      "selection_readback_fields": []
+    },
+    "steer": {
+      "available": true,
+      "operations": ["followup", "interrupt", "message"]
+    },
+    "wait": {
+      "available": true,
+      "request_fields": ["timeout_ms"]
+    },
+    "child_result_delivery": "mailbox-and-final-result"
+  },
+  "hook_capabilities": {
+    "plugin_hooks_supported": true,
+    "trust_required": true,
+    "writable_data_environment": "PLUGIN_DATA",
+    "subagent_event_allowlist": ["SubagentStart", "SubagentStop"],
+    "observes_active_model": true,
+    "observes_agent_type": true,
+    "observes_reasoning_effort": false
+  },
+  "capability_dimensions": {
+    "lifecycle_owner": [
+      {"name": "saga", "status": "available"}
+    ],
+    "continuation": [
+      {"name": "turn", "status": "available"},
+      {"name": "goal", "status": "explicit-only"}
+    ],
+    "workflow_modes": [
+      {"name": "inline", "status": "available"},
+      {"name": "manual", "status": "available"},
+      {"name": "team-execution", "status": "legacy-current"},
+      {"name": "verified-workflow", "status": "planned-unproved"},
+      {"name": "source-workflow", "status": "unsupported"}
+    ],
+    "step_vehicles": [
+      {"name": "inline", "status": "available"},
+      {"name": "deterministic-tool", "status": "available"},
+      {"name": "generic-subagent", "status": "available"},
+      {"name": "named-profile-subagent", "status": "planned-unproved"}
+    ],
+    "role_identities": [
+      {"name": "generic", "status": "available"},
+      {"name": "logical-role-attested", "status": "planned-unproved"}
+    ],
+    "execution_class_controls": [
+      {"name": "prompt-steered", "status": "advisory-only"},
+      {"name": "custom-agent-file", "status": "planned-unproved"},
+      {"name": "per-spawn-override", "status": "unavailable"}
+    ],
+    "hook_roles": [
+      {"name": "observe", "status": "configurable"},
+      {"name": "persist", "status": "planned-unproved"},
+      {"name": "guard", "status": "deferred"}
+    ]
+  },
+  "official_sources": [
+    {"title": "Codex models", "url": "https://learn.chatgpt.com/docs/models"},
+    {"title": "Codex subagents", "url": "https://learn.chatgpt.com/docs/agent-configuration/subagents"},
+    {"title": "Codex hooks", "url": "https://learn.chatgpt.com/docs/hooks"}
+  ]
+}
