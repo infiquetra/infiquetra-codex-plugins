@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.65.0 - 2026-07-10
+
+### Changed
+- Renamed direct-sub-issue DAG seeding to `outcome start --from-parent-issue` so the command
+  describes what it actually imports.
+- Documented that the importer does not discover Objective project-field members, traverse
+  grandchildren, or select executable leaves.
+- Made parent-issue import fail closed when direct children are Capability or nested trackers.
+
+### Compatibility
+- Retained hidden `--from-objective`, `nodes_from_objective`, and `fetch_objective` aliases with
+  direct-parent semantics. The CLI alias emits a deprecation warning.
+
 ## 0.64.0 - 2026-07-06
 
 Parity version label for the Claude `b30e0f2..9470edc` port window (matches the 0.41 precedent

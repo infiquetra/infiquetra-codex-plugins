@@ -55,7 +55,7 @@ LEGACY_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
 
 TARGET_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
     "saga": {
-        "version": "0.64.0",
+        "version": "0.65.0",
         "skills": (
             "office-hours",
             "ideate",
@@ -92,7 +92,7 @@ TARGET_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
         ),
     },
     "mission-control": {
-        "version": "2.2.0",
+        "version": "2.3.0",
         "skills": (
             "board",
             "flow",

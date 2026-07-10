@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""outcome_edges — pure edge inference for /outcome --from-objective ingestion (#375 U2).
+"""Pure edge inference for `/outcome start --from-parent-issue` ingestion.
 
 Maps GitHub blocked-by relationships (normalized as a per-sub-issue ``blocked_by: [number,...]`` list
 by ``discover_subissues``) into ``depends_on`` edges among the ingested sub-issue set. Keeps only edges

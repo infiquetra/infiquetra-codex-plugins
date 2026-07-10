@@ -1,5 +1,17 @@
 # Changelog — mission-control
 
+## 2.3.0 - 2026-07-10
+
+### Changed
+- Retired Objective as a creatable issue type. Objectives are project-field options plus Outcome
+  Scorecard docs; Capabilities are top-level by default.
+- Changed the interactive parent prompt to default to no parent and reserve native sub-issues for
+  real decomposition.
+
+### Added
+- Added idempotent `flow unlink-sub-issue` for removing accidental or retired parent layers
+  without closing either issue.
+
 ## 2.2.0 - 2026-07-06
 
 ### Added

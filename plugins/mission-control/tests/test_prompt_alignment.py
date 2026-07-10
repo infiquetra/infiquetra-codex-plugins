@@ -19,7 +19,7 @@ def test_sdlc_manager_metadata_and_marketplace_entry_match() -> None:
     entry = next(p for p in fixture["plugins"] if p["name"] == "mission-control")
 
     assert plugin_json["name"] == "mission-control"
-    assert plugin_json["version"] == "2.2.0"
+    assert plugin_json["version"] == "2.3.0"
     assert entry["version"] == plugin_json["version"]
     assert sorted(entry["skills"]) == [
         "board",
@@ -45,7 +45,8 @@ def test_issue_type_reference_uses_current_template_labels() -> None:
     assert "`capability`, `hermes-task`, `needs-plan`" in issue_types
     assert "`enhancement`, `hermes-task`, `needs-plan`" in issue_types
     assert "`defect`, `hermes-task`, `needs-plan`" in issue_types
-    assert "`objective`, `hermes-not-actionable`" in issue_types
+    assert "Do not create an Objective issue" in issue_types
+    assert "`objective`, `hermes-not-actionable`" not in issue_types
     assert "`exploration`, `research`, `hermes-not-actionable`" in issue_types
     assert "`context-update`, `documentation`, `hermes-not-actionable`" in issue_types
     assert "`capability`, `needs-analysis` (auto-applied by template)" not in issue_types
@@ -59,7 +60,7 @@ def test_issue_skill_honors_hermes_actionability_contract() -> None:
     skill = _read(PLUGIN_ROOT / "skills/issues/SKILL.md")
 
     assert "Actionable issue types are `capability`, `enhancement`, and `defect`" in skill
-    assert "`objective`, `exploration`, and `context-update` are coordination/context only" in skill
+    assert "`exploration` and `context-update` are context-only types" in skill
     assert "capability/enhancement/defect/exploration/context-update" not in skill
     assert "hermes-task`, `needs-plan`" in skill
     assert "needs-analysis" not in skill
@@ -76,6 +77,20 @@ def test_flow_skill_uses_project_fields_and_current_actionable_labels() -> None:
     assert "Set Initiative or Objective on a card (project FIELDS, not labels)" in flow
     assert "initiative/objective labels" not in flow
     assert "needs-analysis" not in flow
+
+
+def test_field_first_hierarchy_guidance_is_consistent() -> None:
+    issue_skill = _read(PLUGIN_ROOT / "skills/issues/SKILL.md")
+    flow_skill = _read(PLUGIN_ROOT / "skills/flow/SKILL.md")
+    milestone_skill = _read(PLUGIN_ROOT / "skills/milestones/SKILL.md")
+    rollout_hierarchy = _read(PLUGIN_ROOT / "skills/rollout/references/work-hierarchy.md")
+
+    assert "5-type issue" in issue_skill
+    assert "Objective is an `Objective` project-field option" in issue_skill
+    assert "flow unlink-sub-issue" in flow_skill
+    assert "Create the Objective issue" not in milestone_skill
+    assert "Capability issue (top-level)" in rollout_hierarchy
+    assert "Objective issue + project field option" not in rollout_hierarchy
 
 
 def test_label_docs_mark_legacy_auto_label_rules_as_fallback() -> None:
@@ -116,8 +131,13 @@ def test_prepared_issue_guidance_routes_natural_language_creation() -> None:
 
 def test_active_topology_uses_campps_and_retired_olympus_history() -> None:
     schema = json.loads(_read(PLUGIN_ROOT / "config/sdlc-schema.json"))
+    roles = schema["work_hierarchy"]["roles"]
 
     assert schema["schema_version"] == "2026-06-17"
+    assert roles["objective"]["project_view_group_by"] == "Objective"
+    assert roles["outcome"]["required_by_default"] is False
+    assert roles["capability"]["default_parent_role"] is None
+    assert roles["capability"]["allowed_parent_roles"] == ["outcome"]
     assert schema["teams"]["asgard"]["status"] == "active"
     assert schema["teams"]["olympus"]["status"] == "retired_historical"
     assert schema["teams"]["olympus"]["board"] is None

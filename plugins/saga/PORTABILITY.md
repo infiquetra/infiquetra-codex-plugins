@@ -14,7 +14,8 @@
 The 0.64.0 version tracks upstream lineage numbering (KTD6, same precedent as 0.41); this file
 records what actually ported. Landed this cycle: the certificate-gated board-write loop
 (reversibility certificate, outcome board-sync, board progression), outcome reconciliation and
-`--from-objective` DAG seeding, ship ceremony with branch-refresh-on-save and gate-divergence
+direct-sub-issue DAG seeding (now `--from-parent-issue`; legacy `--from-objective` is a hidden alias),
+ship ceremony with branch-refresh-on-save and gate-divergence
 instrumentation, an append-only run-fact ledger, the provenance manifest stack (verified vs.
 adjudicated) with verify-panel dimension-exclusion consensus, and capability-gated engine
 routing. Not ported this cycle: PreCompact spore/residency hooks, remote gate approval

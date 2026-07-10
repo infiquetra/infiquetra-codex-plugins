@@ -106,7 +106,7 @@ organization, and the known Infiquetra project keys only.
 
 ## Architecture
 
-mission-control uses a single shared CLI (`scripts/sdlc_manager.py`) at the plugin root rather than per-skill scripts, because all 6 skills share the same execution backend. Each skill's SKILL.md documents the subset of CLI commands it uses, but they all invoke the same script.
+mission-control uses a single shared CLI (`scripts/sdlc_manager.py`) at the plugin root rather than per-skill scripts, because all 7 skills share the same execution backend. Each skill's SKILL.md documents the subset of CLI commands it uses, but they all invoke the same script.
 
 ## Script Reference
 

@@ -1,16 +1,16 @@
 ---
 name: issues
 description: |
-  Create and manage SDLC issues in Infiquetra GitHub repositories using the 6-type issue
-  taxonomy: capability, enhancement, defect, exploration, context-update, and objective.
+  Create and manage SDLC issues in Infiquetra GitHub repositories using the 5-type issue
+  taxonomy: capability, enhancement, defect, exploration, and context-update.
   Handles issue type selection, template-guided creation, Hermes label application, project
   board assignment, and milestone linking.
 when_to_use: |
   Use this skill when the user wants to:
 
   Direct issue creation:
-  - "create a capability", "create a defect for this bug", "let's create an objective",
-    "file an enhancement", "open an exploration", "create a context update"
+  - "create a capability", "create a defect for this bug", "file an enhancement",
+    "open an exploration", "create a context update"
   - "create an issue in infiquetra-core", "file a bug against the auth service"
   - "create an issue of type capability", "I need to open a defect"
 
@@ -40,7 +40,7 @@ when_to_use: |
 
 # SDLC Issues
 
-Create and manage SDLC issues across Infiquetra repositories using the 6-type taxonomy.
+Create and manage SDLC issues across Infiquetra repositories using the 5-type issue taxonomy.
 Handles type selection, template-guided creation, Hermes label application, and project board
 assignment.
 
@@ -54,27 +54,35 @@ plugins/mission-control/scripts/sdlc_manager.py
 
 ## Issue Types
 
-Six issue types cover all Infiquetra work:
+Five issue types cover all Infiquetra work:
 
 | Type | Hermes Actionable | Duration | When to Use |
 |------|-------------------|----------|-------------|
 | **capability** | Yes | 1-4 weeks | New end-to-end deployable functionality |
 | **enhancement** | Yes | 2-5 days | Improving existing functionality |
 | **defect** | Yes | Hours-2 days | Broken functionality that an agent can fix |
-| **objective** | No | 2-8 weeks | Coordinating multiple capabilities with a target date |
 | **exploration** | No | 1-3 days | Research, POC, or architectural investigation |
 | **context-update** | No | Hours-1 day | Updating Blueprint repository documentation |
 
 See `references/issue-types.md` for the complete guide and decision tree.
 See `references/templates-reference.md` for the generated template field and label reference.
 
+## Objective Grouping
+
+Objective is an `Objective` project-field option plus an Outcome Scorecard doc in the owning
+context library. It is not an issue type or a required native parent. Assign the same Objective
+field value to every Capability and executable child that contributes to the outcome.
+
+Capabilities are top-level by default. Use a native parent only for real issue decomposition, or
+when a long-lived initiative board explicitly defines an Outcome proof card above Capabilities.
+
 ## Hermes Actionable Contract
 
 Actionable issue types are `capability`, `enhancement`, and `defect`. Their canonical templates
 apply `hermes-task`, `needs-plan`, and the type label.
 
-`objective`, `exploration`, and `context-update` are coordination/context only.
-They do not create Hermes-dispatchable task cards.
+`exploration` and `context-update` are context-only types. They do not create
+Hermes-dispatchable task cards.
 
 Each actionable card must render the following exact H3 section headers in the GitHub issue body:
 
@@ -100,9 +108,9 @@ also include optional `Capability size (human planning hint)`.
 
 ## Non-actionable Templates
 
-Objective issues and the Exploration and Context Update templates carry `hermes-not-actionable`.
-Do not present these as Hermes task cards or dispatch them directly to agents. Use them for
-coordination, research, or documentation context.
+Exploration and Context Update templates carry `hermes-not-actionable`. Do not present these as
+Hermes task cards or dispatch them directly to agents. Use them for research or documentation
+context.
 
 ## Core Operations
 
@@ -203,7 +211,6 @@ After template creation, apply labels and add to the project board where applica
 
 **Non-actionable templates**:
 
-- `objective` -> `objective`, `hermes-not-actionable`
 - `exploration` -> `exploration`, `research`, `hermes-not-actionable`
 - `context-update` -> `context-update`, `documentation`, `hermes-not-actionable`
 
@@ -253,9 +260,11 @@ Use the decision tree (see `references/issue-types.md`) or ask the user:
 - New end-to-end deployable functionality? -> **CAPABILITY**
 - Improving existing functionality? -> **ENHANCEMENT**
 - Broken functionality for an agent to fix? -> **DEFECT**
-- Coordinating multiple capabilities with a target date? -> **OBJECTIVE**
 - Researching or investigating? -> **EXPLORATION**
 - Updating Blueprint documentation? -> **CONTEXT UPDATE**
+
+When several Capabilities share a target outcome, create or select the Objective project-field
+option and maintain its Outcome Scorecard. Do not create an Objective issue.
 
 If uncertain, present the decision tree and ask clarifying questions.
 
@@ -310,10 +319,15 @@ python3 sdlc_manager.py board add --repo <repo> --number <N>
 
 Issue starts in **Backlog** unless the current project workflow moves it elsewhere.
 
-### Step 7: Link Parent or Milestone
+### Step 7: Assign Objective and Optionally Link Decomposition
 
 ```bash
-# If part of an objective, link as a native sub-issue or attach to the objective milestone
+# Group the card under the Objective project field
+python3 sdlc_manager.py flow set-field \
+  --project <project> --repo <repo> --number <N> \
+  --field Objective --option "<Objective name>"
+
+# Link only when this card is a real decomposition child
 python3 sdlc_manager.py flow link-sub-issue \
   --parent-repo <parent-repo> \
   --parent-number <parent-number> \
@@ -321,8 +335,8 @@ python3 sdlc_manager.py flow link-sub-issue \
   --child-number <N>
 ```
 
-When creating an Objective issue, also create a corresponding GitHub Milestone if the workflow
-still uses milestones for that repository.
+Use `flow unlink-sub-issue` to remove an accidental or retired parent layer without closing
+either issue. A GitHub Milestone remains an optional per-repo due-date or PR-rollup view.
 
 ## Natural Language Examples
 
@@ -353,8 +367,9 @@ readiness gaps, then use `issue create-prepared`.
 If it improves existing functionality -> enhancement.
 
 **"Create issues for all the capabilities in this objective"**
--> List capabilities from the objective description, create each with `--type capability`, and link
-each to the objective parent or milestone.
+-> List Capabilities from the Outcome Scorecard, create each with `--type capability`, and assign
+the shared Objective field value. Keep them top-level unless the board explicitly uses Outcome
+proof cards.
 
 **"What type of issue should this be?"**
 -> Present the decision tree from `references/issue-types.md`.
@@ -373,7 +388,6 @@ each to the objective parent or milestone.
 
 | Type | Labels |
 |------|--------|
-| `objective` | `objective`, `hermes-not-actionable` |
 | `exploration` | `exploration`, `research`, `hermes-not-actionable` |
 | `context-update` | `context-update`, `documentation`, `hermes-not-actionable` |
 
@@ -389,6 +403,9 @@ each to the objective parent or milestone.
 
 - **Always confirm issue type** before creating — wrong type causes downstream confusion.
 - **Preserve Hermes actionable/non-actionable distinction** — only capability, enhancement, and defect are Hermes task cards.
+- **Use Objective fields for grouping** — never create an Objective issue or apply a plain
+  `objective` issue-type label.
+- **Default to no native parent** — add parentage only for real decomposition.
 - **Use exact actionable H3 headers** — the Hermes validator matches section header text.
 - **Require checklist acceptance criteria** — at least one `- [ ]` item is mandatory.
 - **Require verification commands** — commands should be copy-pasteable and prove success.
@@ -396,5 +413,5 @@ each to the objective parent or milestone.
 
 ## Reference Documents
 
-- `references/issue-types.md` — Complete guide to all 6 issue types with decision tree
+- `references/issue-types.md` — Complete guide to all 5 issue types with decision tree
 - `references/templates-reference.md` — Generated view of canonical issue templates

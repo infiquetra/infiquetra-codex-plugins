@@ -1,4 +1,4 @@
-"""Tests for /outcome start --from-objective ingestion (#375, ported for U5).
+"""Tests for `/outcome start --from-parent-issue` ingestion.
 
 Offline: a fake ``runner`` returns fixture GraphQL JSON, so the whole ingestion path (query ->
 normalize -> edge inference -> node assembly -> spec) runs with no live ``gh``.
@@ -10,8 +10,9 @@ import importlib.util
 import json
 import sys
 from pathlib import Path
-from types import ModuleType
+from types import ModuleType, SimpleNamespace
 from typing import Any
+from unittest.mock import patch
 
 ROOT = Path(__file__).parents[1]
 SCRIPTS = ROOT / "scripts"
@@ -57,6 +58,7 @@ def _sub(
     state_reason: str | None = None,
     labels: list[str] | None = None,
     tracked: list[int] | None = None,
+    child_count: int = 0,
 ) -> dict[str, Any]:
     return {
         "number": number,
@@ -67,6 +69,7 @@ def _sub(
         "labels": {"nodes": [{"name": name} for name in (labels or [])]},
         "assignees": {"nodes": []},
         "trackedIssues": {"nodes": [{"number": t} for t in (tracked or [])]},
+        "subIssues": {"totalCount": child_count},
     }
 
 
@@ -128,15 +131,15 @@ def test_edges_from_relationships_drops_cycle() -> None:
     assert dropped == [{"reason": "cycle", "from": "sub-2", "to": "sub-1"}]
 
 
-# --------------------------------------------------------------------------- nodes_from_objective
+# --------------------------------------------------------------------------- nodes_from_parent_issue
 
 
-def test_nodes_from_objective_builds_nodes_with_kind_and_github_stamp() -> None:
+def test_nodes_from_parent_issue_builds_nodes_with_kind_and_github_stamp() -> None:
     subs = [
         _sub(1, "Design", labels=["non-code"]),
         _sub(2, "Build", tracked=[1]),
     ]
-    nodes, dropped, title = ENG.nodes_from_objective(
+    nodes, dropped, title = ENG.nodes_from_parent_issue(
         "o", "r", 100, runner=_runner_for(subs, parent_title="Ship It")
     )
     assert title == "Ship It"
@@ -148,36 +151,60 @@ def test_nodes_from_objective_builds_nodes_with_kind_and_github_stamp() -> None:
     assert by_sid["sub-1"]["github"] == {"repo": "o/r", "issue": "o/r#1", "sub_issue": 1}
 
 
-def test_nodes_from_objective_ingest_state_completed_and_not_planned() -> None:
+def test_nodes_from_parent_issue_ingests_state_completed_and_not_planned() -> None:
     subs = [
         _sub(1, "Done leaf", state="CLOSED", state_reason="COMPLETED"),
         _sub(2, "Rejected leaf", state="CLOSED", state_reason="NOT_PLANNED"),
         _sub(3, "Open leaf", state="OPEN"),
     ]
-    nodes, _dropped, _title = ENG.nodes_from_objective("o", "r", 100, runner=_runner_for(subs))
+    nodes, _dropped, _title = ENG.nodes_from_parent_issue("o", "r", 100, runner=_runner_for(subs))
     by_sid = {n["subplot_id"]: n for n in nodes}
     assert by_sid["sub-1"]["state"] == "done"
     assert by_sid["sub-2"]["state"] == "rejected"
     assert by_sid["sub-3"]["state"] == "pending"
 
 
-def test_nodes_from_objective_produces_a_validatable_spec() -> None:
+def test_nodes_from_parent_issue_produces_a_validatable_spec() -> None:
     subs = [_sub(1, "A"), _sub(2, "B", tracked=[1])]
-    nodes, _dropped, title = ENG.nodes_from_objective("o", "r", 100, runner=_runner_for(subs))
+    nodes, _dropped, title = ENG.nodes_from_parent_issue("o", "r", 100, runner=_runner_for(subs))
     spec = SPEC_MOD.OutcomeSpec.from_dict({"outcome_id": "demo", "objective": title, "nodes": nodes})
     spec.validate()  # must not raise
 
 
-# --------------------------------------------------------------------------- _parse_objective_ref
+def test_nodes_from_parent_issue_rejects_capability_trackers() -> None:
+    subs = [_sub(1, "Broad workstream", labels=["capability"])]
 
-
-def test_parse_objective_ref_valid() -> None:
-    assert ENG._parse_objective_ref("infiquetra/foo#42") == ("infiquetra", "foo", 42)
-
-
-def test_parse_objective_ref_rejects_malformed() -> None:
     try:
-        ENG._parse_objective_ref("not-a-ref")
+        ENG.nodes_from_parent_issue("o", "r", 100, runner=_runner_for(subs))
+    except ENG.OutcomeError as exc:
+        assert "requires executable direct children" in str(exc)
+        assert "o/r#1" in str(exc)
+    else:
+        raise AssertionError("expected OutcomeError")
+
+
+def test_nodes_from_parent_issue_rejects_nested_trackers() -> None:
+    subs = [_sub(1, "Nested tracker", child_count=2)]
+
+    try:
+        ENG.nodes_from_parent_issue("o", "r", 100, runner=_runner_for(subs))
+    except ENG.OutcomeError as exc:
+        assert "requires executable direct children" in str(exc)
+        assert "o/r#1" in str(exc)
+    else:
+        raise AssertionError("expected OutcomeError")
+
+
+# --------------------------------------------------------------------------- parent ref parsing
+
+
+def test_parse_parent_issue_ref_valid() -> None:
+    assert ENG._parse_parent_issue_ref("infiquetra/foo#42") == ("infiquetra", "foo", 42)
+
+
+def test_parse_parent_issue_ref_rejects_malformed() -> None:
+    try:
+        ENG._parse_parent_issue_ref("not-a-ref")
     except ENG.OutcomeError:
         pass
     else:
@@ -202,6 +229,75 @@ def test_ingest_state_closed_not_planned_is_rejected() -> None:
 # --------------------------------------------------------------------------- CLI wiring
 
 
-def test_main_start_requires_objective_or_from_objective(tmp_path: Path) -> None:
+def test_main_start_requires_objective_or_parent_issue(tmp_path: Path) -> None:
     rc = ENG.main(["--repo-root", str(tmp_path), "start", "demo"])
     assert rc == 1
+
+
+def test_main_start_accepts_from_parent_issue(tmp_path: Path) -> None:
+    node = {"subplot_id": "sub-1", "title": "Build", "kind": "code"}
+    with (
+        patch.object(
+            ENG,
+            "nodes_from_parent_issue",
+            return_value=([node], [], "Parent title"),
+        ) as build_nodes,
+        patch.object(
+            ENG,
+            "start",
+            return_value=SimpleNamespace(outcome_id="demo", nodes=[node]),
+        ) as start,
+    ):
+        rc = ENG.main(
+            [
+                "--repo-root",
+                str(tmp_path),
+                "start",
+                "demo",
+                "--from-parent-issue",
+                "infiquetra/repo#42",
+            ]
+        )
+
+    assert rc == 0
+    build_nodes.assert_called_once_with("infiquetra", "repo", 42)
+    assert start.call_args.args[2] == "Parent title"
+    assert start.call_args.kwargs["nodes"] == [node]
+
+
+def test_legacy_from_objective_warns_and_keeps_parent_semantics(
+    tmp_path: Path, capsys: Any
+) -> None:
+    node = {"subplot_id": "sub-1", "title": "Build", "kind": "code"}
+    with (
+        patch.object(
+            ENG,
+            "nodes_from_parent_issue",
+            return_value=([node], [], "Parent title"),
+        ) as build_nodes,
+        patch.object(
+            ENG,
+            "start",
+            return_value=SimpleNamespace(outcome_id="demo", nodes=[node]),
+        ),
+    ):
+        rc = ENG.main(
+            [
+                "--repo-root",
+                str(tmp_path),
+                "start",
+                "demo",
+                "--from-objective",
+                "infiquetra/repo#42",
+            ]
+        )
+
+    assert rc == 0
+    build_nodes.assert_called_once_with("infiquetra", "repo", 42)
+    assert "deprecated" in capsys.readouterr().err
+
+
+def test_legacy_python_api_alias_preserves_parent_semantics() -> None:
+    subs = [_sub(1, "Build")]
+    expected = ENG.nodes_from_parent_issue("o", "r", 100, runner=_runner_for(subs))
+    assert ENG.nodes_from_objective("o", "r", 100, runner=_runner_for(subs)) == expected

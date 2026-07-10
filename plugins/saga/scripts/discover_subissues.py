@@ -32,6 +32,7 @@ query SubIssues($owner: String!, $repo: String!, $number: Int!) {
           labels(first: 10) { nodes { name } }
           assignees(first: 5) { nodes { login } }
           trackedIssues(first: 50) { nodes { number } }
+          subIssues(first: 1) { totalCount }
         }
       }
     }
@@ -77,11 +78,18 @@ def fetch_subissues(
     return json.loads(result.stdout)
 
 
+def fetch_parent_issue(
+    owner: str, repo: str, number: int, *, runner: Callable[..., Any] | None = None
+) -> dict[str, object]:
+    """Fetch and normalize one parent issue plus its direct sub-issues."""
+    return normalize(fetch_subissues(owner, repo, number, runner=runner))
+
+
 def fetch_objective(
     owner: str, repo: str, number: int, *, runner: Callable[..., Any] | None = None
 ) -> dict[str, object]:
-    """Library entry point (#375): fetch + normalize a parent Objective's sub-issues in one call."""
-    return normalize(fetch_subissues(owner, repo, number, runner=runner))
+    """Compatibility alias for callers using the retired Objective-parent name."""
+    return fetch_parent_issue(owner, repo, number, runner=runner)
 
 
 def normalize(payload: dict[str, object]) -> dict[str, object]:
@@ -109,6 +117,7 @@ def normalize(payload: dict[str, object]) -> dict[str, object]:
                     assignee.get("login")
                     for assignee in (node.get("assignees", {}).get("nodes") or [])
                 ],
+                "sub_issue_count": (node.get("subIssues") or {}).get("totalCount", 0),
                 # #375 KTD1: a tracker depends on what it tracks; empty when absent (degrade-to-no-edges).
                 "blocked_by": [
                     t.get("number")

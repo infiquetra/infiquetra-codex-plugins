@@ -145,10 +145,11 @@ python3 plugins/saga/scripts/outcome_spec.py layers   docs/outcomes/<id>/outcome
 prints the topological layers. No I/O happens at import (pure functions), so the module is unit-testable
 offline — see `tests/test_outcome_spec.py`.
 
-## Seeding from a GitHub Objective (`start --from-objective`)
+## Seeding From A Parent Issue (`start --from-parent-issue`)
 
-`outcome.py nodes_from_objective(owner, repo, number)` builds node dicts directly from a GitHub
-Objective's sub-issues via `discover_subissues.fetch_objective` + `outcome_edges.edges_from_relationships`:
+`outcome.py nodes_from_parent_issue(owner, repo, number)` builds node dicts directly from a GitHub
+issue's direct sub-issues via `discover_subissues.fetch_parent_issue` +
+`outcome_edges.edges_from_relationships`:
 one node per sub-issue (`kind` from a `non-code` label, else `code`), an authored terminal `state` for a
 closed sub-issue (`completed`->`done`, `not_planned`->`rejected` — structural spec state, never a
 committed status field or a completion event), a `github` provenance stamp (`{"repo", "issue",
@@ -160,6 +161,13 @@ endpoints are in the ingested set, drops a self-edge, and drops (and reports) an
 dependency cycle — so the produced spec always passes `OutcomeSpec.validate()`'s declared-target and
 Kahn-acyclicity checks. Dropped edges print to stderr as `{"dropped_edges": [...]}` rather than being
 silently discarded.
+
+This command does not discover cards by the project `Objective` field, traverse grandchildren, or
+classify tracker children as executable leaves. Objective-field campaigns require an explicitly
+authored spec until a dedicated composition command is implemented. The hidden
+`--from-objective` compatibility alias emits a warning and retains these same direct-parent semantics.
+Import fails before spec creation when a direct child is labeled `capability` or reports its own
+sub-issues; either signal means the child is a tracker rather than an executable leaf.
 
 ## Board↔saga reconciliation (`outcome_reconcile`)
 
@@ -190,5 +198,5 @@ described in the `/outcome` skill's Reconcile-on-wake section; `re-assert` alway
 ```bash
 python3 plugins/saga/scripts/outcome.py reconcile <id>
 python3 plugins/saga/scripts/outcome.py reconcile <id> --resolve <drift-id> --action accept-board|re-assert|hold
-python3 plugins/saga/scripts/outcome.py start <id> --from-objective <owner>/<repo>#<N>
+python3 plugins/saga/scripts/outcome.py start <id> --from-parent-issue <owner>/<repo>#<N>
 ```

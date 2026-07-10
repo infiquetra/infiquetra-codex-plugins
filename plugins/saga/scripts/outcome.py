@@ -351,12 +351,12 @@ def _ingest_state(state: Any, state_reason: Any) -> str:
     return "rejected" if str(state_reason or "").upper() == "NOT_PLANNED" else "done"
 
 
-def nodes_from_objective(
+def nodes_from_parent_issue(
     owner: str, repo: str, number: int, *, runner: Callable[..., Any] | None = None
 ) -> tuple[list[dict[str, Any]], list[dict[str, str]], str]:
-    """Build outcome node dicts from a GitHub Objective's sub-issues (#375 U3).
+    """Build outcome node dicts from a GitHub issue's direct sub-issues.
 
-    Returns ``(nodes, dropped_edges, objective_title)``. Each node carries ``subplot_id=sub-<N>``, a
+    Returns ``(nodes, dropped_edges, parent_title)``. Each node carries ``subplot_id=sub-<N>``, a
     ``kind`` from the sub-issue's labels (``non-code`` label -> ``non-code``, else ``code``), an authored
     ``state`` from the sub-issue's state+reason, a ``github`` provenance stamp the reconcile/board-sync
     consumers read, and ``depends_on`` from the inferred (cycle-safe) edges.
@@ -364,8 +364,21 @@ def nodes_from_objective(
     import discover_subissues  # noqa: PLC0415
     import outcome_edges  # noqa: PLC0415
 
-    data = discover_subissues.fetch_objective(owner, repo, number, runner=runner)
+    data = discover_subissues.fetch_parent_issue(owner, repo, number, runner=runner)
     subissues = data.get("subissues", []) or []
+    tracker_children: list[str] = []
+    for sub in subissues:
+        labels = {str(x).lower() for x in (sub.get("labels") or [])}
+        if "capability" in labels or int(sub.get("sub_issue_count") or 0) > 0:
+            tracker_children.append(f"{owner}/{repo}#{sub['number']}")
+    if tracker_children:
+        refs = ", ".join(tracker_children)
+        raise OutcomeError(
+            "parent-issue import requires executable direct children; found Capability or nested "
+            f"tracker children: {refs}. Seed from the owning Capability parents or author an "
+            "explicit outcome spec from executable leaves."
+        )
+
     depends_on_by_subplot, dropped = outcome_edges.edges_from_relationships(subissues)
 
     repo_full = f"{owner}/{repo}"
@@ -381,7 +394,7 @@ def nodes_from_objective(
             "kind": kind,
             "state": _ingest_state(sub.get("state"), sub.get("state_reason")),
             # Stamp the sub-issue's OWN number (fully-qualified) so reconcile/board-sync resolve it,
-            # never the parent Objective (#375 KTD4/R5).
+            # never the parent issue (#375 KTD4/R5).
             "github": {"repo": repo_full, "issue": f"{repo_full}#{n}", "sub_issue": n},
         }
         deps = depends_on_by_subplot.get(sid)
@@ -389,16 +402,28 @@ def nodes_from_objective(
             node["depends_on"] = deps
         nodes.append(node)
 
-    objective_title = str((data.get("parent") or {}).get("title") or "")
-    return nodes, dropped, objective_title
+    parent_title = str((data.get("parent") or {}).get("title") or "")
+    return nodes, dropped, parent_title
+
+
+def nodes_from_objective(
+    owner: str, repo: str, number: int, *, runner: Callable[..., Any] | None = None
+) -> tuple[list[dict[str, Any]], list[dict[str, str]], str]:
+    """Compatibility alias for the retired Objective-parent API name."""
+    return nodes_from_parent_issue(owner, repo, number, runner=runner)
+
+
+def _parse_parent_issue_ref(ref: str) -> tuple[str, str, int]:
+    """Parse ``<owner>/<repo>#<N>`` into ``(owner, repo, number)``."""
+    m = re.fullmatch(r"(?P<owner>[^/]+)/(?P<repo>[^#]+)#(?P<number>\d+)", ref.strip())
+    if not m:
+        raise OutcomeError(f"--from-parent-issue must be '<owner>/<repo>#<N>', got {ref!r}")
+    return m.group("owner"), m.group("repo"), int(m.group("number"))
 
 
 def _parse_objective_ref(ref: str) -> tuple[str, str, int]:
-    """Parse ``<owner>/<repo>#<N>`` into ``(owner, repo, number)`` (#375 U4)."""
-    m = re.fullmatch(r"(?P<owner>[^/]+)/(?P<repo>[^#]+)#(?P<number>\d+)", ref.strip())
-    if not m:
-        raise OutcomeError(f"--from-objective must be '<owner>/<repo>#<N>', got {ref!r}")
-    return m.group("owner"), m.group("repo"), int(m.group("number"))
+    """Compatibility alias for the retired Objective-parent parser name."""
+    return _parse_parent_issue_ref(ref)
 
 
 def resume(
@@ -1156,11 +1181,18 @@ def main(argv: list[str] | None = None) -> int:
     p_start = sub.add_parser("start", help="create the branch-local spec + store")
     p_start.add_argument("outcome_id")
     p_start.add_argument("objective", nargs="?", default=None)
-    p_start.add_argument(
+    start_source = p_start.add_mutually_exclusive_group()
+    start_source.add_argument(
+        "--from-parent-issue",
+        metavar="<owner>/<repo>#<N>",
+        default=None,
+        help="seed the DAG from a GitHub issue's direct sub-issues",
+    )
+    start_source.add_argument(
         "--from-objective",
         metavar="<owner>/<repo>#<N>",
         default=None,
-        help="seed the DAG from a GitHub Objective's sub-issues (#375)",
+        help=argparse.SUPPRESS,
     )
 
     p_advance = sub.add_parser("advance", help="run a reconcile tick (dispatch the ready frontier)")
@@ -1261,16 +1293,23 @@ def main(argv: list[str] | None = None) -> int:
     root = Path(args.repo_root).resolve()
     try:
         if args.command == "start":
-            if args.from_objective:
-                owner, repo, number = _parse_objective_ref(args.from_objective)
-                nodes, dropped, objective_title = nodes_from_objective(owner, repo, number)
-                objective = args.objective or objective_title or args.from_objective
+            parent_ref = args.from_parent_issue or args.from_objective
+            if parent_ref:
+                if args.from_objective:
+                    print(
+                        "warning: --from-objective is deprecated; it imports direct sub-issues "
+                        "and does not discover Objective-field members. Use --from-parent-issue.",
+                        file=sys.stderr,
+                    )
+                owner, repo, number = _parse_parent_issue_ref(parent_ref)
+                nodes, dropped, parent_title = nodes_from_parent_issue(owner, repo, number)
+                objective = args.objective or parent_title or parent_ref
                 spec = start(root, args.outcome_id, objective, nodes=nodes)
                 if dropped:
                     print(json.dumps({"dropped_edges": dropped}), file=sys.stderr)
             else:
                 if not args.objective:
-                    raise OutcomeError("start requires an objective (or --from-objective)")
+                    raise OutcomeError("start requires an objective (or --from-parent-issue)")
                 spec = start(root, args.outcome_id, args.objective)
             print(json.dumps({"started": spec.outcome_id, "nodes": len(spec.nodes)}))
         elif args.command == "advance":

@@ -50,6 +50,7 @@ Usage:
     sdlc_manager.py flow field-options --project campps --field Objective
     sdlc_manager.py flow discover-project --repo athena-service
     sdlc_manager.py flow link-sub-issue --parent-repo R --parent-number P --child-repo R2 --child-number C
+    sdlc_manager.py flow unlink-sub-issue --parent-repo R --parent-number P --child-repo R2 --child-number C
     sdlc_manager.py flow verify-label --repo athena-service --name high-priority [--color D93F0B] [--description "..."]
     sdlc_manager.py flow validate-card --repo athena-service --number 42
 
@@ -694,9 +695,14 @@ def _rest_put(path: str, body: dict) -> Any:
     return json.loads(result)
 
 
-def _rest_delete(path: str) -> Any:
+def _rest_delete(path: str, body: dict | None = None) -> Any:
     """Execute a REST DELETE via gh CLI. May return empty body (e.g. 204 No Content)."""
-    result = _gh(["api", "--method", "DELETE", path])
+    args = ["api", "--method", "DELETE", path]
+    input_data = None
+    if body is not None:
+        args.extend(["--input", "-"])
+        input_data = json.dumps(body)
+    result = _gh(args, input_data=input_data)
     return json.loads(result) if result else ""
 
 
@@ -2135,6 +2141,7 @@ def rollout_update(repo: str, field: str, status: str, fmt: str) -> None:
 #   - field-options      list current options for a project field
 #   - discover-project   resolve which project a repo is mapped to
 #   - link-sub-issue     wrap the native sub-issue API
+#   - unlink-sub-issue   remove a native sub-issue relationship
 #   - verify-label       self-heal missing labels (404 → create; exists → no-op)
 #   - validate-card      run the card_validator schema check on an issue body
 
@@ -2367,6 +2374,58 @@ def flow_link_sub_issue(
             f"sub-issue of {parent_repo}#{parent_number} (idempotent re-run).",
             fmt,
         )
+
+
+def flow_unlink_sub_issue(
+    parent_repo: str,
+    parent_number: int,
+    child_repo: str,
+    child_number: int,
+    fmt: str,
+) -> None:
+    """Remove a native sub-issue relationship without closing either issue.
+
+    Both issues are fetched first so a 404 from DELETE can safely mean the
+    relationship is already absent rather than a typo in the repo or number.
+    """
+    try:
+        child_data = _rest_get(f"repos/{ORG}/{child_repo}/issues/{child_number}")
+    except RuntimeError as e:
+        raise RuntimeError(f"Could not fetch child {child_repo}#{child_number}: {e}") from e
+    child_db_id = child_data.get("id")
+    if not isinstance(child_db_id, int):
+        raise RuntimeError(
+            f"Child {child_repo}#{child_number} returned no integer 'id'; "
+            f"got {child_db_id!r}. Cannot unlink."
+        )
+
+    try:
+        parent_data = _rest_get(f"repos/{ORG}/{parent_repo}/issues/{parent_number}")
+    except RuntimeError as e:
+        raise RuntimeError(f"Could not fetch parent {parent_repo}#{parent_number}: {e}") from e
+    if "pull_request" in parent_data:
+        raise RuntimeError(
+            f"Parent {parent_repo}#{parent_number} is a PR, not an issue. "
+            f"Sub-issues require an issue parent."
+        )
+
+    try:
+        _rest_delete(
+            f"repos/{ORG}/{parent_repo}/issues/{parent_number}/sub_issue",
+            {"sub_issue_id": child_db_id},
+        )
+    except ApiNotFoundError:
+        _out(
+            f"Already unlinked: {child_repo}#{child_number} is not a "
+            f"sub-issue of {parent_repo}#{parent_number} (idempotent re-run).",
+            fmt,
+        )
+        return
+
+    _out(
+        f"Unlinked {child_repo}#{child_number} from {parent_repo}#{parent_number}",
+        fmt,
+    )
 
 
 def flow_verify_label(
@@ -2798,7 +2857,6 @@ _ISSUE_TYPES = (
     "defect",
     "exploration",
     "context-update",
-    "objective",
 )
 # Active prepared-issue teams (KTD17): Asgard (shaping/rapid-action profile) and
 # CAMPPS (strict actionable dispatch profile on the initiative execution board).
@@ -2810,7 +2868,6 @@ _ISSUE_TYPE_LABELS = {
     "capability": ["capability", "hermes-task", "needs-plan"],
     "enhancement": ["enhancement", "hermes-task", "needs-plan"],
     "defect": ["defect", "hermes-task", "needs-plan"],
-    "objective": ["objective", "hermes-not-actionable"],
     "exploration": ["exploration", "research", "hermes-not-actionable"],
     "context-update": ["context-update", "documentation", "hermes-not-actionable"],
 }
@@ -2871,7 +2928,7 @@ _MUTATION_CONFIRMATION_TTL_SECONDS = 900
 # Project field discovery is live and per-board. Prompts are skipped when the
 # selected board does not expose a field, so field rollout can happen without a
 # separate CLI release.
-_CAPABILITY_ADAPTIVE_TYPES = frozenset({"capability", "objective"})
+_CAPABILITY_ADAPTIVE_TYPES = frozenset({"capability"})
 
 
 @dataclass
@@ -4293,17 +4350,17 @@ def _safe_input(prompt: str) -> str | None:
 
 
 def _select_issue_type(default: str | None = None) -> str:
-    """Decision-tree prompt for the 6 issue types. Returns the chosen
+    """Decision-tree prompt for the five issue types. Returns the chosen
     type. `default` overrides the built-in 'capability' default if set."""
     print("\nIssue Type Selection")
     print("=" * 40)
     print("Decision tree:")
-    print("  1. Coordinating multiple capabilities with a target date? -> OBJECTIVE")
-    print("  2. Broken in production? -> DEFECT")
-    print("  3. New end-to-end deployable functionality? -> CAPABILITY")
-    print("  4. Improving existing functionality? -> ENHANCEMENT")
-    print("  5. Researching or investigating? -> EXPLORATION")
-    print("  6. Updating documentation? -> CONTEXT UPDATE")
+    print("  1. Broken in production? -> DEFECT")
+    print("  2. New end-to-end deployable functionality? -> CAPABILITY")
+    print("  3. Improving existing functionality? -> ENHANCEMENT")
+    print("  4. Researching or investigating? -> EXPLORATION")
+    print("  5. Updating documentation? -> CONTEXT UPDATE")
+    print("  Objective is a project field plus a scorecard, not an issue type.")
     print()
     fallback = default if default in _ISSUE_TYPES else "capability"
     answer = _safe_input(f"Select type (or press Enter for '{fallback}'): ")
@@ -4317,21 +4374,22 @@ _PARENT_REF_RE = re.compile(r"^\s*([\w.-]+)#(\d+)\s*$")
 
 
 def _prompt_parent_issue() -> tuple[str, int] | None:
-    """Sub-issue-first prompt — the first thing asked. Returns (parent_repo,
-    parent_number) if the operator provides a parent ref, or None for
-    'free-floating' / 'no parent'. Default is 'yes — paste a ref'; the
-    operator types 'no' (or 'n') to skip."""
-    print("\nSub-issue first: every new card has a parent by default.")
-    print("Paste a parent ref like 'campps-context-library#42' or type 'no' to skip.")
-    raw = _safe_input("Parent issue? (yes/no/<repo#N>) [yes]: ")
+    """Prompt for an optional decomposition parent.
+
+    Returns ``(parent_repo, parent_number)`` when the operator provides a
+    parent ref. A blank response defaults to no parent because Objective is the
+    grouping field; native parentage is reserved for issue decomposition.
+    """
+    print("\nNative parent is optional and represents issue decomposition.")
+    print("Paste a parent ref like 'campps-context-library#42', or press Enter for none.")
+    raw = _safe_input("Parent issue? (<repo#N>/yes/no) [none]: ")
     if raw is None:
-        return None  # Ctrl+D / Ctrl+C → treat as no-parent
+        return None
     answer = raw.lower()
 
-    if answer in ("no", "n", "skip", "-"):
+    if answer in ("", "no", "n", "skip", "-"):
         return None
-    if answer in ("yes", "y", ""):
-        # Operator confirmed but didn't paste a ref — re-prompt for the ref
+    if answer in ("yes", "y"):
         ref = _safe_input("Parent ref (e.g., campps-context-library#42): ")
         if ref is None:
             return None
@@ -4342,7 +4400,7 @@ def _prompt_parent_issue() -> tuple[str, int] | None:
     if not match:
         _warn(
             "Couldn't parse parent ref. Expected '<repo>#<number>'. "
-            "Continuing as free-floating (no parent)."
+            "Continuing with no parent."
         )
         return None
     return match.group(1), int(match.group(2))
@@ -4484,6 +4542,11 @@ def _apply_post_create_metadata(
 
     Steps 2-3 require `project_name` to be set; step 1 always runs;
     step 4 requires `parent`."""
+    if issue_type not in _ISSUE_TYPES:
+        raise RuntimeError(
+            f"Unknown or retired issue type {issue_type!r}; expected one of {', '.join(_ISSUE_TYPES)}"
+        )
+
     issue_ref = f"{repo}#{issue_number}"
     print(f"\nApplying metadata to {issue_ref}...")
     # Cache config once — saves a load_config() round-trip on board_add.
@@ -4510,7 +4573,7 @@ def _apply_post_create_metadata(
         except GhApiError as e:
             _warn(f"  ✗ Could not apply hermes-task label: {e}")
     else:
-        # Objective gets explicit opt-out
+        # Exploration and context-update get explicit opt-out.
         try:
             _gh(
                 [
@@ -4593,8 +4656,8 @@ def issue_create(
     skip_metadata: bool = False,
     _in_paired_card: bool = False,
 ) -> None:
-    """Interactive issue creation — sub-issue-first, per-project schema
-    aware, with capability-adaptive fields and paired-card flow.
+    """Interactive issue creation with optional decomposition parent,
+    per-project schema discovery, and capability-adaptive fields.
 
     Current topology: Operations and Asgard use the intent flow; CAMPPS is
     the active long-lived initiative board. The per-project schema discovery
@@ -4610,11 +4673,11 @@ def issue_create(
 
     Flow:
       1. Determine type (decision tree if not provided)
-      2. Sub-issue-first prompt: parent issue?
+      2. Optionally identify a native decomposition parent
       3. Discover project the repo maps to (if any)
       4. Per-project schema discovery: which project fields exist?
       5. Prompt for field values, defaults from ~/.codex/sdlc-defaults.json
-      6. Capability-adaptive: prompt for Size if type is capability/objective AND project exposes the field
+      6. Capability-adaptive: prompt for Size if type is capability AND project exposes the field
       7. Open `gh issue create --web` in browser; operator fills body
       8. Operator pastes back the issue number
       9. Apply hermes-task / hermes-not-actionable label, project field values, sub-issue link
@@ -4638,7 +4701,7 @@ def issue_create(
     if issue_type is None:
         issue_type = _select_issue_type(default=defaults.get("default_type"))
 
-    # Step 2: sub-issue-first parent prompt
+    # Step 2: optional decomposition parent
     parent: tuple[str, int] | None = None
     if parent_ref:
         match = _PARENT_REF_RE.match(parent_ref)
@@ -4705,7 +4768,7 @@ def issue_create(
         if chosen:
             field_values["Status"] = chosen
 
-    # Step 6: capability-adaptive fields (only for capability/objective AND
+    # Step 6: capability-adaptive fields (only for capability AND
     # only when the project exposes the field)
     if issue_type in _CAPABILITY_ADAPTIVE_TYPES and project_name and not skip_metadata:
         for adaptive_field in (
@@ -4854,19 +4917,12 @@ def main() -> None:
 
     issue_create_p = issue_sp.add_parser(
         "create",
-        help="Sub-issue-first interactive issue creation with metadata application",
+        help="Interactive issue creation with metadata and an optional native parent",
     )
     issue_create_p.add_argument("--repo", required=True)
     issue_create_p.add_argument(
         "--type",
-        choices=[
-            "capability",
-            "enhancement",
-            "defect",
-            "exploration",
-            "context-update",
-            "objective",
-        ],
+        choices=_ISSUE_TYPES,
         help="Issue type (uses template). If omitted, decision-tree prompts for it.",
     )
     issue_create_p.add_argument(
@@ -4888,14 +4944,7 @@ def main() -> None:
     issue_prepare_p.add_argument(
         "--type",
         required=True,
-        choices=[
-            "capability",
-            "enhancement",
-            "defect",
-            "exploration",
-            "context-update",
-            "objective",
-        ],
+        choices=_ISSUE_TYPES,
     )
     issue_prepare_p.add_argument("--team", required=True, choices=_TEAM_CHOICES)
     issue_prepare_p.add_argument("--project", required=True, choices=PROJECT_CHOICES)
@@ -5138,6 +5187,15 @@ def main() -> None:
     flow_link_p.add_argument("--child-repo", required=True)
     flow_link_p.add_argument("--child-number", required=True, type=int)
 
+    flow_unlink_p = flow_sp.add_parser(
+        "unlink-sub-issue",
+        help="Remove a native sub-issue relationship without closing either issue",
+    )
+    flow_unlink_p.add_argument("--parent-repo", required=True)
+    flow_unlink_p.add_argument("--parent-number", required=True, type=int)
+    flow_unlink_p.add_argument("--child-repo", required=True)
+    flow_unlink_p.add_argument("--child-number", required=True, type=int)
+
     flow_label_p = flow_sp.add_parser(
         "verify-label",
         help="Self-healing label create (404 → create; exists → no-op; other errors raise)",
@@ -5306,6 +5364,10 @@ def main() -> None:
                 flow_discover_project(args.repo, fmt)
             elif args.action == "link-sub-issue":
                 flow_link_sub_issue(
+                    args.parent_repo, args.parent_number, args.child_repo, args.child_number, fmt
+                )
+            elif args.action == "unlink-sub-issue":
+                flow_unlink_sub_issue(
                     args.parent_repo, args.parent_number, args.child_repo, args.child_number, fmt
                 )
             elif args.action == "verify-label":

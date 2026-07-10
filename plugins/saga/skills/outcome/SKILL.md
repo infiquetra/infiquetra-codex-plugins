@@ -23,7 +23,7 @@ Use `plugins/saga/scripts/outcome.py` for the mechanical operations:
 
 ```bash
 python3 plugins/saga/scripts/outcome.py start <id> <objective>
-python3 plugins/saga/scripts/outcome.py start <id> --from-objective <owner>/<repo>#<N>
+python3 plugins/saga/scripts/outcome.py start <id> --from-parent-issue <owner>/<repo>#<N>
 python3 plugins/saga/scripts/outcome.py status <id>
 python3 plugins/saga/scripts/outcome.py report <id>
 python3 plugins/saga/scripts/outcome.py project <id>
@@ -36,14 +36,27 @@ python3 plugins/saga/scripts/outcome.py export <id>
 python3 plugins/saga/scripts/outcome.py import <bundle>
 ```
 
-`start --from-objective <owner>/<repo>#<N>` seeds the DAG directly from a GitHub Objective's
-sub-issues instead of the two-node design/build starter: one node per sub-issue (`kind` from a
+`start --from-parent-issue <owner>/<repo>#<N>` seeds the DAG directly from a GitHub issue's
+direct sub-issues instead of the two-node design/build starter: one node per sub-issue (`kind` from a
 `non-code` label, else `code`), an authored terminal `state` for a closed sub-issue
 (`completed`&rarr;`done`, `not_planned`&rarr;`rejected`), a `github` provenance stamp the reconcile
 and board-sync consumers read, and `depends_on` edges inferred from GitHub's tracked-issue
 relationships. Edge inference is best-effort and cycle-safe: any edge that would close a cycle, or
 whose endpoint is outside the ingested set, is dropped and reported on stderr rather than silently
 producing a spec that fails `validate()`.
+
+This importer is structural, not project-field discovery. It does not query an `Objective`
+project-field option, traverse grandchildren, or decide which tracker children are executable
+leaves. For an Objective grouped only by project field, author an explicit outcome spec from the
+intended executable cards until a dedicated Objective-field composer exists. The positional
+`objective` argument remains the human statement of the outcome, not a GitHub issue type.
+
+The importer fails closed when a direct child is labeled `capability` or has sub-issues of its own.
+Those are tracker signals, not executable-leaf evidence; seed from the owning Capability parents or
+author the leaf DAG explicitly.
+
+`--from-objective` remains a hidden compatibility alias and emits a deprecation warning. It has the
+same direct-parent semantics; it must never be interpreted as Objective-field composition.
 
 Default operator output must be terminal-safe: ASCII, prose, or the shared
 status-card renderer. Do not emit Mermaid in chat or terminal output unless the
