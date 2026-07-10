@@ -12,8 +12,8 @@
 The approved 2026-07-10 cycle freezes the next source window at
 `9470edca65b1db06d2f7562eeb2d5a9e48c34dec..38742ece89880a6b140be237edad6d3f13c97b54`
 and targets fleet-core `0.8.4`. The per-path treatment and preservation obligations live in
-`../../docs/portability/ports/2026-07-10-saga-07517.json`. This U1 record does not claim that U2
-behavior or the U8 version cutover has landed.
+`../../docs/portability/ports/2026-07-10-saga-07517.json`. U2 behavior may land before the U8
+version and installed-state cutover; the staged contract records that distinction explicitly.
 
 Fleet-core is the maintained authority for shared Codex model, effort, cost, proof, and workflow
 compatibility policy. Consumer shims are synchronized derivatives; installed cache is never source.
@@ -34,9 +34,14 @@ byte-identically.
   (`~/.claude/.../installed_plugins.json`, `CLAUDE_PLUGIN_ROOT` cache-sibling) are dropped, not
   emulated — Codex has no equivalent registry, so a Claude-shaped rung would be a silent dead
   rung. This divergence is recorded in `docs/portability/codex-saga-064-drift-classification.md`.
-- **Dual palette (KTD3):** upstream Claude tier names (`fable`/`opus`/`sonnet`/`haiku`) are kept
-  as the lineage vocabulary so upstream diffs still apply cleanly; each `models.json` row also
-  carries the Codex model mapping (`gpt-5.5`/`gpt-5.4`/`gpt-5.4-mini`) actually dispatched.
+- **Catalog-aware classes (KTD2-KTD4):** five leaf execution classes select Sol/Terra/Luna with
+  ordered fallbacks against one immutable, allowlisted `codex debug models` snapshot. Scalar
+  effort is `low..max`; Ultra is root-only and explicit.
+- **Lineage compatibility:** `fable`/`opus`/`sonnet`/`haiku`, the old work-shape resolver, and
+  their mappings remain temporary compatibility APIs. They do not select new managed profiles.
+- **Proof split:** external-engine bridge receipts and output attestations are shared schemas but
+  never attest a Verified Workflows role or effective reasoning effort. Delegation audit/state is
+  advisory and writes only contained ignored Codex state.
 - No manifest `skills` field, no `interface.defaultPrompt` — validator treats this plugin as a
   library plugin (`scripts/validate_codex_plugins.py`, `TARGET_EXPECTED_PLUGINS["fleet-core"]`).
 - No `.claude-plugin`, command files, or agent markdown carried over — scripts and stdlib-only

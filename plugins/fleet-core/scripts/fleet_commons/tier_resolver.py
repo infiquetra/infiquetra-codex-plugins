@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
-"""Dispatch-time tier resolver — maps a work shape to a ``{model, effort}`` tier (#362).
+"""Fleet dispatch policy resolution.
 
-One callable seam for tier decisions that today live scattered across team-execution's 25
+``resolve_execution_class`` is the authoritative Codex path: it resolves one of Fleet Core's
+five leaf classes against one immutable model-catalog snapshot. ``resolve_root_orchestration``
+is the only path that can select Ultra. The older work-shape ``resolve`` function remains as a
+temporary compatibility API for pre-cutover Saga and Team Execution consumers.
+
+One compatibility seam for tier decisions that today live scattered across team-execution's 25
 hardcoded agent ``model:`` literals, the prose-only heuristic table at
 ``plugins/saga/skills/plan/SKILL.md:298-304``, and assorted per-call literals. ``resolve()``
 reads defaults from the machine-readable ``tier_policy.json`` registry (U1) and never hardcodes
@@ -41,8 +46,11 @@ if str(_SCRIPTS_DIR) not in sys.path:
 import fleet_commons_shim  # noqa: E402
 
 _tier_palette = fleet_commons_shim.load("tier_palette")
+_codex_model_catalog = fleet_commons_shim.load("codex_model_catalog")
 MODELS: tuple[str, ...] = _tier_palette.MODELS
 EFFORTS: tuple[str, ...] = _tier_palette.EFFORTS
+SCALAR_EFFORTS: tuple[str, ...] = _tier_palette.SCALAR_EFFORTS
+EXECUTION_CLASSES: tuple[str, ...] = _tier_palette.EXECUTION_CLASSES
 model_rank = _tier_palette.model_rank
 effort_rank = _tier_palette.effort_rank
 
@@ -73,6 +81,199 @@ class Resolution:
     because: str
     cheaper_fallback: tuple[str, str]
     needs_confirm: bool
+
+
+@dataclass(frozen=True)
+class ClassResolution:
+    """Catalog-bound expected configuration for one leaf execution class.
+
+    This is policy resolution, not proof that a spawned child used the selected profile. U4 joins
+    profile and hook receipts before making an effective-execution claim.
+    """
+
+    execution_class: str
+    preferred_model: str
+    effective_model: str
+    requested_effort: str
+    effective_effort: str
+    candidate_index: int
+    fallback_reason: str | None
+    candidate_failures: tuple[str, ...]
+    catalog_source: str
+    catalog_sha256: str
+    catalog_input_sha256: str
+    workspace_boundary: str
+    external_boundary: str
+
+    @property
+    def clamped(self) -> bool:
+        return self.effective_effort != self.requested_effort
+
+
+@dataclass(frozen=True)
+class RootResolution:
+    effective_model: str
+    requested_effort: str
+    effective_effort: str
+    candidate_index: int
+    fallback_reason: str | None
+    catalog_source: str
+    catalog_sha256: str
+    catalog_input_sha256: str
+    ultra: bool
+
+
+def _catalog_model(snapshot: Any, slug: str) -> Any | None:
+    model = snapshot.model(slug)
+    if model is None or not model.selectable:
+        return None
+    return model
+
+
+def _lower_scalar_effort(supported: tuple[str, ...], requested: str) -> str | None:
+    """Strongest supported scalar effort at or below ``requested``; never clamps upward."""
+    try:
+        requested_rank = SCALAR_EFFORTS.index(requested)
+    except ValueError:
+        raise TierResolverError(
+            f"unknown scalar effort {requested!r}; expected one of {SCALAR_EFFORTS}"
+        ) from None
+    allowed = [
+        effort
+        for effort in SCALAR_EFFORTS[: requested_rank + 1]
+        if effort in supported
+    ]
+    return allowed[-1] if allowed else None
+
+
+def resolve_execution_class(execution_class: str, snapshot: Any) -> ClassResolution:
+    """Resolve a leaf class using exactly ``snapshot`` and the registry's ordered candidates.
+
+    The first pass preserves requested effort across the candidate order. Only when no selectable
+    candidate supports that exact effort does the second pass clamp downward. Ultra can appear in
+    catalog truth but can never be returned here.
+    """
+    try:
+        policy = _tier_palette.execution_class_policy(execution_class)
+    except ValueError as exc:
+        raise TierResolverError(str(exc)) from exc
+    requested = policy.requested_effort
+    if requested not in SCALAR_EFFORTS:
+        raise TierResolverError(
+            f"leaf execution class {execution_class!r} requests non-scalar effort {requested!r}"
+        )
+
+    failures: list[str] = []
+    selectable: list[tuple[int, Any, Any]] = []
+    for index, candidate in enumerate(policy.candidates):
+        model = _catalog_model(snapshot, candidate.model)
+        if model is None:
+            failures.append(f"{candidate.model}: unavailable or not selectable")
+            continue
+        selectable.append((index, candidate, model))
+        if requested in model.supported_efforts:
+            reason = None
+            if index:
+                reason = f"candidate {index} preserved requested effort after earlier candidates failed"
+            return ClassResolution(
+                execution_class=execution_class,
+                preferred_model=policy.preferred.model,
+                effective_model=model.slug,
+                requested_effort=requested,
+                effective_effort=requested,
+                candidate_index=index,
+                fallback_reason=reason,
+                candidate_failures=tuple(failures),
+                catalog_source=snapshot.source,
+                catalog_sha256=snapshot.normalized_sha256,
+                catalog_input_sha256=snapshot.input_sha256,
+                workspace_boundary=policy.workspace_boundary,
+                external_boundary=policy.external_boundary,
+            )
+        failures.append(f"{candidate.model}: does not support exact effort {requested}")
+
+    for index, _candidate_value, model in selectable:
+        effective = _lower_scalar_effort(model.supported_efforts, requested)
+        if effective is None:
+            continue
+        return ClassResolution(
+            execution_class=execution_class,
+            preferred_model=policy.preferred.model,
+            effective_model=model.slug,
+            requested_effort=requested,
+            effective_effort=effective,
+            candidate_index=index,
+            fallback_reason=(
+                f"no candidate preserved {requested}; candidate {index} clamped downward to {effective}"
+            ),
+            candidate_failures=tuple(failures),
+            catalog_source=snapshot.source,
+            catalog_sha256=snapshot.normalized_sha256,
+            catalog_input_sha256=snapshot.input_sha256,
+            workspace_boundary=policy.workspace_boundary,
+            external_boundary=policy.external_boundary,
+        )
+    raise TierResolverError(
+        f"execution class {execution_class!r} has no compatible selectable model: "
+        + "; ".join(failures)
+    )
+
+
+def resolve_root_orchestration(
+    snapshot: Any,
+    *,
+    effort: str | None = None,
+    explicit: bool = False,
+    independent_fanout: bool = False,
+) -> RootResolution:
+    """Resolve the root coordinator. Ultra requires explicit selection and independent fan-out."""
+    policy = _tier_palette.root_orchestration_policy()
+    requested = policy.default_effort if effort is None else effort
+    if requested == "ultra":
+        if policy.ultra_requires_explicit_selection and not explicit:
+            raise TierResolverError("Ultra requires explicit root selection")
+        if policy.ultra_requires_independent_fanout and not independent_fanout:
+            raise TierResolverError("Ultra requires independently executable fan-out")
+    elif requested not in SCALAR_EFFORTS:
+        raise TierResolverError(
+            f"unknown root effort {requested!r}; expected scalar effort or 'ultra'"
+        )
+
+    selectable: list[tuple[int, Any]] = []
+    for index, slug in enumerate(policy.models):
+        model = _catalog_model(snapshot, slug)
+        if model is None:
+            continue
+        selectable.append((index, model))
+        if requested in model.supported_efforts:
+            return RootResolution(
+                effective_model=model.slug,
+                requested_effort=requested,
+                effective_effort=requested,
+                candidate_index=index,
+                fallback_reason=None if index == 0 else f"root candidate {index} selected",
+                catalog_source=snapshot.source,
+                catalog_sha256=snapshot.normalized_sha256,
+                catalog_input_sha256=snapshot.input_sha256,
+                ultra=requested == "ultra",
+            )
+    if requested == "ultra":
+        raise TierResolverError("no configured root model supports Ultra")
+    for index, model in selectable:
+        effective = _lower_scalar_effort(model.supported_efforts, requested)
+        if effective is not None:
+            return RootResolution(
+                effective_model=model.slug,
+                requested_effort=requested,
+                effective_effort=effective,
+                candidate_index=index,
+                fallback_reason=f"root effort clamped downward from {requested} to {effective}",
+                catalog_source=snapshot.source,
+                catalog_sha256=snapshot.normalized_sha256,
+                catalog_input_sha256=snapshot.input_sha256,
+                ultra=False,
+            )
+    raise TierResolverError("no configured root model supports a compatible scalar effort")
 
 
 def load_policy(path: Path | None = None) -> dict[str, dict[str, str]]:

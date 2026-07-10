@@ -1,0 +1,125 @@
+{
+  "schema_version": 1,
+  "unit": "U2",
+  "recorded_at": "2026-07-10T17:34:49Z",
+  "repo_head": "a1d4e142caa50f84caad15d9395308431433220b",
+  "catalog": {
+    "source": "refreshed",
+    "model_count": 8,
+    "normalized_sha256": "cab542b9fc6f07bc2eaf282a6ebe85b4b4b1a807a68fb22e51b11863d146d511"
+  },
+  "execution_classes": [
+    {
+      "name": "review-max",
+      "effective_model": "gpt-5.6-sol",
+      "effective_effort": "max"
+    },
+    {
+      "name": "review-high",
+      "effective_model": "gpt-5.6-sol",
+      "effective_effort": "high"
+    },
+    {
+      "name": "test-medium",
+      "effective_model": "gpt-5.6-terra",
+      "effective_effort": "medium"
+    },
+    {
+      "name": "scan-low",
+      "effective_model": "gpt-5.6-luna",
+      "effective_effort": "low"
+    },
+    {
+      "name": "monitor-low",
+      "effective_model": "gpt-5.6-luna",
+      "effective_effort": "low"
+    }
+  ],
+  "checks": [
+    {
+      "name": "u2-focused-tests",
+      "argv": [
+        "PYTHONPATH=.",
+        "uv",
+        "run",
+        "pytest",
+        "-q",
+        "plugins/fleet-core/tests/test_codex_model_catalog.py",
+        "plugins/fleet-core/tests/test_tier_resolver.py",
+        "plugins/fleet-core/tests/test_cost_weights.py",
+        "plugins/fleet-core/tests/test_render_tier_table.py",
+        "plugins/fleet-core/tests/test_retry_backoff.py",
+        "plugins/fleet-core/tests/test_bridge_receipt.py"
+      ],
+      "exit_code": 0,
+      "summary": "95 passed"
+    },
+    {
+      "name": "full-suite",
+      "argv": ["PYTHONPATH=.", "uv", "run", "pytest", "-q"],
+      "exit_code": 0,
+      "summary": "1407 passed"
+    },
+    {
+      "name": "plugin-validator",
+      "argv": ["python3", "scripts/validate_codex_plugins.py"],
+      "exit_code": 0,
+      "summary": "current plugin inventory valid"
+    },
+    {
+      "name": "scoped-ruff",
+      "argv": [
+        "uv",
+        "run",
+        "ruff",
+        "check",
+        "plugins/fleet-core/scripts/fleet_commons",
+        "plugins/fleet-core/tests",
+        "scripts/port_contract.py",
+        "tests/test_port_contract.py"
+      ],
+      "exit_code": 0,
+      "summary": "no findings"
+    },
+    {
+      "name": "source-verification",
+      "argv": [
+        "python3",
+        "scripts/port_contract.py",
+        "verify-source",
+        "--manifest",
+        "docs/portability/ports/2026-07-10-saga-07517.json",
+        "--source-repo",
+        "SOURCE_CHECKOUT"
+      ],
+      "exit_code": 0,
+      "source_repository_id": "infiquetra/infiquetra-claude-plugins",
+      "summary": "156 rows and frozen inventory digest reproduced"
+    }
+  ],
+  "review": {
+    "initial_findings": {
+      "p0": 0,
+      "p1": 2,
+      "p2": 9,
+      "p3": 0
+    },
+    "fixed": [
+      "same-run launch and validated receipt join",
+      "symlink-safe lock handling",
+      "explicit empty-effort rejection",
+      "closed receipt and runner schemas",
+      "receipt and attestation byte binding",
+      "positive-only cost weights",
+      "receipt engine and run identity binding",
+      "finite numeric proof values without large-integer overflow",
+      "closed nested output-attestation schema"
+    ],
+    "re_review": "no remaining P0-P3 code findings"
+  },
+  "limitations": [
+    "class resolution is expected configuration, not child execution proof",
+    "reasoning effort is proven later by exact managed-profile digest because hooks do not observe effort",
+    "Ultra remains root-only and was not selected for this workflow"
+  ]
+}

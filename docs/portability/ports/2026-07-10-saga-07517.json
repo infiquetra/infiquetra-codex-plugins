@@ -749,7 +749,32 @@
       }
     ]
   },
-  "evidence": [],
+  "evidence": [
+    {
+      "artifact_path": "docs/validation/codex-plugin-modernization-u2.json",
+      "artifact_sha256": "f9c09422951ad6b04680300fd8b6d19e80f9ce0ea049c8ebdc096c28733c02b4",
+      "argv": [
+        "PYTHONPATH=.",
+        "uv",
+        "run",
+        "pytest",
+        "-q",
+        "plugins/fleet-core/tests/test_codex_model_catalog.py",
+        "plugins/fleet-core/tests/test_tier_resolver.py",
+        "plugins/fleet-core/tests/test_cost_weights.py",
+        "plugins/fleet-core/tests/test_render_tier_table.py",
+        "plugins/fleet-core/tests/test_retry_backoff.py",
+        "plugins/fleet-core/tests/test_bridge_receipt.py"
+      ],
+      "cwd": ".",
+      "evidence_id": "u2-fleet-core-check-20260710",
+      "exit_code": 0,
+      "kind": "check",
+      "recorded_at": "2026-07-10T17:34:49Z",
+      "repo_head": "a1d4e142caa50f84caad15d9395308431433220b",
+      "unit": "U2"
+    }
+  ],
   "port_id": "2026-07-10-saga-07517",
   "refresh_changes": [],
   "release_evidence": {
@@ -795,14 +820,14 @@
         "planned_tests": [
           "plugins/fleet-core/tests/test_tier_resolver.py"
         ],
-        "rationale": "Port shared policy or proof behavior through the catalog-aware Codex fleet-core boundary.",
+        "rationale": "Adapt the Claude manifest only in the U8 release transaction after Fleet Core behavior and installed-state proof are complete.",
         "row_id": "src-c89dcbffa88c9a73",
         "similarity": null,
         "state": "classified",
         "surface_kind": "claude-manifest",
         "treatment": "codex-adapt",
         "units": [
-          "U2"
+          "U8"
         ]
       },
       {
@@ -823,14 +848,14 @@
         "planned_tests": [
           "plugins/fleet-core/tests/test_tier_resolver.py"
         ],
-        "rationale": "Port shared policy or proof behavior through the catalog-aware Codex fleet-core boundary.",
+        "rationale": "Record the adapted Fleet Core release notes in U8 with the version and cutover evidence; U2 does not publish metadata early.",
         "row_id": "src-ae2bfb19c195be7f",
         "similarity": null,
         "state": "classified",
         "surface_kind": "changelog",
         "treatment": "codex-adapt",
         "units": [
-          "U2"
+          "U8"
         ]
       },
       {
@@ -841,7 +866,7 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
+        "evidence_refs": ["u2-fleet-core-check-20260710"],
         "host_primitives": [],
         "new_path": "plugins/fleet-core/scripts/fleet_commons/bridge_receipt.py",
         "old_path": null,
@@ -849,14 +874,14 @@
           "plugins/fleet-core/scripts/fleet_commons/bridge_receipt.py"
         ],
         "planned_tests": [
-          "plugins/fleet-core/tests/test_tier_resolver.py"
+          "plugins/fleet-core/tests/test_bridge_receipt.py"
         ],
-        "rationale": "Port the host-neutral algorithm or schema directly behind the same tested package boundary; no Claude host primitive is activated.",
+        "rationale": "Port the transport-discriminated receipt schema behind Fleet Core and add Codex-safe type, URL, argv, and secret-shaped evidence validation.",
         "row_id": "src-961ac2648293a89f",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
-        "treatment": "direct-port",
+        "treatment": "codex-adapt",
         "units": [
           "U2"
         ]
@@ -869,7 +894,7 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
+        "evidence_refs": ["u2-fleet-core-check-20260710"],
         "host_primitives": [],
         "new_path": "plugins/fleet-core/scripts/fleet_commons/cost_weights.json",
         "old_path": null,
@@ -877,14 +902,14 @@
           "plugins/fleet-core/scripts/fleet_commons/cost_weights.json"
         ],
         "planned_tests": [
-          "plugins/fleet-core/tests/test_tier_resolver.py"
+          "plugins/fleet-core/tests/test_cost_weights.py"
         ],
-        "rationale": "Port the host-neutral algorithm or schema directly behind the same tested package boundary; no Claude host primitive is activated.",
+        "rationale": "Adapt the upstream ordinal grid to the Codex scalar low-through-max effort ladder while retaining lineage models only for imported economics compatibility.",
         "row_id": "src-2801f0af7297416e",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "config",
-        "treatment": "direct-port",
+        "treatment": "codex-adapt",
         "units": [
           "U2"
         ]
@@ -897,7 +922,7 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
+        "evidence_refs": ["u2-fleet-core-check-20260710"],
         "host_primitives": [],
         "new_path": "plugins/fleet-core/scripts/fleet_commons/cost_weights.py",
         "old_path": null,
@@ -905,14 +930,14 @@
           "plugins/fleet-core/scripts/fleet_commons/cost_weights.py"
         ],
         "planned_tests": [
-          "plugins/fleet-core/tests/test_tier_resolver.py"
+          "plugins/fleet-core/tests/test_cost_weights.py"
         ],
-        "rationale": "Port the host-neutral algorithm or schema directly behind the same tested package boundary; no Claude host primitive is activated.",
+        "rationale": "Adapt validation to the Codex scalar low-through-max effort ladder; weights remain ordinal and never select active models.",
         "row_id": "src-65f0685e134a3f9d",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
-        "treatment": "direct-port",
+        "treatment": "codex-adapt",
         "units": [
           "U2"
         ]
@@ -925,7 +950,7 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
+        "evidence_refs": ["u2-fleet-core-check-20260710"],
         "host_primitives": [],
         "new_path": "plugins/fleet-core/scripts/fleet_commons/delegation_audit.py",
         "old_path": null,
@@ -933,12 +958,12 @@
           "plugins/fleet-core/scripts/fleet_commons/delegation_audit.py"
         ],
         "planned_tests": [
-          "plugins/fleet-core/tests/test_tier_resolver.py"
+          "plugins/fleet-core/tests/test_bridge_receipt.py"
         ],
-        "rationale": "Adapt the portable algorithm while replacing Claude state or execution paths with the contained Codex boundary.",
+        "rationale": "Adapt transcript and bundle corroboration to Codex tool names, contained relative evidence, bounded reads, and advisory-only authority.",
         "row_id": "src-10e6c1982d164efa",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -953,7 +978,7 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
+        "evidence_refs": ["u2-fleet-core-check-20260710"],
         "host_primitives": [],
         "new_path": "plugins/fleet-core/scripts/fleet_commons/delegation_state.py",
         "old_path": null,
@@ -961,12 +986,12 @@
           "plugins/fleet-core/scripts/fleet_commons/delegation_state.py"
         ],
         "planned_tests": [
-          "plugins/fleet-core/tests/test_tier_resolver.py"
+          "plugins/fleet-core/tests/test_bridge_receipt.py"
         ],
-        "rationale": "Adapt the portable algorithm while replacing Claude state or execution paths with the contained Codex boundary.",
+        "rationale": "Adapt liveness state to contained ignored Codex state with atomic permission-safe writes; it remains advisory and is not a hook guard.",
         "row_id": "src-e93b887b9cc4c041",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -981,7 +1006,7 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
+        "evidence_refs": ["u2-fleet-core-check-20260710"],
         "host_primitives": [],
         "new_path": "plugins/fleet-core/scripts/fleet_commons/output_attestation.py",
         "old_path": null,
@@ -989,40 +1014,12 @@
           "plugins/fleet-core/scripts/fleet_commons/output_attestation.py"
         ],
         "planned_tests": [
-          "plugins/fleet-core/tests/test_tier_resolver.py"
+          "plugins/fleet-core/tests/test_bridge_receipt.py"
         ],
-        "rationale": "Port the host-neutral algorithm or schema directly behind the same tested package boundary; no Claude host primitive is activated.",
+        "rationale": "Adapt the host-neutral hash schema with safe relative artifact references and strict bool/type rejection for committed Codex evidence.",
         "row_id": "src-65cf00d03d2c057e",
         "similarity": null,
-        "state": "classified",
-        "surface_kind": "script",
-        "treatment": "direct-port",
-        "units": [
-          "U2"
-        ]
-      },
-      {
-        "capability_refs": [
-          "capability:model-catalog-and-custom-agent-config"
-        ],
-        "change": "M",
-        "codex_invariant_refs": [
-          "codex-execution-base"
-        ],
-        "evidence_refs": [],
-        "host_primitives": [],
-        "new_path": "plugins/fleet-core/scripts/fleet_commons/render_tier_table.py",
-        "old_path": null,
-        "planned_targets": [
-          "plugins/fleet-core/scripts/fleet_commons/render_tier_table.py"
-        ],
-        "planned_tests": [
-          "plugins/fleet-core/tests/test_tier_resolver.py"
-        ],
-        "rationale": "Port shared policy or proof behavior through the catalog-aware Codex fleet-core boundary.",
-        "row_id": "src-2f67fabd345f4c49",
-        "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -1037,7 +1034,35 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
+        "evidence_refs": ["u2-fleet-core-check-20260710"],
+        "host_primitives": [],
+        "new_path": "plugins/fleet-core/scripts/fleet_commons/render_tier_table.py",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/fleet-core/scripts/fleet_commons/render_tier_table.py"
+        ],
+        "planned_tests": [
+          "plugins/fleet-core/tests/test_render_tier_table.py"
+        ],
+        "rationale": "Adapt registry rendering to the five Codex execution classes and one caller-supplied immutable catalog snapshot; role defaults remain outside Fleet Core.",
+        "row_id": "src-2f67fabd345f4c49",
+        "similarity": null,
+        "state": "verified",
+        "surface_kind": "script",
+        "treatment": "codex-adapt",
+        "units": [
+          "U2"
+        ]
+      },
+      {
+        "capability_refs": [
+          "capability:model-catalog-and-custom-agent-config"
+        ],
+        "change": "M",
+        "codex_invariant_refs": [
+          "codex-execution-base"
+        ],
+        "evidence_refs": ["u2-fleet-core-check-20260710"],
         "host_primitives": [],
         "new_path": "plugins/fleet-core/scripts/fleet_commons/retry_backoff.py",
         "old_path": null,
@@ -1045,12 +1070,12 @@
           "plugins/fleet-core/scripts/fleet_commons/retry_backoff.py"
         ],
         "planned_tests": [
-          "plugins/fleet-core/tests/test_tier_resolver.py"
+          "plugins/fleet-core/tests/test_retry_backoff.py"
         ],
         "rationale": "Port the host-neutral algorithm or schema directly behind the same tested package boundary; no Claude host primitive is activated.",
         "row_id": "src-cdf133631a5cda4c",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "direct-port",
         "units": [
@@ -1065,7 +1090,7 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
+        "evidence_refs": ["u2-fleet-core-check-20260710"],
         "host_primitives": [],
         "new_path": "plugins/fleet-core/scripts/fleet_commons/tier_palette.py",
         "old_path": null,
@@ -1075,10 +1100,10 @@
         "planned_tests": [
           "plugins/fleet-core/tests/test_tier_resolver.py"
         ],
-        "rationale": "Port shared policy or proof behavior through the catalog-aware Codex fleet-core boundary.",
+        "rationale": "Adapt the lineage-backed palette additively with authoritative Codex execution classes, scalar max, catalog candidates, and a root-only Ultra policy.",
         "row_id": "src-2934e4039a1db441",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -1103,15 +1128,13 @@
         "planned_tests": [
           "plugins/fleet-core/tests/test_tier_resolver.py"
         ],
-        "rationale": "Port shared policy or proof behavior through the catalog-aware Codex fleet-core boundary.",
+        "rationale": "Reject the upstream work-shape policy change because logical-role defaults and class transitions belong to Verified Workflows; preserve the existing file only as temporary legacy-consumer compatibility.",
         "row_id": "src-e8889789457187d4",
         "similarity": null,
         "state": "classified",
         "surface_kind": "config",
-        "treatment": "codex-adapt",
-        "units": [
-          "U2"
-        ]
+        "treatment": "reject",
+        "units": []
       },
       {
         "capability_refs": [
@@ -1217,17 +1240,15 @@
           "plugins/fleet-core/references/tier-palette.md"
         ],
         "planned_tests": [
-          "plugins/fleet-core/tests/test_tier_resolver.py"
+          "plugins/fleet-core/tests/test_render_tier_table.py"
         ],
-        "rationale": "Translate the Claude command behavior into an existing Codex skill, reference, or deterministic script; no active commands directory ships.",
+        "rationale": "Reject the Claude slash command and its per-session dynamic override semantics because Codex has no equivalent per-spawn model or effort selector; Codex-native class guidance is documented independently.",
         "row_id": "src-a32441119dba4b12",
         "similarity": null,
         "state": "classified",
         "surface_kind": "command",
-        "treatment": "codex-adapt",
-        "units": [
-          "U2"
-        ]
+        "treatment": "reject",
+        "units": []
       },
       {
         "capability_refs": [
@@ -1447,16 +1468,16 @@
           "plugins/saga/references/effort-policy.yaml"
         ],
         "planned_tests": [
-          "plugins/fleet-core/tests/test_tier_resolver.py"
+          "tests/test_chaperone_economics.py"
         ],
-        "rationale": "Normalize model and effort policy through fleet-core while retaining this source as lineage evidence.",
+        "rationale": "Adapt effort escrow with the external-engine economics and operator escalation boundary in U7, after dispatch proof exists.",
         "row_id": "src-3fa2deffe1f63f30",
         "similarity": null,
         "state": "classified",
         "surface_kind": "config",
         "treatment": "codex-adapt",
         "units": [
-          "U2"
+          "U7"
         ]
       },
       {
@@ -1587,16 +1608,16 @@
           "plugins/saga/references/model-releases.yaml"
         ],
         "planned_tests": [
-          "plugins/fleet-core/tests/test_tier_resolver.py"
+          "tests/test_engine_registry_lint.py"
         ],
-        "rationale": "Normalize model and effort policy through fleet-core while retaining this source as lineage evidence.",
+        "rationale": "Adapt authored external-engine release freshness data with the U6 registry and resolver; Codex native model capability comes from the live catalog instead.",
         "row_id": "src-f8a1484a586e015a",
         "similarity": null,
         "state": "classified",
         "surface_kind": "config",
         "treatment": "codex-adapt",
         "units": [
-          "U2"
+          "U6"
         ]
       },
       {
@@ -2541,15 +2562,13 @@
         "planned_tests": [
           "plugins/fleet-core/tests/test_tier_resolver.py"
         ],
-        "rationale": "Adapt source model, tier, and effort behavior to the current Codex catalog and scalar-effort policy.",
+        "rationale": "Reject committed work-shape model pins: they can stale against the Codex catalog and conflict with Verified Workflows role/class policy, which is the canonical planning boundary.",
         "row_id": "src-cb2829dcce25b382",
         "similarity": null,
         "state": "classified",
         "surface_kind": "script",
-        "treatment": "codex-adapt",
-        "units": [
-          "U2"
-        ]
+        "treatment": "reject",
+        "units": []
       },
       {
         "capability_refs": [
@@ -2569,15 +2588,13 @@
         "planned_tests": [
           "plugins/fleet-core/tests/test_tier_resolver.py"
         ],
-        "rationale": "Adapt source model, tier, and effort behavior to the current Codex catalog and scalar-effort policy.",
+        "rationale": "Reject the singleton Claude session override because Codex cannot change child model or effort per spawn; selected managed profiles and plan-time classes are the enforceable boundary.",
         "row_id": "src-65406399b045329a",
         "similarity": null,
         "state": "classified",
         "surface_kind": "script",
-        "treatment": "codex-adapt",
-        "units": [
-          "U2"
-        ]
+        "treatment": "reject",
+        "units": []
       },
       {
         "capability_refs": [
@@ -3415,20 +3432,20 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
+        "evidence_refs": ["u2-fleet-core-check-20260710"],
         "host_primitives": [],
         "new_path": "tests/test_bridge_receipt.py",
         "old_path": null,
         "planned_targets": [
-          "plugins/fleet-core/tests/test_tier_resolver.py"
+          "plugins/fleet-core/tests/test_bridge_receipt.py"
         ],
         "planned_tests": [
-          "plugins/fleet-core/tests/test_tier_resolver.py"
+          "plugins/fleet-core/tests/test_bridge_receipt.py"
         ],
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-e2b51a5167e221bd",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -3448,19 +3465,19 @@
         "new_path": "tests/test_bridge_receipt_drift.py",
         "old_path": null,
         "planned_targets": [
-          "plugins/fleet-core/tests/test_tier_resolver.py"
+          "tests/test_bridge_receipt_drift.py"
         ],
         "planned_tests": [
-          "plugins/fleet-core/tests/test_tier_resolver.py"
+          "tests/test_bridge_receipt_drift.py"
         ],
-        "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
+        "rationale": "Adapt emitter-enumeration drift proof in U6 after the Codex engine registry and bridge implementations exist.",
         "row_id": "src-87b19c49d49a5c08",
         "similarity": null,
         "state": "classified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
-          "U2"
+          "U6"
         ]
       },
       {
@@ -3671,20 +3688,20 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
+        "evidence_refs": ["u2-fleet-core-check-20260710"],
         "host_primitives": [],
         "new_path": "tests/test_cost_weights.py",
         "old_path": null,
         "planned_targets": [
-          "plugins/fleet-core/tests/test_tier_resolver.py"
+          "plugins/fleet-core/tests/test_cost_weights.py"
         ],
         "planned_tests": [
-          "plugins/fleet-core/tests/test_tier_resolver.py"
+          "plugins/fleet-core/tests/test_cost_weights.py"
         ],
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-f918a85fc644fa96",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -3699,20 +3716,20 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
+        "evidence_refs": ["u2-fleet-core-check-20260710"],
         "host_primitives": [],
         "new_path": "tests/test_delegation_audit.py",
         "old_path": null,
         "planned_targets": [
-          "plugins/fleet-core/tests/test_tier_resolver.py"
+          "plugins/fleet-core/tests/test_bridge_receipt.py"
         ],
         "planned_tests": [
-          "plugins/fleet-core/tests/test_tier_resolver.py"
+          "plugins/fleet-core/tests/test_bridge_receipt.py"
         ],
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-689e8e455beb6648",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -4427,20 +4444,20 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
+        "evidence_refs": ["u2-fleet-core-check-20260710"],
         "host_primitives": [],
         "new_path": "tests/test_output_attestation.py",
         "old_path": null,
         "planned_targets": [
-          "plugins/fleet-core/tests/test_tier_resolver.py"
+          "plugins/fleet-core/tests/test_bridge_receipt.py"
         ],
         "planned_tests": [
-          "plugins/fleet-core/tests/test_tier_resolver.py"
+          "plugins/fleet-core/tests/test_bridge_receipt.py"
         ],
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-9549ee5f074cb953",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -4511,20 +4528,20 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
+        "evidence_refs": ["u2-fleet-core-check-20260710"],
         "host_primitives": [],
         "new_path": "tests/test_retry_backoff.py",
         "old_path": null,
         "planned_targets": [
-          "plugins/fleet-core/tests/test_tier_resolver.py"
+          "plugins/fleet-core/tests/test_retry_backoff.py"
         ],
         "planned_tests": [
-          "plugins/fleet-core/tests/test_tier_resolver.py"
+          "plugins/fleet-core/tests/test_retry_backoff.py"
         ],
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-77bde31bbff6f91c",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -4991,15 +5008,13 @@
         "planned_tests": [
           "plugins/fleet-core/tests/test_tier_resolver.py"
         ],
-        "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
+        "rationale": "Reject with the committed work-shape model-pin behavior it tests; Verified Workflows class policy replaces that Claude-derived persistence model.",
         "row_id": "src-2b7215ab5e9a2240",
         "similarity": null,
         "state": "classified",
         "surface_kind": "test",
-        "treatment": "codex-adapt",
-        "units": [
-          "U2"
-        ]
+        "treatment": "reject",
+        "units": []
       },
       {
         "capability_refs": [
@@ -5009,7 +5024,7 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
+        "evidence_refs": ["u2-fleet-core-check-20260710"],
         "host_primitives": [],
         "new_path": "tests/test_tier_resolver.py",
         "old_path": null,
@@ -5022,7 +5037,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-f2f67c32a3e543d1",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -5047,15 +5062,13 @@
         "planned_tests": [
           "plugins/fleet-core/tests/test_tier_resolver.py"
         ],
-        "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
+        "rationale": "Reject with the unsupported per-session per-spawn model override behavior it tests; Codex model and effort are selected by managed profile.",
         "row_id": "src-eefa4468ba762099",
         "similarity": null,
         "state": "classified",
         "surface_kind": "test",
-        "treatment": "codex-adapt",
-        "units": [
-          "U2"
-        ]
+        "treatment": "reject",
+        "units": []
       },
       {
         "capability_refs": [

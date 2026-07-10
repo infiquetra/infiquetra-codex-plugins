@@ -91,6 +91,49 @@ def test_retry_after_hint_overrides_computed_delay() -> None:
     assert slept == [7.0]
 
 
+def test_positive_retry_after_is_capped_at_max_delay() -> None:
+    slept: list[float] = []
+    calls = {"n": 0}
+
+    def fn() -> str:
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise _HttpError(429)
+        return "ok"
+
+    assert rb.retry_with_backoff(
+        fn,
+        max_attempts=2,
+        max_delay=5.0,
+        retry_after=lambda _exc: 500.0,
+        sleep=slept.append,
+    ) == "ok"
+    assert slept == [5.0]
+
+
+@pytest.mark.parametrize("hint", [0.0, -10.0])
+def test_nonpositive_retry_after_uses_computed_jitter(hint: float) -> None:
+    slept: list[float] = []
+    calls = {"n": 0}
+    expected = rb._computed_delay(1, 2.0, 60.0, random.Random(7))
+
+    def fn() -> str:
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise _HttpError(429)
+        return "ok"
+
+    rb.retry_with_backoff(
+        fn,
+        max_attempts=2,
+        base_delay=2.0,
+        retry_after=lambda _exc: hint,
+        sleep=slept.append,
+        rng=random.Random(7),
+    )
+    assert slept == [expected]
+
+
 def test_circuit_breaker_opens_then_half_opens() -> None:
     clock = {"t": 0.0}
     breaker = rb.CircuitBreaker(fail_threshold=2, cooldown=10.0, clock=lambda: clock["t"])

@@ -36,8 +36,11 @@ def test_frozen_source_and_codex_inventories_are_exhaustive() -> None:
     assert len(source["rows"]) == source["expected_count"] == 156
     assert contract.inventory_digest(source["rows"]) == source["inventory_sha256"]
     assert len({row["row_id"] for row in source["rows"]}) == 156
-    assert all(row["state"] == "classified" for row in source["rows"])
-    assert all(row["treatment"] in {"direct-port", "codex-adapt", "defer", "reject"} for row in source["rows"])
+    assert all(row["state"] in {"classified", "implemented", "verified"} for row in source["rows"])
+    assert all(
+        row["treatment"] in {"direct-port", "codex-adapt", "defer", "reject"}
+        for row in source["rows"]
+    )
 
     assert codex["historical_plan_base"] == contract.DEFAULT_CODEX_PLAN_BASE
     assert codex["execution_base"] == "3f639109b06ed2634d5333a58fb200b06e36dbbe"
@@ -271,13 +274,13 @@ def test_release_evidence_kind_must_match_release_slot() -> None:
     assert any("release_evidence.review must reference `review` evidence" in error for error in errors)
 
 
-def test_unit_and_cutover_stages_fail_before_their_evidence_exists() -> None:
+def test_completed_u2_unit_passes_while_cutover_remains_closed() -> None:
     manifest = load_manifest()
 
     unit_errors = contract.validate_manifest(ROOT, manifest, stage="unit", unit="U2")
     cutover_errors = contract.validate_manifest(ROOT, manifest, stage="cutover")
 
-    assert any("claimed by U2 but is not verified" in error for error in unit_errors)
+    assert unit_errors == []
     assert any("cutover requires" in error for error in cutover_errors)
 
 

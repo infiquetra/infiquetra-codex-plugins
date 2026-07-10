@@ -40,7 +40,7 @@ advisory input; repository diff checks confirmed no child mutation.
 - Refreshed source authority and portability documentation. Team Execution remains the sole active
   workflow package; Verified Workflows remains an unpublished target until the U8 cutover gate.
 
-## Independent Review
+## U1 Independent Review
 
 The first U1 review found two P1 enforcement gaps and one P2 recapture gap:
 
@@ -52,6 +52,42 @@ All were fixed. The re-review reported no remaining P0-P3 findings: active refs 
 bound and Codex Git inventory is recomputed; evidence is non-vacuous, successful, unit-bound,
 kind-bound, path-safe, timestamped, and attached to approved history; capability checks include
 config provenance, managed counts, and explicit allowlisted session facts.
+
+## U2 Complete: Fleet Core Model, Effort, Cost, And Proof Policy
+
+- Corrected the staged classification before implementation: U2 now claims 15 Fleet Core source
+  and source-test rows rather than 26 mixed Fleet Core/Saga/release rows. Release metadata moved to
+  U8, engine model releases to U6, effort escrow to U7, and bridge-emitter drift proof to U6. The
+  Claude `/tier`, work-shape policy delta, committed tier pins, and singleton session override were
+  rejected with Codex-specific rationales rather than emulated.
+- Split the registry into temporary lineage compatibility plus authoritative Codex policy. Existing
+  `MODELS`, `EFFORTS`, `codex_tier()`, and work-shape consumers remain green; new APIs expose
+  `SCALAR_EFFORTS=low..max`, five execution classes, and a separate explicit root-only Ultra policy.
+- Added one bounded argv-only catalog reader: refreshed then bundled once, 15-second timeout,
+  combined 16 MiB ceiling, closed allowlisted projection, immutable snapshot, raw-input and
+  normalized hashes, and no model-instruction leakage. The live reader reproduced the U1 catalog
+  hash and resolved all five classes to the expected Sol/Terra/Luna profiles.
+- Resolution preserves requested effort across ordered model candidates before any downward clamp.
+  It retains distinct `scan-low` and `monitor-low` permission boundaries, fails on upward clamps or
+  incompatible catalogs, and cannot return Ultra for a leaf.
+- Ported ordinal cost weights through scalar `max`, bounded retry hints, bridge receipts, output
+  attestation, advisory transcript/bundle audit, and contained atomic liveness state. External-engine
+  proof remains separate from Verified Workflows role/profile proof.
+- Kept all five consumer shim copies byte-identical and smoke-loaded the new palette and catalog
+  through Saga, Team Execution, Mission Control, and both UniFi consumers.
+
+## U2 Independent Review
+
+The first pass found two P1 and nine distinct P2 issues across its review rounds. All were fixed:
+same-run validated receipt joins; symlink/hardlink-safe owned lock files; explicit empty-effort
+rejection; closed receipt, runner, and nested-attestation schemas; receipt/attestation byte binding;
+positive-only weights; engine/run identity binding; finite-number handling without large-integer
+overflow; and negative tests for each boundary. Two independent re-reviews reported no remaining
+P0-P3 code findings.
+
+The staged U2 evidence is `docs/validation/codex-plugin-modernization-u2.json`. All 15 claimed rows
+are verified against it, the generated classification is current, and the U2 unit-stage contract
+gate passes.
 
 ## Checks Run
 
@@ -66,8 +102,17 @@ config provenance, managed counts, and explicit allowlisted session facts.
 - `uv run ruff check ...` — passed for U1 Python and tests.
 - `PYTHONPATH=. uv run pytest -q` — 1336 passed.
 - `git diff --check` — passed.
+- U2 focused Fleet Core suite — 95 passed.
+- U2 full `PYTHONPATH=. uv run pytest -q` — 1407 passed.
+- U2 scoped `uv run ruff check` over Fleet Core and port-contract surfaces — passed.
+- U2 live catalog resolution — eight rows, committed normalized hash reproduced, five class
+  selections matched policy.
+- `python3 scripts/port_contract.py validate --stage unit --unit U2` — passed.
+- Repository-wide `ruff check .` is not a U2 gate and remains red on four pre-existing unrelated
+  findings in `tests/test_typed_exceptions.py`, `scripts/build_saga_docs_facts.py`, and
+  `scripts/render_saga_docs_assets.py`; no unrelated files were changed.
 
 ## Next Step
 
-Commit U1, record its Saga checkpoint, then execute U2: modernize fleet-core model, effort, fallback,
-cost, retry, and proof policy using only the U2 rows allowed by the port manifest.
+Commit U2 and record its Saga checkpoint, then execute U9: establish the unpublished
+`verified-workflows` package identity and compatibility vocabulary without activating cutover.
