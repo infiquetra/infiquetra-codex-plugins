@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.65.1 - 2026-07-10
+
+### Fixed
+- Normalized canonical `owner/repo#N` issue and pull request references into the numeric target plus
+  `--repo owner/repo` arguments accepted by `gh` across Outcome reads and merge operations.
+- Preserved existing behavior for bare-number and GitHub URL references while retaining fail-closed
+  handling for unreadable GitHub state.
+
 ## 0.65.0 - 2026-07-10
 
 ### Changed
