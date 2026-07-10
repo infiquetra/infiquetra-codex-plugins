@@ -1,5 +1,21 @@
 # Decisions
 
+## 2026-07-10: Modernize Codex Model And Execution Truth Before The Next Claude Import
+
+The next port cycle is commit-bounded at Codex `788902513e48ea95fd0504ac3c850c8c02e5d920` and Claude `38742ece89880a6b140be237edad6d3f13c97b54`, a focused `9470edc..38742ece` window of 156 files across fleet-core, Saga, team-execution, and their tests. The cycle first separates lifecycle state, continuation, dispatch vehicle, role identity, model/effort policy, and hooks; it then modernizes fleet-core, activates and attests Team Execution, repairs Saga's real-launch boundary, and only then imports the Claude engine/trust/reconciliation delta.
+
+The Codex model policy keeps `fable`/`opus`/`sonnet`/`haiku` only as lineage keys. Preferred mappings are Sol/max for exceptional bounded root judgment, Sol/high for reviewer judgment, Terra/medium for general workers and testers, and Luna/low for scanners and monitors, with catalog-aware ordered fallbacks. Scalar effort is `low..max`; Ultra is a root orchestration profile because it adds automatic delegation and is prohibited in leaf agent profiles.
+
+Managed Team Execution agent files must carry active `model` and `model_reasoning_effort`, but installation alone is not execution proof. Delegated evidence requires a receipt binding named role, child identity, hook-reported active model, the digest of the exact installed TOML (which binds expected effort because the hook does not report it), and result vehicle. Generic subagents never satisfy Team Execution gates, and a fresh isolated proof may leave the capability explicitly `serial-only`. P0, security, and required-validator hard failures remain blocking after the three-cycle remediation cap.
+
+Saga keeps durable lifecycle/outcome state. Goal is explicit long-running continuation, hooks are event extensions, and Team Execution is a dispatch/gate protocol; none is a substitute execution backend. Outcome dispatch becomes a v2 intent plus typed acknowledgement: only `launched` creates dispatched work, `handed-off` is visible but not launched, and legacy commit records remain settled as `legacy-unverified` until append-only evidence reconciliation. A synthetic `leaf-*` id cannot advance state by itself. Codex hooks are behavioral adaptations with explicit trust, prompt-free contained receipts, and no surprise Git mutation; blocking PreToolUse enforcement is deferred while unified-exec interception remains incomplete.
+
+Target Codex releases are fleet-core `0.8.4` and Saga `0.75.17`, preserving the frozen source-lineage labels, plus team-execution `2.4.0` on its existing Codex adapter line. Codex differences remain explicit in `PORTABILITY.md`; no version claims byte parity. Metadata changes land last, after locked-environment tests, isolated install, agent sync, hook trust, fresh-session capability proof, and a recorded managed-surface rollback path.
+
+Rejected: importing Claude `0.75.17` before fixing model/runtime foundations, treating Ultra as a scalar leaf effort, inheriting the mutable machine default, counting installed TOMLs or a simulated probe as named dispatch, keeping Goal/hooks/subagents/Workflow in one backend enum, copying Claude hooks/commands, or editing installed cache as source.
+
+Plan: `docs/plans/2026-07-10-codex-plugin-model-execution-modernization-plan.md`.
+
 ## 2026-07-07: Saga Resolves Sibling Plugins From The Codex Plugin Environment
 
 Saga outcome board-sync depends on mission-control, and several plugins depend on fleet-core, but those are sibling plugin dependencies, not files under the consumer repository. Runtime resolution should therefore start from the executing script's plugin environment: source checkout or local marketplace `plugins/<name>` siblings first, then installed-cache marketplace versions, with explicit env overrides only for fleet-core.
