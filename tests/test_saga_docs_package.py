@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 
 from scripts import build_saga_docs_facts, render_saga_docs_assets
-from scripts.validate_codex_plugins import TARGET_EXPECTED_PLUGINS
+from scripts.validate_codex_plugins import CURRENT_EXPECTED_PLUGINS
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DOCS_ROOT = REPO_ROOT / "docs" / "saga"
@@ -35,9 +35,32 @@ def test_command_catalog_covers_saga_family_skills() -> None:
     facts = load_facts()
     text = (DOCS_ROOT / "command-catalog.md").read_text(encoding="utf-8")
     for plugin in ("saga", "mission-control", "team-execution", "deploy"):
-        for skill in TARGET_EXPECTED_PLUGINS[plugin]["skills"]:
+        for skill in CURRENT_EXPECTED_PLUGINS[plugin]["skills"]:
             assert f"{plugin}:{skill}" in text
             assert any(row["name"] == skill for row in facts["plugins"][plugin]["skills"])
+
+
+def test_target_fixture_facts_project_verified_workflows_without_changing_current_docs() -> None:
+    facts = build_saga_docs_facts.build_facts(REPO_ROOT, inventory_mode="target-fixture")
+
+    assert set(facts["plugins"]) == {
+        "saga",
+        "mission-control",
+        "verified-workflows",
+        "deploy",
+    }
+    assert "team-execution" not in facts["plugins"]
+    assert facts["plugins"]["verified-workflows"]["version"] == "1.0.0"
+    assert {
+        row["namespace"] for row in facts["plugins"]["verified-workflows"]["skills"]
+    } == {
+        "verified-workflows:run",
+        "verified-workflows:appsec-audit",
+    }
+    assert "verified-workflows" in facts["owner_boundaries"]
+    assert build_saga_docs_facts.dumps(facts) == build_saga_docs_facts.dumps(
+        build_saga_docs_facts.build_facts(REPO_ROOT, inventory_mode="target-fixture")
+    )
 
 
 def test_routable_saga_commands_and_maturities_are_documented() -> None:

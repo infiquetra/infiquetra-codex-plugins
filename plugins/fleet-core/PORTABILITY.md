@@ -23,7 +23,8 @@ compatibility policy. Consumer shims are synchronized derivatives; installed cac
 `fleet-core` is a scripts-only library plugin: it has no skills, commands, or agents. It is the
 canonical home for cross-plugin shared primitives (model/effort tier palette, tier resolver,
 effort rider, retry/backoff) and the canonical copy of `fleet_commons_shim.py`, the resolution
-shim consuming plugins (`saga`, `team-execution`, `mission-control`, `unifi`) vendor
+shim consuming plugins (`saga`, temporary legacy `team-execution`, staged `verified-workflows`,
+`mission-control`, `unifi`) vendor
 byte-identically.
 
 ## Codex Differences From Upstream
@@ -39,6 +40,10 @@ byte-identically.
   effort is `low..max`; Ultra is root-only and explicit.
 - **Lineage compatibility:** `fable`/`opus`/`sonnet`/`haiku`, the old work-shape resolver, and
   their mappings remain temporary compatibility APIs. They do not select new managed profiles.
+- **Workflow identity compatibility:** `workflow_compat.py` owns the closed old-read/new-write
+  mapping for the Team Execution-to-Verified Workflows migration. Unknown values fail closed;
+  consumers load the registry only through their own fleet-core shim. Surviving old tokens are
+  exact-path and digest bound by the generated legacy-workflow inventory.
 - **Proof split:** external-engine bridge receipts and output attestations are shared schemas but
   never attest a Verified Workflows role or effective reasoning effort. Delegation audit/state is
   advisory and writes only contained ignored Codex state.
@@ -49,6 +54,6 @@ byte-identically.
 
 ## Consumers
 
-`plugins/{saga,team-execution,mission-control}/scripts/fleet_commons_shim.py` and
+`plugins/{saga,team-execution,verified-workflows,mission-control}/scripts/fleet_commons_shim.py` and
 `plugins/unifi/skills/unifi-{network,protect}/scripts/fleet_commons_shim.py` are byte-identical
 vendored copies of this plugin's shim, guarded by `plugins/fleet-core/tests/test_shim_drift.py`.

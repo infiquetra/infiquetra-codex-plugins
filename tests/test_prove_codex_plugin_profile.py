@@ -32,7 +32,11 @@ def test_generate_static_proof_contains_required_evidence(tmp_path: Path) -> Non
     )
 
     assert proof["default_profile_mutated"] is False
-    assert proof["installed_plugins"] == list(proof_script.TARGET_PLUGINS)
+    assert proof["installed_plugins"] == list(proof_script.CURRENT_INSTALL_PLUGINS)
+    upgrade = next(profile for profile in proof["profiles"] if profile["name"] == "upgrade-from-old")
+    assert set(upgrade["seeded_inventory"]).isdisjoint(upgrade["replacement_inventory"])
+    assert "team-execution" not in upgrade["seeded_inventory"]
+    assert upgrade["old_inventory_absent"] is True
     assert {item["skill"] for item in proof["namespace_proof"]} == {
         "saga:plan",
         "saga:work",
@@ -59,7 +63,7 @@ def test_rendered_markdown_redacts_local_profile_paths() -> None:
         "profile_class": "isolated repo-local CODEX_HOME under ignored .codex/proofs",
         "default_profile_mutated": False,
         "marketplace": {"name": "infiquetra-saga-family-proof"},
-        "installed_plugins": list(proof_script.TARGET_PLUGINS),
+        "installed_plugins": list(proof_script.CURRENT_INSTALL_PLUGINS),
         "codex_cli_install": {"mode": "static", "executed": False},
         "flows": {
             "saga": {"recommended": "team-execution", "source_workflow_excluded": True},
@@ -78,3 +82,22 @@ def test_rendered_markdown_redacts_local_profile_paths() -> None:
     assert ".codex/proofs/saga-family/<run-id>/" in text
     assert "saga:plan" in text
     assert "Default profile mutated: `false`" in text
+
+
+def test_target_fixture_identity_is_read_only_and_unpublished() -> None:
+    before = (ROOT / ".agents" / "plugins" / "marketplace.json").read_bytes()
+
+    proof = proof_script.target_fixture_identity(ROOT)
+
+    assert proof["mode"] == "target-fixture"
+    assert proof["workflow_plugin"] == "verified-workflows"
+    assert proof["workflow_version"] == "1.0.0"
+    assert proof["workflow_skills"] == ["appsec-audit", "run"]
+    assert proof["publication_status"] == "unpublished"
+    assert proof["legacy_workflow_marketplace_listed"] is True
+    assert proof["target_workflow_marketplace_listed"] is False
+    assert proof["installed_plugin_state"] == "unobserved"
+    assert proof["profile_state"] == "unobserved"
+    assert proof["cache_state"] == "unobserved"
+    assert "default_profile_mutated" not in proof
+    assert (ROOT / ".agents" / "plugins" / "marketplace.json").read_bytes() == before

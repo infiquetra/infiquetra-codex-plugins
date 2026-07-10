@@ -11,6 +11,7 @@ dist/
 build/
 .codex/saga/
 .codex/team-execution/
+.codex/verified-workflows/
 .codex/proofs/
 .neuralmind/
 graphify-out/

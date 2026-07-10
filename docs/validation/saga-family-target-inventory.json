@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "2.0",
   "mode": "target-fixture",
   "description": "Saga-family target inventory used before active marketplace cutover.",
   "plugins": [
@@ -71,18 +71,17 @@
       ]
     },
     {
-      "name": "team-execution",
-      "version": "2.3.0",
+      "name": "verified-workflows",
+      "version": "1.0.0",
+      "publication_status": "unpublished",
       "skills": [
-        "team-execution",
+        "run",
         "appsec-audit"
       ],
       "forbidden_active_dirs": [
         ".claude-plugin",
-        "commands"
-      ],
-      "managed_active_dirs": [
-        "agents/*.toml"
+        "commands",
+        "agents"
       ]
     },
     {
@@ -166,17 +165,36 @@
   ],
   "removed_plugins": [
     "blueprint-reviewer",
-    "sdlc-manager"
+    "sdlc-manager",
+    "team-execution"
+  ],
+  "unpublished_plugins": [
+    "verified-workflows"
+  ],
+  "legacy_readable_plugins": [
+    "team-execution"
   ],
   "required_namespace_proof": [
     "saga:plan",
     "saga:work",
-    "saga:brainstorm"
+    "saga:brainstorm",
+    "verified-workflows:run",
+    "verified-workflows:appsec-audit"
   ],
   "required_state_roots": [
     ".codex/saga/",
+    ".codex/verified-workflows/"
+  ],
+  "legacy_readable_state_roots": [
     ".codex/team-execution/"
   ],
+  "development_lock": {
+    "active_workflow_plugin": "team-execution",
+    "unpublished_workflow_plugin": "verified-workflows",
+    "marketplace_sha256": "42803919b39b720599b9692bfdcd95bcfe8c31b06ebb2c976aacaa890fdfea8a",
+    "legacy_source_file_count": 52,
+    "legacy_source_tree_sha256": "ee3486b96fc07308d089d0cabf09a218ecd3008369c5adb2444e70719c1e8c0e"
+  },
   "mutation_gate_plugins": [
     "deploy",
     "mission-control",

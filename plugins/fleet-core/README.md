@@ -2,7 +2,7 @@
 
 Fleet-commons library plugin: the canonical home for cross-plugin shared primitives and the
 canonical copy of the vendored resolution shim. **Scripts-only** — no skills, commands, or
-agents. Consumer plugins (`saga`, `team-execution`, `mission-control`, `unifi`) vendor a
+agents. Consumer plugins (`saga`, `team-execution`, `verified-workflows`, `mission-control`, `unifi`) vendor a
 byte-identical copy of `fleet_commons_shim.py` and load the shared modules through it.
 
 ## What lives here
@@ -20,6 +20,7 @@ byte-identical copy of `fleet_commons_shim.py` and load the shared modules throu
 | `scripts/fleet_commons/retry_backoff.py` | Shared 429 retry/backoff + circuit breaker. |
 | `scripts/fleet_commons/bridge_receipt.py` / `output_attestation.py` | External-engine execution and output proof schemas. |
 | `scripts/fleet_commons/delegation_audit.py` / `delegation_state.py` | Advisory external-engine corroboration and contained liveness state. |
+| `scripts/fleet_commons/workflow_compat.py` | Closed Team Execution-to-Verified Workflows reader aliases and canonical-write vocabulary. |
 | `scripts/fleet_commons/render_tier_table.py` | Renders static and catalog-resolved execution-class tables. |
 
 ## Codex resolution ladder
@@ -43,6 +44,10 @@ New Codex profiles select one of `review-max`, `review-high`, `test-medium`, `sc
 `monitor-low`, then resolve it against the runtime model catalog. The old
 `fable`/`opus`/`sonnet`/`haiku` vocabulary and mappings remain only so existing consumers stay
 green until their planned migration. See `references/tier-palette.md`.
+
+`team-execution` is the byte-stable, marketplace-active legacy consumer during U9 development.
+The unpublished `verified-workflows` source is its staged successor. Both load one compatibility
+registry, but only Team Execution is active until U8 atomically replaces it.
 
 ## Tests
 

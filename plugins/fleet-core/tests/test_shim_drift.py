@@ -18,6 +18,7 @@ _CANONICAL = _REPO_ROOT / "plugins" / "fleet-core" / "scripts" / "fleet_commons_
 _EXPECTED_VENDORED = (
     "plugins/saga/scripts/fleet_commons_shim.py",
     "plugins/team-execution/scripts/fleet_commons_shim.py",
+    "plugins/verified-workflows/scripts/fleet_commons_shim.py",
     "plugins/mission-control/scripts/fleet_commons_shim.py",
     "plugins/unifi/skills/unifi-network/scripts/fleet_commons_shim.py",
     "plugins/unifi/skills/unifi-protect/scripts/fleet_commons_shim.py",

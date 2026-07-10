@@ -1,0 +1,1415 @@
+{
+  "entries": [
+    {
+      "classification": "temporary-active-marketplace",
+      "path": ".agents/plugins/marketplace.json",
+      "sha256": "42803919b39b720599b9692bfdcd95bcfe8c31b06ebb2c976aacaa890fdfea8a",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "legacy-readable-state-root",
+      "path": ".gitignore",
+      "sha256": "4a068733e4b8da0f314e253ed5c5f435eb2a1ee870bb793c3307ca472639dad7",
+      "tokens": [
+        ".codex/team-execution/",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "current-pre-cutover-inventory",
+      "path": "AGENTS.md",
+      "sha256": "13eb50d9227c494c683770ca6ca3da60bd6d7575b5cc8d8c74b91cb728ee8bc7",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "current-pre-cutover-inventory",
+      "path": "README.md",
+      "sha256": "ed282569a06df1d670f00373b84a01355b8ba077a51d0d56b5b9fe34ff1fd8a8",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "current-pre-cutover-documentation",
+      "path": "docs/baseline/codex-visible-plugins.md",
+      "sha256": "dc43cd32984546655d48959d723d40e4d95e8d09433e13eb0c7212e4b751189b",
+      "tokens": [
+        "team-execution",
+        "team-execution:appsec-audit",
+        "team-execution:team-execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/brainstorms/2026-05-27-codex-plugin-repo-requirements.md",
+      "sha256": "8cd35e6435331f906130c17d11112c5f00a16195eb1b1a33ab4ab754984e8a10",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/brainstorms/2026-06-06-codex-saga-family-replacement-requirements.md",
+      "sha256": "f8a7db1d43195847cb1c53f9133cbaff158f7da0b35a54f637c108ade42e3dea",
+      "tokens": [
+        ".codex/team-execution/",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/brainstorms/2026-06-09-saga-family-documentation-package-requirements.md",
+      "sha256": "9768cdb54139ea8d8b9a758e0e55a0b900d923ffbcb74d6deea8c710a81b0885",
+      "tokens": [
+        "team-execution",
+        "team-execution:team-execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/brainstorms/2026-06-29-codex-saga-orchestration-requirements.md",
+      "sha256": "9f723ef2b6438d1ef563e8a8c26f01f1da41d0754754e8abbfe9e7952f912c10",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/brainstorms/2026-06-30-team-execution-saga-orchestration-repair-requirements.md",
+      "sha256": "14fb43945f67c1a9bf073c1c877085648bf3015f8e448be0ad0630a0ec83c374",
+      "tokens": [
+        "## Team Structure",
+        "Team Execution",
+        "team-execution",
+        "team-execution-delegated",
+        "team-execution-serial"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/code-reviews/2026-07-07-outcome-plugin-dependency-resolution-code-review.md",
+      "sha256": "e0238982b16686f252d72e1483cc6af972e854693561110ca6176a788bd1a30c",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-documentation",
+      "path": "docs/cutover/cache-replacement.md",
+      "sha256": "1eed1ccf401a8269f3ff57e42d133fe8ac63fac67e7a47d41d193e34ab74f117",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-documentation",
+      "path": "docs/cutover/saga-family-rollback-and-split.md",
+      "sha256": "a8ddfe878be8081c3e271e6adaa703b1cf2a2e1b8bb9bad7603dff8dcdc3fd40",
+      "tokens": [
+        "team-execution",
+        "team-execution:team-execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/engineering-journal/DECISIONS.md",
+      "sha256": "efe335046f415816d2b8c3c3f1566563a0813a16ff3ce7348ad4f1ba39534818",
+      "tokens": [
+        "## Team Structure",
+        "Team Execution",
+        "team-execution",
+        "team-execution-delegated",
+        "team-execution-serial"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/engineering-journal/QUEUED.md",
+      "sha256": "a2ef977fc34557a7ac708aa0fcf08d51ffc2b6adc51daed2c85263d2fa9e839a",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/ideation/2026-05-27-codex-plugin-strategy.md",
+      "sha256": "90f5eda44561e3bcd2e08f86b6ba51934e3bb64027f4465df84c18c388570470",
+      "tokens": [
+        "Team Execution",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/ideation/2026-06-06-codex-saga-port-ideation.md",
+      "sha256": "83cb5b14dbfb1989af6a37e0c93a5c2853eaf6596f46801514a63ee522ec7c73",
+      "tokens": [
+        "## Team Structure",
+        "Team Execution",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/ideation/2026-06-30-team-execution-saga-orchestration-repair-ideation.md",
+      "sha256": "3e9714f3af45652a158cf05faad1513a33163c356cc004b4b84bb852c8380047",
+      "tokens": [
+        "## Team Structure",
+        "#team-structure",
+        "Team Execution",
+        "team-execution",
+        "team-execution-delegated",
+        "team-execution-serial"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/investigations/2026-06-30-team-execution-saga-orchestration-debug-report.md",
+      "sha256": "ecc08eceda3a67dc81d15b1930753fe236ca7c1ae9b3ad9dd506cdecfb0ac4fa",
+      "tokens": [
+        "## Team Structure",
+        "#team-structure",
+        ".codex/team-execution/",
+        "Team Execution",
+        "team-execution",
+        "team-execution-delegated",
+        "team-execution-serial"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/outcomes/discord-visual-identity-publisher/outcome-spec.json",
+      "sha256": "e91430a9d071494fcac1ab20b9021b9fb54678a91ad3dc6fcefc094fcbac652f",
+      "tokens": [
+        "#team-structure",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/outcomes/team-execution-saga-orchestration-repair/outcome-spec.json",
+      "sha256": "738e8d5e36f247d3dd1d62df489ff45a2fe8b79a0566b96bee85c2e92bd43099",
+      "tokens": [
+        "#team-structure",
+        "Team Execution",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/outcomes/team-execution-saga-orchestration-repair/report.md",
+      "sha256": "f9d7e68270404594e96f4b41435b4d34153250b579765df4850c520e6b3fd402",
+      "tokens": [
+        "Team Execution",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/plans/2026-06-06-001-feat-saga-family-replacement-plan.md",
+      "sha256": "412616701c7bdbd9754db0ba7a66e3a519d2c22d92c65ba02519ebffb5d10afe",
+      "tokens": [
+        ".codex/team-execution/",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/plans/2026-06-09-saga-family-documentation-package-plan.md",
+      "sha256": "87d58e03c99358f62622f2af730e03cffa9c88bd8696f6e9dfdbb4581ffe91b8",
+      "tokens": [
+        "Team Execution",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/plans/2026-06-17-codex-active-plugin-parity.md",
+      "sha256": "48f8bb2ddb1f649078a28d3ceef765c5c66953e1fedb4a17f0660e1b7b60a0f0",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/plans/2026-06-27-port-recent-claude-plugin-updates.md",
+      "sha256": "8031c83bf5237ce60fe489925c09fa731de6c386f1f1f07b43ab14b3124e4a1d",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/plans/2026-06-29-codex-saga-orchestration-plan.md",
+      "sha256": "ae109f873bf822caf479dbb640a1c64aac35923c9a9548370c7422ebe54d9118",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/plans/2026-06-30-team-execution-saga-orchestration-repair-plan.md",
+      "sha256": "46027456753e756e33e8e6d48fe372717be31da48e2f754d01e3f95fe1b96d5e",
+      "tokens": [
+        "## Team Structure",
+        "#team-structure",
+        ".codex/team-execution/",
+        "Team Execution",
+        "team-execution",
+        "team-execution-delegated",
+        "team-execution-serial",
+        "team_execution_ref",
+        "~/.codex/team-execution/state/"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/plans/2026-07-01-discord-visual-identity-publisher-plan.md",
+      "sha256": "b66ece1a608fb1e7f7bd1cfa83917a918a295435b5c2b8095495d24196d2b56f",
+      "tokens": [
+        "## Team Structure",
+        "#team-structure",
+        "Team Execution",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/plans/2026-07-06-port-claude-plugin-updates-to-0.64-plan.md",
+      "sha256": "bb873f6456869564756d9c3f6bf46132db3d4247b3b3bcaa971a1f61c3334ccd",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/plans/2026-07-06-port-claude-plugin-updates-to-0.64-spec.json",
+      "sha256": "319f116f373462e66d9394fee37952ed68b82360df0fbe8f1787773501abc261",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/plans/2026-07-06-port-claude-plugin-updates-to-0.64.workflow.js",
+      "sha256": "43636c3542951bba72f6fbef526c704b3040dfd98d13702bbba4ee36eb72e49c",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/plans/2026-07-07-outcome-plugin-dependency-resolution-plan.md",
+      "sha256": "6250083defe3eeabd437dbc34adaad217896774a1473b486096a9086b8fd2100",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/plans/2026-07-10-codex-plugin-model-execution-modernization-plan.md",
+      "sha256": "4f6e1e8693234b815958ce9675a93caf6385c15d76582c555ea6a89769f015ea",
+      "tokens": [
+        "#team-structure",
+        "Team Execution",
+        "team-execution",
+        "team_execution_ref"
+      ]
+    },
+    {
+      "classification": "lineage-documentation",
+      "path": "docs/portability/claude-to-codex-plugin-port-runbook.md",
+      "sha256": "5bc8b6952dcc86538920b7d7d221115f5fbdc806a06d51d7b0b0562c1415879b",
+      "tokens": [
+        "Team Execution",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "lineage-documentation",
+      "path": "docs/portability/codex-saga-041-harness-delta.md",
+      "sha256": "3f834638c7119cb81de1107baa8c7b0526c0fc260b11c9be517835bbf5cdac34",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "lineage-documentation",
+      "path": "docs/portability/codex-saga-064-drift-classification.md",
+      "sha256": "4cd818f27bdaf6aec1252e0aea099457826df376e8060cf7574288bc068430f7",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "lineage-documentation",
+      "path": "docs/portability/codex-saga-07517-drift-classification.md",
+      "sha256": "446dddc27ddb2527e560ed9ba59701f144fdfd54641de2002619bcf40afd55e2",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "lineage-documentation",
+      "path": "docs/portability/matrix.md",
+      "sha256": "4eadbcf54e1b1bdc36129e0a74ea854d7fbe29308b2d80d0dab84c78dc8789d2",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "lineage-documentation",
+      "path": "docs/portability/ports/2026-07-10-saga-07517.json",
+      "sha256": "f67b3d97a774e2d19ea8ac60cbed62bad3e91d04de201e790e73b9c3fa86b3f0",
+      "tokens": [
+        "Team Execution",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "lineage-documentation",
+      "path": "docs/portability/provenance.md",
+      "sha256": "cd74bab4e2470a6a1fdda49e247d2e7c987722c906a8cb5845d529ede4c38089",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "lineage-documentation",
+      "path": "docs/portability/saga-family-capability-map.md",
+      "sha256": "b0316d9f9b1eec585a8cf69d0c381f667b327b981c34859867b5d1c6c499d4d4",
+      "tokens": [
+        "team-execution",
+        "team-execution:team-execution"
+      ]
+    },
+    {
+      "classification": "lineage-documentation",
+      "path": "docs/portability/saga-family-known-use-inventory.md",
+      "sha256": "7d76eeab33bd9f827dd682c90d73866a5a9d483168da55f82b901145d66d0298",
+      "tokens": [
+        "team-execution",
+        "team-execution:team-execution"
+      ]
+    },
+    {
+      "classification": "lineage-documentation",
+      "path": "docs/portability/saga-family-state-policy.md",
+      "sha256": "eb558e56dfb2f882527e0456468f9c44dde1e14a5604a23c85126fde8d1f789d",
+      "tokens": [
+        ".codex/team-execution/",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "lineage-documentation",
+      "path": "docs/portability/source-baseline-saga-family.md",
+      "sha256": "db01928d21ada3b99fee165b9d5ee358eed5ade50fdd10f439e3da96c0e0c4fc",
+      "tokens": [
+        ".codex/team-execution/",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/reviews/2026-06-27-port-recent-claude-plugin-updates-plan-review.md",
+      "sha256": "bb697272b682ba6ae6e35383368bf8906e2d042e123eb1dd98aeffe56fdb7f03",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/reviews/2026-06-30-team-execution-saga-orchestration-repair-plan-doc-review.md",
+      "sha256": "4466cda9aae3e714ed224d91e589c8057f04d65970502fb8cece4da32dfdc3a0",
+      "tokens": [
+        "## Team Structure",
+        "Team Execution",
+        "team-execution",
+        "team_execution_ref"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/reviews/2026-06-30-team-execution-saga-orchestration-repair-requirements-doc-review.md",
+      "sha256": "db46a90725a3696d705c13734fe5793aba96f4bb9a8f694a31ab4710d493217e",
+      "tokens": [
+        "## Team Structure",
+        "Team Execution",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/reviews/2026-07-01-discord-visual-identity-publisher-code-review.md",
+      "sha256": "47d8daf203021633844159c9edfe4637cb70f2037184d1771cc205c30b60831d",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/reviews/2026-07-01-discord-visual-identity-publisher-plan-doc-review.md",
+      "sha256": "1b5a2ddd9f3dd5bbd6e1016c8588fbef352acf6c417ed6dc04b6d72c488e6b15",
+      "tokens": [
+        "#team-structure",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/reviews/2026-07-10-codex-plugin-model-execution-modernization-plan-doc-review-r2.md",
+      "sha256": "e1a3fdec37be347f56ca84956b33fe58aade8904d1445841f693318007071915",
+      "tokens": [
+        "Team Execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/reviews/2026-07-10-codex-plugin-model-execution-modernization-plan-doc-review-r3.md",
+      "sha256": "934d742d794247499c00997bd7e3313a023b8a14d94e4bc418dce1e8da7ba219",
+      "tokens": [
+        "Team Execution",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/reviews/2026-07-10-codex-plugin-model-execution-modernization-plan-doc-review.md",
+      "sha256": "971016f69067a74bb9d574bf9d2e6fdfbadf2580010c68af79880c35e2957faf",
+      "tokens": [
+        "Team Execution"
+      ]
+    },
+    {
+      "classification": "current-pre-cutover-documentation",
+      "path": "docs/saga/README.md",
+      "sha256": "31b69305e40c1f9443f561f991fd4f207b6589ba68ad48689afd7f2bda9dd5fb",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "current-pre-cutover-documentation",
+      "path": "docs/saga/associated-plugins.md",
+      "sha256": "930e174eb8531cc06bbaaa219774d19dce757fc4339c413adc1afc0543f8a6b8",
+      "tokens": [
+        "Team Execution",
+        "team-execution",
+        "team-execution:team-execution"
+      ]
+    },
+    {
+      "classification": "current-pre-cutover-documentation",
+      "path": "docs/saga/command-catalog.md",
+      "sha256": "1cea285dda8452fe133e5a3ac8a1e306e770131325a3479a39741db6d2b40872",
+      "tokens": [
+        "Team Execution",
+        "team-execution",
+        "team-execution:appsec-audit",
+        "team-execution:team-execution"
+      ]
+    },
+    {
+      "classification": "current-pre-cutover-documentation",
+      "path": "docs/saga/generated/lifecycle-facts.json",
+      "sha256": "ceaa11b64fb8a2dcd02a37cff63adc0f4d9ed7ee15e38574412eb78ddfc0f553",
+      "tokens": [
+        "team-execution",
+        "team-execution:appsec-audit",
+        "team-execution:team-execution"
+      ]
+    },
+    {
+      "classification": "current-pre-cutover-documentation",
+      "path": "docs/saga/quick-reference.md",
+      "sha256": "cc0c609464b3a56a065297f0f3fd40d84fb0b9f75c5956009d0c16bff500f989",
+      "tokens": [
+        "team-execution",
+        "team-execution:team-execution"
+      ]
+    },
+    {
+      "classification": "current-pre-cutover-documentation",
+      "path": "docs/saga/scenarios.md",
+      "sha256": "48a34acb5547b39ceab1b26263c23c0e365a20913a51f186e114830c7d2217b5",
+      "tokens": [
+        "Team Execution",
+        "team-execution",
+        "team-execution:appsec-audit",
+        "team-execution:team-execution"
+      ]
+    },
+    {
+      "classification": "current-pre-cutover-documentation",
+      "path": "docs/saga/visual-assets/ownership-boundaries.svg",
+      "sha256": "5cbf69867565699ad0004e5a44538619222dd45b5f220866ffbb3bf2aea0c9a6",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "current-pre-cutover-documentation",
+      "path": "docs/saga/visual-assets/saga-lifecycle-atlas.svg",
+      "sha256": "dbe6dff7d08a73a7354118fe5e3adf5817c797cdffbe0c7184630761cf7e3ee9",
+      "tokens": [
+        "Team Execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/validation/codex-runtime-capability-snapshot.json",
+      "sha256": "b978f0631b4b0b3178e4201ff2f27f0bbba6fddcb690b97d2c935ddb52810070",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "current-install-proof",
+      "path": "docs/validation/saga-family-codex-proof.md",
+      "sha256": "fb1c1372933498bea0e319d27baa0a5fa8cbcf15a020b94f73231d7b80d52356",
+      "tokens": [
+        ".codex/team-execution/",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "legacy-read-metadata",
+      "path": "docs/validation/saga-family-target-inventory.json",
+      "sha256": "d8693396e49c1abd200157ccb35f47bc1d102be0757502f61cda10e683e876a8",
+      "tokens": [
+        ".codex/team-execution/",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-documentation",
+      "path": "docs/validation.md",
+      "sha256": "43ff9dadd6c9c95ef501846875554d60469df7b59ae49763218a90aa983a9827",
+      "tokens": [
+        "Team Execution",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/work-sessions/2026-06-17-codex-active-plugin-parity-work.md",
+      "sha256": "4ef20b6355891cd336a8e8285abf079fac15bca56c2ed8faf42a5c4223f9bdfc",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/work-sessions/2026-06-27-team-execution-codex-agents.md",
+      "sha256": "9be36b1e8bda80782dd3dc8a857275902ecb32394f46f1b8a3a6be8fcbda91ad",
+      "tokens": [
+        "Team Execution",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/work-sessions/2026-06-29-codex-saga-041-parity.md",
+      "sha256": "37af75b589979b78982cf6e2f3bc541dd8b0ddffad2a61a81ec50c8826d4be15",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/work-sessions/2026-06-30-team-execution-saga-orchestration-repair.md",
+      "sha256": "ec46f1443ce5d8b9617ef335856c16ad754f4eb08860884ad45663ab2f2bf9b8",
+      "tokens": [
+        "## Team Structure",
+        "Team Execution",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/work-sessions/2026-07-01-discord-visual-identity-publisher-work.md",
+      "sha256": "28752897b53c266812c5ed3b2e8ae9755da365f76d9204f0672039ea83955d9f",
+      "tokens": [
+        "Team Execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/work-sessions/2026-07-06-port-claude-plugin-updates-to-0.64.md",
+      "sha256": "a9b9e8671cfbc12fb26149e4fac4e9a27a21cbf3047a809145aaa9fd4a66518a",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/work-sessions/2026-07-07-outcome-plugin-dependency-resolution.md",
+      "sha256": "85f87323f1fd86419e0a4f95eb2f7dfa43f7e448bfd30d7bbd4b931cd2fdd9dc",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/work-sessions/2026-07-10-codex-plugin-model-execution-modernization.md",
+      "sha256": "8d9cbc5a3dc57c77077eb9cc103e24b0d0f315d46f3bb013931b6b382e3d1094",
+      "tokens": [
+        "Team Execution"
+      ]
+    },
+    {
+      "classification": "lineage-documentation",
+      "path": "plugins/fleet-core/CHANGELOG.md",
+      "sha256": "1370d710a237e97f05d496d1a98f3dc620328298e62824e06da97fbe5351698d",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "lineage-documentation",
+      "path": "plugins/fleet-core/PORTABILITY.md",
+      "sha256": "eb1929571cc0cb8a009210a534c3d3f9a25ac1423e6d1584e38b9395efd6d15f",
+      "tokens": [
+        "Team Execution",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-documentation",
+      "path": "plugins/fleet-core/README.md",
+      "sha256": "39cbcb9c08e30c51c60b0667b51559996d461b18dcb2843d2ba1b41580f76b56",
+      "tokens": [
+        "Team Execution",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "lineage-documentation",
+      "path": "plugins/fleet-core/references/effort-convention.md",
+      "sha256": "afb49b3280ee6b7b4da40e0494b9802438ce2f7bf311912a2e8f2b0395c4716b",
+      "tokens": [
+        "Team Execution"
+      ]
+    },
+    {
+      "classification": "legacy-parser",
+      "path": "plugins/fleet-core/scripts/fleet_commons/tier_palette.py",
+      "sha256": "1f7454b3beac26a2ebb3cbb731bf4f8e2dcfc43b7f8ccfdc4840c4496f6a1b4c",
+      "tokens": [
+        "Team Execution"
+      ]
+    },
+    {
+      "classification": "legacy-parser",
+      "path": "plugins/fleet-core/scripts/fleet_commons/tier_resolver.py",
+      "sha256": "b21e4ef9b20b2e00380b8721380b6097341b18b2f17bd131d658cbae691a267b",
+      "tokens": [
+        "Team Execution",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "compat-registry",
+      "path": "plugins/fleet-core/scripts/fleet_commons/workflow_compat.py",
+      "sha256": "52dc3aad3fb9b63de73873a519fd81bb9a2457d7ac68998fbe0f0442fd7ff5c1",
+      "tokens": [
+        "# managed_by = \"infiquetra-codex-plugins/team-execution\"",
+        "## Team Structure",
+        "#team-structure",
+        ".codex/team-execution/",
+        ".team-execution.json",
+        "Team Execution",
+        "refs/team-execution/snapshots/",
+        "team-execution",
+        "team-execution-delegated",
+        "team-execution-serial",
+        "team-execution:appsec-audit",
+        "team-execution:team-execution",
+        "team_execution_ref",
+        "~/.codex/team-execution/state/"
+      ]
+    },
+    {
+      "classification": "compatibility-fixture",
+      "path": "plugins/fleet-core/tests/test_shim_drift.py",
+      "sha256": "ad39ebb411f7647a7372d3fca3f1b492de73e73a3caa315438c1f57b2f78fd01",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "compatibility-fixture",
+      "path": "plugins/fleet-core/tests/test_tier_resolver.py",
+      "sha256": "975cca1be41212b06920169af1cc9109a8ddba1e86d31c805ece075e25d69a42",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "compatibility-fixture",
+      "path": "plugins/fleet-core/tests/test_workflow_compat.py",
+      "sha256": "f7fc585094abaca5cf807b1d24ac62abac232e45fce8c2fcc2d997f4eff7bbe8",
+      "tokens": [
+        "# managed_by = \"infiquetra-codex-plugins/team-execution\"",
+        "## Team Structure",
+        "#team-structure",
+        ".codex/team-execution/",
+        ".team-execution.json",
+        "Team Execution",
+        "refs/team-execution/snapshots/",
+        "team-execution",
+        "team-execution-delegated",
+        "team-execution-serial",
+        "team-execution:appsec-audit",
+        "team-execution:team-execution",
+        "team_execution_ref",
+        "~/.codex/team-execution/state/"
+      ]
+    },
+    {
+      "classification": "lineage-documentation",
+      "path": "plugins/saga/CHANGELOG.md",
+      "sha256": "ca01ab9c9b3188936e07bbbc1fc28f807fcbef860db67d3348d4181b7a3b963c",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "lineage-documentation",
+      "path": "plugins/saga/PORTABILITY.md",
+      "sha256": "6e88e6a1d1aceb1fcfc58f1d33cfbb11ea7b23942bb94d78eadc0702cc9fdee6",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "temporary-saga-instructions",
+      "path": "plugins/saga/README.md",
+      "sha256": "93c3a13620ec4d75078102166bffb7bc2e93f6d3108595843b5e467050418e19",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "temporary-saga-instructions",
+      "path": "plugins/saga/references/engine-dispatch.md",
+      "sha256": "d8e6b9db40f3b54b494b6f9c6b01fb78766b521d1c0dcb79e96e45279b2644e5",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "temporary-saga-instructions",
+      "path": "plugins/saga/references/operator-choice.md",
+      "sha256": "397666f988b08f7171d6d7dc0935642f235257e39e0f14927f8190349cb647ca",
+      "tokens": [
+        "## Team Structure",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "temporary-saga-instructions",
+      "path": "plugins/saga/references/saga-spec.md",
+      "sha256": "92d01cd0f8e6399502c163b6f3947ca0aeec4990e20f03d45e340b0174c0233a",
+      "tokens": [
+        "## Team Structure",
+        "#team-structure",
+        "Team Execution",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "temporary-saga-writer",
+      "path": "plugins/saga/scripts/execution_spec.py",
+      "sha256": "db9f15ac9e6042b0023e732ec8af058cb38c91f398d33e9878a8284fcc016913",
+      "tokens": [
+        "## Team Structure",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "temporary-saga-writer",
+      "path": "plugins/saga/scripts/lifecycle_state.py",
+      "sha256": "18e44182b99a1468c99e7d167130d8280389d6bc7776a5662aa3a69aacbc3b36",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "temporary-saga-writer",
+      "path": "plugins/saga/scripts/manifest_store.py",
+      "sha256": "7accc55fd83593ebee97abad9b6fbf6194761ec173c6bfc2c86c8df44440ab8d",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "temporary-saga-writer",
+      "path": "plugins/saga/scripts/outcome.py",
+      "sha256": "aeb916ae5c636dd82fe4a027683a2db336f3c66cd3bd25c015eacc546b3271a9",
+      "tokens": [
+        "Team Execution",
+        "team-execution",
+        "team_execution_ref"
+      ]
+    },
+    {
+      "classification": "temporary-saga-writer",
+      "path": "plugins/saga/scripts/outcome_dispatcher.py",
+      "sha256": "8203579818e99d4e263c702d843b72b650c10cdc1592356aaa82d56e09861e3a",
+      "tokens": [
+        "## Team Structure",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "temporary-saga-writer",
+      "path": "plugins/saga/scripts/outcome_spec.py",
+      "sha256": "c38f111b6d4fac182807e812262e421e5159c2ac61f8b0d01497192ef6b1a22b",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "temporary-saga-reader",
+      "path": "plugins/saga/scripts/override_rate_reader.py",
+      "sha256": "87ed8816ae2d26e02086defc36662fbb58f5535cbee9e44c78c3bdcba39ac6e9",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "temporary-saga-writer",
+      "path": "plugins/saga/scripts/provenance_manifest.py",
+      "sha256": "913c4d8bf0e3194ce2e5ffacd7051d3ad6431ae6f729370193405a272e96c2c3",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "temporary-saga-writer",
+      "path": "plugins/saga/scripts/saga.py",
+      "sha256": "340453c02a916504906c7b30c343228a6f1eb76e5d2050d43791dff01b2ab20b",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "temporary-saga-writer",
+      "path": "plugins/saga/scripts/team_emitter.py",
+      "sha256": "a842d33fdac93091a45f93085beb97c2ea878e508b595d1569df7d99b4bdea5d",
+      "tokens": [
+        "## Team Structure",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "temporary-saga-reader",
+      "path": "plugins/saga/scripts/team_execution_readiness.py",
+      "sha256": "1e9ae22ca7a74dec73f468093ca82686d8bc2b350de55f1491f485a9b3406e8f",
+      "tokens": [
+        "## Team Structure",
+        "#team-structure",
+        ".codex/team-execution/",
+        "Team Execution",
+        "team-execution",
+        "~/.codex/team-execution/state/"
+      ]
+    },
+    {
+      "classification": "temporary-saga-instructions",
+      "path": "plugins/saga/skills/code-review/SKILL.md",
+      "sha256": "12fdbb14041abe9894b357e1f8cc1034ccb6804d6327221c149de1e58d02b223",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "temporary-saga-instructions",
+      "path": "plugins/saga/skills/doc-review/SKILL.md",
+      "sha256": "7dde3949af6d552ca1f158a36fec2e1939df75a5f2de351484d26070bcac7b14",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "temporary-saga-instructions",
+      "path": "plugins/saga/skills/founder-review/SKILL.md",
+      "sha256": "d4b21626a9fa1d58581564d5e92da3541e559b289f4f98d8b2f6c07aa51035c1",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "temporary-saga-instructions",
+      "path": "plugins/saga/skills/investigate/SKILL.md",
+      "sha256": "dd14b72ccde950fd3468a010426b64d1a22064b400fd2f6003023d97f2792f7f",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "temporary-saga-instructions",
+      "path": "plugins/saga/skills/investigate/references/methodology.md",
+      "sha256": "56bbd2665c1b0b496d0b9ef9b679538965c83eaa4ee76ce7aca5057a92440016",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "temporary-saga-instructions",
+      "path": "plugins/saga/skills/loop/SKILL.md",
+      "sha256": "c4ddb72b9410ba4a6d926786679b3e43bbec4725ea71dfed28739e6ef76e39fc",
+      "tokens": [
+        "Team Execution",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "temporary-saga-instructions",
+      "path": "plugins/saga/skills/loop/references/drive-and-resume.md",
+      "sha256": "9d22f58caa320f143af9158018c4e8733a0806c9a234cd82383aa14950f4d6e2",
+      "tokens": [
+        "Team Execution",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "temporary-saga-instructions",
+      "path": "plugins/saga/skills/optimize/SKILL.md",
+      "sha256": "92e350b4f34a3a2b6ee81a069c7ae023d09eca1548e93f1f7920e92f54a81dde",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "temporary-saga-instructions",
+      "path": "plugins/saga/skills/optimize/references/experiment-loop.md",
+      "sha256": "9563bd1788ca8579d1c26845068d36f416fa10cd60669f43306df61af12d462d",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "temporary-saga-instructions",
+      "path": "plugins/saga/skills/outcome/SKILL.md",
+      "sha256": "e04f5558f3175f9fbd54f69a11a708ee52aae2a09efd3f8f2dd704e5530bc12e",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "temporary-saga-instructions",
+      "path": "plugins/saga/skills/plan/SKILL.md",
+      "sha256": "725ab92dd9282248538c7cf5389917f634ec1b2c1f885723f6ef5ab41805a69e",
+      "tokens": [
+        "## Team Structure",
+        "#team-structure",
+        "Team Execution",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "temporary-saga-instructions",
+      "path": "plugins/saga/skills/plan/references/plan-sections.md",
+      "sha256": "42507424e5d0cb241a531a76db70796e6ceb1ecaa1e69619d02e04cde006bc05",
+      "tokens": [
+        "## Team Structure",
+        "#team-structure",
+        "Team Execution",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "temporary-saga-instructions",
+      "path": "plugins/saga/skills/qa/SKILL.md",
+      "sha256": "4024387b5e53aa39c2e7e0ef313a7bd55412c8946e75cf709c1e523e9bfab71d",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "temporary-saga-instructions",
+      "path": "plugins/saga/skills/resume/SKILL.md",
+      "sha256": "96dbf96c2ab4c86ecc08f30938beecce926b32fc12f80d8fabba53e1436d597d",
+      "tokens": [
+        "Team Execution",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "temporary-saga-instructions",
+      "path": "plugins/saga/skills/retro/SKILL.md",
+      "sha256": "9e7994dcbc9a97d0d72e687895797b003d4c9e6bdad7ae64d73978e7917b3daa",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "temporary-saga-instructions",
+      "path": "plugins/saga/skills/retro/references/self-edit-safety.md",
+      "sha256": "fdfe4f16959838422fca5b99c01c82498ac4c83706631b7b1341b4dfbc2bff17",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "temporary-saga-instructions",
+      "path": "plugins/saga/skills/work/SKILL.md",
+      "sha256": "3903ef82c6685e03e12ad043552c0c7aa34363b6cac9d241f376354f90b87f4d",
+      "tokens": [
+        "## Team Structure",
+        "#team-structure",
+        "Team Execution",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "temporary-saga-instructions",
+      "path": "plugins/saga/skills/work/references/execution-strategy.md",
+      "sha256": "2433916203d9e724c957e42838fa9cf87960220a0749837ce4af74c04abea327",
+      "tokens": [
+        "Team Execution",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-fixture",
+      "path": "plugins/saga/tests/test_lifecycle_state.py",
+      "sha256": "4d97e47d13f87fa659fe8a10a8a27a796923e06472766ddbcb3585a0fd5e900f",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-fixture",
+      "path": "plugins/saga/tests/test_provenance_manifest.py",
+      "sha256": "bd91b12c18765fedb1876ad06b3316201730c062af450d12a82b4a5e65316453",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-fixture",
+      "path": "plugins/saga/tests/test_saga_state.py",
+      "sha256": "43d6eeec9ee91ccb6ff2dd1f0ddfbf387be42312096c18eac8df1001c82515dd",
+      "tokens": [
+        "## Team Structure",
+        "#team-structure",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-fixture",
+      "path": "plugins/saga/tests/test_verify_panel_robustness.py",
+      "sha256": "ea5021fe85ac2b0f99c87c90c86a01a2dcb654d5de2657160369ec159dded6c3",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "lineage-documentation",
+      "path": "plugins/verified-workflows/CHANGELOG.md",
+      "sha256": "712a3b8644295be873dd4e1438654238e147ba6eb4909aad37b35827d1dd9d4b",
+      "tokens": [
+        "Team Execution",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "lineage-documentation",
+      "path": "plugins/verified-workflows/PORTABILITY.md",
+      "sha256": "20074f234d8b4d780530c9a74e6d34009d04fab43e571c9e61ca47b3d2a1eb7e",
+      "tokens": [
+        "Team Execution",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-documentation",
+      "path": "plugins/verified-workflows/README.md",
+      "sha256": "ca9a8a7cfc4a9bf20c5a2132acd979110ef75c9695545e980f3bae9f2803ee39",
+      "tokens": [
+        "Team Execution",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "temporary-legacy-test-path",
+      "path": "pyproject.toml",
+      "sha256": "ee9c833f2989ca0935344414e0a123ca0dd90674b591af91bfb80a42ce22513d",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "current-target-projection",
+      "path": "scripts/build_saga_docs_facts.py",
+      "sha256": "800c9fb67d2e4b4be0fab130dbd9e9bdc6035072adc27e13f619ccc4d83580ba",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "scripts/capture_codex_runtime_capabilities.py",
+      "sha256": "2cd634aa40b24faea8d87538e404f13608403a01ff3c0a4e68652a29a4f8b21e",
+      "tokens": [
+        "# managed_by = \"infiquetra-codex-plugins/team-execution\"",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "frozen-source-contract",
+      "path": "scripts/port_contract.py",
+      "sha256": "6d32ee566b34f87335fd8b0a43a611f8be06bfb0ca2cda56c48bab792d323bb7",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "current-install-proof",
+      "path": "scripts/prove_codex_plugin_profile.py",
+      "sha256": "d77f4df6f159401c668d8e586140cb1485b3469c240b2c665f2254006391c5dd",
+      "tokens": [
+        ".codex/team-execution/",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "current-doc-renderer",
+      "path": "scripts/render_saga_docs_assets.py",
+      "sha256": "d9421a39ae74532662d842f8fcf5a1a3b4e724ef33094056935534c2695d3bd9",
+      "tokens": [
+        "Team Execution",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-fixture",
+      "path": "tests/test_capability_degrade.py",
+      "sha256": "431d3a0b9e41bcaa9a03787da173f38c46ff8373ef270b2ce86f9e5c9b7dda1e",
+      "tokens": [
+        "## Team Structure",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-fixture",
+      "path": "tests/test_operator_choice_drift.py",
+      "sha256": "3ce9e283e08ae4a303c83ab52de94ffdfcf3a30f9c7d28422a4b6e6aeb489de7",
+      "tokens": [
+        "Team Execution",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-fixture",
+      "path": "tests/test_outcome_backends.py",
+      "sha256": "9a7c94722ec44b8f8d81d7703062d53e591739943bae2efc1ff0feebbade2ec7",
+      "tokens": [
+        "## Team Structure",
+        "#team-structure",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-fixture",
+      "path": "tests/test_outcome_dispatcher.py",
+      "sha256": "505b1e8b25b597468196578f25b42c61e778de27105bcdeb7e99c5c70987961c",
+      "tokens": [
+        "## Team Structure",
+        "#team-structure",
+        "team-execution",
+        "team_execution_ref"
+      ]
+    },
+    {
+      "classification": "migration-fixture",
+      "path": "tests/test_outcome_economics.py",
+      "sha256": "522f0204ff2e4419814817406fef726dc15a029366456244d1bb8ee3caa0ab1e",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-fixture",
+      "path": "tests/test_outcome_integration.py",
+      "sha256": "d68172c255b615ca6759b51543dd1b2c09cb3e08bfb7992bd379981305a46393",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-fixture",
+      "path": "tests/test_outcome_spec.py",
+      "sha256": "c54bbc54968e6f95d8e3033d4c32b4494ae87b728e9122ca7f8c02d5e37e06fb",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-fixture",
+      "path": "tests/test_override_rate.py",
+      "sha256": "d54f5f09560280434becc2da656da6431e5d9e72adf9275b948c469cee97f61e",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-fixture",
+      "path": "tests/test_port_runbook.py",
+      "sha256": "8637a30264a84acfacd8d483cac9aa1bf9fa055a71e1400f6d8fc44287446eba",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-fixture",
+      "path": "tests/test_promote_scan.py",
+      "sha256": "4223d386ce33e854b941c70e4a7a1f0e98d4cb5c42357cea3ec2f1327d517974",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-fixture",
+      "path": "tests/test_prove_codex_plugin_profile.py",
+      "sha256": "9eb5629f5d6ba08e18e40935076e284654731caaea4ba10bb956a1b61618622c",
+      "tokens": [
+        ".codex/team-execution/",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-fixture",
+      "path": "tests/test_saga_docs_package.py",
+      "sha256": "e5a0c13ba94e6c61e119c7292bc8130760263eb5c60bdfa36b3bc76289e87158",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-fixture",
+      "path": "tests/test_team_emitter.py",
+      "sha256": "c2bc88e8b00c2bf55eb0a747ee515fdf6b84df9815f7abccdfdc909dc5ea7e00",
+      "tokens": [
+        "## Team Structure",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-fixture",
+      "path": "tests/test_team_execution_agents.py",
+      "sha256": "2ae398a78f7e9697a6e7ebdec941038dcc1266039792c50917899ab8e248e031",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-fixture",
+      "path": "tests/test_team_execution_lifecycle_text.py",
+      "sha256": "833a162d7f80f088ffb4acfe9eec21c070a7f50b989f70ba853b67437a6a3c72",
+      "tokens": [
+        "## Team Structure",
+        "#team-structure",
+        "Team Execution",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-fixture",
+      "path": "tests/test_team_execution_orchestration_regressions.py",
+      "sha256": "e27a6bdf5884752a0184edd08862e1dc068ec829cb64a00ab7bb6df798a00ab5",
+      "tokens": [
+        "#team-structure",
+        ".codex/team-execution/",
+        "Team Execution",
+        "team-execution",
+        "team-execution-delegated",
+        "team-execution-serial"
+      ]
+    },
+    {
+      "classification": "migration-fixture",
+      "path": "tests/test_team_execution_readiness.py",
+      "sha256": "6afd882d1f1dd5039a2a40868d942116d55df1b68e9ad69f4078eb158e89270c",
+      "tokens": [
+        "## Team Structure",
+        "#team-structure",
+        ".codex/team-execution/",
+        "team-execution",
+        "~/.codex/team-execution/state/"
+      ]
+    },
+    {
+      "classification": "migration-fixture",
+      "path": "tests/test_validate_codex_plugins.py",
+      "sha256": "015b75c1619ad396c5af2a1865a20755d518e44db7ac5aee5e8b3202cbd95efb",
+      "tokens": [
+        ".codex/team-execution/",
+        "team-execution",
+        "team-execution:team-execution"
+      ]
+    },
+    {
+      "classification": "migration-fixture",
+      "path": "tests/test_verified_workflows_migration.py",
+      "sha256": "32108e1e58559274b91769017baf8d5681547f474198129bf88bee80764c824d",
+      "tokens": [
+        "Team Execution",
+        "team-execution"
+      ]
+    }
+  ],
+  "generated_by": "scripts/build_legacy_workflow_inventory.py",
+  "historical_inventory_sha256": "7d70ccc8f723913013c28b189b95ae93b75b666fc922c869f2de6bd867db3a5d",
+  "history_sentinels": {
+    "docs/investigations/2026-06-30-team-execution-saga-orchestration-debug-report.md": {
+      "sha256": "ecc08eceda3a67dc81d15b1930753fe236ca7c1ae9b3ad9dd506cdecfb0ac4fa",
+      "tokens": [
+        "## Team Structure",
+        "Team Execution",
+        "#team-structure",
+        ".codex/team-execution/",
+        "team-execution",
+        "team-execution-delegated",
+        "team-execution-serial"
+      ]
+    },
+    "docs/plans/2026-06-30-team-execution-saga-orchestration-repair-plan.md": {
+      "sha256": "46027456753e756e33e8e6d48fe372717be31da48e2f754d01e3f95fe1b96d5e",
+      "tokens": [
+        "## Team Structure",
+        "Team Execution",
+        "#team-structure",
+        ".codex/team-execution/",
+        "team-execution",
+        "team-execution-delegated",
+        "team-execution-serial",
+        "team_execution_ref",
+        "~/.codex/team-execution/state/"
+      ]
+    },
+    "docs/reviews/2026-06-30-team-execution-saga-orchestration-repair-plan-doc-review.md": {
+      "sha256": "4466cda9aae3e714ed224d91e589c8057f04d65970502fb8cece4da32dfdc3a0",
+      "tokens": [
+        "## Team Structure",
+        "Team Execution",
+        "team-execution",
+        "team_execution_ref"
+      ]
+    }
+  },
+  "legacy_team_execution_tree": {
+    "file_count": 52,
+    "sha256": "ee3486b96fc07308d089d0cabf09a218ecd3008369c5adb2444e70719c1e8c0e"
+  },
+  "schema_version": 1,
+  "workflow_registry_sha256": "1f1fddb6b2d247278d0c38c03e1149232bc03b43ab5db46844dce4593594a8da"
+}

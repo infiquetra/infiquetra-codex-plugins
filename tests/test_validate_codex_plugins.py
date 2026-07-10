@@ -1,13 +1,32 @@
 """Tests for repo validation."""
 
+import copy
+import hashlib
+import json
 from pathlib import Path
 
+import pytest
+
+from scripts import validate_codex_plugins as validator
 from scripts.validate_codex_plugins import (
     CURRENT_EXPECTED_PLUGINS,
     EXPECTED_PLUGINS,
     LEGACY_EXPECTED_PLUGINS,
+    LEGACY_TEAM_EXECUTION_FILE_COUNT,
+    LEGACY_TEAM_EXECUTION_TREE_SHA256,
+    LEGACY_WORKFLOW_HISTORY_SENTINELS,
+    LEGACY_WORKFLOW_INVENTORY,
+    REQUIRED_LEGACY_STATE_ROOTS,
     TARGET_EXPECTED_PLUGINS,
     compare_inventory,
+    deterministic_tree_digest,
+    expected_legacy_workflow_classification,
+    legacy_workflow_file_facts,
+    validate_legacy_workflow_token_allowlist,
+    validate_legacy_history_sentinels,
+    validate_saga_workflow_independence,
+    validate_verified_workflows_canonical_surface,
+    workflow_registry_sha256,
     validate_relative_file,
     validate_repository,
     validate_port_contract,
@@ -16,6 +35,53 @@ from scripts.validate_codex_plugins import (
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def make_verified_workflows_target(tmp_path: Path, filename: str, body: str) -> Path:
+    target = tmp_path / "plugins" / "verified-workflows"
+    target.mkdir(parents=True)
+    (target / filename).write_text(body, encoding="utf-8")
+    (target / "PORTABILITY.md").write_text(
+        "This is a behavior adaptation, not an upstream byte-parity claim.\n",
+        encoding="utf-8",
+    )
+    return target
+
+
+def write_legacy_workflow_inventory(
+    root: Path,
+    classified_paths: dict[str, str],
+) -> None:
+    legacy_tokens = {
+        value for entry in validator.WORKFLOW_COMPAT.REGISTRY.values() for value in entry.legacy
+    }
+    entries = []
+    for raw_path, classification in sorted(classified_paths.items()):
+        content = (root / raw_path).read_bytes()
+        text = content.decode("utf-8")
+        entries.append(
+            {
+                "path": raw_path,
+                "classification": classification,
+                "tokens": sorted(token for token in legacy_tokens if token in text),
+                "sha256": hashlib.sha256(content).hexdigest(),
+            }
+        )
+    payload = {
+        "schema_version": 1,
+        "generated_by": "scripts/build_legacy_workflow_inventory.py",
+        "workflow_registry_sha256": workflow_registry_sha256(),
+        "legacy_team_execution_tree": {
+            "file_count": LEGACY_TEAM_EXECUTION_FILE_COUNT,
+            "sha256": LEGACY_TEAM_EXECUTION_TREE_SHA256,
+        },
+        "history_sentinels": validator.serialized_legacy_history_sentinels(),
+        "historical_inventory_sha256": validator.legacy_historical_entries_sha256(entries),
+        "entries": entries,
+    }
+    path = root / LEGACY_WORKFLOW_INVENTORY
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload), encoding="utf-8")
 
 
 def test_current_repository_validates():
@@ -32,6 +98,7 @@ def test_cutover_is_blocked_until_u8_release_evidence_exists():
 
     assert any("port contract (cutover)" in error for error in errors)
     assert any("cutover requires" in error for error in errors)
+    assert any("unexpected=['team-execution']" in error for error in errors)
 
 
 def test_current_and_target_fixture_run_classification_port_gate():
@@ -42,7 +109,7 @@ def test_current_and_target_fixture_run_classification_port_gate():
     assert errors == []
 
 
-def test_expected_plugin_set_is_saga_family_cutover():
+def test_expected_plugin_set_is_current_pre_cutover_inventory():
     assert set(EXPECTED_PLUGINS) == {
         "saga",
         "deploy",
@@ -56,7 +123,7 @@ def test_expected_plugin_set_is_saga_family_cutover():
         "fleet-core",
     }
     assert EXPECTED_PLUGINS is CURRENT_EXPECTED_PLUGINS
-    assert EXPECTED_PLUGINS is TARGET_EXPECTED_PLUGINS
+    assert EXPECTED_PLUGINS is not TARGET_EXPECTED_PLUGINS
 
 
 def test_legacy_plugin_set_remains_only_for_migration_checks():
@@ -76,7 +143,7 @@ def test_target_plugin_set_describes_saga_family_cutover():
         "saga",
         "deploy",
         "mission-control",
-        "team-execution",
+        "verified-workflows",
         "discord-identity-assets",
         "home-lab-ops",
         "python-toolkit",
@@ -88,6 +155,11 @@ def test_target_plugin_set_describes_saga_family_cutover():
     assert TARGET_EXPECTED_PLUGINS["discord-identity-assets"]["skills"] == (
         "discord-identity-assets",
     )
+    assert TARGET_EXPECTED_PLUGINS["verified-workflows"] == {
+        "version": "1.0.0",
+        "skills": ("run", "appsec-audit"),
+    }
+    assert "team-execution" not in TARGET_EXPECTED_PLUGINS
     assert {"blueprint-reviewer", "sdlc-manager"}.isdisjoint(TARGET_EXPECTED_PLUGINS)
 
 
@@ -97,9 +169,18 @@ def test_target_fixture_requires_namespace_proof():
             {"name": name, "version": spec["version"], "skills": list(spec["skills"]), "forbidden_active_dirs": [".claude-plugin", "commands", "agents"]}
             for name, spec in TARGET_EXPECTED_PLUGINS.items()
         ],
-        "removed_plugins": ["blueprint-reviewer", "sdlc-manager"],
-        "required_namespace_proof": ["saga:plan", "saga:work"],
-        "required_state_roots": [".codex/saga/", ".codex/team-execution/"],
+        "schema_version": "2.0",
+        "removed_plugins": ["blueprint-reviewer", "sdlc-manager", "team-execution"],
+        "unpublished_plugins": ["verified-workflows"],
+        "legacy_readable_plugins": ["team-execution"],
+        "required_namespace_proof": [
+            "saga:plan",
+            "saga:work",
+            "verified-workflows:run",
+            "verified-workflows:appsec-audit",
+        ],
+        "required_state_roots": [".codex/saga/", ".codex/verified-workflows/"],
+        "legacy_readable_state_roots": [".codex/team-execution/"],
         "mutation_gate_plugins": ["deploy", "mission-control", "discord-identity-assets"],
     }
     errors: list[str] = []
@@ -120,9 +201,19 @@ def test_target_fixture_requires_discord_identity_assets_mutation_gate():
             }
             for name, spec in TARGET_EXPECTED_PLUGINS.items()
         ],
-        "removed_plugins": ["blueprint-reviewer", "sdlc-manager"],
-        "required_namespace_proof": ["saga:plan", "saga:work", "saga:brainstorm"],
-        "required_state_roots": [".codex/saga/", ".codex/team-execution/"],
+        "schema_version": "2.0",
+        "removed_plugins": ["blueprint-reviewer", "sdlc-manager", "team-execution"],
+        "unpublished_plugins": ["verified-workflows"],
+        "legacy_readable_plugins": ["team-execution"],
+        "required_namespace_proof": [
+            "saga:plan",
+            "saga:work",
+            "saga:brainstorm",
+            "verified-workflows:run",
+            "verified-workflows:appsec-audit",
+        ],
+        "required_state_roots": [".codex/saga/", ".codex/verified-workflows/"],
+        "legacy_readable_state_roots": [".codex/team-execution/"],
         "mutation_gate_plugins": ["deploy", "mission-control"],
     }
     errors: list[str] = []
@@ -130,6 +221,372 @@ def test_target_fixture_requires_discord_identity_assets_mutation_gate():
     validate_target_fixture_payload(payload, REPO_ROOT / "fixture.json", errors)
 
     assert any("discord-identity-assets" in error for error in errors)
+
+
+def test_target_fixture_rejects_duplicate_plugin_entries():
+    payload = {
+        "schema_version": "2.0",
+        "plugins": [
+            {
+                "name": "verified-workflows",
+                "version": "1.0.0",
+                "publication_status": "unpublished",
+                "skills": ["run", "appsec-audit"],
+                "forbidden_active_dirs": [".claude-plugin", "commands", "agents"],
+            },
+            {
+                "name": "verified-workflows",
+                "version": "1.0.0",
+                "publication_status": "unpublished",
+                "skills": ["run", "appsec-audit"],
+                "forbidden_active_dirs": [".claude-plugin", "commands", "agents"],
+            },
+        ],
+    }
+    errors: list[str] = []
+
+    validate_target_fixture_payload(payload, REPO_ROOT / "fixture.json", errors)
+
+    assert any("duplicate plugin entry `verified-workflows`" in error for error in errors)
+
+
+def test_target_fixture_rejects_legacy_namespace_in_canonical_proof_set():
+    payload = json.loads(
+        (REPO_ROOT / "docs/validation/saga-family-target-inventory.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    payload = copy.deepcopy(payload)
+    payload["required_namespace_proof"].append("team-execution:team-execution")
+    errors: list[str] = []
+
+    validate_target_fixture_payload(payload, REPO_ROOT / "fixture.json", errors)
+
+    assert any(
+        "namespace proof skills mismatch" in error
+        and "team-execution:team-execution" in error
+        for error in errors
+    )
+
+
+def test_target_fixture_rejects_legacy_root_in_canonical_state_set():
+    payload = json.loads(
+        (REPO_ROOT / "docs/validation/saga-family-target-inventory.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    payload = copy.deepcopy(payload)
+    payload["required_state_roots"].append(".codex/team-execution/")
+    errors: list[str] = []
+
+    validate_target_fixture_payload(payload, REPO_ROOT / "fixture.json", errors)
+
+    assert any(
+        "canonical state roots mismatch" in error and ".codex/team-execution/" in error
+        for error in errors
+    )
+
+
+def test_legacy_team_execution_tree_matches_u9_frozen_digest():
+    errors: list[str] = []
+
+    digest = deterministic_tree_digest(REPO_ROOT / "plugins" / "team-execution", errors)
+
+    assert errors == []
+    assert digest == (
+        52,
+        "ee3486b96fc07308d089d0cabf09a218ecd3008369c5adb2444e70719c1e8c0e",
+    )
+    assert REQUIRED_LEGACY_STATE_ROOTS == {".codex/team-execution/"}
+
+
+def test_verified_workflows_rejects_from_plugins_import_saga(tmp_path):
+    make_verified_workflows_target(tmp_path, "bad.py", "from plugins import saga\n")
+    errors: list[str] = []
+
+    validate_verified_workflows_canonical_surface(tmp_path, errors)
+
+    assert any("directly imports another workflow plugin" in error for error in errors)
+
+
+def test_verified_workflows_allows_standard_library_import(tmp_path):
+    make_verified_workflows_target(
+        tmp_path,
+        "good.py",
+        'from json import loads\nLABEL = "saga"\n',
+    )
+    errors: list[str] = []
+
+    validate_verified_workflows_canonical_surface(tmp_path, errors)
+
+    assert errors == []
+
+
+def test_verified_workflows_rejects_dynamic_saga_import(tmp_path):
+    make_verified_workflows_target(
+        tmp_path,
+        "bad.py",
+        'from importlib import import_module\n'
+        'import_module("plugins." + "sa" + "ga" + ".scripts.saga")\n',
+    )
+    errors: list[str] = []
+
+    validate_verified_workflows_canonical_surface(tmp_path, errors)
+
+    assert any("dynamic imports are not allowed" in error for error in errors)
+
+
+@pytest.mark.parametrize(
+    "body",
+    (
+        'import builtins\nname = "json"\nbuiltins.__import__(name)\n',
+        'from builtins import __import__ as load\nname = "json"\nload(name)\n',
+        'name = "json"\nexec("import " + name)\n',
+    ),
+)
+def test_verified_workflows_rejects_dynamic_import_aliases(tmp_path, body):
+    make_verified_workflows_target(tmp_path, "bad.py", body)
+    errors: list[str] = []
+
+    validate_verified_workflows_canonical_surface(tmp_path, errors)
+
+    assert any("dynamic imports are not allowed" in error for error in errors)
+
+
+def test_verified_workflows_allows_importlib_metadata(tmp_path):
+    make_verified_workflows_target(
+        tmp_path,
+        "good.py",
+        "from importlib.metadata import version\n",
+    )
+    errors: list[str] = []
+
+    validate_verified_workflows_canonical_surface(tmp_path, errors)
+
+    assert errors == []
+
+
+def test_verified_workflows_rejects_source_symlink(tmp_path):
+    target = make_verified_workflows_target(tmp_path, "good.py", "from json import loads\n")
+    saga = tmp_path / "plugins" / "saga"
+    saga.mkdir()
+    (target / "saga-link").symlink_to(saga, target_is_directory=True)
+    errors: list[str] = []
+
+    validate_verified_workflows_canonical_surface(tmp_path, errors)
+
+    assert any("canonical target source must not contain symlinks" in error for error in errors)
+
+
+def test_saga_rejects_verified_workflows_source_dependency(tmp_path):
+    script = tmp_path / "plugins" / "saga" / "scripts" / "bad.py"
+    script.parent.mkdir(parents=True)
+    script.write_text(
+        'TARGET = "plugins/" + "verified-" + "workflows/scripts/run.py"\n',
+        encoding="utf-8",
+    )
+    errors: list[str] = []
+
+    validate_saga_workflow_independence(tmp_path, errors)
+
+    assert any("Saga must not import Verified Workflows source" in error for error in errors)
+
+
+def test_saga_allows_unrelated_workflow_prose(tmp_path):
+    script = tmp_path / "plugins" / "saga" / "scripts" / "good.py"
+    script.parent.mkdir(parents=True)
+    script.write_text('MESSAGE = "verified-workflows is not installed"\n', encoding="utf-8")
+    errors: list[str] = []
+
+    validate_saga_workflow_independence(tmp_path, errors)
+
+    assert errors == []
+
+
+def test_saga_rejects_source_symlink_to_verified_workflows(tmp_path):
+    saga = tmp_path / "plugins" / "saga"
+    target = tmp_path / "plugins" / "verified-workflows" / "owned.py"
+    saga.mkdir(parents=True)
+    target.parent.mkdir(parents=True)
+    target.write_text("VALUE = 1\n", encoding="utf-8")
+    (saga / "linked.py").symlink_to(target)
+    errors: list[str] = []
+
+    validate_saga_workflow_independence(tmp_path, errors)
+
+    assert any("Saga source must not contain symlinks" in error for error in errors)
+
+
+def test_verified_workflows_rejects_upstream_byte_parity_claim(tmp_path):
+    target = make_verified_workflows_target(tmp_path, "good.py", "from json import loads\n")
+    (target / "PORTABILITY.md").write_text(
+        "This is a behavior adaptation, not an upstream byte-parity claim.\n"
+        "This package claims upstream byte parity.\n",
+        encoding="utf-8",
+    )
+    errors: list[str] = []
+
+    validate_verified_workflows_canonical_surface(tmp_path, errors)
+
+    assert any("must not claim upstream byte parity" in error for error in errors)
+
+
+def test_legacy_workflow_tokens_require_an_explicit_path_classification(tmp_path):
+    unallowlisted = tmp_path / "plugins" / "saga" / "scripts" / "new_serializer.py"
+    unallowlisted.parent.mkdir(parents=True)
+    unallowlisted.write_text('MODE = "team-execution"\n', encoding="utf-8")
+    historical = tmp_path / "docs" / "plans" / "old.md"
+    historical.parent.mkdir(parents=True)
+    historical.write_text("Historical team-execution plan.\n", encoding="utf-8")
+    write_legacy_workflow_inventory(
+        tmp_path,
+        {"docs/plans/old.md": "historical-evidence"},
+    )
+    errors: list[str] = []
+
+    validate_legacy_workflow_token_allowlist(
+        tmp_path,
+        errors,
+        enforce_history_sentinels=False,
+    )
+
+    assert any(
+        "legacy workflow token path inventory mismatch" in error
+        and "plugins/saga/scripts/new_serializer.py" in error
+        for error in errors
+    )
+    assert (
+        expected_legacy_workflow_classification(
+            Path("plugins/saga/scripts/new_serializer.py")
+        )
+        is None
+    )
+
+
+def test_nested_codex_directory_is_not_hidden_from_legacy_scan(tmp_path):
+    writer = tmp_path / "plugins" / "other" / ".codex" / "writer.py"
+    writer.parent.mkdir(parents=True)
+    writer.write_text('MODE = "team-execution"\n', encoding="utf-8")
+
+    facts = legacy_workflow_file_facts(tmp_path)
+
+    assert "plugins/other/.codex/writer.py" in facts
+
+
+def test_cutover_allowlist_rejects_pre_cutover_active_marketplace(tmp_path):
+    marketplace = tmp_path / ".agents" / "plugins" / "marketplace.json"
+    marketplace.parent.mkdir(parents=True)
+    marketplace.write_text('{"plugins": [{"name": "team-execution"}]}\n', encoding="utf-8")
+    write_legacy_workflow_inventory(
+        tmp_path,
+        {".agents/plugins/marketplace.json": "temporary-active-marketplace"},
+    )
+    staged_errors: list[str] = []
+    cutover_errors: list[str] = []
+
+    validate_legacy_workflow_token_allowlist(
+        tmp_path,
+        staged_errors,
+        enforce_history_sentinels=False,
+    )
+    validate_legacy_workflow_token_allowlist(
+        tmp_path,
+        cutover_errors,
+        mode="cutover",
+        enforce_history_sentinels=False,
+    )
+
+    assert staged_errors == []
+    assert any("cutover-active surface" in error for error in cutover_errors)
+
+
+def test_legacy_inventory_rejects_changes_to_known_saga_writer(tmp_path):
+    writer = tmp_path / "plugins" / "saga" / "scripts" / "outcome.py"
+    writer.parent.mkdir(parents=True)
+    writer.write_text('MODE = "team-execution"\n', encoding="utf-8")
+    write_legacy_workflow_inventory(
+        tmp_path,
+        {"plugins/saga/scripts/outcome.py": "temporary-saga-writer"},
+    )
+    clean: list[str] = []
+    validate_legacy_workflow_token_allowlist(
+        tmp_path,
+        clean,
+        enforce_history_sentinels=False,
+    )
+    assert clean == []
+
+    writer.write_text('MODE = "team-execution"\nWRITES_STATE = True\n', encoding="utf-8")
+    errors: list[str] = []
+    validate_legacy_workflow_token_allowlist(
+        tmp_path,
+        errors,
+        enforce_history_sentinels=False,
+    )
+
+    assert any("legacy workflow content digest drifted" in error for error in errors)
+
+
+def test_legacy_inventory_rejects_global_replacement_of_historical_doc(tmp_path):
+    history = tmp_path / "docs" / "plans" / "old.md"
+    history.parent.mkdir(parents=True)
+    history.write_text("Historical team-execution decision.\n", encoding="utf-8")
+    write_legacy_workflow_inventory(
+        tmp_path,
+        {"docs/plans/old.md": "historical-evidence"},
+    )
+    clean: list[str] = []
+    validate_legacy_workflow_token_allowlist(
+        tmp_path,
+        clean,
+        enforce_history_sentinels=False,
+    )
+    assert clean == []
+
+    history.write_text("Historical verified-workflows decision.\n", encoding="utf-8")
+    errors: list[str] = []
+    validate_legacy_workflow_token_allowlist(
+        tmp_path,
+        errors,
+        enforce_history_sentinels=False,
+    )
+
+    assert any("legacy workflow token path inventory mismatch" in error for error in errors)
+
+
+def test_frozen_history_sentinels_survive_inventory_refresh(tmp_path):
+    for raw_path in LEGACY_WORKFLOW_HISTORY_SENTINELS:
+        source = REPO_ROOT / raw_path
+        target = tmp_path / raw_path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(source.read_bytes())
+    clean: list[str] = []
+    validate_legacy_history_sentinels(tmp_path, clean)
+    assert clean == []
+
+    target = tmp_path / next(iter(LEGACY_WORKFLOW_HISTORY_SENTINELS))
+    target.write_text(
+        target.read_text(encoding="utf-8").replace("team-execution", "verified-workflows"),
+        encoding="utf-8",
+    )
+    errors: list[str] = []
+    validate_legacy_history_sentinels(tmp_path, errors)
+
+    assert any("historical workflow sentinel digest drifted" in error for error in errors)
+    assert any("missing tokens" in error for error in errors)
+
+
+def test_cutover_repository_validation_runs_canonical_target_gate(monkeypatch):
+    called: list[Path] = []
+
+    def record(root: Path, errors: list[str]) -> None:
+        called.append(root)
+
+    monkeypatch.setattr(validator, "validate_verified_workflows_canonical_surface", record)
+
+    validator.validate_repository(REPO_ROOT, mode="cutover")
+
+    assert called == [REPO_ROOT]
 
 
 def test_compare_inventory_reports_missing_and_unexpected_items():

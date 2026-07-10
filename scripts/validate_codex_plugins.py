@@ -3,13 +3,33 @@
 
 from __future__ import annotations
 
-import json
+import ast
 import hashlib
+import json
 import re
 import tomllib
 from argparse import ArgumentParser
 from pathlib import Path
 from typing import Any
+
+
+_REPO_ROOT_FOR_HINTS = Path(__file__).resolve().parent.parent
+
+
+def _load_fleet_module(module: str) -> Any:
+    """Load one fleet-core module through the canonical repo shim."""
+
+    import sys
+
+    fleet_scripts = _REPO_ROOT_FOR_HINTS / "plugins" / "fleet-core" / "scripts"
+    if str(fleet_scripts) not in sys.path:
+        sys.path.insert(0, str(fleet_scripts))
+    import fleet_commons_shim  # noqa: PLC0415
+
+    return fleet_commons_shim.load(module)
+
+
+WORKFLOW_COMPAT = _load_fleet_module("workflow_compat")
 
 
 LEGACY_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
@@ -53,7 +73,7 @@ LEGACY_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
     },
 }
 
-TARGET_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
+CURRENT_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
     "saga": {
         "version": "0.65.0",
         "skills": (
@@ -122,8 +142,25 @@ TARGET_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
     "test-suite": LEGACY_EXPECTED_PLUGINS["test-suite"],
 }
 
-# Backward-compatible names for current-mode tests and callers.
-CURRENT_EXPECTED_PLUGINS = TARGET_EXPECTED_PLUGINS
+# U9 stages this source package without publishing it in the active marketplace. U8 replaces the
+# legacy package atomically; until then current and target inventories must remain distinct.
+TARGET_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
+    name: spec
+    for name, spec in CURRENT_EXPECTED_PLUGINS.items()
+    if name != "team-execution"
+}
+TARGET_EXPECTED_PLUGINS["verified-workflows"] = {
+    "version": "1.0.0",
+    "skills": ("run", "appsec-audit"),
+}
+UNPUBLISHED_TARGET_PLUGINS = {
+    "verified-workflows": TARGET_EXPECTED_PLUGINS["verified-workflows"],
+}
+CURRENT_ONLY_LEGACY_PLUGINS = {
+    "team-execution": CURRENT_EXPECTED_PLUGINS["team-execution"],
+}
+
+# Backward-compatible name for current-mode tests and callers.
 EXPECTED_PLUGINS = CURRENT_EXPECTED_PLUGINS
 
 CLAUDE_CATALOG = {
@@ -175,8 +212,23 @@ OLD_ACTIVE_SKILLS = {
     "sdlc-milestones",
     "sdlc-rollout",
 }
-REQUIRED_NAMESPACE_PROOF_SKILLS = {"saga:plan", "saga:work", "saga:brainstorm"}
-REQUIRED_STATE_ROOTS = {".codex/saga/", ".codex/team-execution/"}
+REQUIRED_NAMESPACE_PROOF_SKILLS = {
+    "saga:plan",
+    "saga:work",
+    "saga:brainstorm",
+    "verified-workflows:run",
+    "verified-workflows:appsec-audit",
+}
+REQUIRED_STATE_ROOTS = {
+    ".codex/saga/",
+    WORKFLOW_COMPAT.emit(WORKFLOW_COMPAT.REPO_STATE_ROOT),
+}
+REQUIRED_LEGACY_STATE_ROOTS = set(
+    WORKFLOW_COMPAT.legacy_values(WORKFLOW_COMPAT.REPO_STATE_ROOT)
+)
+REQUIRED_UNPUBLISHED_PLUGINS = {"verified-workflows"}
+REQUIRED_LEGACY_READ_PLUGINS = {"team-execution"}
+TARGET_REMOVED_PLUGINS = OLD_ACTIVE_PLUGINS | {"team-execution"}
 REQUIRED_MIGRATION_REPLACEMENTS = {
     "sdlc-board": ("mission-control:board",),
     "sdlc-flow": ("mission-control:flow",),
@@ -212,7 +264,184 @@ LINEAGE_ALLOWED_PARTS = {
     "docs/portability/saga-family-capability-map.md",
     "docs/portability/saga-family-known-use-inventory.md",
 }
-TEAM_EXECUTION_AGENT_MARKER = '# managed_by = "infiquetra-codex-plugins/team-execution"'
+TEAM_EXECUTION_AGENT_MARKER = WORKFLOW_COMPAT.legacy_values(
+    WORKFLOW_COMPAT.MANAGED_AGENT_MARKER
+)[0]
+LEGACY_TEAM_EXECUTION_FILE_COUNT = 52
+LEGACY_TEAM_EXECUTION_TREE_SHA256 = (
+    "ee3486b96fc07308d089d0cabf09a218ecd3008369c5adb2444e70719c1e8c0e"
+)
+STAGED_MARKETPLACE_SHA256 = (
+    "42803919b39b720599b9692bfdcd95bcfe8c31b06ebb2c976aacaa890fdfea8a"
+)
+LEGACY_WORKFLOW_HISTORICAL_INVENTORY_SHA256 = (
+    "7d70ccc8f723913013c28b189b95ae93b75b666fc922c869f2de6bd867db3a5d"
+)
+LEGACY_WORKFLOW_INVENTORY = Path(
+    "docs/validation/verified-workflows-legacy-token-inventory.json"
+)
+LEGACY_WORKFLOW_INVENTORY_EXCLUDED = {
+    LEGACY_WORKFLOW_INVENTORY,
+    Path("scripts/validate_codex_plugins.py"),
+}
+LEGACY_WORKFLOW_EXCLUDED_TOP_LEVEL = {
+    ".git",
+    ".venv",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".codex",
+    ".serena",
+}
+LEGACY_WORKFLOW_EXACT_CLASSIFICATIONS = {
+    Path(".agents/plugins/marketplace.json"): "temporary-active-marketplace",
+    Path(".gitignore"): "legacy-readable-state-root",
+    Path("AGENTS.md"): "current-pre-cutover-inventory",
+    Path("README.md"): "current-pre-cutover-inventory",
+    Path("pyproject.toml"): "temporary-legacy-test-path",
+    Path("docs/validation.md"): "migration-documentation",
+    Path("docs/validation/codex-runtime-capability-snapshot.json"): "historical-evidence",
+    Path("docs/validation/saga-family-codex-proof.md"): "current-install-proof",
+    Path("docs/validation/saga-family-target-inventory.json"): "legacy-read-metadata",
+    Path("plugins/fleet-core/CHANGELOG.md"): "lineage-documentation",
+    Path("plugins/fleet-core/PORTABILITY.md"): "lineage-documentation",
+    Path("plugins/fleet-core/README.md"): "migration-documentation",
+    Path("plugins/fleet-core/references/effort-convention.md"): "lineage-documentation",
+    Path("plugins/fleet-core/scripts/fleet_commons/tier_palette.py"): "legacy-parser",
+    Path("plugins/fleet-core/scripts/fleet_commons/tier_resolver.py"): "legacy-parser",
+    Path("plugins/fleet-core/scripts/fleet_commons/workflow_compat.py"): "compat-registry",
+    Path("plugins/saga/CHANGELOG.md"): "lineage-documentation",
+    Path("plugins/saga/PORTABILITY.md"): "lineage-documentation",
+    Path("plugins/saga/README.md"): "temporary-saga-instructions",
+    Path("plugins/verified-workflows/README.md"): "migration-documentation",
+    Path("plugins/verified-workflows/PORTABILITY.md"): "lineage-documentation",
+    Path("plugins/verified-workflows/CHANGELOG.md"): "lineage-documentation",
+    Path("scripts/build_legacy_workflow_inventory.py"): "inventory-builder",
+    Path("scripts/build_saga_docs_facts.py"): "current-target-projection",
+    Path("scripts/capture_codex_runtime_capabilities.py"): "historical-evidence",
+    Path("scripts/port_contract.py"): "frozen-source-contract",
+    Path("scripts/prove_codex_plugin_profile.py"): "current-install-proof",
+    Path("scripts/render_saga_docs_assets.py"): "current-doc-renderer",
+}
+LEGACY_WORKFLOW_HISTORICAL_DOC_PARTS = {
+    "brainstorms",
+    "code-reviews",
+    "engineering-journal",
+    "ideation",
+    "investigations",
+    "outcomes",
+    "plans",
+    "reviews",
+    "work-sessions",
+}
+LEGACY_WORKFLOW_SAGA_WRITERS = {
+    Path("plugins/saga/scripts/execution_spec.py"),
+    Path("plugins/saga/scripts/lifecycle_state.py"),
+    Path("plugins/saga/scripts/manifest_store.py"),
+    Path("plugins/saga/scripts/outcome.py"),
+    Path("plugins/saga/scripts/outcome_dispatcher.py"),
+    Path("plugins/saga/scripts/outcome_spec.py"),
+    Path("plugins/saga/scripts/provenance_manifest.py"),
+    Path("plugins/saga/scripts/saga.py"),
+    Path("plugins/saga/scripts/team_emitter.py"),
+}
+LEGACY_WORKFLOW_SAGA_READERS = {
+    Path("plugins/saga/scripts/override_rate_reader.py"),
+    Path("plugins/saga/scripts/team_execution_readiness.py"),
+}
+LEGACY_WORKFLOW_SAGA_INSTRUCTIONS = {
+    Path("plugins/saga/references/engine-dispatch.md"),
+    Path("plugins/saga/references/operator-choice.md"),
+    Path("plugins/saga/references/saga-spec.md"),
+    Path("plugins/saga/skills/code-review/SKILL.md"),
+    Path("plugins/saga/skills/doc-review/SKILL.md"),
+    Path("plugins/saga/skills/founder-review/SKILL.md"),
+    Path("plugins/saga/skills/investigate/SKILL.md"),
+    Path("plugins/saga/skills/investigate/references/methodology.md"),
+    Path("plugins/saga/skills/loop/SKILL.md"),
+    Path("plugins/saga/skills/loop/references/drive-and-resume.md"),
+    Path("plugins/saga/skills/optimize/SKILL.md"),
+    Path("plugins/saga/skills/optimize/references/experiment-loop.md"),
+    Path("plugins/saga/skills/outcome/SKILL.md"),
+    Path("plugins/saga/skills/plan/SKILL.md"),
+    Path("plugins/saga/skills/plan/references/plan-sections.md"),
+    Path("plugins/saga/skills/qa/SKILL.md"),
+    Path("plugins/saga/skills/resume/SKILL.md"),
+    Path("plugins/saga/skills/retro/SKILL.md"),
+    Path("plugins/saga/skills/retro/references/self-edit-safety.md"),
+    Path("plugins/saga/skills/work/SKILL.md"),
+    Path("plugins/saga/skills/work/references/execution-strategy.md"),
+}
+VALID_LEGACY_WORKFLOW_CLASSIFICATIONS = {
+    "compat-registry",
+    "compatibility-fixture",
+    "current-doc-renderer",
+    "current-install-proof",
+    "current-pre-cutover-documentation",
+    "current-pre-cutover-inventory",
+    "current-target-projection",
+    "frozen-source-contract",
+    "historical-evidence",
+    "inventory-builder",
+    "legacy-parser",
+    "legacy-read-metadata",
+    "legacy-readable-state-root",
+    "lineage-documentation",
+    "migration-documentation",
+    "migration-fixture",
+    "temporary-active-marketplace",
+    "temporary-legacy-test-path",
+    "temporary-saga-instructions",
+    "temporary-saga-reader",
+    "temporary-saga-writer",
+}
+CUTOVER_DISALLOWED_LEGACY_CLASSIFICATIONS = {
+    "temporary-active-marketplace",
+    "current-pre-cutover-inventory",
+    "temporary-legacy-test-path",
+    "current-target-projection",
+    "current-install-proof",
+    "current-doc-renderer",
+    "current-pre-cutover-documentation",
+    "temporary-saga-instructions",
+    "temporary-saga-writer",
+}
+LEGACY_WORKFLOW_HISTORY_SENTINELS = {
+    "docs/plans/2026-06-30-team-execution-saga-orchestration-repair-plan.md": {
+        "sha256": "46027456753e756e33e8e6d48fe372717be31da48e2f754d01e3f95fe1b96d5e",
+        "tokens": (
+            "## Team Structure",
+            "Team Execution",
+            "#team-structure",
+            ".codex/team-execution/",
+            "team-execution",
+            "team-execution-delegated",
+            "team-execution-serial",
+            "team_execution_ref",
+            "~/.codex/team-execution/state/",
+        ),
+    },
+    "docs/reviews/2026-06-30-team-execution-saga-orchestration-repair-plan-doc-review.md": {
+        "sha256": "4466cda9aae3e714ed224d91e589c8057f04d65970502fb8cece4da32dfdc3a0",
+        "tokens": (
+            "## Team Structure",
+            "Team Execution",
+            "team-execution",
+            "team_execution_ref",
+        ),
+    },
+    "docs/investigations/2026-06-30-team-execution-saga-orchestration-debug-report.md": {
+        "sha256": "ecc08eceda3a67dc81d15b1930753fe236ca7c1ae9b3ad9dd506cdecfb0ac4fa",
+        "tokens": (
+            "## Team Structure",
+            "Team Execution",
+            "#team-structure",
+            ".codex/team-execution/",
+            "team-execution",
+            "team-execution-delegated",
+            "team-execution-serial",
+        ),
+    },
+}
 TEAM_EXECUTION_AGENT_ROSTER = {
     "ai-usefulness-reviewer",
     "api-compat-scanner",
@@ -249,18 +478,10 @@ def _derive_model_hints() -> dict[str, tuple[str, str]]:
     to load the palette is fatal for validation, surfaced as an ImportError rather than a
     silently stale literal.
     """
-    import sys
-
-    fleet_scripts = _REPO_ROOT_FOR_HINTS / "plugins" / "fleet-core" / "scripts"
-    if str(fleet_scripts) not in sys.path:
-        sys.path.insert(0, str(fleet_scripts))
-    import fleet_commons_shim  # noqa: PLC0415
-
-    palette = fleet_commons_shim.load("tier_palette")
+    palette = _load_fleet_module("tier_palette")
     return {model: palette.codex_tier(model) for model in palette.MODELS}
 
 
-_REPO_ROOT_FOR_HINTS = Path(__file__).resolve().parent.parent
 TEAM_EXECUTION_MODEL_HINTS = _derive_model_hints()
 
 SCRIPT_FIELD_RE = re.compile(r"^\s*script:\s*(?P<path>\S+)\s*$", re.MULTILINE)
@@ -278,25 +499,40 @@ def validate_repository(root: Path, mode: str = "current") -> list[str]:
     if mode == "current":
         expected_plugins = CURRENT_EXPECTED_PLUGINS
         validate_marketplace(root, expected_plugins, errors)
-        validate_plugins(root, expected_plugins, errors)
+        validate_plugins(
+            root,
+            expected_plugins,
+            errors,
+            optional_plugins=UNPUBLISHED_TARGET_PLUGINS,
+        )
+        validate_staged_workflow_identity(root, errors)
         validate_cutover_evidence(root, errors)
     elif mode == "cutover":
         expected_plugins = TARGET_EXPECTED_PLUGINS
         validate_marketplace(root, expected_plugins, errors)
         validate_plugins(root, expected_plugins, errors)
+        validate_verified_workflows_canonical_surface(root, errors)
+        validate_saga_workflow_independence(root, errors)
+        validate_legacy_workflow_token_allowlist(root, errors, mode="cutover")
         validate_cutover_evidence(root, errors)
     else:
         expected_plugins = TARGET_EXPECTED_PLUGINS
         validate_target_fixture(root, errors)
+        validate_plugins(
+            root,
+            expected_plugins,
+            errors,
+            optional_plugins=CURRENT_ONLY_LEGACY_PLUGINS,
+        )
+        validate_staged_workflow_identity(root, errors)
 
     validate_matrix(root, mode, errors)
     validate_provenance(root, expected_plugins, errors)
     validate_cutover(root, errors)
     validate_issue_contract_parity(root, errors)
     validate_port_contract(root, "cutover" if mode == "cutover" else "classification", errors)
-    if mode != "current" or expected_plugins is TARGET_EXPECTED_PLUGINS:
-        validate_saga_family_docs(root, errors)
-        validate_deletion_migration_map(root, errors)
+    validate_saga_family_docs(root, errors)
+    validate_deletion_migration_map(root, errors)
     return errors
 
 
@@ -316,6 +552,581 @@ def validate_port_contract(root: Path, stage: str, errors: list[str]) -> None:
         return
     for error in port_contract.validate_manifest(root, manifest, stage=stage):
         errors.append(f"port contract ({stage}): {error}")
+
+
+def deterministic_tree_digest(path: Path, errors: list[str]) -> tuple[int, str] | None:
+    """Hash relative path, mode, size, and content for a contained source tree."""
+
+    if not path.is_dir():
+        errors.append(f"legacy source tree missing `{path}`")
+        return None
+    candidates = sorted(
+        child
+        for child in path.rglob("*")
+        if "__pycache__" not in child.parts and (child.is_file() or child.is_symlink())
+    )
+    symlinks = [child for child in candidates if child.is_symlink()]
+    if symlinks:
+        errors.append(
+            "legacy source tree must not contain symlinks: "
+            f"{[child.relative_to(path).as_posix() for child in symlinks]}"
+        )
+        return None
+
+    digest = hashlib.sha256()
+    for child in candidates:
+        try:
+            content = child.read_bytes()
+            mode = child.stat().st_mode & 0o777
+        except OSError as exc:
+            errors.append(f"legacy source tree unreadable `{child}`: {exc}")
+            return None
+        digest.update(child.relative_to(path).as_posix().encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(f"{mode:o}".encode("ascii"))
+        digest.update(b"\0")
+        digest.update(len(content).to_bytes(8, "big"))
+        digest.update(content)
+    return len(candidates), digest.hexdigest()
+
+
+def validate_staged_workflow_identity(root: Path, errors: list[str]) -> None:
+    """Prove the U9 dual-source state without treating both packages as active."""
+
+    marketplace_path = root / ".agents" / "plugins" / "marketplace.json"
+    marketplace = load_json(marketplace_path, errors)
+    if marketplace is not None:
+        raw_entries = marketplace.get("plugins", [])
+        entries = raw_entries if isinstance(raw_entries, list) else []
+        names = {
+            entry.get("name")
+            for entry in entries
+            if isinstance(entry, dict) and isinstance(entry.get("name"), str)
+        }
+        active_workflow_ids = names & {"team-execution", "verified-workflows"}
+        if active_workflow_ids != {"team-execution"}:
+            errors.append(
+                "U9 staged marketplace must activate only `team-execution`; "
+                f"found={sorted(active_workflow_ids)}"
+            )
+        try:
+            marketplace_sha256 = hashlib.sha256(marketplace_path.read_bytes()).hexdigest()
+        except OSError as exc:
+            errors.append(f"staged marketplace unreadable: {exc}")
+        else:
+            if marketplace_sha256 != STAGED_MARKETPLACE_SHA256:
+                errors.append(
+                    "U9 staged marketplace bytes changed before cutover: "
+                    f"expected {STAGED_MARKETPLACE_SHA256}, got {marketplace_sha256}"
+                )
+
+    legacy_digest = deterministic_tree_digest(root / "plugins" / "team-execution", errors)
+    if legacy_digest is not None:
+        file_count, tree_sha256 = legacy_digest
+        if (file_count, tree_sha256) != (
+            LEGACY_TEAM_EXECUTION_FILE_COUNT,
+            LEGACY_TEAM_EXECUTION_TREE_SHA256,
+        ):
+            errors.append(
+                "legacy team-execution source changed during U9 staging: "
+                f"expected files={LEGACY_TEAM_EXECUTION_FILE_COUNT} "
+                f"sha256={LEGACY_TEAM_EXECUTION_TREE_SHA256}, "
+                f"got files={file_count} sha256={tree_sha256}"
+            )
+
+    fixture_path = root / TARGET_FIXTURE
+    fixture = load_json(fixture_path, errors)
+    if fixture is not None:
+        unpublished = string_set_field(
+            fixture,
+            "unpublished_plugins",
+            fixture_path,
+            errors,
+        )
+        if unpublished != REQUIRED_UNPUBLISHED_PLUGINS:
+            errors.append(
+                "target fixture unpublished plugin mismatch: "
+                f"expected={sorted(REQUIRED_UNPUBLISHED_PLUGINS)} "
+                f"actual={sorted(unpublished)}"
+            )
+        development_lock = fixture.get("development_lock")
+        expected_lock = {
+            "active_workflow_plugin": "team-execution",
+            "unpublished_workflow_plugin": "verified-workflows",
+            "marketplace_sha256": STAGED_MARKETPLACE_SHA256,
+            "legacy_source_file_count": LEGACY_TEAM_EXECUTION_FILE_COUNT,
+            "legacy_source_tree_sha256": LEGACY_TEAM_EXECUTION_TREE_SHA256,
+        }
+        if development_lock != expected_lock:
+            errors.append("target fixture development_lock does not match U9 staged source truth")
+
+    validate_verified_workflows_canonical_surface(root, errors)
+    validate_saga_workflow_independence(root, errors)
+    validate_legacy_workflow_token_allowlist(root, errors)
+
+
+def expected_legacy_workflow_classification(path: Path) -> str | None:
+    """Return the required classification for one inventoried legacy-token path."""
+
+    if path in LEGACY_WORKFLOW_EXACT_CLASSIFICATIONS:
+        return LEGACY_WORKFLOW_EXACT_CLASSIFICATIONS[path]
+    if path.parts[:2] == ("plugins", "team-execution"):
+        return None
+    if path.parts[:2] == ("plugins", "saga"):
+        if path.parts[:3] == ("plugins", "saga", "tests"):
+            return "migration-fixture"
+        if path in LEGACY_WORKFLOW_SAGA_WRITERS:
+            return "temporary-saga-writer"
+        if path in LEGACY_WORKFLOW_SAGA_READERS:
+            return "temporary-saga-reader"
+        if path in LEGACY_WORKFLOW_SAGA_INSTRUCTIONS:
+            return "temporary-saga-instructions"
+        return None
+    if path.parts[:3] == ("plugins", "fleet-core", "tests"):
+        return "compatibility-fixture"
+    if path.parts and path.parts[0] == "tests":
+        return "migration-fixture"
+    if path.parts and path.parts[0] == "docs":
+        if len(path.parts) > 1 and path.parts[1] in LEGACY_WORKFLOW_HISTORICAL_DOC_PARTS:
+            return "historical-evidence"
+        if path.parts[:2] == ("docs", "portability"):
+            return "lineage-documentation"
+        if path.parts[:2] == ("docs", "cutover"):
+            return "migration-documentation"
+        if path.parts[:2] in {("docs", "saga"), ("docs", "baseline")}:
+            return "current-pre-cutover-documentation"
+        if path.parts[:2] == ("docs", "validation"):
+            return "current-pre-cutover-documentation"
+    return None
+
+
+def workflow_registry_sha256() -> str:
+    payload = {
+        key: {"canonical": entry.canonical, "legacy": list(entry.legacy)}
+        for key, entry in WORKFLOW_COMPAT.REGISTRY.items()
+    }
+    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def serialized_legacy_history_sentinels() -> dict[str, dict[str, Any]]:
+    return {
+        path: {"sha256": spec["sha256"], "tokens": list(spec["tokens"])}
+        for path, spec in LEGACY_WORKFLOW_HISTORY_SENTINELS.items()
+    }
+
+
+def legacy_historical_entries_sha256(entries: list[dict[str, Any]]) -> str:
+    historical = sorted(
+        (entry for entry in entries if entry.get("classification") == "historical-evidence"),
+        key=lambda entry: str(entry.get("path")),
+    )
+    encoded = json.dumps(historical, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def validate_legacy_history_sentinels(root: Path, errors: list[str]) -> None:
+    """Keep representative historical evidence byte-stable across inventory refreshes."""
+
+    for raw_path, spec in LEGACY_WORKFLOW_HISTORY_SENTINELS.items():
+        path = root / raw_path
+        try:
+            content = path.read_bytes()
+            text = content.decode("utf-8")
+        except (OSError, UnicodeDecodeError) as exc:
+            errors.append(f"historical workflow sentinel unreadable `{raw_path}`: {exc}")
+            continue
+        if hashlib.sha256(content).hexdigest() != spec["sha256"]:
+            errors.append(f"historical workflow sentinel digest drifted `{raw_path}`")
+        missing = [token for token in spec["tokens"] if token not in text]
+        if missing:
+            errors.append(
+                f"historical workflow sentinel `{raw_path}` missing tokens {missing}"
+            )
+
+
+def legacy_workflow_file_facts(root: Path) -> dict[str, dict[str, Any]]:
+    """Return exact token and digest facts, excluding separately bound legacy source."""
+
+    tokens = {
+        value
+        for spec in WORKFLOW_COMPAT.REGISTRY.values()
+        for value in spec.legacy
+    }
+    facts: dict[str, dict[str, Any]] = {}
+    for path in sorted(root.rglob("*")):
+        if not path.is_file() or path.is_symlink():
+            continue
+        rel = path.relative_to(root)
+        if (
+            (rel.parts and rel.parts[0] in LEGACY_WORKFLOW_EXCLUDED_TOP_LEVEL)
+            or "__pycache__" in rel.parts
+            or rel in LEGACY_WORKFLOW_INVENTORY_EXCLUDED
+            or rel.parts[:2] == ("plugins", "team-execution")
+        ):
+            continue
+        try:
+            content = path.read_bytes()
+            text = content.decode("utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        found = sorted(token for token in tokens if token in text)
+        if found:
+            facts[rel.as_posix()] = {
+                "tokens": found,
+                "sha256": hashlib.sha256(content).hexdigest(),
+            }
+    return facts
+
+
+def validate_legacy_workflow_token_allowlist(
+    root: Path,
+    errors: list[str],
+    mode: str = "staged",
+    *,
+    enforce_history_sentinels: bool = True,
+) -> None:
+    """Require exact, digest-bound classification of every surviving legacy token."""
+
+    if mode not in {"staged", "cutover"}:
+        errors.append(f"unknown legacy workflow allowlist mode `{mode}`")
+        return
+    if enforce_history_sentinels:
+        validate_legacy_history_sentinels(root, errors)
+    inventory_path = root / LEGACY_WORKFLOW_INVENTORY
+    inventory = load_json(inventory_path, errors)
+    if inventory is None:
+        return
+    expected_keys = {
+        "schema_version",
+        "generated_by",
+        "workflow_registry_sha256",
+        "legacy_team_execution_tree",
+        "history_sentinels",
+        "historical_inventory_sha256",
+        "entries",
+    }
+    if set(inventory) != expected_keys:
+        errors.append(
+            f"{LEGACY_WORKFLOW_INVENTORY}: fields must be {sorted(expected_keys)}"
+        )
+    if inventory.get("schema_version") != 1:
+        errors.append(f"{LEGACY_WORKFLOW_INVENTORY}: schema_version must be 1")
+    if inventory.get("generated_by") != "scripts/build_legacy_workflow_inventory.py":
+        errors.append(f"{LEGACY_WORKFLOW_INVENTORY}: generated_by is invalid")
+    if inventory.get("workflow_registry_sha256") != workflow_registry_sha256():
+        errors.append(f"{LEGACY_WORKFLOW_INVENTORY}: workflow registry digest drifted")
+    if inventory.get("legacy_team_execution_tree") != {
+        "file_count": LEGACY_TEAM_EXECUTION_FILE_COUNT,
+        "sha256": LEGACY_TEAM_EXECUTION_TREE_SHA256,
+    }:
+        errors.append(f"{LEGACY_WORKFLOW_INVENTORY}: legacy source binding drifted")
+    if inventory.get("history_sentinels") != serialized_legacy_history_sentinels():
+        errors.append(f"{LEGACY_WORKFLOW_INVENTORY}: historical sentinel binding drifted")
+    if enforce_history_sentinels and (
+        inventory.get("historical_inventory_sha256")
+        != LEGACY_WORKFLOW_HISTORICAL_INVENTORY_SHA256
+    ):
+        errors.append(f"{LEGACY_WORKFLOW_INVENTORY}: historical inventory binding drifted")
+
+    raw_entries = inventory.get("entries")
+    if not isinstance(raw_entries, list):
+        errors.append(f"{LEGACY_WORKFLOW_INVENTORY}: entries must be a list")
+        return
+    declared: dict[str, dict[str, Any]] = {}
+    entry_keys = {"path", "classification", "tokens", "sha256"}
+    for index, entry in enumerate(raw_entries):
+        label = f"{LEGACY_WORKFLOW_INVENTORY}: entries[{index}]"
+        if not isinstance(entry, dict):
+            errors.append(f"{label} must be an object")
+            continue
+        if set(entry) != entry_keys:
+            errors.append(f"{label} fields must be {sorted(entry_keys)}")
+            continue
+        raw_path = entry.get("path")
+        if not isinstance(raw_path, str):
+            errors.append(f"{label}.path must be a string")
+            continue
+        rel = Path(raw_path)
+        if rel.is_absolute() or ".." in rel.parts or rel.as_posix() != raw_path:
+            errors.append(f"{label}.path must be a normalized repo-relative path")
+            continue
+        if raw_path in declared:
+            errors.append(f"{label}.path duplicates `{raw_path}`")
+            continue
+        classification = entry.get("classification")
+        required_classification = expected_legacy_workflow_classification(rel)
+        if classification not in VALID_LEGACY_WORKFLOW_CLASSIFICATIONS:
+            errors.append(f"{label}.classification is invalid")
+        elif classification != required_classification:
+            errors.append(
+                f"{label}.classification must be `{required_classification}`, "
+                f"got `{classification}`"
+            )
+        raw_tokens = entry.get("tokens")
+        if (
+            not isinstance(raw_tokens, list)
+            or not raw_tokens
+            or not all(isinstance(token, str) for token in raw_tokens)
+            or raw_tokens != sorted(set(raw_tokens))
+        ):
+            errors.append(f"{label}.tokens must be a sorted unique non-empty string list")
+        digest = entry.get("sha256")
+        if not isinstance(digest, str) or re.fullmatch(r"[0-9a-f]{64}", digest) is None:
+            errors.append(f"{label}.sha256 must be lowercase SHA-256")
+        declared[raw_path] = entry
+
+    valid_entries = [entry for entry in raw_entries if isinstance(entry, dict)]
+    if legacy_historical_entries_sha256(valid_entries) != inventory.get(
+        "historical_inventory_sha256"
+    ):
+        errors.append(f"{LEGACY_WORKFLOW_INVENTORY}: historical entry digest is invalid")
+
+    actual = legacy_workflow_file_facts(root)
+    compare_inventory(
+        set(actual),
+        set(declared),
+        "legacy workflow token path inventory",
+        errors,
+    )
+    for raw_path in sorted(set(actual) & set(declared)):
+        entry = declared[raw_path]
+        if entry.get("tokens") != actual[raw_path]["tokens"]:
+            errors.append(f"{raw_path}: legacy workflow token set drifted")
+        if entry.get("sha256") != actual[raw_path]["sha256"]:
+            errors.append(f"{raw_path}: legacy workflow content digest drifted")
+        if (
+            mode == "cutover"
+            and entry.get("classification") in CUTOVER_DISALLOWED_LEGACY_CLASSIFICATIONS
+        ):
+            errors.append(
+                f"{raw_path}: cutover-active surface retains legacy workflow tokens "
+                f"{actual[raw_path]['tokens']} classified as `{entry.get('classification')}`"
+            )
+
+
+def validate_verified_workflows_canonical_surface(root: Path, errors: list[str]) -> None:
+    """Reject legacy writes and cross-plugin imports from maintained target surfaces."""
+
+    plugin_root = root / "plugins" / "verified-workflows"
+    if not plugin_root.is_dir():
+        errors.append("U9 staged source missing `plugins/verified-workflows`")
+        return
+    symlinks = sorted(path for path in plugin_root.rglob("*") if path.is_symlink())
+    for path in symlinks:
+        errors.append(
+            f"{path.relative_to(root)}: canonical target source must not contain symlinks"
+        )
+    lineage_docs = {
+        plugin_root / "README.md",
+        plugin_root / "PORTABILITY.md",
+        plugin_root / "CHANGELOG.md",
+    }
+    legacy_tokens = {
+        value
+        for spec in WORKFLOW_COMPAT.REGISTRY.values()
+        for value in spec.legacy
+    }
+    candidates = sorted(
+        path
+        for path in plugin_root.rglob("*")
+        if path.is_file()
+        and "__pycache__" not in path.parts
+        and path not in lineage_docs
+        and path.name != "fleet_commons_shim.py"
+    )
+    for path in candidates:
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError) as exc:
+            errors.append(f"verified-workflows source unreadable `{path}`: {exc}")
+            continue
+        rel = path.relative_to(root)
+        if "TODO" in text:
+            errors.append(f"{rel}: unpublished target contains scaffold TODO text")
+        for token in sorted(legacy_tokens):
+            if token in text:
+                errors.append(f"{rel}: canonical target emits legacy token `{token}`")
+        if path.suffix == ".py":
+            for forbidden in (
+                "plugins/team-execution",
+                "plugins/saga",
+            ):
+                if forbidden in text:
+                    errors.append(f"{rel}: target source contains cross-plugin import `{forbidden}`")
+            try:
+                parsed = ast.parse(text, filename=str(path))
+            except SyntaxError as exc:
+                errors.append(f"{rel}: invalid Python while checking imports: {exc}")
+                continue
+            imported = {
+                alias.name
+                for node in ast.walk(parsed)
+                if isinstance(node, ast.Import)
+                for alias in node.names
+            }
+            for node in ast.walk(parsed):
+                if not isinstance(node, ast.ImportFrom) or node.module is None:
+                    continue
+                imported.add(node.module)
+                imported.update(f"{node.module}.{alias.name}" for alias in node.names)
+            forbidden_imports = {
+                name for name in imported if is_cross_plugin_module(name)
+            }
+            if forbidden_imports:
+                errors.append(
+                    f"{rel}: target source directly imports another workflow plugin "
+                    f"{sorted(forbidden_imports)}"
+                )
+            dynamic_imports = sorted(
+                name
+                for name in imported
+                if name == "importlib"
+                or name == "importlib.import_module"
+                or name.startswith("importlib.util")
+                or name.startswith("importlib.machinery")
+                or name == "builtins"
+                or name.startswith("builtins.__import__")
+                or name.startswith("builtins.exec")
+                or name.startswith("builtins.eval")
+            )
+            dangerous_calls = any(
+                isinstance(node, ast.Call)
+                and (
+                    isinstance(node.func, ast.Name)
+                    and node.func.id in {"__import__", "exec", "eval"}
+                    or isinstance(node.func, ast.Attribute)
+                    and node.func.attr in {"__import__", "exec", "eval"}
+                )
+                for node in ast.walk(parsed)
+            )
+            import_primitive_string = any(
+                isinstance(node, ast.Constant) and node.value == "__import__"
+                for node in ast.walk(parsed)
+            )
+            if dynamic_imports or dangerous_calls or import_primitive_string:
+                errors.append(
+                    f"{rel}: dynamic imports are not allowed in canonical target source; "
+                    "load shared modules through fleet_commons_shim"
+                )
+
+    for forbidden_dir in ("hooks", "agents", "config"):
+        if (plugin_root / forbidden_dir).exists():
+            errors.append(
+                f"verified-workflows: U9 identity package must not create `{forbidden_dir}` yet"
+            )
+
+    portability_path = plugin_root / "PORTABILITY.md"
+    portability = read_text(portability_path, errors)
+    if portability is not None:
+        required_sentinel = "This is a behavior adaptation, not an upstream byte-parity claim."
+        if required_sentinel not in portability:
+            errors.append(
+                "verified-workflows/PORTABILITY.md: missing no-upstream-byte-parity sentinel"
+            )
+        byte_parity_claims = (
+            r"(?i)\b(?:claims?|maintains?|provides?)\s+(?:upstream\s+)?byte[- ]parity\b",
+            r"(?i)\bbyte-identical\s+to\s+(?:the\s+)?upstream\b",
+        )
+        if any(re.search(pattern, portability) for pattern in byte_parity_claims):
+            errors.append(
+                "verified-workflows/PORTABILITY.md: must not claim upstream byte parity"
+            )
+
+
+def is_cross_plugin_module(name: str) -> bool:
+    """Return whether an import or constant module name reaches sibling workflow source."""
+
+    normalized = name.replace("-", "_")
+    return (
+        normalized == "saga"
+        or normalized.startswith("saga.")
+        or normalized == "team_execution"
+        or normalized.startswith("team_execution.")
+        or normalized == "plugins.saga"
+        or normalized.startswith("plugins.saga.")
+        or normalized == "plugins.team_execution"
+        or normalized.startswith("plugins.team_execution.")
+    )
+
+
+def static_string_value(node: ast.AST) -> str | None:
+    """Fold literal-only string expressions used by dynamic import calls."""
+
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return node.value
+    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
+        left = static_string_value(node.left)
+        right = static_string_value(node.right)
+        if left is not None and right is not None:
+            return left + right
+    if isinstance(node, ast.JoinedStr):
+        parts: list[str] = []
+        for value in node.values:
+            part = static_string_value(value)
+            if part is None:
+                return None
+            parts.append(part)
+        return "".join(parts)
+    return None
+
+
+def validate_saga_workflow_independence(root: Path, errors: list[str]) -> None:
+    """Reject Saga source dependencies on the separately installed target plugin."""
+
+    saga_root = root / "plugins" / "saga"
+    if not saga_root.is_dir():
+        errors.append("Saga source missing while checking workflow package independence")
+        return
+    symlinks = sorted(path for path in saga_root.rglob("*") if path.is_symlink())
+    for path in symlinks:
+        errors.append(f"{path.relative_to(root)}: Saga source must not contain symlinks")
+    for path in sorted(saga_root.rglob("*.py")):
+        if (
+            path.is_symlink()
+            or "tests" in path.relative_to(saga_root).parts
+            or "__pycache__" in path.parts
+        ):
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+            parsed = ast.parse(text, filename=str(path))
+        except (OSError, UnicodeDecodeError, SyntaxError) as exc:
+            errors.append(f"Saga source unreadable while checking workflow independence `{path}`: {exc}")
+            continue
+        imported: set[str] = set()
+        for node in ast.walk(parsed):
+            if isinstance(node, ast.Import):
+                imported.update(alias.name for alias in node.names)
+            elif isinstance(node, ast.ImportFrom) and node.module is not None:
+                imported.add(node.module)
+                imported.update(f"{node.module}.{alias.name}" for alias in node.names)
+        literal_targets = {
+            value
+            for node in ast.walk(parsed)
+            if (value := static_string_value(node)) is not None
+        }
+        references = imported | literal_targets
+        forbidden = sorted(
+            value
+            for value in references
+            if is_verified_workflows_source_reference(value)
+        )
+        if forbidden:
+            errors.append(
+                f"{path.relative_to(root)}: Saga must not import Verified Workflows source "
+                f"{forbidden}"
+            )
+
+
+def is_verified_workflows_source_reference(value: str) -> bool:
+    normalized = value.replace("-", "_").replace("/", ".")
+    return (
+        normalized == "verified_workflows"
+        or normalized.startswith("verified_workflows.")
+        or normalized == "plugins.verified_workflows"
+        or normalized.startswith("plugins.verified_workflows.")
+    )
 
 
 def validate_marketplace(
@@ -341,6 +1152,8 @@ def validate_marketplace(
         if not isinstance(name, str):
             errors.append("marketplace plugin entry missing string `name`")
             continue
+        if name in seen:
+            errors.append(f"marketplace contains duplicate plugin entry `{name}`")
         seen.add(name)
         expected_path = f"./plugins/{name}"
         source = entry.get("source")
@@ -663,11 +1476,28 @@ def validate_target_fixture(root: Path, errors: list[str]) -> None:
     validate_target_fixture_payload(payload, path, errors)
 
 
+def string_set_field(
+    payload: dict[str, Any],
+    field: str,
+    path: Path,
+    errors: list[str],
+) -> set[str]:
+    """Read one JSON string-list field without letting malformed fixtures crash validation."""
+
+    value = payload.get(field)
+    if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
+        errors.append(f"{path}: field `{field}` must be a list of strings")
+        return set()
+    return set(value)
+
+
 def validate_target_fixture_payload(
     payload: dict[str, Any],
     path: Path,
     errors: list[str],
 ) -> None:
+    if payload.get("schema_version") != "2.0":
+        errors.append(f"{path}: schema_version must be `2.0`")
     plugins = payload.get("plugins")
     if not isinstance(plugins, list):
         errors.append(f"{path}: field `plugins` must be a list")
@@ -678,6 +1508,8 @@ def validate_target_fixture_payload(
         if not isinstance(entry, dict) or not isinstance(entry.get("name"), str):
             errors.append(f"{path}: plugin entries must be objects with string names")
             continue
+        if entry["name"] in actual_plugins:
+            errors.append(f"{path}: duplicate plugin entry `{entry['name']}`")
         actual_plugins[entry["name"]] = entry
 
     compare_inventory(
@@ -695,6 +1527,8 @@ def validate_target_fixture_payload(
             errors.append(
                 f"{path}: {plugin_name} version must be {expected['version']}"
             )
+        if plugin_name == "verified-workflows" and entry.get("publication_status") != "unpublished":
+            errors.append(f"{path}: verified-workflows must be marked unpublished before U8")
         skills = entry.get("skills")
         if not isinstance(skills, list) or not all(isinstance(skill, str) for skill in skills):
             errors.append(f"{path}: {plugin_name} skills must be a list of strings")
@@ -705,47 +1539,76 @@ def validate_target_fixture_payload(
             f"target fixture {plugin_name} skills",
             errors,
         )
-        forbidden_dirs = (".claude-plugin", "commands")
-        if plugin_name != "team-execution":
-            forbidden_dirs = (*forbidden_dirs, "agents")
+        forbidden_dirs = (".claude-plugin", "commands", "agents")
+        raw_forbidden_dirs = entry.get("forbidden_active_dirs", [])
+        if not isinstance(raw_forbidden_dirs, list) or not all(
+            isinstance(item, str) for item in raw_forbidden_dirs
+        ):
+            errors.append(f"{path}: {plugin_name} forbidden_active_dirs must be strings")
+            raw_forbidden_dirs = []
         for forbidden in forbidden_dirs:
-            if forbidden in entry.get("forbidden_active_dirs", []):
+            if forbidden in raw_forbidden_dirs:
                 continue
             errors.append(f"{path}: {plugin_name} must forbid active `{forbidden}` directories")
-        if plugin_name == "team-execution":
-            managed_dirs = entry.get("managed_active_dirs", [])
-            if "agents/*.toml" not in managed_dirs:
-                errors.append(f"{path}: team-execution must allow managed `agents/*.toml`")
-
-    removed_plugins = set(payload.get("removed_plugins", []))
+    removed_plugins = string_set_field(payload, "removed_plugins", path, errors)
     compare_inventory(
         removed_plugins,
-        OLD_ACTIVE_PLUGINS,
+        TARGET_REMOVED_PLUGINS,
         "target fixture removed plugins",
         errors,
     )
 
-    namespace_proof = set(payload.get("required_namespace_proof", []))
-    missing_namespace = REQUIRED_NAMESPACE_PROOF_SKILLS - namespace_proof
-    if missing_namespace:
-        errors.append(
-            "target fixture missing namespace proof skills: "
-            f"{sorted(missing_namespace)}"
-        )
+    unpublished_plugins = string_set_field(payload, "unpublished_plugins", path, errors)
+    compare_inventory(
+        unpublished_plugins,
+        REQUIRED_UNPUBLISHED_PLUGINS,
+        "target fixture unpublished plugins",
+        errors,
+    )
+    legacy_read_plugins = string_set_field(payload, "legacy_readable_plugins", path, errors)
+    compare_inventory(
+        legacy_read_plugins,
+        REQUIRED_LEGACY_READ_PLUGINS,
+        "target fixture legacy-readable plugins",
+        errors,
+    )
 
-    state_roots = set(payload.get("required_state_roots", []))
-    missing_state_roots = REQUIRED_STATE_ROOTS - state_roots
-    if missing_state_roots:
-        errors.append(f"target fixture missing state roots: {sorted(missing_state_roots)}")
+    namespace_proof = string_set_field(payload, "required_namespace_proof", path, errors)
+    compare_inventory(
+        namespace_proof,
+        REQUIRED_NAMESPACE_PROOF_SKILLS,
+        "target fixture namespace proof skills",
+        errors,
+    )
 
-    mutation_plugins = set(payload.get("mutation_gate_plugins", []))
+    state_roots = string_set_field(payload, "required_state_roots", path, errors)
+    compare_inventory(
+        state_roots,
+        REQUIRED_STATE_ROOTS,
+        "target fixture canonical state roots",
+        errors,
+    )
+    legacy_state_roots = string_set_field(
+        payload,
+        "legacy_readable_state_roots",
+        path,
+        errors,
+    )
+    compare_inventory(
+        legacy_state_roots,
+        REQUIRED_LEGACY_STATE_ROOTS,
+        "target fixture legacy-readable state roots",
+        errors,
+    )
+
+    mutation_plugins = string_set_field(payload, "mutation_gate_plugins", path, errors)
     required_mutation_plugins = {"deploy", "mission-control", "discord-identity-assets"}
-    missing_mutation_plugins = required_mutation_plugins - mutation_plugins
-    if missing_mutation_plugins:
-        errors.append(
-            "target fixture missing mutation-gated plugins: "
-            f"{sorted(missing_mutation_plugins)}"
-        )
+    compare_inventory(
+        mutation_plugins,
+        required_mutation_plugins,
+        "target fixture mutation-gated plugins",
+        errors,
+    )
 
 
 def validate_saga_family_docs(root: Path, errors: list[str]) -> None:

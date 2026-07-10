@@ -83,3 +83,15 @@ The current Saga/fleet/workflow modernization is governed by the canonical
 under four exact pathspecs, binds the approved Codex execution base, and classifies every source and
 preservation row before later units may import behavior. `verified-workflows` is a target identity,
 not an active package at this stage.
+
+### Unpublished Verified Workflows Target
+
+U9 materializes `verified-workflows` `1.0.0` as maintained Codex source with the skills
+`verified-workflows:run` and `verified-workflows:appsec-audit`. Its behavior lineage is the frozen
+upstream `team-execution` package; the path-by-path adaptations are the target paths on those source
+rows in `ports/2026-07-10-saga-07517.json`. This is not an upstream byte-parity claim.
+
+The active marketplace remains byte-stable on `team-execution` `2.3.0`. The target fixture marks
+Verified Workflows unpublished, the shared fleet-core compatibility registry reads exact old aliases
+and emits canonical new values, and U8 alone may replace the source, marketplace, cache, managed
+profiles, hook trust, and state-writing identity.

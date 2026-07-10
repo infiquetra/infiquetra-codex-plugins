@@ -17,8 +17,7 @@ from typing import Any
 TARGET_FIXTURE = Path("docs/validation/saga-family-target-inventory.json")
 PROOF_DOC = Path("docs/validation/saga-family-codex-proof.md")
 PROOF_SCHEMA = Path("docs/validation/saga-family-codex-proof.schema.json")
-NEW_PLUGINS = ("saga", "deploy", "mission-control", "team-execution")
-TARGET_PLUGINS = (
+CURRENT_INSTALL_PLUGINS = (
     "saga",
     "deploy",
     "mission-control",
@@ -98,14 +97,18 @@ def json_from_mixed_stdout(stdout: str) -> dict[str, Any]:
         return {}
 
 
-def make_marketplace(repo_root: Path, proof_dir: Path) -> Path:
+def make_marketplace(
+    repo_root: Path,
+    proof_dir: Path,
+    plugins: tuple[str, ...] = CURRENT_INSTALL_PLUGINS,
+) -> Path:
     marketplace_root = proof_dir / "marketplace"
     plugins_dir = marketplace_root / "plugins"
     agents_dir = marketplace_root / ".agents" / "plugins"
     plugins_dir.mkdir(parents=True, exist_ok=True)
     agents_dir.mkdir(parents=True, exist_ok=True)
 
-    for plugin_name in TARGET_PLUGINS:
+    for plugin_name in plugins:
         target = repo_root / "plugins" / plugin_name
         link = plugins_dir / plugin_name
         if link.exists() or link.is_symlink():
@@ -125,7 +128,7 @@ def make_marketplace(repo_root: Path, proof_dir: Path) -> Path:
                 "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
                 "category": "Coding",
             }
-            for plugin_name in TARGET_PLUGINS
+            for plugin_name in plugins
         ],
     }
     write_json(agents_dir / "marketplace.json", marketplace)
@@ -329,12 +332,44 @@ def state_proof(repo_root: Path) -> dict[str, Any]:
     }
 
 
+def target_fixture_identity(repo_root: Path) -> dict[str, Any]:
+    """Read the unpublished U9 target identity without installing or executing it."""
+
+    fixture = load_json(repo_root / TARGET_FIXTURE)
+    plugins = {
+        entry["name"]: entry
+        for entry in fixture.get("plugins", [])
+        if isinstance(entry, dict) and isinstance(entry.get("name"), str)
+    }
+    marketplace = load_json(repo_root / ".agents" / "plugins" / "marketplace.json")
+    active_names = {
+        entry.get("name")
+        for entry in marketplace.get("plugins", [])
+        if isinstance(entry, dict)
+    }
+    workflow = plugins.get("verified-workflows", {})
+    return {
+        "mode": fixture.get("mode"),
+        "plugins": sorted(plugins),
+        "workflow_plugin": workflow.get("name"),
+        "workflow_version": workflow.get("version"),
+        "workflow_skills": sorted(workflow.get("skills", [])),
+        "publication_status": workflow.get("publication_status"),
+        "legacy_workflow_marketplace_listed": "team-execution" in active_names,
+        "target_workflow_marketplace_listed": "verified-workflows" in active_names,
+        "installed_plugin_state": "unobserved",
+        "profile_state": "unobserved",
+        "cache_state": "unobserved",
+    }
+
+
 def codex_cli_install_proof(
     *,
     repo_root: Path,
     proof_dir: Path,
     marketplace_root: Path,
     mode: str,
+    plugins: tuple[str, ...] = CURRENT_INSTALL_PLUGINS,
 ) -> dict[str, Any]:
     codex = shutil.which("codex")
     try:
@@ -346,7 +381,7 @@ def codex_cli_install_proof(
         "CODEX_HOME=<isolated> codex plugin list --available --json",
         *[
             f"CODEX_HOME=<isolated> codex plugin add {plugin}@infiquetra-saga-family-proof"
-            for plugin in TARGET_PLUGINS
+            for plugin in plugins
         ],
     ]
     base = {
@@ -369,7 +404,7 @@ def codex_cli_install_proof(
     executed = []
     executed.append(run_command(["codex", "plugin", "marketplace", "add", str(marketplace_root)], cwd=repo_root, env=env))
     executed.append(run_command(["codex", "plugin", "list", "--available", "--json"], cwd=repo_root, env=env))
-    for plugin in TARGET_PLUGINS:
+    for plugin in plugins:
         executed.append(
             run_command(
                 ["codex", "plugin", "add", f"{plugin}@infiquetra-saga-family-proof"],
@@ -397,8 +432,13 @@ def generate_proof(
 ) -> dict[str, Any]:
     proof_dir = proof_root / run_id
     proof_dir.mkdir(parents=True, exist_ok=True)
-    marketplace_root = make_marketplace(repo_root, proof_dir)
+    marketplace_root = make_marketplace(repo_root, proof_dir, CURRENT_INSTALL_PLUGINS)
     fixture = load_json(repo_root / TARGET_FIXTURE)
+    current_upgrade_seed = [
+        plugin
+        for plugin in fixture.get("removed_plugins", [])
+        if plugin not in CURRENT_INSTALL_PLUGINS
+    ]
     proof = {
         "schema_version": "1.0",
         "run_id": run_id,
@@ -408,23 +448,23 @@ def generate_proof(
         "marketplace": {
             "path_class": ".codex/proofs/saga-family/<run-id>/marketplace",
             "name": "infiquetra-saga-family-proof",
-            "plugins": list(TARGET_PLUGINS),
+            "plugins": list(CURRENT_INSTALL_PLUGINS),
         },
         "profiles": [
             {
                 "name": "fresh-replacement",
                 "seeded_inventory": [],
-                "replacement_inventory": list(TARGET_PLUGINS),
+                "replacement_inventory": list(CURRENT_INSTALL_PLUGINS),
                 "old_inventory_absent": True,
             },
             {
                 "name": "upgrade-from-old",
-                "seeded_inventory": fixture.get("removed_plugins", []),
-                "replacement_inventory": list(TARGET_PLUGINS),
+                "seeded_inventory": current_upgrade_seed,
+                "replacement_inventory": list(CURRENT_INSTALL_PLUGINS),
                 "old_inventory_absent": True,
             },
         ],
-        "installed_plugins": list(TARGET_PLUGINS),
+        "installed_plugins": list(CURRENT_INSTALL_PLUGINS),
         "namespace_proof": namespace_proof(repo_root),
         "old_skill_absence": {skill: True for skill in OLD_SKILLS},
         "flows": {
@@ -450,6 +490,7 @@ def generate_proof(
             proof_dir=proof_dir,
             marketplace_root=marketplace_root,
             mode=install_mode,
+            plugins=CURRENT_INSTALL_PLUGINS,
         ),
         "raw_artifact_path_class": ".codex/proofs/saga-family/<run-id>/proof.json",
     }

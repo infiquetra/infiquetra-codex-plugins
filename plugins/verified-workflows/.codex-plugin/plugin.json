@@ -1,0 +1,37 @@
+{
+  "name": "verified-workflows",
+  "version": "1.0.0",
+  "description": "Root-owned, receipt-backed Codex workflow orchestration for Infiquetra work.",
+  "author": {
+    "name": "Infiquetra",
+    "email": "hello@infiquetra.com",
+    "url": "https://github.com/infiquetra"
+  },
+  "homepage": "https://github.com/infiquetra/infiquetra-codex-plugins/tree/main/plugins/verified-workflows",
+  "repository": "https://github.com/infiquetra/infiquetra-codex-plugins",
+  "license": "MIT",
+  "keywords": [
+    "workflows",
+    "review",
+    "validators",
+    "subagents",
+    "infiquetra"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Verified Workflows",
+    "shortDescription": "Run root-owned workflows with receipt-backed gates.",
+    "longDescription": "Defines Codex-native workflow DAGs, logical roles, reviewer and validator gates, and evidence contracts while the root thread retains mutation and completion authority.",
+    "developerName": "Infiquetra",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "brandColor": "#3A6B5A",
+    "defaultPrompt": [
+      "Use verified-workflows:run to execute this approved workflow with explicit roles, barriers, and evidence gates."
+    ]
+  }
+}
