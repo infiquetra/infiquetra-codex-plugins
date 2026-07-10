@@ -162,6 +162,7 @@
       {
         "change": "M",
         "evidence_refs": [
+          "u3-role-profile-check-20260710",
           "u9-workflow-identity-check-20260710"
         ],
         "invariant": "Preserve execution-base behavior and history for docs/validation/saga-family-target-inventory.json.",
@@ -179,6 +180,7 @@
         "state": "verified",
         "treatment": "reconcile",
         "units": [
+          "U3",
           "U8",
           "U9"
         ]
@@ -732,6 +734,7 @@
       {
         "change": "M",
         "evidence_refs": [
+          "u3-role-profile-check-20260710",
           "u9-workflow-identity-check-20260710"
         ],
         "invariant": "Preserve execution-base behavior and history for scripts/validate_codex_plugins.py.",
@@ -749,6 +752,7 @@
         "state": "verified",
         "treatment": "reconcile",
         "units": [
+          "U3",
           "U8",
           "U9"
         ]
@@ -804,6 +808,28 @@
       "recorded_at": "2026-07-10T21:02:03Z",
       "repo_head": "18b057892981cd002a31e142db400f7caab339f2",
       "unit": "U9"
+    },
+    {
+      "artifact_path": "docs/validation/codex-plugin-modernization-u3.json",
+      "artifact_sha256": "d1dc8750bb37d7d1d744a296a7540f547a7c27d5fb4265c93c6931c8175d69ea",
+      "argv": [
+        "PYTHONPATH=.",
+        "uv",
+        "run",
+        "pytest",
+        "-q",
+        "plugins/verified-workflows/tests",
+        "tests/test_verified_workflows_agents.py",
+        "tests/test_verified_workflows_migration.py",
+        "tests/test_validate_codex_plugins.py"
+      ],
+      "cwd": ".",
+      "evidence_id": "u3-role-profile-check-20260710",
+      "exit_code": 0,
+      "kind": "check",
+      "recorded_at": "2026-07-10T22:50:34Z",
+      "repo_head": "5d984680efd5df19843fd5eafaa556b995a5907e",
+      "unit": "U3"
     }
   ],
   "port_id": "2026-07-10-saga-07517",
@@ -3085,7 +3111,7 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
+        "evidence_refs": ["u3-role-profile-check-20260710"],
         "host_primitives": [],
         "new_path": "plugins/team-execution/skills/team-execution/references/reviewer-registry.md",
         "old_path": null,
@@ -3098,7 +3124,7 @@
         "rationale": "Preserve the logical role or deterministic-validator contract in the single Verified Workflows role registry and five-profile renderer.",
         "row_id": "src-7ca0384cf8d21d44",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "skill",
         "treatment": "codex-adapt",
         "units": [
@@ -3113,7 +3139,7 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
+        "evidence_refs": ["u3-role-profile-check-20260710"],
         "host_primitives": [],
         "new_path": "plugins/team-execution/skills/team-execution/references/validator-criteria.md",
         "old_path": null,
@@ -3126,7 +3152,7 @@
         "rationale": "Preserve the logical role or deterministic-validator contract in the single Verified Workflows role registry and five-profile renderer.",
         "row_id": "src-7631fbd9f42a5bf2",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "skill",
         "treatment": "codex-adapt",
         "units": [
@@ -3141,7 +3167,7 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
+        "evidence_refs": ["u3-role-profile-check-20260710"],
         "host_primitives": [],
         "new_path": "plugins/team-execution/skills/team-execution/references/validator-registry.md",
         "old_path": null,
@@ -3154,7 +3180,7 @@
         "rationale": "Preserve the logical role or deterministic-validator contract in the single Verified Workflows role registry and five-profile renderer.",
         "row_id": "src-76516b36df832272",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "skill",
         "treatment": "codex-adapt",
         "units": [
