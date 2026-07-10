@@ -161,7 +161,9 @@
       },
       {
         "change": "M",
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u9-workflow-identity-check-20260710"
+        ],
         "invariant": "Preserve execution-base behavior and history for docs/validation/saga-family-target-inventory.json.",
         "new_path": "docs/validation/saga-family-target-inventory.json",
         "old_path": null,
@@ -174,10 +176,11 @@
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-0c981857df7dde08",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "reconcile",
         "units": [
-          "U8"
+          "U8",
+          "U9"
         ]
       },
       {
@@ -728,7 +731,9 @@
       },
       {
         "change": "M",
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u9-workflow-identity-check-20260710"
+        ],
         "invariant": "Preserve execution-base behavior and history for scripts/validate_codex_plugins.py.",
         "new_path": "scripts/validate_codex_plugins.py",
         "old_path": null,
@@ -741,10 +746,11 @@
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-8e22b8117027b34a",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "reconcile",
         "units": [
-          "U8"
+          "U8",
+          "U9"
         ]
       }
     ]
@@ -773,6 +779,31 @@
       "recorded_at": "2026-07-10T17:47:10Z",
       "repo_head": "c773186f53b20c2825f347c049c9014ae8736643",
       "unit": "U2"
+    },
+    {
+      "artifact_path": "docs/validation/codex-plugin-modernization-u9.json",
+      "artifact_sha256": "dbae7cb8681f2cf53126d1f1e97376175ad13dbece9bee31492cde14ca976afd",
+      "argv": [
+        "PYTHONPATH=.",
+        "uv",
+        "run",
+        "pytest",
+        "-q",
+        "plugins/fleet-core/tests/test_shim_drift.py",
+        "plugins/fleet-core/tests/test_tier_resolver.py",
+        "plugins/fleet-core/tests/test_workflow_compat.py",
+        "tests/test_prove_codex_plugin_profile.py",
+        "tests/test_saga_docs_package.py",
+        "tests/test_validate_codex_plugins.py",
+        "tests/test_verified_workflows_migration.py"
+      ],
+      "cwd": ".",
+      "evidence_id": "u9-workflow-identity-check-20260710",
+      "exit_code": 0,
+      "kind": "check",
+      "recorded_at": "2026-07-10T21:02:03Z",
+      "repo_head": "18b057892981cd002a31e142db400f7caab339f2",
+      "unit": "U9"
     }
   ],
   "port_id": "2026-07-10-saga-07517",
@@ -2912,7 +2943,9 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u9-workflow-identity-check-20260710"
+        ],
         "host_primitives": [],
         "new_path": "plugins/team-execution/.claude-plugin/plugin.json",
         "old_path": null,
@@ -2925,7 +2958,7 @@
         "rationale": "Create the unpublished Verified Workflows Codex manifest and preserve Team Execution only as lineage until cutover.",
         "row_id": "src-c75fe471946e3b4e",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "claude-manifest",
         "treatment": "codex-adapt",
         "units": [
