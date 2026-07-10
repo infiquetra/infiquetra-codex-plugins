@@ -87,7 +87,9 @@ P0-P3 code findings.
 
 The staged U2 evidence is `docs/validation/codex-plugin-modernization-u2.json`. All 15 claimed rows
 are verified against it, the generated classification is current, and the U2 unit-stage contract
-gate passes.
+gate passes. The exact implementation commit is `c773186f53b20c2825f347c049c9014ae8736643`;
+the focused suite, full suite, validator, and scoped Ruff checks were rerun after that commit before
+the evidence record was rebound to its SHA.
 
 ## Checks Run
 

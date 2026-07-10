@@ -752,7 +752,7 @@
   "evidence": [
     {
       "artifact_path": "docs/validation/codex-plugin-modernization-u2.json",
-      "artifact_sha256": "f9c09422951ad6b04680300fd8b6d19e80f9ce0ea049c8ebdc096c28733c02b4",
+      "artifact_sha256": "f37f5b1d29f9a80fb2df9449200a731ebf784ae4053bb1f00e1eaa36e523e233",
       "argv": [
         "PYTHONPATH=.",
         "uv",
@@ -770,8 +770,8 @@
       "evidence_id": "u2-fleet-core-check-20260710",
       "exit_code": 0,
       "kind": "check",
-      "recorded_at": "2026-07-10T17:34:49Z",
-      "repo_head": "a1d4e142caa50f84caad15d9395308431433220b",
+      "recorded_at": "2026-07-10T17:47:10Z",
+      "repo_head": "c773186f53b20c2825f347c049c9014ae8736643",
       "unit": "U2"
     }
   ],
