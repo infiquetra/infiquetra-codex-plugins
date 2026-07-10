@@ -1,0 +1,905 @@
+schema_version: 1
+role_spec_version: 1
+source_contract:
+  frozen_source_commit: 38742ece89880a6b140be237edad6d3f13c97b54
+  legacy_plugin_git_tree: 66b23ca83b6ce3b29871954c63a6554c39bfd72e
+  source_row_ids:
+  - src-7ca0384cf8d21d44
+  - src-7631fbd9f42a5bf2
+  - src-76516b36df832272
+  source_file_sha256:
+    reviewer-registry.md: 6452b315f087617689023d430398d007ed59483c950b0f26297a73ff65a6b88c
+    validator-criteria.md: def8e4c8ef02ab16289b769df9655f32eee73fd95627adc17bd5c72f2090a279
+    validator-registry.md: 76ee0c42002b8c4ab6c80b0a222cc9e83b9068da0ca4a03b06c598e71ca0e5e5
+source_behavior_policy:
+  base_reviewer_ids:
+  - devils-advocate-reviewer
+  - security-reviewer
+  - architecture-reviewer
+  plan_types:
+  - code
+  - docs-specs
+  - mixed
+  docs_only_requires_full_review: true
+  triage_all_required:
+  - single-config-file
+  - no-security-surface
+  - fewer-than-three-files
+  - no-doc-or-spec-content
+  triage_options:
+  - skip-review
+  - full-review
+  - devils-advocate-only
+  custom_reviewer_contract: user-supplied-versioned-agent-lens
+  validator_selection_inputs:
+  - repo-type-and-tooling
+  - changed-and-staged-files
+  - github-workflows
+  - contracts-and-schemas
+  - docs-runbooks-and-scenario-hints
+  - existing-tests-and-quality-commands
+  - verified-workflows-config
+  required_validator_absence: blocked
+  disabled_validator_default: skipped-by-config
+  automation_remote: github.com/infiquetra/*
+  automation_requires_default_branch: true
+  automation_environments:
+  - nonprod
+  - publish-nonprod
+  automation_forbidden:
+  - production
+  - staging
+  - force-push
+  - branch-deletion
+  - credential-change
+  advisory_deferrals:
+    external-advisory-reviewer:
+      unit: U7
+      active: false
+      gate_authority: none
+    external-second-opinion:
+      unit: U7
+      active: false
+      gate_authority: none
+selection_config_keys:
+- required_validators
+- disabled_validators
+- nonprod_workflows
+- scenario_hints
+- smoke_targets
+- external_second_opinion
+root_only_actions:
+- git-mutation
+- workflow-state
+- integration
+- merge
+- deploy-initiation
+- credential-change
+- completion
+gate_statuses:
+- pass
+- warn
+- hard-fail
+- skipped-by-config
+- blocked
+review_policy:
+  dimension_score_type: number[0,10]
+  overall_calculation: arithmetic-mean-of-applicable-dimensions
+  minimum_acceptance_average: 9.0
+  minimum_dimension_score: 7.0
+  exclusion_reason: static-non-applicable
+  role_specific_hard_stops_override: true
+evidence_schemas:
+  review-evidence.v1:
+    required_fields:
+    - role_id
+    - role_digest
+    - input_digest
+    - dimensions
+    - denominator
+    - overall
+    - verdict
+    - findings
+    - exclusions
+    field_types:
+      role_id: role-id
+      role_digest: sha256
+      input_digest: sha256
+      dimensions: list[scored-dimension]
+      denominator: integer
+      overall: number[0,10]
+      verdict: enum
+      findings: list[typed-finding]
+      exclusions: list[typed-exclusion]
+    enum_fields:
+      verdict:
+      - accept
+      - needs-revision
+      - blocking
+  scanner-evidence.v1:
+    required_fields:
+    - role_id
+    - role_digest
+    - required
+    - tools
+    - argv
+    - cwd
+    - exit_codes
+    - evidence_refs
+    - findings
+    - gate_status
+    - missing_tool_guidance
+    field_types:
+      role_id: role-id
+      role_digest: sha256
+      required: boolean
+      tools: list[string]
+      argv: list[list[string]]
+      cwd: repo-relative-path
+      exit_codes: list[integer]
+      evidence_refs: list[evidence-ref]
+      findings: list[typed-finding]
+      gate_status: enum
+      missing_tool_guidance: list[string]
+    enum_fields:
+      gate_status:
+      - pass
+      - warn
+      - hard-fail
+      - skipped-by-config
+      - blocked
+  tester-evidence.v1:
+    required_fields:
+    - role_id
+    - role_digest
+    - target
+    - declared_argv
+    - expected
+    - actual
+    - exit_code
+    - evidence_refs
+    - cases
+    - gate_status
+    field_types:
+      role_id: role-id
+      role_digest: sha256
+      target: string
+      declared_argv: list[string]
+      expected: string
+      actual: string
+      exit_code: integer
+      evidence_refs: list[evidence-ref]
+      cases: list[test-case]
+      gate_status: enum
+    enum_fields:
+      gate_status:
+      - pass
+      - warn
+      - hard-fail
+      - skipped-by-config
+      - blocked
+  monitor-evidence.v1:
+    required_fields:
+    - role_id
+    - role_digest
+    - system
+    - environment
+    - time_window
+    - observations
+    - evidence_refs
+    - health_state
+    - gate_status
+    field_types:
+      role_id: role-id
+      role_digest: sha256
+      system: string
+      environment: string
+      time_window: time-window
+      observations: list[observation]
+      evidence_refs: list[evidence-ref]
+      health_state: enum
+      gate_status: enum
+    enum_fields:
+      health_state:
+      - healthy
+      - degraded
+      - missing-signal
+      - not-applicable
+      gate_status:
+      - pass
+      - warn
+      - hard-fail
+      - skipped-by-config
+      - blocked
+  deploy-observation.v1:
+    required_fields:
+    - role_id
+    - role_digest
+    - remote
+    - workflow
+    - run_ref
+    - commit_sha
+    - environment
+    - eligibility
+    - prerequisite_gate_refs
+    - evidence_refs
+    - rollback_notes
+    - run_status
+    - gate_status
+    field_types:
+      role_id: role-id
+      role_digest: sha256
+      remote: string
+      workflow: string
+      run_ref: string
+      commit_sha: git-sha
+      environment: string
+      eligibility: boolean
+      prerequisite_gate_refs: list[evidence-ref]
+      evidence_refs: list[evidence-ref]
+      rollback_notes: string
+      run_status: enum
+      gate_status: enum
+    enum_fields:
+      run_status:
+      - queued
+      - in-progress
+      - succeeded
+      - failed
+      - cancelled
+      - unknown
+      gate_status:
+      - pass
+      - warn
+      - hard-fail
+      - skipped-by-config
+      - blocked
+roles:
+- id: ai-usefulness-reviewer
+  kind: agent-lens
+  category: reviewer
+  spec_version: 1
+  spec: roles/ai-usefulness-reviewer.md
+  description: 'Optional reviewer for verified-workflows. Reviews specifications, issue templates, SKILL.md files, AGENTS.md sections, and task descriptions for AI-consumability: context completeness, unambiguous acceptance criteria, example coverage, constraint explicitness, and machine-parseable structure. Triggered when plan contains: issue template, GitHub issue, task description, acceptance criteria, AI prompt, SKILL.md, AGENTS.md, spec. NOT for: dumbing down content; general documentation quality (clarity-reviewer). Focus: making specs structured and explicit for AI consumption.'
+  selection:
+    mode: conditional
+    signals:
+    - issue template
+    - GitHub issue
+    - task description
+    - acceptance criteria
+    - AI prompt
+    - SKILL.md
+    - AGENTS.md
+    - spec
+  minimum_independence: preferred
+  default_class: review-high
+  allowed_classes:
+  - review-high
+  - review-max
+  boundaries:
+    workspace_cap: read-only
+    external_cap: none
+    external_mutation: forbidden
+    class_may_not_widen_role: true
+  output_schema: review-evidence.v1
+  source_behavior_sha256: 445853509f9f1ab3794fa7352514fbcb91be2d37bcde64fbc416de97c76e7b8c
+- id: api-compat-scanner
+  kind: agent-lens
+  category: scanner
+  spec_version: 1
+  spec: roles/api-compat-scanner.md
+  description: 'Scanner validator for verified-workflows. Checks API compatibility for contract and endpoint changes. Candidate tools: oasdiff, Schemathesis.'
+  selection:
+    mode: conditional
+    signals:
+    - OpenAPI
+    - AsyncAPI
+    - protobuf
+    - GraphQL
+    - API contract
+    - endpoint change
+  minimum_independence: preferred
+  default_class: scan-low
+  allowed_classes:
+  - scan-low
+  - test-medium
+  boundaries:
+    workspace_cap: read-only
+    external_cap: none
+    external_mutation: forbidden
+    class_may_not_widen_role: true
+  output_schema: scanner-evidence.v1
+  source_behavior_sha256: 227b006799a77a28f8c50436a22a6f8b812feecfb400e5e4cef8316549bb861b
+- id: api-contract-tester
+  kind: agent-lens
+  category: tester
+  spec_version: 1
+  spec: roles/api-contract-tester.md
+  description: 'Tester validator for verified-workflows. Runs contract tests for API schemas, endpoint behavior, and generated client expectations. Candidate tools: Schemathesis, oasdiff.'
+  selection:
+    mode: conditional
+    signals:
+    - API contract
+    - schema
+    - generated client
+  minimum_independence: preferred
+  default_class: test-medium
+  allowed_classes:
+  - test-medium
+  - review-high
+  boundaries:
+    workspace_cap: declared-write
+    external_cap: none
+    external_mutation: forbidden
+    class_may_not_widen_role: true
+  output_schema: tester-evidence.v1
+  source_behavior_sha256: ef847055406b326759491951c3ea6fe38b720658dfcb44abf3285f0c3baea2fe
+- id: api-reviewer
+  kind: agent-lens
+  category: reviewer
+  spec_version: 1
+  spec: roles/api-reviewer.md
+  description: 'Optional reviewer for verified-workflows. Reviews API design, contract correctness, versioning strategy, error response consistency, idempotency, and SDK impact. Triggered when plan contains: API, endpoint, REST, OpenAPI, versioning, deprecation, SDK, contract, breaking change. NOT for: implementation security (security-reviewer''s job); infrastructure concerns.'
+  selection:
+    mode: conditional
+    signals:
+    - API
+    - endpoint
+    - REST
+    - OpenAPI
+    - versioning
+    - deprecation
+    - SDK
+    - contract
+    - breaking change
+  minimum_independence: preferred
+  default_class: review-high
+  allowed_classes:
+  - review-high
+  - review-max
+  boundaries:
+    workspace_cap: read-only
+    external_cap: none
+    external_mutation: forbidden
+    class_may_not_widen_role: true
+  output_schema: review-evidence.v1
+  source_behavior_sha256: fc17ce3fe07fa50f881171e9899ed64694eaeb3e2ebccc8ffc49768aa501e988
+- id: architecture-reviewer
+  kind: agent-lens
+  category: reviewer
+  spec_version: 1
+  spec: roles/architecture-reviewer.md
+  description: 'Base reviewer for verified-workflows. Reviews implementations for design pattern consistency, separation of concerns, dependency direction, convention adherence, and architecture documentation coverage. Always selected as a base logical role for every plan execution regardless of plan type; preferred independence may degrade visibly to inline until U4 proves child dispatch. Context loading strategy: searches for architecture decision records or architecture docs in the project (docs/adrs/, architecture-decisions/, docs/architecture/) — loads only relevant ones if found; falls back to codebase pattern analysis if not. NOT for: code quality specifics (code-quality-reviewer); security-specific concerns (security-reviewer''s job); test coverage (testing-reviewer).'
+  selection:
+    mode: base
+    signals: []
+  minimum_independence: preferred
+  default_class: review-high
+  allowed_classes:
+  - review-high
+  - review-max
+  boundaries:
+    workspace_cap: read-only
+    external_cap: none
+    external_mutation: forbidden
+    class_may_not_widen_role: true
+  output_schema: review-evidence.v1
+  source_behavior_sha256: 40cef29a50e6f95a2ef34bb1ea884e99ff2f771498c53863da924c480eb96b61
+- id: clarity-reviewer
+  kind: agent-lens
+  category: reviewer
+  spec_version: 1
+  spec: roles/clarity-reviewer.md
+  description: 'Optional reviewer for verified-workflows. Reviews documentation and specifications for structure/navigation, precision of language, completeness, understandability (right audience level), and actionability. Triggered when plan contains: docs, README, specification, guide, runbook, architecture doc, documentation. Primarily used for docs/specs plans and mixed plans with doc content. NOT for: copy editing or grammar (focuses on meaning and structure); code quality.'
+  selection:
+    mode: conditional
+    signals:
+    - docs
+    - README
+    - specification
+    - guide
+    - runbook
+    - architecture doc
+    - documentation
+  minimum_independence: preferred
+  default_class: review-high
+  allowed_classes:
+  - review-high
+  - review-max
+  boundaries:
+    workspace_cap: read-only
+    external_cap: none
+    external_mutation: forbidden
+    class_may_not_widen_role: true
+  output_schema: review-evidence.v1
+  source_behavior_sha256: cc8ca6e530b03b91c2c87eb1a4aa06ec10cfc92614e0614cb7394b1316f0f77c
+- id: code-quality-reviewer
+  kind: agent-lens
+  category: reviewer
+  spec_version: 1
+  spec: roles/code-quality-reviewer.md
+  description: 'Optional reviewer for verified-workflows. Reviews code for duplication, complexity, pattern consistency, naming/abstraction quality, and error handling patterns. Triggered when plan contains: refactor, lint, patterns, DRY, SOLID, complexity, code smell, technical debt, abstraction. NOT for: security concerns (security-reviewer); test coverage (testing-reviewer); style/formatting (linter handles that).'
+  selection:
+    mode: conditional
+    signals:
+    - refactor
+    - lint
+    - patterns
+    - DRY
+    - SOLID
+    - complexity
+    - code smell
+    - technical debt
+    - abstraction
+  minimum_independence: preferred
+  default_class: review-high
+  allowed_classes:
+  - review-high
+  - review-max
+  boundaries:
+    workspace_cap: read-only
+    external_cap: none
+    external_mutation: forbidden
+    class_may_not_widen_role: true
+  output_schema: review-evidence.v1
+  source_behavior_sha256: 8b7ceb86ef2dc2e9d70fe19d859847c1ce5891c966016325916e4570c8bfd849
+- id: concurrency-tester
+  kind: agent-lens
+  category: tester
+  spec_version: 1
+  spec: roles/concurrency-tester.md
+  description: Tester validator for verified-workflows. Tests concurrent execution, locks, retries, idempotency, races, and worker coordination.
+  selection:
+    mode: conditional
+    signals:
+    - lock
+    - queue
+    - idempotency
+    - retry
+    - parallel worker
+    - concurrency
+  minimum_independence: preferred
+  default_class: test-medium
+  allowed_classes:
+  - test-medium
+  - review-high
+  boundaries:
+    workspace_cap: declared-write
+    external_cap: none
+    external_mutation: forbidden
+    class_may_not_widen_role: true
+  output_schema: tester-evidence.v1
+  source_behavior_sha256: 8b5be26d8b11518c61c5e460e0a9f78a06e29af011422ef76fd78b07b0cfe010
+- id: dependency-scanner
+  kind: agent-lens
+  category: scanner
+  spec_version: 1
+  spec: roles/dependency-scanner.md
+  description: 'Scanner validator for verified-workflows. Checks dependency manifests, lockfiles, and container inputs for vulnerable or risky supply-chain changes. Candidate tools: pip-audit, Trivy.'
+  selection:
+    mode: conditional
+    signals:
+    - dependency manifest
+    - lockfile
+    - base image
+    - package publishing
+  minimum_independence: preferred
+  default_class: scan-low
+  allowed_classes:
+  - scan-low
+  - test-medium
+  boundaries:
+    workspace_cap: read-only
+    external_cap: none
+    external_mutation: forbidden
+    class_may_not_widen_role: true
+  output_schema: scanner-evidence.v1
+  source_behavior_sha256: a273e1018fda591b02d16036afeed68419ba8bf514ecb35d34f0cab196b26e2f
+- id: deploy-watcher
+  kind: agent-lens
+  category: monitor
+  spec_version: 1
+  spec: roles/deploy-watcher.md
+  description: 'Operational validator for verified-workflows. Watches allowed nonprod or publish-nonprod workflows after reviewer, scanner, CI, and required tester gates pass. NOT for: production, staging, force-push, branch deletion, or credential changes.'
+  selection:
+    mode: conditional
+    signals:
+    - eligible nonprod workflow
+    - publish-nonprod workflow
+  minimum_independence: preferred
+  default_class: monitor-low
+  allowed_classes:
+  - monitor-low
+  - test-medium
+  boundaries:
+    workspace_cap: read-only
+    external_cap: allowlisted-read
+    external_mutation: forbidden
+    class_may_not_widen_role: true
+  output_schema: deploy-observation.v1
+  source_behavior_sha256: 42feeae5643a640140b07f81ff97fc5d6d9ea693d0136291e6e5540dd71c696b
+- id: devils-advocate-reviewer
+  kind: agent-lens
+  category: reviewer
+  spec_version: 1
+  spec: roles/devils-advocate-reviewer.md
+  description: 'Base reviewer for verified-workflows. Challenges assumptions, identifies edge cases, analyzes failure modes, assesses scope creep risk, and evaluates whether alternatives were properly considered. Always selected as a base logical role for every plan execution regardless of plan type; preferred independence may degrade visibly to inline until U4 proves child dispatch. NOT for: blocking on theoretical concerns; redesigning the solution; doing the security reviewer''s job (auth/secrets); doing the architecture reviewer''s job (patterns/conventions).'
+  selection:
+    mode: base
+    signals: []
+  minimum_independence: preferred
+  default_class: review-high
+  allowed_classes:
+  - review-high
+  - review-max
+  boundaries:
+    workspace_cap: read-only
+    external_cap: none
+    external_mutation: forbidden
+    class_may_not_widen_role: true
+  output_schema: review-evidence.v1
+  source_behavior_sha256: a6e291806e2a8935e149f0e18217075b30c1074f01313cb84d7bfcd2c74c75ab
+- id: event-flow-tester
+  kind: agent-lens
+  category: tester
+  spec_version: 1
+  spec: roles/event-flow-tester.md
+  description: Tester validator for verified-workflows. Validates queues, streams, webhooks, pub/sub, retries, idempotency, and async event paths.
+  selection:
+    mode: conditional
+    signals:
+    - event
+    - queue
+    - webhook
+    - stream
+    - async workflow
+  minimum_independence: preferred
+  default_class: test-medium
+  allowed_classes:
+  - test-medium
+  - review-high
+  boundaries:
+    workspace_cap: declared-write
+    external_cap: none
+    external_mutation: forbidden
+    class_may_not_widen_role: true
+  output_schema: tester-evidence.v1
+  source_behavior_sha256: e2c9e088998b8b62e02084891661fb68f5d6de0ae01d458d3b6465b57cd121ea
+- id: github-actions-monitor
+  kind: agent-lens
+  category: monitor
+  spec_version: 1
+  spec: roles/github-actions-monitor.md
+  description: Monitor validator for verified-workflows. Checks GitHub Actions status and relevant logs for PR, CI, merge, and nonprod workflow gates.
+  selection:
+    mode: conditional
+    signals:
+    - pull request
+    - CI
+    - merge
+    - GitHub workflow
+  minimum_independence: preferred
+  default_class: monitor-low
+  allowed_classes:
+  - monitor-low
+  - test-medium
+  boundaries:
+    workspace_cap: read-only
+    external_cap: allowlisted-read
+    external_mutation: forbidden
+    class_may_not_widen_role: true
+  output_schema: monitor-evidence.v1
+  source_behavior_sha256: 9438da53e0947fc713217a16ee7858818e9970b944c80710e8fa849704f0b734
+- id: iac-cost-scanner
+  kind: agent-lens
+  category: scanner
+  spec_version: 1
+  spec: roles/iac-cost-scanner.md
+  description: 'Scanner validator for verified-workflows. Reviews infrastructure-as-code security, policy, and cost-risk signals. Candidate tools: Checkov, Trivy.'
+  selection:
+    mode: conditional
+    signals:
+    - CDK
+    - CloudFormation
+    - Terraform
+    - Kubernetes
+    - IAM
+    - cloud cost
+  minimum_independence: preferred
+  default_class: scan-low
+  allowed_classes:
+  - scan-low
+  - test-medium
+  boundaries:
+    workspace_cap: read-only
+    external_cap: none
+    external_mutation: forbidden
+    class_may_not_widen_role: true
+  output_schema: scanner-evidence.v1
+  source_behavior_sha256: 91faa9ae2fe336e88b38e631a87fe91c1c48ca8feed27305a6eb0026e35a4964
+- id: infra-reviewer
+  kind: agent-lens
+  category: reviewer
+  spec_version: 1
+  spec: roles/infra-reviewer.md
+  description: 'Optional reviewer for verified-workflows. Reviews CDK/CloudFormation infrastructure code, IAM policies, AWS resource configurations, cost implications, resilience patterns, and observability setup. Triggered when plan contains: CDK, CloudFormation, Lambda, DynamoDB, S3, IAM, KMS, multi-region, infrastructure, AWS. NOT for: application-level security (security-reviewer''s job); API design concerns.'
+  selection:
+    mode: conditional
+    signals:
+    - CDK
+    - CloudFormation
+    - Lambda
+    - DynamoDB
+    - S3
+    - IAM
+    - KMS
+    - multi-region
+    - infrastructure
+    - AWS
+  minimum_independence: preferred
+  default_class: review-high
+  allowed_classes:
+  - review-high
+  - review-max
+  boundaries:
+    workspace_cap: read-only
+    external_cap: none
+    external_mutation: forbidden
+    class_may_not_widen_role: true
+  output_schema: review-evidence.v1
+  source_behavior_sha256: 3119f3b9a5811261409bfa56515365351746d748edd65a2d4461f8b5b732ba9a
+- id: performance-tester
+  kind: agent-lens
+  category: tester
+  spec_version: 1
+  spec: roles/performance-tester.md
+  description: 'Tester validator for verified-workflows. Validates latency, throughput, benchmark, and load claims when performance risk is in scope. Candidate tool: k6.'
+  selection:
+    mode: conditional
+    signals:
+    - latency
+    - throughput
+    - load
+    - query performance
+    - runtime cost claim
+  minimum_independence: preferred
+  default_class: test-medium
+  allowed_classes:
+  - test-medium
+  - review-high
+  boundaries:
+    workspace_cap: declared-write
+    external_cap: none
+    external_mutation: forbidden
+    class_may_not_widen_role: true
+  output_schema: tester-evidence.v1
+  source_behavior_sha256: 88e4550c90be689588ec188052eead305ba5ccb8517e1b5a8c7238beef8c80c1
+- id: privacy-reviewer
+  kind: agent-lens
+  category: reviewer
+  spec_version: 1
+  spec: roles/privacy-reviewer.md
+  description: 'Optional reviewer for verified-workflows. Reviews implementations for privacy by design: data minimization, consent and purpose limitation, PII handling and classification, retention and deletion, and cross-border/compliance considerations. Triggered when plan contains: PII, GDPR, data classification, consent, retention, anonymize, personal data, privacy. NOT for: general security concerns (security-reviewer); legal determinations (flags for legal review).'
+  selection:
+    mode: conditional
+    signals:
+    - PII
+    - GDPR
+    - data classification
+    - consent
+    - retention
+    - anonymize
+    - personal data
+    - privacy
+  minimum_independence: preferred
+  default_class: review-high
+  allowed_classes:
+  - review-high
+  - review-max
+  boundaries:
+    workspace_cap: read-only
+    external_cap: none
+    external_mutation: forbidden
+    class_may_not_widen_role: true
+  output_schema: review-evidence.v1
+  source_behavior_sha256: 5b8f419068768556c024402c5abf94ddad6f5473d29a380a1fd1861a4642202c
+- id: runtime-monitor
+  kind: agent-lens
+  category: monitor
+  spec_version: 1
+  spec: roles/runtime-monitor.md
+  description: Monitor validator for verified-workflows. Checks runtime health using repository-appropriate observability after nonprod deploy or publish.
+  selection:
+    mode: conditional
+    signals:
+    - nonprod deploy
+    - nonprod publish
+    - runtime health
+  minimum_independence: preferred
+  default_class: monitor-low
+  allowed_classes:
+  - monitor-low
+  - test-medium
+  boundaries:
+    workspace_cap: read-only
+    external_cap: allowlisted-read
+    external_mutation: forbidden
+    class_may_not_widen_role: true
+  output_schema: monitor-evidence.v1
+  source_behavior_sha256: d34c14f8b4603b385ae4c60a4eafdc0b0ec2bf40ccad402b6f1523dab7d2e8b8
+- id: scenario-tester
+  kind: agent-lens
+  category: tester
+  spec_version: 1
+  spec: roles/scenario-tester.md
+  description: Tester validator for verified-workflows. Executes scenario flows from plan context or `.verified-workflows.json` scenario_hints.
+  selection:
+    mode: conditional
+    signals:
+    - scenario hint
+    - user-visible flow
+  minimum_independence: preferred
+  default_class: test-medium
+  allowed_classes:
+  - test-medium
+  - review-high
+  boundaries:
+    workspace_cap: declared-write
+    external_cap: none
+    external_mutation: forbidden
+    class_may_not_widen_role: true
+  output_schema: tester-evidence.v1
+  source_behavior_sha256: edf11e36d7842fa18c3180f4b5d541f7c49a137e06daaa2caa61d5e344f64b5b
+- id: sdk-regression-tester
+  kind: agent-lens
+  category: tester
+  spec_version: 1
+  spec: roles/sdk-regression-tester.md
+  description: Tester validator for verified-workflows. Checks SDK compatibility, generated client behavior, packaging smoke tests, and regression fixtures.
+  selection:
+    mode: conditional
+    signals:
+    - SDK package
+    - generated client
+    - compatibility fixture
+  minimum_independence: preferred
+  default_class: test-medium
+  allowed_classes:
+  - test-medium
+  - review-high
+  boundaries:
+    workspace_cap: declared-write
+    external_cap: none
+    external_mutation: forbidden
+    class_may_not_widen_role: true
+  output_schema: tester-evidence.v1
+  source_behavior_sha256: 1f3b9b03f69b0fedfdf5e4191cf729fbc7147afd4860c1efe50c2704ea6785e6
+- id: security-reviewer
+  kind: agent-lens
+  category: reviewer
+  spec_version: 1
+  spec: roles/security-reviewer.md
+  description: 'Base reviewer for verified-workflows. Reviews implementations through the lens of OWASP Top 10, secrets management, authentication/authorization flows, PII handling, and dependency/supply chain security. Always selected as a base logical role for every plan execution regardless of plan type; preferred independence may degrade visibly to inline until U4 proves child dispatch. NOT for: code quality concerns; architecture patterns; test coverage.'
+  selection:
+    mode: base
+    signals: []
+  minimum_independence: preferred
+  default_class: review-high
+  allowed_classes:
+  - review-high
+  - review-max
+  boundaries:
+    workspace_cap: read-only
+    external_cap: none
+    external_mutation: forbidden
+    class_may_not_widen_role: true
+  output_schema: review-evidence.v1
+  source_behavior_sha256: 7c42df2da1e8fcad8719d239ba892deca31a2ca421d84e929a090f1c98b1eda9
+- id: security-scanner
+  kind: agent-lens
+  category: scanner
+  spec_version: 1
+  spec: roles/security-scanner.md
+  description: 'Scanner validator for verified-workflows. Runs code, secret, and appsec scans using OSS/free tools where available. Candidate tools: Semgrep, Bandit, Gitleaks, detect-secrets.'
+  selection:
+    mode: conditional
+    signals:
+    - app code
+    - secret
+    - authentication
+    - input handling
+    - broad code change
+  minimum_independence: preferred
+  default_class: scan-low
+  allowed_classes:
+  - scan-low
+  - test-medium
+  boundaries:
+    workspace_cap: read-only
+    external_cap: none
+    external_mutation: forbidden
+    class_may_not_widen_role: true
+  output_schema: scanner-evidence.v1
+  source_behavior_sha256: a7caade7638258bf92f5583344de010016d74198976c6e1912d4cb3ab2bdb73b
+- id: smoke-tester
+  kind: agent-lens
+  category: tester
+  spec_version: 1
+  spec: roles/smoke-tester.md
+  description: Tester validator for verified-workflows. Runs the narrowest meaningful smoke tests for services, CLIs, health endpoints, or configured smoke targets.
+  selection:
+    mode: conditional
+    signals:
+    - nonprod target
+    - service entrypoint
+    - CLI
+    - health endpoint
+    - smoke target
+  minimum_independence: preferred
+  default_class: test-medium
+  allowed_classes:
+  - test-medium
+  - review-high
+  boundaries:
+    workspace_cap: declared-write
+    external_cap: none
+    external_mutation: forbidden
+    class_may_not_widen_role: true
+  output_schema: tester-evidence.v1
+  source_behavior_sha256: 4c28323ece534218965915902f807af7fa0b0a92c2d0c648bfb537affb946f95
+- id: testing-reviewer
+  kind: agent-lens
+  category: reviewer
+  spec_version: 1
+  spec: roles/testing-reviewer.md
+  description: 'Optional reviewer for verified-workflows. Reviews test coverage adequacy, test quality, edge case testing, mock/fixture appropriateness, and test maintainability. Triggered when plan contains: pytest, test, coverage, integration test, mock, fixture, unit test, e2e, test suite. NOT for: code quality concerns (code-quality-reviewer); infrastructure testing.'
+  selection:
+    mode: conditional
+    signals:
+    - pytest
+    - test
+    - coverage
+    - integration test
+    - mock
+    - fixture
+    - unit test
+    - e2e
+    - test suite
+  minimum_independence: preferred
+  default_class: review-high
+  allowed_classes:
+  - review-high
+  - review-max
+  boundaries:
+    workspace_cap: read-only
+    external_cap: none
+    external_mutation: forbidden
+    class_may_not_widen_role: true
+  output_schema: review-evidence.v1
+  source_behavior_sha256: 55e1691990ea441dc3e299422cd437b14b1b7caa3cbe05f82026cf3d6b933283
+- id: ui-regression-tester
+  kind: agent-lens
+  category: tester
+  spec_version: 1
+  spec: roles/ui-regression-tester.md
+  description: 'Tester validator for verified-workflows. Runs browser/UI regression checks for frontend workflows and visible behavior. Candidate tool: Playwright.'
+  selection:
+    mode: conditional
+    signals:
+    - frontend screen
+    - routing
+    - component
+    - browser workflow
+  minimum_independence: preferred
+  default_class: test-medium
+  allowed_classes:
+  - test-medium
+  - review-high
+  boundaries:
+    workspace_cap: declared-write
+    external_cap: none
+    external_mutation: forbidden
+    class_may_not_widen_role: true
+  output_schema: tester-evidence.v1
+  source_behavior_sha256: e5ddcffd500720bfa4385ecf63e3507eb9cf3406798324704d5c3c7956a645cd

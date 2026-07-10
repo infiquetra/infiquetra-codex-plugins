@@ -580,7 +580,7 @@
     {
       "classification": "legacy-read-metadata",
       "path": "docs/validation/saga-family-target-inventory.json",
-      "sha256": "d8693396e49c1abd200157ccb35f47bc1d102be0757502f61cda10e683e876a8",
+      "sha256": "aab4bfddde8d458f445abec1a641324e1da3c02b61a2a4400ecf5af050dfb4a2",
       "tokens": [
         ".codex/team-execution/",
         "team-execution"
@@ -1115,7 +1115,7 @@
     {
       "classification": "lineage-documentation",
       "path": "plugins/verified-workflows/CHANGELOG.md",
-      "sha256": "712a3b8644295be873dd4e1438654238e147ba6eb4909aad37b35827d1dd9d4b",
+      "sha256": "481c2ddfa428cce67b4fded8430551530c36c51bfe8f3303013ad55cdcb5efd9",
       "tokens": [
         "Team Execution",
         "team-execution"
@@ -1124,7 +1124,7 @@
     {
       "classification": "lineage-documentation",
       "path": "plugins/verified-workflows/PORTABILITY.md",
-      "sha256": "20074f234d8b4d780530c9a74e6d34009d04fab43e571c9e61ca47b3d2a1eb7e",
+      "sha256": "82b64fde9d57d3885e76fadb54ecc7e6bc8bff7779eac3673cb55f503dcbd45e",
       "tokens": [
         "Team Execution",
         "team-execution"
@@ -1133,9 +1133,35 @@
     {
       "classification": "migration-documentation",
       "path": "plugins/verified-workflows/README.md",
-      "sha256": "ca9a8a7cfc4a9bf20c5a2132acd979110ef75c9695545e980f3bae9f2803ee39",
+      "sha256": "48922206fecf94f227d31a7d9fe6b8ea0f874561c66b5a5dbb9c1bd9c441da5e",
       "tokens": [
         "Team Execution",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-fixture",
+      "path": "plugins/verified-workflows/tests/fixtures/frozen-source/reviewer-registry.md",
+      "sha256": "6452b315f087617689023d430398d007ed59483c950b0f26297a73ff65a6b88c",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-fixture",
+      "path": "plugins/verified-workflows/tests/fixtures/frozen-source/validator-criteria.md",
+      "sha256": "def8e4c8ef02ab16289b769df9655f32eee73fd95627adc17bd5c72f2090a279",
+      "tokens": [
+        ".team-execution.json",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-fixture",
+      "path": "plugins/verified-workflows/tests/fixtures/frozen-source/validator-registry.md",
+      "sha256": "76ee0c42002b8c4ab6c80b0a222cc9e83b9068da0ca4a03b06c598e71ca0e5e5",
+      "tokens": [
+        ".team-execution.json",
         "team-execution"
       ]
     },
@@ -1350,7 +1376,7 @@
     {
       "classification": "migration-fixture",
       "path": "tests/test_validate_codex_plugins.py",
-      "sha256": "015b75c1619ad396c5af2a1865a20755d518e44db7ac5aee5e8b3202cbd95efb",
+      "sha256": "b878c9feeac8e9b5b966714157a6edf352d6db34027e859a05359ba8f184f56c",
       "tokens": [
         ".codex/team-execution/",
         "team-execution",
@@ -1359,8 +1385,18 @@
     },
     {
       "classification": "migration-fixture",
+      "path": "tests/test_verified_workflows_agents.py",
+      "sha256": "086c1b07c7861e4c34e32e077781e89d62af57d30aa924b237af6afc7510d004",
+      "tokens": [
+        ".team-execution.json",
+        "Team Execution",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-fixture",
       "path": "tests/test_verified_workflows_migration.py",
-      "sha256": "32108e1e58559274b91769017baf8d5681547f474198129bf88bee80764c824d",
+      "sha256": "36f8687f33160d926f86ca10c0c233e261648821be86ebe36d33e3d449223081",
       "tokens": [
         "Team Execution",
         "team-execution"

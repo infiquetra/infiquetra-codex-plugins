@@ -1,4 +1,4 @@
 interface:
   display_name: "Run Verified Workflow"
-  short_description: "Execute a receipt-backed workflow DAG"
-  default_prompt: "Use $run to execute this approved workflow with role and validator evidence."
+  short_description: "Resolve roles for a root-owned workflow DAG"
+  default_prompt: "Use $run to resolve this approved workflow's roles and evidence contract, and report the actual runtime vehicle truthfully."

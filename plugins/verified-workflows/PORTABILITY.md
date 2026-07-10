@@ -6,7 +6,8 @@
   `38742ece89880a6b140be237edad6d3f13c97b54`
 - Prior Codex adapter: `team-execution` `2.3.0`
 - Canonical Codex target: `verified-workflows` `1.0.0`
-- U9 status: unpublished source; no marketplace, cache, hook-trust, or profile mutation
+- U9/U3 status: unpublished source with 25 role lenses and five generated profiles; no marketplace,
+  cache, hook-trust, or real-profile mutation
 
 This is a behavior adaptation, not an upstream byte-parity claim. The frozen path-by-path source
 treatments and old-to-new targets are recorded in
@@ -22,9 +23,19 @@ The Claude team runtime becomes a root-owned Codex workflow DAG. The root thread
 barriers, mutation, integration, and final adjudication. Native children perform bounded role work
 and return attributable evidence; peer communication is not required.
 
-Logical roles are independent of compute profiles. U3 preserves role behavior as lenses and maps
-agent-backed work to a small set of defined model/effort profiles. U4 adds receipt-backed dispatch
-and validators. U8 alone publishes, installs, and proves the new package.
+Logical roles are independent of compute profiles. U3 preserves all 25 role behaviors as agent
+lenses, records closed class transitions and role-level boundary caps, and renders exactly five
+catalog-bound model/effort profiles. No current role qualifies as deterministic because every role
+still needs judgment or result interpretation. `scripts/sync_codex_agents.py` proves isolated
+installation, live-then-bundled catalog resolution, collision safety, explicit stale cleanup,
+partitioned readback, exact rollback, and preparing/prepared/applying/committed recovery without claiming
+runtime selection. Implicit `$CODEX_HOME` targets are real; isolated fixtures require an explicit
+target plus sentinel. U4 adds receipt-backed dispatch and validators. U8 alone publishes, installs
+into the real profile, and proves the new package.
+
+The three frozen upstream selection/gate registries are exact test fixtures, not active legacy
+instructions. Their hashes bind the closed Codex-native selection policy, typed evidence schemas,
+default-branch automation restriction, custom-reviewer contract, and explicit U7 advisory deferral.
 
 ## Compatibility Boundary
 

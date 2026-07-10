@@ -6,7 +6,10 @@ from __future__ import annotations
 import ast
 import hashlib
 import json
+import os
 import re
+import subprocess
+import sys
 import tomllib
 from argparse import ArgumentParser
 from pathlib import Path
@@ -533,6 +536,7 @@ def validate_repository(root: Path, mode: str = "current") -> list[str]:
     validate_port_contract(root, "cutover" if mode == "cutover" else "classification", errors)
     validate_saga_family_docs(root, errors)
     validate_deletion_migration_map(root, errors)
+    validate_verified_workflows_agents(root, errors)
     return errors
 
 
@@ -672,6 +676,13 @@ def expected_legacy_workflow_classification(path: Path) -> str | None:
         return LEGACY_WORKFLOW_EXACT_CLASSIFICATIONS[path]
     if path.parts[:2] == ("plugins", "team-execution"):
         return None
+    if path.parts[:4] == (
+        "plugins",
+        "verified-workflows",
+        "tests",
+        "fixtures",
+    ):
+        return "migration-fixture"
     if path.parts[:2] == ("plugins", "saga"):
         if path.parts[:3] == ("plugins", "saga", "tests"):
             return "migration-fixture"
@@ -934,6 +945,8 @@ def validate_verified_workflows_canonical_surface(root: Path, errors: list[str])
         and "__pycache__" not in path.parts
         and path not in lineage_docs
         and path.name != "fleet_commons_shim.py"
+        and expected_legacy_workflow_classification(path.relative_to(root))
+        != "migration-fixture"
     )
     for path in candidates:
         try:
@@ -948,6 +961,7 @@ def validate_verified_workflows_canonical_surface(root: Path, errors: list[str])
             if token in text:
                 errors.append(f"{rel}: canonical target emits legacy token `{token}`")
         if path.suffix == ".py":
+            is_test_source = path.is_relative_to(plugin_root / "tests")
             for forbidden in (
                 "plugins/team-execution",
                 "plugins/saga",
@@ -973,7 +987,7 @@ def validate_verified_workflows_canonical_surface(root: Path, errors: list[str])
             forbidden_imports = {
                 name for name in imported if is_cross_plugin_module(name)
             }
-            if forbidden_imports:
+            if forbidden_imports and not is_test_source:
                 errors.append(
                     f"{rel}: target source directly imports another workflow plugin "
                     f"{sorted(forbidden_imports)}"
@@ -1004,16 +1018,18 @@ def validate_verified_workflows_canonical_surface(root: Path, errors: list[str])
                 isinstance(node, ast.Constant) and node.value == "__import__"
                 for node in ast.walk(parsed)
             )
-            if dynamic_imports or dangerous_calls or import_primitive_string:
+            if not is_test_source and (
+                dynamic_imports or dangerous_calls or import_primitive_string
+            ):
                 errors.append(
                     f"{rel}: dynamic imports are not allowed in canonical target source; "
                     "load shared modules through fleet_commons_shim"
                 )
 
-    for forbidden_dir in ("hooks", "agents", "config"):
+    for forbidden_dir in ("hooks",):
         if (plugin_root / forbidden_dir).exists():
             errors.append(
-                f"verified-workflows: U9 identity package must not create `{forbidden_dir}` yet"
+                f"verified-workflows: pre-U4 package must not create `{forbidden_dir}` yet"
             )
 
     portability_path = plugin_root / "PORTABILITY.md"
@@ -1032,6 +1048,56 @@ def validate_verified_workflows_canonical_surface(root: Path, errors: list[str])
             errors.append(
                 "verified-workflows/PORTABILITY.md: must not claim upstream byte parity"
             )
+
+
+def validate_verified_workflows_agents(root: Path, errors: list[str]) -> None:
+    """Validate the closed U3 role registry and exact five generated profiles."""
+
+    plugin_root = root / "plugins" / "verified-workflows"
+    script = plugin_root / "scripts" / "render_codex_agents.py"
+    required = (
+        script,
+        plugin_root / "config" / "role-registry.yaml",
+        plugin_root / "roles",
+        plugin_root / "agents",
+    )
+    missing = [path.relative_to(root).as_posix() for path in required if not path.exists()]
+    if missing:
+        errors.append(f"verified-workflows: U3 role/profile surfaces missing {missing}")
+        return
+    try:
+        environment = {
+            **os.environ,
+            "FLEET_COMMONS_ROOT": str((root / "plugins" / "fleet-core").resolve()),
+            "PYTHONDONTWRITEBYTECODE": "1",
+        }
+        result = subprocess.run(  # noqa: S603 - fixed interpreter and repository script
+            [
+                sys.executable,
+                str(script),
+                "--check",
+                "--catalog-snapshot",
+                str(root / "docs" / "validation" / "codex-runtime-capability-snapshot.json"),
+            ],
+            cwd=root,
+            env=environment,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+        if result.returncode:
+            detail = result.stderr.strip().splitlines()[-1] if result.stderr.strip() else "failed"
+            raise RuntimeError(detail)
+        receipt = json.loads(result.stdout)
+        if receipt.get("claim") != "expected-profile-configuration-only":
+            raise RuntimeError("renderer made an unsupported runtime claim")
+        if receipt.get("registry", {}).get("role_count") != 25:
+            raise RuntimeError("renderer did not preserve exactly 25 logical roles")
+        if len(receipt.get("profiles", [])) != 5:
+            raise RuntimeError("renderer did not produce exactly five profiles")
+    except (OSError, RuntimeError, json.JSONDecodeError, subprocess.TimeoutExpired) as exc:
+        errors.append(f"verified-workflows: U3 role/profile validation failed: {exc}")
 
 
 def is_cross_plugin_module(name: str) -> bool:
@@ -1240,6 +1306,8 @@ def validate_plugin(
         if agents_root.exists():
             if plugin_name == "team-execution":
                 validate_team_execution_agents(agents_root, errors)
+            elif plugin_name == "verified-workflows":
+                pass
             else:
                 errors.append(f"{plugin_name}: active Codex plugin must not contain `agents`")
 
@@ -1539,7 +1607,11 @@ def validate_target_fixture_payload(
             f"target fixture {plugin_name} skills",
             errors,
         )
-        forbidden_dirs = (".claude-plugin", "commands", "agents")
+        forbidden_dirs = (
+            (".claude-plugin", "commands")
+            if plugin_name == "verified-workflows"
+            else (".claude-plugin", "commands", "agents")
+        )
         raw_forbidden_dirs = entry.get("forbidden_active_dirs", [])
         if not isinstance(raw_forbidden_dirs, list) or not all(
             isinstance(item, str) for item in raw_forbidden_dirs

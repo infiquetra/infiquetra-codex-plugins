@@ -80,8 +80,7 @@
       ],
       "forbidden_active_dirs": [
         ".claude-plugin",
-        "commands",
-        "agents"
+        "commands"
       ]
     },
     {

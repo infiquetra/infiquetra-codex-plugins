@@ -9,6 +9,13 @@ All notable changes to this plugin are documented here.
 - Establish the unpublished Verified Workflows Codex package identity.
 - Add `run` and `appsec-audit` skill surfaces.
 - Define the root-owned workflow DAG and compatibility boundaries.
+- Preserve 25 logical jobs as versioned agent lenses with closed selection, independence,
+  evidence-schema, and role-level boundary contracts.
+- Render exactly five catalog-bound managed profiles and add live-catalog, persistent-lock profile
+  sync with explicit isolated targets, stale cleanup, partitioned receipts, exact rollback, and
+  preparing/prepared/applying/committed crash recovery.
+- Bind all three frozen reviewer/validator registries, typed evidence schemas, shared scoring and
+  gate semantics, default-branch eligibility, and deferred external advisory behavior.
 
 ### Migration
 

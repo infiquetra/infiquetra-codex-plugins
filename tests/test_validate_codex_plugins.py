@@ -3,6 +3,7 @@
 import copy
 import hashlib
 import json
+import shutil
 from pathlib import Path
 
 import pytest
@@ -25,6 +26,7 @@ from scripts.validate_codex_plugins import (
     validate_legacy_workflow_token_allowlist,
     validate_legacy_history_sentinels,
     validate_saga_workflow_independence,
+    validate_verified_workflows_agents,
     validate_verified_workflows_canonical_surface,
     workflow_registry_sha256,
     validate_relative_file,
@@ -166,7 +168,16 @@ def test_target_plugin_set_describes_saga_family_cutover():
 def test_target_fixture_requires_namespace_proof():
     payload = {
         "plugins": [
-            {"name": name, "version": spec["version"], "skills": list(spec["skills"]), "forbidden_active_dirs": [".claude-plugin", "commands", "agents"]}
+            {
+                "name": name,
+                "version": spec["version"],
+                "skills": list(spec["skills"]),
+                "forbidden_active_dirs": (
+                    [".claude-plugin", "commands"]
+                    if name == "verified-workflows"
+                    else [".claude-plugin", "commands", "agents"]
+                ),
+            }
             for name, spec in TARGET_EXPECTED_PLUGINS.items()
         ],
         "schema_version": "2.0",
@@ -197,7 +208,11 @@ def test_target_fixture_requires_discord_identity_assets_mutation_gate():
                 "name": name,
                 "version": spec["version"],
                 "skills": list(spec["skills"]),
-                "forbidden_active_dirs": [".claude-plugin", "commands", "agents"],
+                "forbidden_active_dirs": (
+                    [".claude-plugin", "commands"]
+                    if name == "verified-workflows"
+                    else [".claude-plugin", "commands", "agents"]
+                ),
             }
             for name, spec in TARGET_EXPECTED_PLUGINS.items()
         ],
@@ -232,14 +247,14 @@ def test_target_fixture_rejects_duplicate_plugin_entries():
                 "version": "1.0.0",
                 "publication_status": "unpublished",
                 "skills": ["run", "appsec-audit"],
-                "forbidden_active_dirs": [".claude-plugin", "commands", "agents"],
+                "forbidden_active_dirs": [".claude-plugin", "commands"],
             },
             {
                 "name": "verified-workflows",
                 "version": "1.0.0",
                 "publication_status": "unpublished",
                 "skills": ["run", "appsec-audit"],
-                "forbidden_active_dirs": [".claude-plugin", "commands", "agents"],
+                "forbidden_active_dirs": [".claude-plugin", "commands"],
             },
         ],
     }
@@ -307,6 +322,51 @@ def test_verified_workflows_rejects_from_plugins_import_saga(tmp_path):
     validate_verified_workflows_canonical_surface(tmp_path, errors)
 
     assert any("directly imports another workflow plugin" in error for error in errors)
+
+
+def test_verified_workflows_role_profiles_are_part_of_repo_validation() -> None:
+    errors: list[str] = []
+
+    validate_verified_workflows_agents(REPO_ROOT, errors)
+
+    assert errors == []
+
+
+def test_verified_workflows_validation_pins_fleet_core_to_supplied_root(
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("FLEET_COMMONS_ROOT", "/tmp/not-the-supplied-repository")
+    errors: list[str] = []
+
+    validate_verified_workflows_agents(REPO_ROOT, errors)
+
+    assert errors == []
+
+
+def test_verified_workflows_role_profile_validation_rejects_missing_role(tmp_path: Path) -> None:
+    root = tmp_path / "repo"
+    (root / "plugins").mkdir(parents=True)
+    shutil.copytree(
+        REPO_ROOT / "plugins" / "verified-workflows",
+        root / "plugins" / "verified-workflows",
+    )
+    shutil.copytree(REPO_ROOT / "plugins" / "fleet-core", root / "plugins" / "fleet-core")
+    (root / ".agents" / "plugins").mkdir(parents=True)
+    shutil.copy2(
+        REPO_ROOT / ".agents" / "plugins" / "marketplace.json",
+        root / ".agents" / "plugins" / "marketplace.json",
+    )
+    (root / "docs" / "validation").mkdir(parents=True)
+    shutil.copy2(
+        REPO_ROOT / "docs" / "validation" / "codex-runtime-capability-snapshot.json",
+        root / "docs" / "validation" / "codex-runtime-capability-snapshot.json",
+    )
+    (root / "plugins" / "verified-workflows" / "roles" / "security-reviewer.md").unlink()
+    errors: list[str] = []
+
+    validate_verified_workflows_agents(root, errors)
+
+    assert any("roster mismatch" in error or "role lens" in error for error in errors)
 
 
 def test_verified_workflows_allows_standard_library_import(tmp_path):

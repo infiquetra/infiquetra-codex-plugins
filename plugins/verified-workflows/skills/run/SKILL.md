@@ -1,26 +1,51 @@
 ---
 name: run
-description: Run an approved Infiquetra workflow as a root-owned Codex DAG with explicit steps, dependencies, logical roles, mutation boundaries, reviewer and validator gates, and evidence. Use for nontrivial approved work that names Verified Workflows or includes a Workflow Structure contract. This unpublished U9 surface defines identity and ownership only; runtime dispatch and attestation arrive in U4.
+description: Run an approved Infiquetra workflow as a root-owned Codex DAG with explicit steps, dependencies, logical roles, mutation boundaries, reviewer and validator gates, and evidence. Use for nontrivial approved work that names Verified Workflows or includes a Workflow Structure contract. This unpublished U3 surface defines role and expected-profile policy; runtime dispatch and attestation arrive in U4.
 ---
 
 # Run Verified Workflow
 
 Use this skill for an approved plan that contains or references `## Workflow Structure`.
 
-## U9 Runtime Boundary
+## U3 Runtime Boundary
 
-This package is an unpublished development target. U9 establishes the canonical package,
-skill, state, receipt, and compatibility vocabulary. It does not yet claim that managed
-profiles, native subagent receipts, workflow dispatch, or gates exist. Those runtime surfaces
-must be supplied and proven by U3 and U4 before this skill can make an execution claim.
+This package is an unpublished development target. U9 established canonical identity and
+compatibility. U3 adds the 25 versioned role lenses and five managed profile definitions, with
+explicit-isolated render, one-snapshot catalog resolution, partitioned sync/readback, recovery, and
+rollback proof. An implicit `$CODEX_HOME` is real, never an isolated test target. Profile presence
+proves expected configuration only. Native subagent receipts, workflow dispatch, and gates must be
+supplied and proven by U4 before this skill can make an execution claim.
 
 Until then:
 
-- Do not create state, profiles, hooks, or receipts under the retired legacy identity.
+- Do not create state, hooks, or receipts under the retired legacy identity.
+- Do not install or migrate profiles in the real Codex home before the U8 cutover gate.
 - Do not label generic subagent help as a Verified Workflow run.
 - Do not claim `verified-workflow-subagent` or `verified-workflow-inline` evidence.
 - Route implementation through the approved root-owned Saga work process and record the actual
   backend truthfully.
+
+## Role And Profile Contract
+
+Read `plugins/verified-workflows/config/role-registry.yaml` and the selected file under
+`plugins/verified-workflows/roles/`. Select only a class listed in that role's `allowed_classes`.
+A workflow step may elevate `preferred` independence to `required`; it may never lower a role whose
+minimum is `required`.
+
+```text
+logical role + risk
+        |
+        v
+allowed execution class --> immutable catalog --> managed profile digest
+        |                                           |
+        +--> role boundary may narrow                +--> expected config only
+                                                    runtime proof waits for U4
+```
+
+All 25 current roles are `agent-lens`. Do not relabel a scanner or tester as deterministic merely
+because it can run a tool: a deterministic validator needs one contained pinned command and an
+evidence schema that cover its entire behavior without judgment or interpretation. Keep model,
+effort, and fallback policy in fleet-core; keep role-specific criteria in the role lens.
 
 ## Ownership Contract
 

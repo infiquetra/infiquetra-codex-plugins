@@ -167,8 +167,16 @@ def test_target_manifest_and_skills_are_complete_without_runtime_surfaces() -> N
         "**Validation**",
     ):
         assert marker in appsec_contract
-    for forbidden in ("hooks", "agents", "config"):
-        assert not (TARGET_ROOT / forbidden).exists()
+    assert not (TARGET_ROOT / "hooks").exists()
+    assert {path.name for path in (TARGET_ROOT / "agents").glob("*.toml")} == {
+        "review-max.toml",
+        "review-high.toml",
+        "test-medium.toml",
+        "scan-low.toml",
+        "monitor-low.toml",
+    }
+    assert (TARGET_ROOT / "config" / "role-registry.yaml").is_file()
+    assert len(list((TARGET_ROOT / "roles").glob("*.md"))) == 25
 
 
 def test_frozen_team_execution_rows_have_explicit_verified_workflows_targets() -> None:
@@ -204,6 +212,7 @@ def test_target_operational_surfaces_emit_no_legacy_vocabulary_or_cross_plugin_i
             or path.name in lineage_docs
             or path.name == "fleet_commons_shim.py"
             or "__pycache__" in path.parts
+            or "frozen-source" in path.parts
         ):
             continue
         text = path.read_text(encoding="utf-8")
