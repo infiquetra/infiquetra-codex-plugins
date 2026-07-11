@@ -927,6 +927,49 @@ def test_launch_ack_may_follow_child_start_but_must_precede_result(
         join(data, active_workflow, {**chain, "launch_ref": after_result})
 
 
+def test_launch_ack_must_precede_child_stop_and_follow_hook_trust(tmp_path: Path) -> None:
+    data = plugin_data(tmp_path)
+    active_workflow = workflow()
+    chain = protected_chain(data, active_workflow)
+    after_stop = R.create_launch_record(
+        data,
+        intent_ref=chain["intent_ref"],
+        parent_session_id="Session-1",
+        turn_id="Turn-1",
+        child_id="Child-1",
+        agent_type="review_high",
+        hook_trust_ref=chain["hook_trust_ref"],
+        launched_at="2026-07-10T22:00:02.500000Z",
+    )
+    with pytest.raises(R.DispatchReceiptError, match="timestamps"):
+        join(data, active_workflow, {**chain, "launch_ref": after_stop})
+
+    codex_home, hooks = installed_hooks(data)
+    late_trust = R.create_hook_trust_record(
+        data,
+        codex_home=codex_home,
+        installed_hooks_dir=hooks,
+        scope="isolated",
+        observed_at="2026-07-10T22:00:00.750000Z",
+    )
+    before_trust = R.create_launch_record(
+        data,
+        intent_ref=chain["intent_ref"],
+        parent_session_id="Session-1",
+        turn_id="Turn-1",
+        child_id="Child-1",
+        agent_type="review_high",
+        hook_trust_ref=late_trust,
+        launched_at="2026-07-10T22:00:00.500000Z",
+    )
+    with pytest.raises(R.DispatchReceiptError, match="timestamps"):
+        join(
+            data,
+            active_workflow,
+            {**chain, "hook_trust_ref": late_trust, "launch_ref": before_trust},
+        )
+
+
 def test_raw_pair_and_trusted_hook_bytes_must_match(tmp_path: Path) -> None:
     data = plugin_data(tmp_path)
     active_workflow = workflow()
@@ -1236,6 +1279,42 @@ def test_review_input_digest_and_security_hard_stop_are_enforced(
         )["verdict"]
         == "blocking"
     )
+
+
+@pytest.mark.parametrize(
+    "argv",
+    [
+        ["scanner", "--token", "opaque-value"],
+        ["scanner", "password=opaque-value"],
+        ["scanner", "--header", "Authorization: Bearer abcdefgh12345678"],
+        ["scanner", "--header", "Basic dXNlcjpwYXNzd29yZA=="],
+        ["scanner", "https://user:password@example.invalid/path"],
+    ],
+)
+def test_agent_validator_argv_rejects_secret_material(
+    tmp_path: Path,
+    argv: list[str],
+) -> None:
+    active_workflow = W.parse_workflow_structure(
+        fixtures.plan(
+            fixtures.row(
+                "scanner",
+                "security-scanner",
+                execution_class="scan-low",
+                required_evidence="scanner-evidence",
+            )
+        )
+    )
+
+    with pytest.raises(R.DispatchReceiptError, match="contains secret material"):
+        agent_command_output(
+            plugin_data(tmp_path),
+            active_workflow,
+            "scanner",
+            argv=argv,
+            created_at="2026-07-10T21:59:58.100000Z",
+            nonce="9" * 32,
+        )
 
 
 def test_nested_validator_aggregates_accept_exact_shapes_and_reject_contradictions(

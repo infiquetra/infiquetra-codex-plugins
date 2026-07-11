@@ -143,6 +143,7 @@ def join_subagent_receipt(
     effective_now = now()
     if not (
         created <= launched <= recorded
+        and trusted <= launched <= stopped
         and trusted <= started <= stopped <= recorded <= verified <= effective_now
     ):
         raise DispatchReceiptError("dispatch timestamps are reversed or in the future")

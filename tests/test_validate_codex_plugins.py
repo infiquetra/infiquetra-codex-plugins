@@ -129,6 +129,31 @@ def test_cutover_validation_passes_after_u8_release_evidence():
     assert validate_repository(REPO_ROOT, mode="cutover") == []
 
 
+def test_current_mode_rejects_pending_real_profile_cutover(monkeypatch):
+    path = (
+        REPO_ROOT
+        / "docs"
+        / "validation"
+        / "codex-plugin-modernization-cutover.json"
+    )
+    pending = json.loads(path.read_text(encoding="utf-8"))
+    pending["status"] = "isolated-gates-passed-real-profile-pending"
+    pending["real_profile"] = {
+        "apply_started": False,
+        "applied": False,
+        "fresh_session": "pending",
+        "rollback_status": "not-needed",
+        "installed_readback": None,
+        "profile_readback": None,
+    }
+    monkeypatch.setattr(validator, "load_json", lambda _path, _errors: pending)
+    errors: list[str] = []
+
+    validator.validate_modernization_cutover_record(REPO_ROOT, path, "current", errors)
+
+    assert any("real-profile cutover evidence is incomplete" in error for error in errors)
+
+
 def test_current_and_target_fixture_run_classification_port_gate():
     errors: list[str] = []
 
@@ -184,7 +209,7 @@ def test_target_plugin_set_describes_saga_family_cutover():
         "discord-identity-assets",
     )
     assert TARGET_EXPECTED_PLUGINS["verified-workflows"] == {
-        "version": "1.0.0+codex.20260711153644",
+        "version": "1.0.0+codex.20260711160140",
         "skills": ("run", "appsec-audit"),
     }
     assert "team-execution" not in TARGET_EXPECTED_PLUGINS
@@ -270,14 +295,14 @@ def test_target_fixture_rejects_duplicate_plugin_entries():
         "plugins": [
             {
                 "name": "verified-workflows",
-                "version": "1.0.0+codex.20260711153644",
+                "version": "1.0.0+codex.20260711160140",
                 "publication_status": "released",
                 "skills": ["run", "appsec-audit"],
                 "forbidden_active_dirs": [".claude-plugin", "commands"],
             },
             {
                 "name": "verified-workflows",
-                "version": "1.0.0+codex.20260711153644",
+                "version": "1.0.0+codex.20260711160140",
                 "publication_status": "released",
                 "skills": ["run", "appsec-audit"],
                 "forbidden_active_dirs": [".claude-plugin", "commands"],

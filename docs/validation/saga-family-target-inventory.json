@@ -5,7 +5,7 @@
   "plugins": [
     {
       "name": "saga",
-      "version": "0.75.17+codex.20260711134423",
+      "version": "0.75.17+codex.20260711160644",
       "skills": [
         "office-hours",
         "ideate",
@@ -72,7 +72,7 @@
     },
     {
       "name": "verified-workflows",
-      "version": "1.0.0+codex.20260711153644",
+      "version": "1.0.0+codex.20260711160140",
       "publication_status": "released",
       "skills": [
         "run",

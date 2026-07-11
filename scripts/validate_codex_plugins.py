@@ -78,7 +78,7 @@ LEGACY_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
 
 PRE_CUTOVER_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
     "saga": {
-        "version": "0.75.17+codex.20260711134423",
+        "version": "0.75.17+codex.20260711160644",
         "skills": (
             "office-hours",
             "ideate",
@@ -151,7 +151,7 @@ TARGET_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
     if name != "team-execution"
 }
 TARGET_EXPECTED_PLUGINS["verified-workflows"] = {
-    "version": "1.0.0+codex.20260711153644",
+    "version": "1.0.0+codex.20260711160140",
     "skills": ("run", "appsec-audit"),
 }
 CURRENT_ONLY_LEGACY_PLUGINS = {
@@ -530,7 +530,11 @@ def validate_repository(root: Path, mode: str = "current") -> list[str]:
     validate_provenance(root, expected_plugins, errors)
     validate_cutover(root, errors)
     validate_issue_contract_parity(root, errors)
-    validate_port_contract(root, "cutover" if mode == "cutover" else "classification", errors)
+    validate_port_contract(
+        root,
+        "cutover" if mode in {"current", "cutover"} else "classification",
+        errors,
+    )
     validate_saga_family_docs(root, errors)
     validate_deletion_migration_map(root, errors)
     validate_verified_workflows_agents(root, errors)
@@ -2031,7 +2035,7 @@ def validate_modernization_cutover_record(
     real = payload.get("real_profile")
     if not isinstance(real, dict):
         errors.append(f"{path.relative_to(root)} real_profile must be an object")
-    elif mode == "cutover" and (
+    elif mode in {"current", "cutover"} and (
         payload.get("status") != "cutover-complete"
         or real.get("apply_started") is not True
         or real.get("applied") is not True

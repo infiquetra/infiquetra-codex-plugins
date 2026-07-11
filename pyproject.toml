@@ -20,7 +20,6 @@ testpaths = [
   "plugins/mission-control/tests",
   "plugins/deploy/tests",
   "plugins/verified-workflows/tests",
-  "plugins/verified-workflows/tests",
   "plugins/saga/tests",
   "plugins/discord-identity-assets/tests",
   "plugins/unifi/tests",

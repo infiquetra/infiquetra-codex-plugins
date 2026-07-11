@@ -1,6 +1,6 @@
 {
   "name": "verified-workflows",
-  "version": "1.0.0+codex.20260711153644",
+  "version": "1.0.0+codex.20260711160140",
   "description": "Root-owned, receipt-backed Codex workflow orchestration for Infiquetra work.",
   "author": {
     "name": "Infiquetra",

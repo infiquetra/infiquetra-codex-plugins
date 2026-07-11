@@ -23,6 +23,7 @@ The env var *name* may appear (e.g. in a "key absent" failure note); the value n
 from __future__ import annotations
 
 import json
+import http.client
 import ipaddress
 import math
 import socket
@@ -69,6 +70,70 @@ class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
         return None
 
 
+class _PinnedHTTPSConnection(http.client.HTTPSConnection):
+    """Connect to a prevalidated address without changing TLS's provider identity.
+
+    ``HTTPSConnection`` normally resolves ``host`` inside ``connect``.  That leaves a DNS
+    rebinding window between our public-address check and the eventual dial.  This connection
+    receives an already-validated numeric address, while retaining the original provider hostname
+    for both SNI and certificate hostname verification.
+    """
+
+    def __init__(
+        self,
+        *args: Any,
+        pinned_address: str,
+        tls_hostname: str,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(*args, **kwargs)
+        self._pinned_address = pinned_address
+        self._tls_hostname = tls_hostname
+
+    def connect(self) -> None:
+        # A numeric address is deliberate: socket.create_connection therefore cannot perform a
+        # second hostname lookup after the bridge has accepted the resolver's answer.
+        self.sock = socket.create_connection(
+            (self._pinned_address, self.port), self.timeout, self.source_address
+        )
+        if self._tunnel_host:
+            self._tunnel()
+        assert self._context is not None
+        self.sock = self._context.wrap_socket(self.sock, server_hostname=self._tls_hostname)
+
+
+class _PinnedHTTPSHandler(urllib.request.HTTPSHandler):
+    """urllib HTTPS handler whose transport connection is pinned to one validated address."""
+
+    def __init__(self, *, provider_host: str, pinned_address: str) -> None:
+        super().__init__()
+        self._provider_host = provider_host
+        self._pinned_address = pinned_address
+
+    def https_open(self, req: urllib.request.Request) -> Any:
+        def _connection(host: str, **kwargs: Any) -> _PinnedHTTPSConnection:
+            return _PinnedHTTPSConnection(
+                host,
+                pinned_address=self._pinned_address,
+                tls_hostname=self._provider_host,
+                **kwargs,
+            )
+
+        return self.do_open(_connection, req)
+
+
+def _pinned_urlopen(provider_host: str, addresses: tuple[str, ...]) -> UrlOpen:
+    """Build one direct, no-redirect opener pinned to the checked resolver result."""
+
+    # Resolver order is retained for a conventional preferred-address policy.  The important
+    # boundary is that this is a numeric member of ``addresses``, never a hostname re-resolution.
+    return urllib.request.build_opener(
+        urllib.request.ProxyHandler({}),
+        _NoRedirectHandler(),
+        _PinnedHTTPSHandler(provider_host=provider_host, pinned_address=addresses[0]),
+    ).open
+
+
 def runner(
     *,
     urlopen: UrlOpen | None = None,
@@ -84,8 +149,11 @@ def runner(
     default binds at call time, keeping the seam honest for tests that monkeypatch the environment).
     """
     live_urlopen = urlopen is None
+    urlopen_factory: Callable[[str, tuple[str, ...]], UrlOpen] | None = None
     if live_urlopen:
-        urlopen = urllib.request.build_opener(_NoRedirectHandler()).open
+        # Build the opener only after _invoke has validated a single DNS answer set.  This avoids
+        # urllib's default hostname lookup during the later TCP connect.
+        urlopen_factory = _pinned_urlopen
     if resolver is None and live_urlopen:
         resolver = socket.getaddrinfo
     if getenv is None:
@@ -104,7 +172,6 @@ def runner(
     bounded_timeout = min(max(timeout_number, MIN_TIMEOUT_SECONDS), MAX_TIMEOUT_SECONDS)
 
     def _run(invocation: dict[str, Any]) -> dict[str, Any]:
-        assert urlopen is not None
         return _invoke(
             invocation,
             urlopen=urlopen,
@@ -112,6 +179,7 @@ def runner(
             clock=clock,
             timeout=bounded_timeout,
             resolver=resolver,
+            urlopen_factory=urlopen_factory,
         )
 
     return _run
@@ -120,11 +188,12 @@ def runner(
 def _invoke(
     invocation: dict[str, Any],
     *,
-    urlopen: UrlOpen,
+    urlopen: UrlOpen | None,
     getenv: GetEnv,
     clock: Clock,
     timeout: float,
     resolver: Resolver | None,
+    urlopen_factory: Callable[[str, tuple[str, ...]], UrlOpen] | None,
 ) -> dict[str, Any]:
     """Build and send one chat/completions request; return the Runner-contract result.
 
@@ -144,8 +213,9 @@ def _invoke(
         return _failure(STATUS_ERROR, url_error)
     if not model or not isinstance(task, str):
         return _failure(STATUS_ERROR, "http invocation missing base_url, model, or task payload")
+    validated_addresses: tuple[str, ...] | None = None
     if resolver is not None:
-        resolution_error = _resolved_host_error(base_url, resolver)
+        validated_addresses, resolution_error = _validated_public_addresses(base_url, resolver)
         if resolution_error:
             return _failure(STATUS_ERROR, resolution_error)
 
@@ -168,7 +238,14 @@ def _invoke(
     request = urllib.request.Request(url, data=body, headers=headers, method="POST")
     started = clock()
     try:
-        with urlopen(request, timeout=timeout) as response:
+        active_urlopen = urlopen
+        if urlopen_factory is not None:
+            assert validated_addresses is not None
+            provider_host = urlsplit(base_url).hostname
+            assert provider_host is not None
+            active_urlopen = urlopen_factory(provider_host, validated_addresses)
+        assert active_urlopen is not None
+        with active_urlopen(request, timeout=timeout) as response:
             status_code = int(getattr(response, "status", 0) or getattr(response, "code", 0) or 0)
             try:
                 raw = response.read(MAX_RESPONSE_BYTES + 1)
@@ -262,6 +339,7 @@ def _base_url_error(base_url: str) -> str | None:
         return "http invocation missing base_url, model, or task payload"
     try:
         parts = urlsplit(base_url)
+        _port = parts.port
     except ValueError:
         return "http invocation base_url is invalid"
     if (
@@ -285,26 +363,39 @@ def _base_url_error(base_url: str) -> str | None:
     return None
 
 
-def _resolved_host_error(base_url: str, resolver: Resolver) -> str | None:
-    """Fail closed when a reviewed hostname resolves outside the public Internet."""
-    host = urlsplit(base_url).hostname
+def _validated_public_addresses(
+    base_url: str, resolver: Resolver
+) -> tuple[tuple[str, ...] | None, str | None]:
+    """Resolve once, returning only public numeric addresses safe for the eventual TCP dial."""
+    parts = urlsplit(base_url)
+    host = parts.hostname
     assert host is not None
     try:
-        answers = resolver(host, 443, type=socket.SOCK_STREAM)
+        answers = resolver(host, parts.port or 443, type=socket.SOCK_STREAM)
     except OSError:
-        return "http invocation provider hostname could not be resolved"
-    addresses: set[ipaddress.IPv4Address | ipaddress.IPv6Address] = set()
+        return None, "http invocation provider hostname could not be resolved"
+    addresses: list[str] = []
+    seen: set[ipaddress.IPv4Address | ipaddress.IPv6Address] = set()
     for answer in answers:
         try:
             sockaddr = answer[4]
-            addresses.add(ipaddress.ip_address(sockaddr[0]))
+            address = ipaddress.ip_address(sockaddr[0])
         except (IndexError, TypeError, ValueError):
-            return "http invocation provider hostname resolution was malformed"
+            return None, "http invocation provider hostname resolution was malformed"
+        if address not in seen:
+            seen.add(address)
+            addresses.append(str(address))
     if not addresses:
-        return "http invocation provider hostname resolved to no addresses"
-    if any(not address.is_global for address in addresses):
-        return "http invocation provider hostname resolved to a non-public address"
-    return None
+        return None, "http invocation provider hostname resolved to no addresses"
+    if any(not ipaddress.ip_address(address).is_global for address in addresses):
+        return None, "http invocation provider hostname resolved to a non-public address"
+    return tuple(addresses), None
+
+
+def _resolved_host_error(base_url: str, resolver: Resolver) -> str | None:
+    """Compatibility wrapper for callers that only need validation, not the pinned address set."""
+    _addresses, error = _validated_public_addresses(base_url, resolver)
+    return error
 
 
 def _failure(status: str, note: str) -> dict[str, Any]:

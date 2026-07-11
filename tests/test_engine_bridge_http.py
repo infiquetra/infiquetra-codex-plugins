@@ -420,6 +420,71 @@ def test_live_bridge_allows_only_public_dns_answers() -> None:
     assert result["status"] == "ok"
 
 
+def test_live_bridge_pins_dial_to_single_validated_public_resolution(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A later poisoned DNS answer cannot replace the numeric address sent to connect()."""
+    calls = 0
+
+    def _rebind_after_validation(*_args: Any, **_kwargs: Any) -> list[tuple[Any, ...]]:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return [
+                (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("8.8.8.8", 443)),
+                (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("1.1.1.1", 443)),
+            ]
+        return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("127.0.0.1", 443))]
+
+    pinning: dict[str, Any] = {}
+    response = _capturing_urlopen(_chat_body("ok"))
+
+    def _record_pinner(provider_host: str, addresses: tuple[str, ...]) -> Any:
+        pinning["provider_host"] = provider_host
+        pinning["addresses"] = addresses
+        return response
+
+    monkeypatch.setattr(BRIDGE, "_pinned_urlopen", _record_pinner)
+    result = BRIDGE.runner(
+        getenv={"OLLAMA_API_KEY": "secret"}.get,
+        resolver=_rebind_after_validation,
+    )(D._build_invocation(_http_resolution(OLLAMA_ROW), model=None))
+
+    assert result["status"] == "ok"
+    assert calls == 1
+    assert pinning == {
+        "provider_host": "ollama.com",
+        "addresses": ("8.8.8.8", "1.1.1.1"),
+    }
+    addresses = pinning["addresses"]
+
+    dialed: list[tuple[tuple[str, int], float | None, Any]] = []
+    fake_socket = object()
+
+    def _dial(address: tuple[str, int], timeout: float | None, source: Any) -> object:
+        dialed.append((address, timeout, source))
+        return fake_socket
+
+    class _TlsContext:
+        def wrap_socket(self, sock: object, *, server_hostname: str) -> object:
+            assert sock is fake_socket
+            assert server_hostname == "ollama.com"
+            return sock
+
+    monkeypatch.setattr(socket, "create_connection", _dial)
+    connection = BRIDGE._PinnedHTTPSConnection(
+        "ollama.com",
+        443,
+        context=_TlsContext(),
+        pinned_address=addresses[0],
+        tls_hostname="ollama.com",
+    )
+    connection.connect()
+
+    assert dialed == [(("8.8.8.8", 443), connection.timeout, None)]
+    assert dialed[0][0][0] in addresses
+
+
 def test_dispatch_adapter_contract_reds_on_dead_runner() -> None:
     invocation = D._build_invocation(_http_resolution(OLLAMA_ROW), model=None)
     with pytest.raises(AssertionError):

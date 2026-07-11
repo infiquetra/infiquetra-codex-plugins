@@ -1549,6 +1549,8 @@ def create_command_output_record(
             for value in actual_argv
         ):
             raise DispatchReceiptError("agent-validator command argv is invalid")
+        if any(SECRET_KEY.search(value) or SECRET_VALUE.search(value) for value in actual_argv):
+            raise DispatchReceiptError("agent-validator command argv contains secret material")
     attempt = _attempt(attempt, "command output attempt")
     task_id = _safe(task_id, "task_id")
     intent, intent_bytes = _load_intent_record(
@@ -3127,6 +3129,7 @@ def validate_normalized_receipt(
         stopped_at = _parse_time(timestamps["stopped_at"], "timestamps.stopped_at")
         timestamps_valid = (
             created_at <= launched_at <= result_recorded_at
+            and trusted_at <= launched_at <= stopped_at
             and trusted_at
             <= started_at
             <= stopped_at
