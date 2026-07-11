@@ -38,6 +38,14 @@ with `blocking question` first if its schema isn't loaded). Fall back to numbere
 chat only when no blocking tool exists or the call errors. In a channel session, inline the
 choices in the reply text. Never silently skip a gate question. Ask one question at a time.
 
+## Engine Offer
+
+Before offering an external-engine lane for ideation, run
+`python3 plugins/saga/scripts/engine_offer.py offer --stage ideate --repo-root . --attended`.
+If the helper reports `prompt_required`, this skill owns the operator prompt and persists the
+selected preference with `engine_offer.py remember`. The offer is advisory only; it never
+dispatches, scores, or gates ideas.
+
 ## Focus hint
 
 <focus_hint> #$ARGUMENTS </focus_hint>
@@ -492,10 +500,23 @@ run is tactical scope):**
 > regardless of basis. When the focus names a slice (one flow, one plugin, one stage), ideate at
 > full ambition *within that slice* — do not widen the surface to the whole product.
 
-**After all frame agents return:**
+**External-engine generator lane (additive, blind, best-effort).** In addition to the native Codex
+frame agents, attempt one chaperoned external-engine generator lane when the Engine Offer permits it.
+Use `offload` with the cheapest policy-compliant chaperone tier; do not confuse this generator lane
+with the stage offer's `second-opinion` default. Assign an ordinary Phase 2 frame: use the next
+unused frame when one exists, otherwise reuse the frame whose lens best fits the focus.
+
+Give the lane the same substituted frame-agent prompt above. Do not add an external-only prompt,
+relax the per-idea basis contract, or include raw candidates in its prompt. The lane is blind: its
+output first meets native output at the merge boundary below. If dispatch is unavailable, lacks
+credentials, times out, or returns an adapter error, record a non-blocking note and continue. Never
+halt `/ideate` or ask critique to compensate for the missing lane.
+
+**After all available generator lanes return:**
 
 1. **Merge and dedupe** every frame agent's candidates into one master candidate list, keeping
-   sub-agent (frame) attribution.
+   sub-agent (frame) attribution. Tag external-lane candidates `engine-generated`; the tag is
+   provenance only and grants no scoring or gate authority.
 2. **Add the user seeds to the pool** as `user-seed` candidates (if not already absorbed by a
    frame agent that built on them). A seed a frame only *challenged* or rejected — rather than
    building into a promoted idea — still enters the pool as its own peer candidate; never drop a

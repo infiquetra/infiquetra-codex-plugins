@@ -11,6 +11,7 @@ from __future__ import annotations
 import importlib.util
 import sys
 from copy import deepcopy
+from dataclasses import replace
 from pathlib import Path
 from types import ModuleType
 from typing import Any
@@ -85,6 +86,18 @@ def test_happy_path_lookups_by_capability_engine_and_role(tmp_path: Path) -> Non
         "agy/gemini-3.1-pro-high",
         "agy/gemini-3.5-flash-high",
     ]
+
+
+def test_advisory_panel_cap_is_seven(tmp_path: Path) -> None:
+    data = _reg_dict()
+    data["roles"]["cross-family-review-panel"]["members"] = [
+        "agy/gemini-3.1-pro-high",
+        "agy/gemini-3.5-flash-high",
+    ] * 4
+    registry = REG.Registry.load(_write_registry(tmp_path, data))
+
+    with pytest.raises(REG.RegistryError, match="PANEL_N_CAP=7"):
+        REG.validate_panel_role("cross-family-review-panel", registry=registry)
 
 
 def test_ambiguous_engine_default_errors(tmp_path: Path) -> None:
@@ -471,18 +484,12 @@ def _receipt(
     )
 
 
-def test_codex_invocation_preserves_payload_byte_for_byte_and_read_only() -> None:
+def test_native_codex_is_not_an_external_engine_route() -> None:
     payload = "Run read-only.\n\nReturn the diff exactly.\nTrailing spaces:  "
     resolution = _resolution(engine_id="codex", variant="gpt-5.6-terra", payload=payload)
 
-    invocation = D.build_codex_invocation(resolution)
-
-    assert invocation == {
-        "via": "codex:codex-rescue",
-        "task": payload,
-        "sandbox": "read-only",
-    }
-    assert invocation["task"].encode("utf-8") == payload.encode("utf-8")
+    with pytest.raises(D.DispatchError, match="native Codex agents"):
+        D.build_codex_invocation(resolution)
 
 
 def test_agy_envelope_is_no_write_and_forwards_model_verbatim() -> None:
@@ -540,7 +547,45 @@ def test_dispatch_short_circuits_when_resolution_already_halted() -> None:
     assert evidence.provenance["status"] == "halted"
 
 
-def test_satisfy_gate_requires_host_verification() -> None:
+def test_external_gatekeeper_fields_are_rejected_structurally() -> None:
+    with pytest.raises(D.DispatchError, match="never gatekeepers"):
+        D.dispatch(
+            _resolution(),
+            runner=lambda _invocation: {
+                "status": "ok",
+                "output": "plausible text",
+                "verdict": "pass",
+            },
+        )
+
+
+def test_economics_halt_prevents_provider_dispatch() -> None:
+    called = False
+
+    def runner(_invocation: dict[str, Any]) -> dict[str, Any]:
+        nonlocal called
+        called = True
+        raise AssertionError("economics must stop the provider call")
+
+    evidence = D.dispatch(
+        _resolution(),
+        runner=runner,
+        economics={
+            "cost_class": "metered",
+            "estimated_external_cost_usd": 0.01,
+            "provider_budget_ceiling_usd": 25.0,
+            "prior_provider_spend_usd": 0.0,
+            "codex_inline_tokens_estimate": 100,
+            "chaperone_tokens_estimate": 100,
+        },
+    )
+
+    assert called is False
+    assert evidence.halt == "break-even-halt"
+    assert evidence.provenance["economics"]["proceed"] is False
+
+
+def test_satisfy_gate_requires_typed_reconciliation_before_host_verification() -> None:
     unverified = D.AdvisoryEvidence(
         engine_id="codex",
         variant="gpt-5.5-xhigh",
@@ -559,7 +604,8 @@ def test_satisfy_gate_requires_host_verification() -> None:
         verified_by_claude=True,
     )
 
-    assert D.satisfy_gate(verified) is None
+    with pytest.raises(D.DispatchError, match="typed reconciliation"):
+        D.satisfy_gate(verified)
 
 
 def test_dispatch_returns_advisory_evidence_without_tree_mutation_surface() -> None:
@@ -580,11 +626,10 @@ def test_dispatch_returns_advisory_evidence_without_tree_mutation_surface() -> N
     assert isinstance(evidence, D.AdvisoryEvidence)
     assert evidence.evidence.startswith("diff --git")
     assert evidence.halt is None
-    assert evidence.provenance == {
-        "engine": "agy",
-        "variant": "gemini-3.1-pro-high",
-        "status": "ok",
-    }
+    assert evidence.provenance["engine"] == "agy"
+    assert evidence.provenance["variant"] == "gemini-3.1-pro-high"
+    assert evidence.provenance["status"] == "ok"
+    assert evidence.provenance["bridge_run_key"] == "test-run-1"
     assert not hasattr(evidence, "gated_verdict")
 
 
@@ -623,6 +668,26 @@ def _ok_runner(_invocation: dict[str, Any]) -> dict[str, Any]:
         "output": output,
         "receipt": _receipt(output, _invocation),
     }
+
+
+def _reconciliation(evidence: Any) -> Any:
+    return D.reconcile.build_result(
+        reconciliation_id=f"routing-{evidence.execution_id}",
+        execution_id=evidence.execution_id,
+        intent=evidence.intent,
+        adjudicator_id="codex",
+        evidence_digest=evidence.evidence_digest,
+        source_finding_ids=evidence.source_finding_ids,
+        items=tuple(
+            D.reconcile.ReconciliationItem(
+                source_finding_id=finding_id,
+                status=D.reconcile.ReconciliationStatus.RECONCILED,
+                adjudicator_id="codex",
+                rationale="Codex verified this external finding.",
+            )
+            for finding_id in evidence.source_finding_ids
+        ),
+    )
 
 
 def _store(tmp_path: Path) -> Any:
@@ -702,16 +767,16 @@ def test_satisfy_gate_refuses_claimed_only_manifest(tmp_path: Path) -> None:
         claim_provenance=claims,
     )
 
-    verified = D.AdvisoryEvidence(
-        engine_id=evidence.engine_id,
-        variant=evidence.variant,
-        evidence=evidence.evidence,
-        provenance=evidence.provenance,
+    verified = replace(
+        evidence,
+        execution_id="exec-claims",
+        provenance={**evidence.provenance, "observer_corroborated": True},
         verified_by_claude=True,
     )
+    reconciliation = _reconciliation(verified)
 
     with pytest.raises(D.DispatchError):
-        D.satisfy_gate(verified, manifest)
+        D.satisfy_gate(verified, manifest, reconciliation=reconciliation)
 
     adjudicated = D.adjudicate_manifest(
         store,
@@ -720,14 +785,14 @@ def test_satisfy_gate_refuses_claimed_only_manifest(tmp_path: Path) -> None:
             ("all tests pass", "tests/test_example.py"): (
                 PM.AdjudicatedStatus.VERIFIED,
                 PM.Adjudication(
-                    adjudicator="claude",
+                    adjudicator="codex",
                     sources_read=("tests/test_example.py",),
                     decision="re-ran suite, all green",
                 ),
             )
         },
     )
-    assert D.satisfy_gate(verified, adjudicated) is None
+    assert D.satisfy_gate(verified, adjudicated, reconciliation=reconciliation) is None
 
     with pytest.raises(D.DispatchError):
         D.satisfy_gate(evidence, adjudicated)
@@ -858,13 +923,14 @@ def test_agy_no_sandbox_dispatch_is_byte_identical_to_today() -> None:
 def test_codex_sandboxed_mutate_enforce_halt() -> None:
     sb = _Sandbox("read-write")
     resolution = _resolution(engine_id="codex", payload="p")
-    with pytest.raises(D.DispatchError, match="no write adapter"):
+    with pytest.raises(D.DispatchError, match="native Codex agents"):
         D.build_codex_invocation(resolution, sandbox=sb)
 
 
-def test_codex_no_sandbox_still_read_only() -> None:
+def test_codex_no_sandbox_is_still_not_external() -> None:
     resolution = _resolution(engine_id="codex", payload="p")
-    assert D.build_codex_invocation(resolution)["sandbox"] == "read-only"
+    with pytest.raises(D.DispatchError, match="native Codex agents"):
+        D.build_codex_invocation(resolution)
 
 
 def test_dispatch_codex_sandboxed_mutate_propagates_enforce_halt() -> None:

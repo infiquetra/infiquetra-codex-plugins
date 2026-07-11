@@ -7,7 +7,7 @@ optional subrecords:
 - ``OutputCompleteness`` — declared vs produced (R3), field-compatible with what
   ``completeness_gate.Contract`` + ``classify()`` already compute.
 - ``ClaimProvenance`` — source-attributed claims with the two-layer producer-*claimed* vs
-  Claude-*adjudicated* tag (R4-R7), plus an attested ``Adjudication`` record (R6).
+  Codex-*adjudicated* tag (R4-R7), plus an attested ``Adjudication`` record (R6).
 
 Design decisions recorded here (load-bearing for tests):
 
@@ -18,7 +18,7 @@ Design decisions recorded here (load-bearing for tests):
   field on any dataclass is named ``verdict`` or ``authority``, no method mutates gates,
   and consumers treat every field as advisory (R8).
 - **Parroting taxonomy** (KTD5/R7): a claim counts as parroting iff it was
-  producer-claimed ``verified`` AND Claude adjudication lands in {``refuted``,
+  producer-claimed ``verified`` AND Codex adjudication lands in {``refuted``,
   ``unsupported``}. ``refuted`` is an adjudicated status; ``unsupported`` is expressed
   through ``mismatch_reason`` (a claimed-verified claim the adjudicator could not
   support). ``not-adjudicated``, ``scope-excluded``, and ``source-stale`` never count.
@@ -37,6 +37,7 @@ from enum import StrEnum
 from typing import Any
 
 SCHEMA_VERSION = "saga.manifest.v1"
+MAX_OPERATIONAL_NOTE_BYTES = 1024
 
 
 class ManifestError(ValueError):
@@ -57,6 +58,27 @@ class Disposition(StrEnum):
     RAN_AS_REQUESTED = "ran-as-requested"
     FELL_BACK_TO_CLAUDE = "fell-back-to-claude"
     SUBSTITUTED_ENGINE = "substituted-engine"
+    # A dispatch reported "ok" but carried no schema-valid `bridge_receipt.v1` proof of
+    # execution (plan `2026-07-06-...pair-plan.md` U6, KTD8, #383 DoD 2). Distinct from
+    # `FELL_BACK_TO_CLAUDE` -- nothing fell back, the engine ran -- and distinct from
+    # `RAN_AS_REQUESTED` -- derived truth must not assert proof that doesn't exist.
+    UNPROVEN = "unproven"
+    # Two-signal divergence (#384 U5, KTD6/R4): the engine's self-report and the independent
+    # observer signal (bundle launch flag + schema-valid receipt) DISAGREE about whether the
+    # delegation genuinely ran. Named at the dispatch/manifest layer -- the only place both
+    # signals meet -- never silently resolved in either direction. Distinct from `UNPROVEN`
+    # (single missing proof, no contradiction) and from `FELL_BACK_TO_CLAUDE` (an admitted
+    # failure, not a disputed success).
+    DELEGATION_INTEGRITY = "delegation-integrity"
+    # A receipt exists and passes the base `bridge_receipt.v1` schema, but the stronger #388
+    # proof contract fails: missing output attestation, hash mismatch, zero external tokens, or
+    # producer/consumer liveness contradiction. This is distinct from `UNPROVEN` because the
+    # bridge did emit a receipt; the receipt's proof claims are not trustworthy.
+    PROOF_INTEGRITY = "proof-integrity"
+    # The engine ran, but Codex's chaperone rejected its output after review. The rejection
+    # remains advisory evidence for reviewers/validators; it is neither a dispatch fallback nor
+    # an accepted run. Every such manifest must carry a normalized non-empty disposition note.
+    REJECTED_OFFLOAD = "rejected-offload"
 
 
 class ClaimedStatus(StrEnum):
@@ -68,7 +90,7 @@ class ClaimedStatus(StrEnum):
 
 
 class AdjudicatedStatus(StrEnum):
-    """Claude-adjudicated verification status (KTD5/R6)."""
+    """Codex-adjudicated verification status (KTD5/R6)."""
 
     VERIFIED = "verified"
     INFERRED = "inferred"
@@ -140,7 +162,7 @@ class Attribution:
 
 @dataclass(frozen=True)
 class Adjudication:
-    """Attested record of a Claude adjudication pass (D5/R6)."""
+    """Attested record of a Codex adjudication pass (D5/R6)."""
 
     adjudicator: str
     sources_read: tuple[str, ...] = ()
@@ -315,6 +337,80 @@ class ClaimProvenance:
 
 
 @dataclass(frozen=True)
+class EconomicsRecord:
+    """Typed net-savings economics record for an external-engine dispatch (#386)."""
+
+    engine_tokens_avoided: int
+    chaperone_tokens_spent: int
+    net_savings_tokens: int
+    net_savings_status: str
+    external_cost_usd: float | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        data: dict[str, Any] = {
+            "engine_tokens_avoided": self.engine_tokens_avoided,
+            "chaperone_tokens_spent": self.chaperone_tokens_spent,
+            "net_savings_tokens": self.net_savings_tokens,
+            "net_savings_status": self.net_savings_status,
+        }
+        if self.external_cost_usd is not None:
+            data["external_cost_usd"] = self.external_cost_usd
+        return data
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> EconomicsRecord:
+        _reject_unknown_keys(
+            data,
+            {
+                "engine_tokens_avoided",
+                "chaperone_tokens_spent",
+                "net_savings_tokens",
+                "net_savings_status",
+                "external_cost_usd",
+            },
+            "economics",
+        )
+        status = data.get("net_savings_status", "")
+        if status not in {"positive", "zero", "negative"}:
+            raise ManifestError("economics requires net_savings_status positive|zero|negative")
+        net_savings_tokens = _required_int(data, "net_savings_tokens", "economics")
+        if net_savings_tokens > 0:
+            expected_status = "positive"
+        elif net_savings_tokens == 0:
+            expected_status = "zero"
+        else:
+            expected_status = "negative"
+        if status != expected_status:
+            raise ManifestError("economics net_savings_status must match net_savings_tokens")
+        return cls(
+            engine_tokens_avoided=_required_int(data, "engine_tokens_avoided", "economics"),
+            chaperone_tokens_spent=_required_int(data, "chaperone_tokens_spent", "economics"),
+            net_savings_tokens=net_savings_tokens,
+            net_savings_status=str(status),
+            external_cost_usd=_optional_number(data.get("external_cost_usd"), "external_cost_usd"),
+        )
+
+
+def _validate_normalized_note(note: Any, *, field: str, required: bool) -> None:
+    """Validate bounded operational text before it can enter a durable manifest."""
+    if not isinstance(note, str):
+        raise ManifestError(f"{field} must be a string")
+    normalized = " ".join(note.split())
+    if required and not normalized:
+        raise ManifestError(f"{field} requires a non-empty disposition_note")
+    if not normalized:
+        if note:
+            raise ManifestError(f"{field} must use normalized whitespace")
+        return
+    if any(ord(char) < 32 for char in normalized):
+        raise ManifestError(f"{field} must not contain control characters")
+    if len(normalized.encode("utf-8")) > MAX_OPERATIONAL_NOTE_BYTES:
+        raise ManifestError(f"{field} exceeds {MAX_OPERATIONAL_NOTE_BYTES} bytes")
+    if note != normalized:
+        raise ManifestError(f"{field} must use normalized whitespace")
+
+
+@dataclass(frozen=True)
 class Manifest:
     """The saga.manifest.v1 envelope — one per delegated execution (R1).
 
@@ -329,10 +425,27 @@ class Manifest:
     disposition_note: str = ""
     output_completeness: OutputCompleteness | None = None
     claim_provenance: ClaimProvenance | None = None
+    economics: EconomicsRecord | None = None
+    bridge_run_key: str = ""
+    tripwire_note: str = ""
     schema: str = field(default=SCHEMA_VERSION)
 
+    def __post_init__(self) -> None:
+        if self.disposition is Disposition.REJECTED_OFFLOAD:
+            _validate_normalized_note(
+                self.disposition_note,
+                field="rejected-offload disposition_note",
+                required=True,
+            )
+        if self.tripwire_note:
+            _validate_normalized_note(
+                self.tripwire_note,
+                field="tripwire_note",
+                required=False,
+            )
+
     def to_dict(self) -> dict[str, Any]:
-        return {
+        data: dict[str, Any] = {
             "schema": self.schema,
             "execution_id": self.execution_id,
             "saga_ref": self.saga_ref,
@@ -346,7 +459,13 @@ class Manifest:
             "claim_provenance": (
                 self.claim_provenance.to_dict() if self.claim_provenance else None
             ),
+            "economics": self.economics.to_dict() if self.economics else None,
         }
+        if self.bridge_run_key:
+            data["bridge_run_key"] = self.bridge_run_key
+        if self.tripwire_note:
+            data["tripwire_note"] = self.tripwire_note
+        return data
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Manifest:
@@ -362,6 +481,9 @@ class Manifest:
                 "created_at",
                 "output_completeness",
                 "claim_provenance",
+                "economics",
+                "bridge_run_key",
+                "tripwire_note",
             },
             "manifest",
         )
@@ -383,6 +505,7 @@ class Manifest:
             raise ManifestError(f"manifest requires a valid disposition (R18): {exc}") from exc
         oc_raw = data.get("output_completeness")
         cp_raw = data.get("claim_provenance")
+        economics_raw = data.get("economics")
         return cls(
             execution_id=execution_id,
             saga_ref=str(data.get("saga_ref", "") or ""),
@@ -392,6 +515,9 @@ class Manifest:
             created_at=str(data.get("created_at", "") or ""),
             output_completeness=OutputCompleteness.from_dict(oc_raw) if oc_raw else None,
             claim_provenance=ClaimProvenance.from_dict(cp_raw) if cp_raw else None,
+            economics=EconomicsRecord.from_dict(economics_raw) if economics_raw else None,
+            bridge_run_key=str(data.get("bridge_run_key", "") or ""),
+            tripwire_note=str(data.get("tripwire_note", "") or ""),
         )
 
 
@@ -449,7 +575,11 @@ def parroting_count(manifest: Manifest) -> int:
 
 def tier_of(manifest: Manifest) -> Tier:
     """Derive the payload tier: full when any subrecord is present, else lightweight."""
-    if manifest.output_completeness is not None or manifest.claim_provenance is not None:
+    if (
+        manifest.output_completeness is not None
+        or manifest.claim_provenance is not None
+        or manifest.economics is not None
+    ):
         return Tier.FULL
     return Tier.LIGHTWEIGHT
 
@@ -489,9 +619,32 @@ def _reject_unknown_keys(data: dict[str, Any], allowed: set[str], where: str) ->
         raise ManifestError(f"{where} has unknown keys: {', '.join(unknown)}")
 
 
+def _required_int(data: dict[str, Any], field_name: str, where: str) -> int:
+    value = data.get(field_name)
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ManifestError(f"{where}.{field_name} must be an integer")
+    return value
+
+
+def _optional_number(value: Any, field_name: str) -> float | None:
+    if value is None:
+        return None
+    if isinstance(value, bool) or not isinstance(value, int | float):
+        raise ManifestError(f"economics.{field_name} must be a number")
+    return float(value)
+
+
 def _no_verdict_surface() -> list[str]:
     """Introspection helper for R20 tests: field names across all schema dataclasses."""
     names: list[str] = []
-    for cls in (Manifest, Attribution, Adjudication, Claim, OutputCompleteness, ClaimProvenance):
+    for cls in (
+        Manifest,
+        Attribution,
+        Adjudication,
+        Claim,
+        OutputCompleteness,
+        ClaimProvenance,
+        EconomicsRecord,
+    ):
         names.extend(f.name for f in fields(cls))
     return names

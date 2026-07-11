@@ -197,6 +197,17 @@ The R7 parroting taxonomy is defined once in `provenance_manifest.py`, never red
 verbatim, never fabricate a rate. This pass is read-only and advisory-only: a low verified
 ratio or a nonzero parroting count is signal for the interview, never a gate.
 
+**1.7 Reconciliation recipe proposals (read-only).** Resolve the repository's
+`run_ledger.RunLedger`, then call `reconcile.derive_recipe_update_proposal(ledger)`. The reader
+verifies the hash chain, validates every typed reconciliation fact, and deduplicates reconcile/apply
+events by stable `reconciliation_id`. Treat a chain break, non-trailing corruption, or invalid fact
+as a visible evidence failure; only the ledger's existing torn trailing-line tolerance is allowed.
+
+The `recipe_update_proposal.v1` result is derive-on-read and always advisory. A proposal requires
+operator approval and never edits `RECIPE_REGISTRY`, appends to the ledger, or authorizes a route.
+Carry it into the interview and retro doc as **PROPOSE-DIFF-AND-WAIT** input; implementation belongs
+in a separate authorized work path.
+
 ---
 
 ## Phase 2 — Structured interview

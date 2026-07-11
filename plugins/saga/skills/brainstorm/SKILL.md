@@ -43,6 +43,14 @@ These govern every turn of the dialogue.
 In a channel session (`redis-channel` active), do not call `Codex blocking question`; inline the choices in
 your reply text instead ("Which? A) ... B) ... C) ...").
 
+## Engine Offer
+
+Before offering an external-engine lane for brainstorming, run
+`python3 plugins/saga/scripts/engine_offer.py offer --stage brainstorm --repo-root . --attended`.
+If the helper reports `prompt_required`, this skill owns the operator prompt and persists the
+selected preference with `engine_offer.py remember`. The offer is advisory only; it never
+dispatches, decides scope, or gates requirements.
+
 ## Topic
 
 Take the topic from command arguments, a `/ideate` survivor reference (e.g. `dig deeper on #N` or a

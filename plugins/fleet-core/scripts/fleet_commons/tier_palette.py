@@ -160,7 +160,7 @@ def _derive_codex_mapping() -> dict[str, tuple[str, str]]:
 _EFFORT_CEILINGS = _derive_effort_ceilings()
 _CODEX_MAPPING = _derive_codex_mapping()
 CHEAP_MODELS = ("haiku",)
-ENGINE_INTENTS = ("offload", "second-opinion")
+ENGINE_INTENTS = ("offload", "second-opinion", "divergence")
 
 
 def _candidate(value: object, where: str, requested_effort: str | None = None) -> ModelCandidate:

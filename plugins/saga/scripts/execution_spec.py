@@ -421,6 +421,36 @@ class Verify:
         }
 
 
+@dataclass(frozen=True)
+class AdvisoryPanelRequest:
+    """A named, bounded external-engine advisory jury, distinct from a Verify panel."""
+
+    role: str
+
+    def validate(self, where: str) -> None:
+        registry_module = _engine_registry_module()
+        registry_path = Path(__file__).resolve().parent.parent / "references" / "engine-registry.yaml"
+        try:
+            registry = registry_module.Registry.load(registry_path)
+            registry_module.validate_panel_role(self.role, registry=registry)
+        except registry_module.RegistryError as exc:
+            raise SpecError(f"{where}: invalid advisory panel role: {exc}") from exc
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any], where: str) -> AdvisoryPanelRequest:
+        if set(data) != {"role"}:
+            raise SpecError(f"{where}: advisory_panel needs exactly one 'role' field")
+        role = data.get("role")
+        if not isinstance(role, str):
+            raise SpecError(f"{where}: advisory panel role must be a string")
+        request = cls(role=role)
+        request.validate(where)
+        return request
+
+    def to_dict(self) -> dict[str, str]:
+        return {"role": self.role}
+
+
 @dataclass
 class Unit:
     """One execution unit -- one ``agent()`` call in the emitted script.
