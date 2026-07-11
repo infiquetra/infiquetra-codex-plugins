@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "unit": "U5",
-  "recorded_at": "2026-07-11T09:39:54Z",
-  "repo_head": "3e626d8a42cff5a69d5cd247af2c5f1e0359aa5e",
-  "target_tree_sha256": "d45d989a6b1e3b53ade8856486a29166ef44d71ba444c5e0a316ef4baa0600d5",
+  "recorded_at": "2026-07-11T09:43:27Z",
+  "repo_head": "16a3a27cf7eb5408243366a03275411c862d8df6",
+  "target_tree_sha256": "e6dd68e6fd25a76a86c1b000794dabd24d2d91351ce8c0a3b9563d9fb710a0a9",
   "claim": "saga-canonical-workflow-dispatch-and-continuation-boundary",
   "checks": [
     {
       "name": "u5-focused-suite",
       "argv": ["PYTHONPATH=.", "uv", "run", "pytest", "-q", "plugins/saga/tests", "tests/test_outcome_dispatcher.py", "tests/test_outcome_backends.py", "tests/test_outcome_dispatch_migration.py", "tests/test_outcome_command.py", "tests/test_outcome_integration.py", "tests/test_outcome_liveness.py", "tests/test_outcome_completion.py", "tests/test_outcome_replay.py", "tests/test_capability_degrade.py", "tests/test_verified_workflow_readiness.py", "tests/test_saga_session_context.py"],
       "exit_code": 0,
-      "summary": "516 passed"
+      "summary": "519 passed"
     },
     {
       "name": "legacy-token-inventory",
@@ -45,6 +45,9 @@
     "operator-only handoff authorization and nonportable copied authority",
     "explicit Goal request binding and canonical no-ref readiness fallback",
     "non-finite receipt and imported-intent timestamp rejection",
-    "owner-only user-state readiness and identity-marker permissions"
+    "owner-only user-state readiness and identity-marker permissions",
+    "append-only authority reconciliation for historical v2 acknowledgements",
+    "audit-only portable acknowledgements with local authority reconciliation",
+    "cross-location canonical and legacy root conflict detection"
   ]
 }
