@@ -948,7 +948,7 @@
       "unit": "U5",
       "kind": "check",
       "artifact_path": "docs/validation/codex-plugin-modernization-u5.json",
-      "artifact_sha256": "62c8028e137227d4fc483a65ac7419b90db9c360a077e1760490ef8194d3a21a",
+      "artifact_sha256": "123c32c551b8dae3d10f954313d5ad3f65f64daeddfb02db91b224663f0d82fd",
       "argv": [
         "PYTHONPATH=.",
         "uv",
@@ -970,8 +970,8 @@
       ],
       "cwd": ".",
       "exit_code": 0,
-      "recorded_at": "2026-07-11T09:52:50Z",
-      "repo_head": "7e7f5dde0dd1c6ce5cdb9513cf4adf765b27d606",
+      "recorded_at": "2026-07-11T11:06:24Z",
+      "repo_head": "c070c8a83f403b3a09f23e15a8d67ea4eb9f6191",
       "target_paths": [
         "plugins/saga/hooks/hooks.json",
         "plugins/saga/hooks/session_context.py",
@@ -1026,7 +1026,84 @@
         "tests/test_saga_session_context.py",
         "tests/test_verified_workflow_readiness.py"
       ],
-      "target_tree_sha256": "5ee52712b9d39a11ab50e33242386339a4bb35cf79b3bdbcb76c132beb879061"
+      "target_tree_sha256": "753125da488ce8b9063305b9fad5dfd0111f92a9cd8f4c72546eb28cf629f938"
+    },
+    {
+      "evidence_id": "u6-validation",
+      "unit": "U6",
+      "kind": "check",
+      "artifact_path": "docs/validation/codex-plugin-modernization-u6.json",
+      "artifact_sha256": "495440504261de675850887d69fabb956cc0ce66c7e92c029522834e87da2a89",
+      "argv": [
+        "PYTHONPATH=.",
+        "uv",
+        "run",
+        "pytest",
+        "-q",
+        "plugins/fleet-core/tests/test_bridge_receipt.py",
+        "plugins/fleet-core/tests/test_tier_resolver.py",
+        "plugins/saga/tests/test_board_progression.py",
+        "plugins/saga/tests/test_outcome_from_objective.py",
+        "plugins/saga/tests/test_execution_spec_tiers.py",
+        "plugins/saga/tests/test_verify_panel_robustness.py",
+        "plugins/saga/tests/test_engine_routing.py",
+        "plugins/saga/tests/test_outcome_board_sync.py",
+        "plugins/verified-workflows/tests/test_workflow_dispatch.py",
+        "tests/test_workflow_emitter.py",
+        "tests/test_outcome_completion.py",
+        "tests/test_outcome_command.py",
+        "tests/test_outcome_integration.py",
+        "tests/test_engine_bridge_http.py",
+        "tests/test_engine_registry_conformance.py",
+        "tests/test_engine_registry_cli.py",
+        "tests/test_engine_registry_lint.py",
+        "tests/test_bridge_receipt_drift.py",
+        "tests/test_port_contract.py"
+      ],
+      "cwd": ".",
+      "exit_code": 0,
+      "recorded_at": "2026-07-11T11:11:27Z",
+      "repo_head": "c070c8a83f403b3a09f23e15a8d67ea4eb9f6191",
+      "target_paths": [
+        "plugins/fleet-core/scripts/fleet_commons/bridge_receipt.py",
+        "plugins/fleet-core/scripts/fleet_commons/tier_resolver.py",
+        "plugins/fleet-core/tests/test_bridge_receipt.py",
+        "plugins/saga/references/bridge-signatures.json",
+        "plugins/saga/references/dispatch-adapter-contract.md",
+        "plugins/saga/references/engine-dispatch.md",
+        "plugins/saga/references/engine-registry.yaml",
+        "plugins/saga/references/model-releases.yaml",
+        "plugins/saga/scripts/board_progression.py",
+        "plugins/saga/scripts/bridge_signatures.py",
+        "plugins/saga/scripts/check_engine_registry.py",
+        "plugins/saga/scripts/discover_subissues.py",
+        "plugins/saga/scripts/engine_bridge_http.py",
+        "plugins/saga/scripts/engine_dispatch.py",
+        "plugins/saga/scripts/engine_overlay.py",
+        "plugins/saga/scripts/engine_registry.py",
+        "plugins/saga/scripts/engine_registry_cli.py",
+        "plugins/saga/scripts/engine_registry_conformance.py",
+        "plugins/saga/scripts/engine_resolver.py",
+        "plugins/saga/scripts/execution_spec.py",
+        "plugins/saga/scripts/outcome.py",
+        "plugins/saga/scripts/outcome_edges.py",
+        "plugins/saga/scripts/outcome_github.py",
+        "plugins/saga/scripts/workflow_emitter.py",
+        "plugins/saga/tests/test_board_progression.py",
+        "plugins/saga/tests/test_engine_routing.py",
+        "plugins/saga/tests/test_execution_spec_tiers.py",
+        "plugins/saga/tests/test_outcome_from_objective.py",
+        "plugins/saga/tests/test_verify_panel_robustness.py",
+        "plugins/verified-workflows/scripts/workflow_dispatch.py",
+        "tests/test_bridge_receipt_drift.py",
+        "tests/test_engine_bridge_http.py",
+        "tests/test_engine_registry_cli.py",
+        "tests/test_engine_registry_conformance.py",
+        "tests/test_engine_registry_lint.py",
+        "tests/test_outcome_completion.py",
+        "tests/test_workflow_emitter.py"
+      ],
+      "target_tree_sha256": "db68ae1891b4b940bc7ba6384f170a3501f0f84d5b4ff411351c098f656a6a00"
     }
   ],
   "port_id": "2026-07-10-saga-07517",
@@ -1515,7 +1592,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u6-validation"
         ],
         "host_primitives": [
           "ClaudeCommand"
@@ -1531,7 +1608,7 @@
         "rationale": "Translate the Claude command behavior into an existing Codex skill, reference, or deterministic script; no active commands directory ships.",
         "row_id": "src-342afddebbf9e8f2",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "command",
         "treatment": "codex-adapt",
         "units": [
@@ -1739,7 +1816,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u6-validation"
         ],
         "host_primitives": [
 
@@ -1755,7 +1832,7 @@
         "rationale": "Port the host-neutral algorithm or schema directly behind the same tested package boundary; no Claude host primitive is activated.",
         "row_id": "src-63967084bca52d88",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "config",
         "treatment": "direct-port",
         "units": [
@@ -1771,7 +1848,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u6-validation"
         ],
         "host_primitives": [
 
@@ -1787,7 +1864,7 @@
         "rationale": "Adapt the host-neutral engine contract or registry reference to Codex paths and invocation controls.",
         "row_id": "src-8fb5c93a161a0dca",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "reference",
         "treatment": "codex-adapt",
         "units": [
@@ -1835,7 +1912,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u6-validation"
         ],
         "host_primitives": [
 
@@ -1851,7 +1928,7 @@
         "rationale": "Adapt the host-neutral engine contract or registry reference to Codex paths and invocation controls.",
         "row_id": "src-c8b6f366e9056b73",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "reference",
         "treatment": "codex-adapt",
         "units": [
@@ -1899,7 +1976,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u6-validation"
         ],
         "host_primitives": [
 
@@ -1915,7 +1992,7 @@
         "rationale": "Adapt the host-neutral engine contract or registry reference to Codex paths and invocation controls.",
         "row_id": "src-b0c898ea2487649f",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "config",
         "treatment": "codex-adapt",
         "units": [
@@ -1963,7 +2040,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u6-validation"
         ],
         "host_primitives": [
 
@@ -1979,7 +2056,7 @@
         "rationale": "Adapt authored external-engine release freshness data with the U6 registry and resolver; Codex native model capability comes from the live catalog instead.",
         "row_id": "src-f8a1484a586e015a",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "config",
         "treatment": "codex-adapt",
         "units": [
@@ -2123,7 +2200,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u6-validation"
         ],
         "host_primitives": [
 
@@ -2139,7 +2216,7 @@
         "rationale": "Port host-neutral correctness or engine behavior behind Codex paths, typed receipts, and enforceable model/effort invocation.",
         "row_id": "src-1cd5d97da6d493ea",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -2155,7 +2232,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u6-validation"
         ],
         "host_primitives": [
 
@@ -2171,7 +2248,7 @@
         "rationale": "Port the host-neutral algorithm or schema directly behind the same tested package boundary; no Claude host primitive is activated.",
         "row_id": "src-dc75f6a1047fc59d",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "direct-port",
         "units": [
@@ -2251,7 +2328,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u6-validation"
         ],
         "host_primitives": [
 
@@ -2267,7 +2344,7 @@
         "rationale": "Port host-neutral correctness or engine behavior behind Codex paths, typed receipts, and enforceable model/effort invocation.",
         "row_id": "src-e5dba09bcce10d8a",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -2283,7 +2360,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u6-validation"
         ],
         "host_primitives": [
 
@@ -2299,7 +2376,7 @@
         "rationale": "Port host-neutral correctness or engine behavior behind Codex paths, typed receipts, and enforceable model/effort invocation.",
         "row_id": "src-2eee1627fe7f230e",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -2347,7 +2424,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u6-validation"
         ],
         "host_primitives": [
 
@@ -2363,7 +2440,7 @@
         "rationale": "Port host-neutral correctness or engine behavior behind Codex paths, typed receipts, and enforceable model/effort invocation.",
         "row_id": "src-878b5a297c0fbabc",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -2379,7 +2456,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u6-validation"
         ],
         "host_primitives": [
 
@@ -2395,7 +2472,7 @@
         "rationale": "Port host-neutral correctness or engine behavior behind Codex paths, typed receipts, and enforceable model/effort invocation.",
         "row_id": "src-cbb6105ea6b5030f",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -2475,7 +2552,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u6-validation"
         ],
         "host_primitives": [
 
@@ -2491,7 +2568,7 @@
         "rationale": "Port the host-neutral algorithm or schema directly behind the same tested package boundary; no Claude host primitive is activated.",
         "row_id": "src-d134c88ceb351796",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "direct-port",
         "units": [
@@ -2571,7 +2648,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u6-validation"
         ],
         "host_primitives": [
 
@@ -2587,7 +2664,7 @@
         "rationale": "Port host-neutral correctness or engine behavior behind Codex paths, typed receipts, and enforceable model/effort invocation.",
         "row_id": "src-42409839549f3ea9",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -2603,7 +2680,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u6-validation"
         ],
         "host_primitives": [
 
@@ -2619,7 +2696,7 @@
         "rationale": "Port host-neutral correctness or engine behavior behind Codex paths, typed receipts, and enforceable model/effort invocation.",
         "row_id": "src-1380086c0890894d",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -2635,7 +2712,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u6-validation"
         ],
         "host_primitives": [
 
@@ -2651,7 +2728,7 @@
         "rationale": "Port the host-neutral algorithm or schema directly behind the same tested package boundary; no Claude host primitive is activated.",
         "row_id": "src-0cb81ca98fe8817a",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "direct-port",
         "units": [
@@ -2667,7 +2744,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u6-validation"
         ],
         "host_primitives": [
 
@@ -2683,7 +2760,7 @@
         "rationale": "Port host-neutral correctness or engine behavior behind Codex paths, typed receipts, and enforceable model/effort invocation.",
         "row_id": "src-a8e23f1d0831b6fe",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -2699,7 +2776,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u6-validation"
         ],
         "host_primitives": [
 
@@ -2715,7 +2792,7 @@
         "rationale": "Port host-neutral correctness or engine behavior behind Codex paths, typed receipts, and enforceable model/effort invocation.",
         "row_id": "src-6d2a1f892989ae64",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -2827,7 +2904,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u6-validation"
         ],
         "host_primitives": [
 
@@ -2843,7 +2920,7 @@
         "rationale": "Port host-neutral correctness or engine behavior behind Codex paths, typed receipts, and enforceable model/effort invocation.",
         "row_id": "src-b72a6362dd91adac",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -2859,7 +2936,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u6-validation"
         ],
         "host_primitives": [
 
@@ -2875,7 +2952,7 @@
         "rationale": "Port host-neutral correctness or engine behavior behind Codex paths, typed receipts, and enforceable model/effort invocation.",
         "row_id": "src-b7b878000149d109",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -4016,7 +4093,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u6-validation"
         ],
         "host_primitives": [
 
@@ -4032,7 +4109,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-1b63071b7b70bb66",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -4112,7 +4189,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u6-validation"
         ],
         "host_primitives": [
 
@@ -4128,7 +4205,7 @@
         "rationale": "Adapt emitter-enumeration drift proof in U6 after the Codex engine registry and bridge implementations exist.",
         "row_id": "src-87b19c49d49a5c08",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -4144,7 +4221,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u6-validation"
         ],
         "host_primitives": [
 
@@ -4160,7 +4237,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-0c248300888244e1",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -4528,7 +4605,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u6-validation"
         ],
         "host_primitives": [
 
@@ -4544,7 +4621,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-c86c8951f29c82fb",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -4720,7 +4797,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u6-validation"
         ],
         "host_primitives": [
 
@@ -4736,7 +4813,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-fdb45f4f6d6c2f78",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -4816,7 +4893,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u6-validation"
         ],
         "host_primitives": [
 
@@ -4832,7 +4909,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-20248564df648cc2",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -4848,7 +4925,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u6-validation"
         ],
         "host_primitives": [
 
@@ -4864,7 +4941,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-b421af42c3776780",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -4880,7 +4957,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u6-validation"
         ],
         "host_primitives": [
 
@@ -4896,7 +4973,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-9e97cb9d45193b12",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -5456,7 +5533,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u6-validation"
         ],
         "host_primitives": [
 
@@ -5472,7 +5549,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-1aa85e2cbf6033b9",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -5488,7 +5565,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u6-validation"
         ],
         "host_primitives": [
 
@@ -5504,7 +5581,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-d73b15cbb4933acd",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -5520,7 +5597,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u6-validation"
         ],
         "host_primitives": [
 
@@ -5536,7 +5613,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-821c38a36f24e959",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -5552,7 +5629,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u6-validation"
         ],
         "host_primitives": [
 
@@ -5568,7 +5645,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-748823d450228e0c",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -5776,7 +5853,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u6-validation"
         ],
         "host_primitives": [
 
@@ -5796,7 +5873,7 @@
         "rationale": "Adapt the mixed source tests in U6: reject unreachable model/effort requests through the Codex catalog and class policy, represent operator changes as explicit execution-spec revisions rather than Claude session state, and preserve divergence as an external-engine intent.",
         "row_id": "src-4d15c56d69198ca7",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -6008,7 +6085,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u6-validation"
         ],
         "host_primitives": [
 
@@ -6024,7 +6101,7 @@
         "rationale": "Port explicit verifier fallback identity/depth attribution in U6's Saga execution specification; it is Saga workflow evidence, not a Verified Workflows hook or native-child attestation claim.",
         "row_id": "src-1ebdd4eb1b9089f1",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -6040,7 +6117,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u6-validation"
         ],
         "host_primitives": [
 
@@ -6056,7 +6133,7 @@
         "rationale": "Port verifier visibility, examined-subject binding, under-strength quorum failure, and canonical divergence ordering in U6's Saga workflow emitter rather than conflating those workflow-generation rules with U4 receipt dispatch.",
         "row_id": "src-fa0d9d3e7788991c",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [

@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "unit": "U6",
+  "recorded_at": "2026-07-11T11:11:27Z",
+  "repo_head": "c070c8a83f403b3a09f23e15a8d67ea4eb9f6191",
+  "target_tree_sha256": "db68ae1891b4b940bc7ba6384f170a3501f0f84d5b4ff411351c098f656a6a00",
+  "claim": "codex-safe-host-neutral-correctness-and-external-engine-substrate",
+  "checks": [
+    {
+      "name": "u6-focused-suite",
+      "argv": ["PYTHONPATH=.", "uv", "run", "pytest", "-q", "plugins/fleet-core/tests/test_bridge_receipt.py", "plugins/fleet-core/tests/test_tier_resolver.py", "plugins/saga/tests/test_board_progression.py", "plugins/saga/tests/test_outcome_from_objective.py", "plugins/saga/tests/test_execution_spec_tiers.py", "plugins/saga/tests/test_verify_panel_robustness.py", "plugins/saga/tests/test_engine_routing.py", "plugins/saga/tests/test_outcome_board_sync.py", "plugins/verified-workflows/tests/test_workflow_dispatch.py", "tests/test_workflow_emitter.py", "tests/test_outcome_completion.py", "tests/test_outcome_command.py", "tests/test_outcome_integration.py", "tests/test_engine_bridge_http.py", "tests/test_engine_registry_conformance.py", "tests/test_engine_registry_cli.py", "tests/test_engine_registry_lint.py", "tests/test_bridge_receipt_drift.py", "tests/test_port_contract.py"],
+      "exit_code": 0,
+      "summary": "400 passed"
+    },
+    {
+      "name": "u5-overlap-regression",
+      "argv": ["PYTHONPATH=.", "uv", "run", "pytest", "-q", "plugins/saga/tests", "tests/test_outcome_dispatcher.py", "tests/test_outcome_backends.py", "tests/test_outcome_dispatch_migration.py", "tests/test_outcome_command.py", "tests/test_outcome_integration.py", "tests/test_outcome_liveness.py", "tests/test_outcome_completion.py", "tests/test_outcome_replay.py", "tests/test_capability_degrade.py", "tests/test_verified_workflow_readiness.py", "tests/test_saga_session_context.py"],
+      "exit_code": 0,
+      "summary": "537 passed"
+    },
+    {
+      "name": "generated-workflow-javascript-syntax",
+      "argv": ["node", "--input-type=module", "--check"],
+      "exit_code": 0,
+      "summary": "root-authored subject, verifier panel, and external advisory intent fixture parsed"
+    },
+    {
+      "name": "changed-python-ruff",
+      "argv": ["uv", "run", "ruff", "check", "<U6 changed Python paths>"],
+      "exit_code": 0,
+      "summary": "all checks passed"
+    },
+    {
+      "name": "u6-port-contract",
+      "argv": ["python3", "scripts/port_contract.py", "validate", "--stage", "unit", "--unit", "U6"],
+      "exit_code": 0,
+      "summary": "port contract valid at unit stage"
+    },
+    {
+      "name": "plugin-validator",
+      "argv": ["python3", "scripts/validate_codex_plugins.py"],
+      "exit_code": 0,
+      "summary": "Codex plugin validation passed"
+    },
+    {
+      "name": "generated-inventory",
+      "argv": ["python3", "scripts/build_legacy_workflow_inventory.py", "--check"],
+      "exit_code": 0,
+      "summary": "legacy workflow token inventory is current"
+    }
+  ],
+  "coverage": [
+    "cross-repository objective ingestion with collision-resistant subplot identifiers",
+    "certificate-preserving board writes with authenticated crash-replay comment dedupe",
+    "cross-owner board mutation fail-closed behavior",
+    "external registry and resolver model plus effort propagation",
+    "native Codex exclusion from the external-engine registry",
+    "secret-free generic HTTP invocation and bounded response handling",
+    "complete invocation digest binding for CLI and HTTP bridge receipts",
+    "finite non-negative external telemetry",
+    "root-authored clean-subject verifier binding with fixed seat identity and fallback depth",
+    "instruction-inert verifier evidence input and under-strength quorum failure",
+    "structured external-engine intent preservation across workflow, team, and inline emitters",
+    "overlay containment, authentication preflight, signature policy, and emitter drift proof",
+    "GitHub owner/repository reference normalization",
+    "U5 canonical workflow and outcome-boundary regression coverage"
+  ]
+}
