@@ -2,7 +2,7 @@
 
 - Target: branch `work/verified-workflows-modernization` vs merge-base `fbd4001`
   (`origin/main`, fetched)
-- Reviewed revision: `3e88f2a5022146b25f5705adce64c57ef314b707`
+- Reviewed revision: `5e1ad5d1c87001379da7244fe2216a77d16bd6fc`
 - Diff: 364 files, +63,622 / -7,791
 - Mode: interactive consolidation of the U5-U8 Verified Workflow review rounds
 - Blocked status: **NOT blocked** — no unresolved P0/P1 findings
@@ -74,3 +74,15 @@ COMPLETION: 9/9 DONE, 0 PARTIAL, 0 NOT-DONE, 0 CHANGED, 0 UNVERIFIABLE.
 The final inventory-count guard was corrected at `3e88f2a`. Revalidation passed with 2,102 tests,
 all three repository validator modes, the cutover-stage port contract, generated Saga facts/assets,
 the legacy-token inventory check, and `git diff --check`. The verdict remains **PASS**.
+
+## Main integration re-review
+
+`origin/main` commit `ca8d105` was integrated as merge commit `823bb6c`. The branch retained its
+existing full-URL normalization for qualified GitHub references and extended that same normalization
+to base/head/merge-state reads plus update and squash-merge operations. The obsolete `0.65.1`
+version metadata from the older base was not carried over; the reviewed modernization versions remain
+authoritative.
+
+No new findings. The focused U6 suite passed 514 tests, the full repository suite passed 2,103 tests,
+all validator modes and the cutover-stage port contract passed, generated Saga facts/assets remained
+current, and GitHub reported PR #26 `MERGEABLE / CLEAN`. The verdict remains **PASS**.
