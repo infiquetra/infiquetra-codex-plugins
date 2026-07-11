@@ -18,6 +18,7 @@ from typing import Any
 
 
 SCHEMA_VERSION = 1
+RUNBOOK_VERSION = 2
 DEFAULT_MANIFEST = Path("docs/portability/ports/2026-07-10-saga-07517.json")
 DEFAULT_RENDER = Path("docs/portability/codex-saga-07517-drift-classification.md")
 DEFAULT_RUNBOOK = Path("docs/portability/claude-to-codex-plugin-port-runbook.md")
@@ -389,7 +390,7 @@ def build_manifest(
         "authority": {
             "plan": _authority_entry(root, plan),
             "reviews": [_authority_entry(root, path) for path in reviews],
-            "runbook": {**_authority_entry(root, runbook), "version": 1},
+            "runbook": {**_authority_entry(root, runbook), "version": RUNBOOK_VERSION},
             "capability_snapshot": {
                 **_authority_entry(root, capability_snapshot),
                 "schema_version": 1,
@@ -865,8 +866,10 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
         runbook = authority.get("runbook")
         if isinstance(runbook, dict):
             _exact_keys(runbook, {"path", "version", "sha256"}, "authority.runbook", errors)
-            if runbook.get("version") != 1:
-                errors.append("authority.runbook.version must be 1")
+            if runbook.get("version") != RUNBOOK_VERSION:
+                errors.append(
+                    f"authority.runbook.version must be {RUNBOOK_VERSION}"
+                )
             _validate_artifact(root, {"path": runbook.get("path"), "sha256": runbook.get("sha256")}, "authority.runbook", errors)
         else:
             errors.append("authority.runbook must be an object")

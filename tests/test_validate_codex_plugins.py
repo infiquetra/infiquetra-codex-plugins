@@ -28,6 +28,7 @@ from scripts.validate_codex_plugins import (
     validate_saga_workflow_independence,
     validate_verified_workflows_agents,
     validate_verified_workflows_canonical_surface,
+    validate_verified_workflows_runtime,
     workflow_registry_sha256,
     validate_relative_file,
     validate_repository,
@@ -84,6 +85,29 @@ def write_legacy_workflow_inventory(
     path = root / LEGACY_WORKFLOW_INVENTORY
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload), encoding="utf-8")
+
+
+def copy_verified_workflows_runtime_target(tmp_path: Path) -> Path:
+    root = tmp_path / "repo"
+    shutil.copytree(
+        REPO_ROOT / "plugins" / "verified-workflows",
+        root / "plugins" / "verified-workflows",
+    )
+    (root / "scripts").mkdir(parents=True)
+    shutil.copy2(
+        REPO_ROOT / "scripts" / "prove_verified_workflows_runtime.py",
+        root / "scripts" / "prove_verified_workflows_runtime.py",
+    )
+    (root / "docs" / "validation").mkdir(parents=True)
+    for name in (
+        "codex-runtime-capability-snapshot.json",
+        "verified-workflows-runtime-proof.json",
+    ):
+        shutil.copy2(
+            REPO_ROOT / "docs" / "validation" / name,
+            root / "docs" / "validation" / name,
+        )
+    return root
 
 
 def test_current_repository_validates():
@@ -330,6 +354,50 @@ def test_verified_workflows_role_profiles_are_part_of_repo_validation() -> None:
     validate_verified_workflows_agents(REPO_ROOT, errors)
 
     assert errors == []
+
+
+def test_verified_workflows_runtime_surfaces_are_part_of_repo_validation() -> None:
+    errors: list[str] = []
+
+    validate_verified_workflows_runtime(REPO_ROOT, errors)
+
+    assert errors == []
+
+
+def test_verified_workflows_runtime_rejects_missing_hook(tmp_path: Path) -> None:
+    root = copy_verified_workflows_runtime_target(tmp_path)
+    (root / "plugins" / "verified-workflows" / "hooks" / "hooks.json").unlink()
+    errors: list[str] = []
+
+    validate_verified_workflows_runtime(root, errors)
+
+    assert any("runtime surfaces missing" in error for error in errors)
+
+
+def test_verified_workflows_runtime_rejects_open_hook_definition(tmp_path: Path) -> None:
+    root = copy_verified_workflows_runtime_target(tmp_path)
+    hook_path = root / "plugins" / "verified-workflows" / "hooks" / "hooks.json"
+    payload = json.loads(hook_path.read_text())
+    payload["extra"] = True
+    hook_path.write_text(json.dumps(payload))
+    errors: list[str] = []
+
+    validate_verified_workflows_runtime(root, errors)
+
+    assert any("top-level fields" in error for error in errors)
+
+
+def test_verified_workflows_runtime_rejects_stale_proof(tmp_path: Path) -> None:
+    root = copy_verified_workflows_runtime_target(tmp_path)
+    proof_path = root / "docs" / "validation" / "verified-workflows-runtime-proof.json"
+    payload = json.loads(proof_path.read_text())
+    payload["reason"] = "stale"
+    proof_path.write_text(json.dumps(payload))
+    errors: list[str] = []
+
+    validate_verified_workflows_runtime(root, errors)
+
+    assert any("tracked runtime proof is stale" in error for error in errors)
 
 
 def test_verified_workflows_validation_pins_fleet_core_to_supplied_root(

@@ -1,0 +1,66 @@
+{
+  "capability_outcome": "inline-only",
+  "claim": "runtime-capability-characterization",
+  "codex_cli_version": "0.144.1",
+  "harness_sha256": "230a5a077feefe08177ce772a71096fb3ee24a0437496be475c3b5248865516a",
+  "hook_capabilities": {
+    "definition_sha256": "a956bf510134fe03e96d510a6c78a9564940ebbc7adacacce8dbe6d6bc4659eb",
+    "events": [
+      "SubagentStart",
+      "SubagentStop"
+    ],
+    "handler_sha256": "af8030009d1e6f84ea222d979008fe4db580366fb34828dbb030a088a3d9871c",
+    "installed_bytes_readback": false,
+    "observes_active_model": true,
+    "observes_agent_type": true,
+    "observes_reasoning_effort": false,
+    "trust_readback": "unobserved",
+    "trust_required": true
+  },
+  "isolated_login_metadata_present": null,
+  "limitations": [
+    "profile presence is expected configuration, not runtime selection",
+    "hook permission_mode is not effective sandbox_mode",
+    "reasoning effort is expected from the exact profile digest, not observed by hooks",
+    "host-attested subagent capability is unavailable on the active spawn surface",
+    "isolated readback proves bytes only; it does not prove hook trust or task execution"
+  ],
+  "live_envelope_sha256": null,
+  "live_invocation_performed": false,
+  "mode": "dry-run",
+  "profiles": [
+    {
+      "execution_class": "monitor-low",
+      "sha256": "f1815804cd5b8200e7fdc7e81a9a7a83955cd2516fdb4769e68e63c7ba1c2a7b"
+    },
+    {
+      "execution_class": "review-high",
+      "sha256": "ec31f021bfd88dbf94b735ba4306656f9a8c21bba5ac18de24c33f4f9f280e20"
+    },
+    {
+      "execution_class": "review-max",
+      "sha256": "d2f5e20561576e613f46d03c0d299234ec69bc10c98d63904ea16cec6fc45227"
+    },
+    {
+      "execution_class": "scan-low",
+      "sha256": "02b33dc13e07eda203ae71426f74dbba91698fe31752f2924d8875976e090b18"
+    },
+    {
+      "execution_class": "test-medium",
+      "sha256": "288f4611d2b2cf886b6654b6030677a4343dd7e94ca89877f912da6384af1592"
+    }
+  ],
+  "reason": "active spawn surface cannot request or read back a named profile",
+  "role_registry_sha256": "011eea995e8c263c37805aa30b1c3f6b7cb5559c4c5e867a0d951adb95ccb4bc",
+  "root_mediated_task_reported": false,
+  "runtime_receipt_ref": null,
+  "runtime_receipt_sha256": null,
+  "schema_version": 1,
+  "snapshot_sha256": "b978f0631b4b0b3178e4201ff2f27f0bbba6fddcb690b97d2c935ddb52810070",
+  "spawn_request_fields": [
+    "fork_turns",
+    "message",
+    "task_name"
+  ],
+  "spawn_surface": "generic"
+}

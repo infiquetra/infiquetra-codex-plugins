@@ -3,7 +3,7 @@
 ## Contract Metadata
 
 - Status: canonical
-- Runbook version: `1`
+- Runbook version: `2`
 - Machine contract: `ports/<date>-<scope>.json`
 - Contract tool: `../../scripts/port_contract.py`
 - Digest rule: the machine contract stores the SHA-256 of the exact UTF-8 runbook bytes.
@@ -61,9 +61,9 @@ Saga lifecycle/state
         |
         +-- workflow mode: inline | manual | verified workflow
                 |
-                +-- step vehicle: inline | deterministic tool | native subagent
+                +-- step vehicle: inline | deterministic tool | candidate native child
                         |
-                        +-- identity: generic | logical-role attested
+                        +-- identity: configured | host-attested
                                 |
                                 +-- execution class -> profile model/effort policy
 
@@ -103,7 +103,7 @@ Choose a Codex surface only when the runtime supports the required behavior:
 | `MAP-AGENT` | Markdown agent | Classify as agent-lens, execution profile, deterministic validator, reference, defer, or reject. | Active-copying an agent or equating a role with a model. |
 | `MAP-DETERMINISTIC` | Repeatable check | Keep a command plus evidence schema. | Wrapping deterministic truth in an LLM persona. |
 | `MAP-WORKFLOW` | `TeamCreate` or Workflow | Represent as a root-owned Verified Workflows DAG with dependencies, roles, gates, and receipts. | Advertising Claude Workflow as executable. |
-| `MAP-MESSAGE` | `SendMessage` | Use root-mediated follow-up. Peer messaging MAY be used when present but is never required. | Requiring peer-to-peer messaging for correctness. |
+| `MAP-MESSAGE` | `SendMessage` | Use messages only for status or clarification inside one bound attempt. Start remediation/revalidation with a new intent and fresh execution context. | Treating a message as a retry, evidence, dependency, or required peer protocol. |
 | `MAP-HOOK` | Claude hook | Port behavior only for a verified Codex event, explicit trust, `PLUGIN_DATA`, minimal prompt-free receipts, and adapted tests. | Copying hook JSON or claiming complete enforcement. |
 | `MAP-STATE` | `.claude/...` mutable state | Use protected `PLUGIN_DATA` or ignored `.codex/...`; read old and write new during migration. | Rewriting append-only history or merging conflicting roots. |
 | `MAP-MCP` | External integration | Use MCP only for typed external actions with explicit auth and mutation policy. | Turning local workflow code into an unnecessary server. |
@@ -131,8 +131,10 @@ output shape, and independence needs. An execution class selects a reusable prof
 model, effort, sandbox, and tool boundary. A deterministic validator has no model class.
 
 Planning selects the logical role and risk-adjusted class. The root Codex thread owns the DAG,
-spawning, follow-up, waiting, integration, and adjudication. A generic subagent result is useful but
-does not satisfy a named workflow role without the required role/profile/model/result receipt.
+spawning, status/clarification messages, waiting, integration, and adjudication. Every execution
+attempt uses a fresh context. A class/profile digest proves requested configuration only. A generic
+or root-accountability subagent result is diagnostic and cannot satisfy a gate without host-issued
+selection/identity attestation; current gate-authoritative role work falls back inline.
 
 ## State, Trust, Authentication, And Mutation Boundaries
 
@@ -163,7 +165,9 @@ does not satisfy a named workflow role without the required role/profile/model/r
    suite.
 8. Prove clean isolated installation and a separately authenticated seeded-migration lane. Never copy
    credentials from the default profile.
-9. Start a fresh Codex session and prove model/profile/hook/plugin discovery and readback.
+9. Start a fresh Codex session and prove only the model/profile/hook/plugin discovery and readback
+   that the active surface exposes. Record `inline-only` when per-child selection or host attestation
+   is unavailable; never fabricate a task receipt.
 10. Pass `validate --stage cutover`, activate exactly one package identity, and verify exact rollback
     of every managed surface.
 
@@ -188,13 +192,16 @@ and runtime discovery. A failed readback triggers rollback; it is not a warning.
 ## Worked Examples
 
 1. **Reviewer:** translate a Devil's Advocate agent into a logical reviewer lens. Default it to a
-   `review-high` profile, allow explicit `review-max` escalation, record independence, and require a
-   role/lens/profile/model/result receipt before claiming named subagent execution.
+   `review-high` profile, allow explicit `review-max` escalation, record independence, and treat the
+   profile as requested configuration until Codex reports host-attested selection. Run inline when
+   preferred independence cannot be attested; block when independence is required.
 2. **Scanner:** use a deterministic validator only when a pinned command and evidence schema cover the
    full behavior. If judgment or interpretation remains, keep an agent-lens using `scan-low` and treat
-   command output as supporting evidence.
+   command output as protected hash/size plus typed evidence. Never persist raw streams.
 3. **Workflow:** translate TeamCreate/Workflow into a root-owned DAG with dependencies, barriers,
-   roles, validators, gates, and receipts. The root mediates follow-up and owns completion.
+   roles, validators, gates, and receipts. Require the base reviewers and a required validator until
+   a protected triage selector exists. The root starts a fresh attempt for each retry and owns
+   completion.
 4. **Hook:** implement SubagentStart/Stop receipt capture only after the event schema is verified.
    Trust the hook, store prompt-free minimal data under `PLUGIN_DATA`, and negative-test malformed and
    oversized events.
@@ -222,8 +229,8 @@ and runtime discovery. A failed readback triggers rollback; it is not a warning.
 - `STOP-DUAL-IDENTITY`: legacy and target package identities would both be active.
 - `STOP-CREDENTIAL-COPY`: proof would require copying or symlinking credentials.
 - `STOP-EXTERNAL-MUTATION`: external mutation lacks explicit authority and confirmation.
-- `STOP-UNPROVED-EXECUTION`: effective model, profile, logical-role identity, or independence is claimed
-  without observable proof.
+- `STOP-UNPROVED-EXECUTION`: effective model, effort, profile, logical-role identity, task execution,
+  hook trust, or independence is claimed without observable host/runtime proof.
 
 ## Required Artifacts And Historical References
 

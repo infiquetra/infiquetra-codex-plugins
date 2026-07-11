@@ -86,7 +86,7 @@ def test_runbook_has_exact_versioned_structure() -> None:
 
     assert headings == list(REQUIRED_H2)
     assert "Status: canonical" in text
-    assert "Runbook version: `1`" in text
+    assert "Runbook version: `2`" in text
 
 
 def test_authority_mapping_and_stop_ids_are_unique() -> None:
@@ -106,7 +106,8 @@ def test_normative_mappings_keep_claude_host_surfaces_inactive() -> None:
         "agent-lens",
         "deterministic validator",
         "root-owned Verified Workflows DAG",
-        "root-mediated follow-up",
+        "status or clarification",
+        "fresh execution context",
         "`PLUGIN_DATA`",
         "MCP only for typed external actions",
         "Treat cache/profile state as installation evidence only",

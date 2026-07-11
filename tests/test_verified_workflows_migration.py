@@ -120,7 +120,7 @@ def test_legacy_token_inventory_is_exact_digest_bound_and_current() -> None:
     assert all(len(entry["sha256"]) == 64 for entry in entries.values())
 
 
-def test_target_manifest_and_skills_are_complete_without_runtime_surfaces() -> None:
+def test_target_manifest_skills_and_u4_runtime_surfaces_are_complete() -> None:
     manifest = json.loads(
         (TARGET_ROOT / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8")
     )
@@ -167,7 +167,19 @@ def test_target_manifest_and_skills_are_complete_without_runtime_surfaces() -> N
         "**Validation**",
     ):
         assert marker in appsec_contract
-    assert not (TARGET_ROOT / "hooks").exists()
+    hooks = json.loads((TARGET_ROOT / "hooks" / "hooks.json").read_text())
+    assert set(hooks["hooks"]) == {"SubagentStart", "SubagentStop"}
+    assert (TARGET_ROOT / "hooks" / "agent_receipt.py").is_file()
+    assert {
+        "dispatch_receipt.py",
+        "gate_evaluator.py",
+        "named_child_attestation.py",
+        "protocol_probe.py",
+        "protected_store.py",
+        "workflow_records.py",
+        "workflow_dispatch.py",
+        "workspace_evidence.py",
+    } <= {path.name for path in (TARGET_ROOT / "scripts").glob("*.py")}
     assert {path.name for path in (TARGET_ROOT / "agents").glob("*.toml")} == {
         "review-max.toml",
         "review-high.toml",
@@ -190,9 +202,10 @@ def test_frozen_team_execution_rows_have_explicit_verified_workflows_targets() -
     ]
 
     assert len(rows) == 10
-    assert all(len(row["planned_targets"]) == 1 for row in rows)
+    assert all(row["planned_targets"] for row in rows)
     assert all(
-        row["planned_targets"][0].startswith("plugins/verified-workflows/") for row in rows
+        all(target.startswith("plugins/verified-workflows/") for target in row["planned_targets"])
+        for row in rows
     )
     identity = next(row for row in rows if row["row_id"] == "src-c75fe471946e3b4e")
     assert identity["units"] == ["U9"]

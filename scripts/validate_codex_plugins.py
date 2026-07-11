@@ -278,7 +278,7 @@ STAGED_MARKETPLACE_SHA256 = (
     "42803919b39b720599b9692bfdcd95bcfe8c31b06ebb2c976aacaa890fdfea8a"
 )
 LEGACY_WORKFLOW_HISTORICAL_INVENTORY_SHA256 = (
-    "7d70ccc8f723913013c28b189b95ae93b75b666fc922c869f2de6bd867db3a5d"
+    "9c51ae7c0905a41e3734a71b7b4f2b1c921ef5ffe292418b7f3689de2e48e8b5"
 )
 LEGACY_WORKFLOW_INVENTORY = Path(
     "docs/validation/verified-workflows-legacy-token-inventory.json"
@@ -537,6 +537,7 @@ def validate_repository(root: Path, mode: str = "current") -> list[str]:
     validate_saga_family_docs(root, errors)
     validate_deletion_migration_map(root, errors)
     validate_verified_workflows_agents(root, errors)
+    validate_verified_workflows_runtime(root, errors)
     return errors
 
 
@@ -1026,12 +1027,6 @@ def validate_verified_workflows_canonical_surface(root: Path, errors: list[str])
                     "load shared modules through fleet_commons_shim"
                 )
 
-    for forbidden_dir in ("hooks",):
-        if (plugin_root / forbidden_dir).exists():
-            errors.append(
-                f"verified-workflows: pre-U4 package must not create `{forbidden_dir}` yet"
-            )
-
     portability_path = plugin_root / "PORTABILITY.md"
     portability = read_text(portability_path, errors)
     if portability is not None:
@@ -1098,6 +1093,114 @@ def validate_verified_workflows_agents(root: Path, errors: list[str]) -> None:
             raise RuntimeError("renderer did not produce exactly five profiles")
     except (OSError, RuntimeError, json.JSONDecodeError, subprocess.TimeoutExpired) as exc:
         errors.append(f"verified-workflows: U3 role/profile validation failed: {exc}")
+
+
+def validate_verified_workflows_runtime(root: Path, errors: list[str]) -> None:
+    """Validate the closed U4 hook, workflow, receipt, gate, and proof surfaces."""
+
+    plugin_root = root / "plugins" / "verified-workflows"
+    required = (
+        plugin_root / "hooks" / "hooks.json",
+        plugin_root / "hooks" / "agent_receipt.py",
+        plugin_root / "scripts" / "workflow_dispatch.py",
+        plugin_root / "scripts" / "dispatch_receipt.py",
+        plugin_root / "scripts" / "protected_store.py",
+        plugin_root / "scripts" / "workspace_evidence.py",
+        plugin_root / "scripts" / "workflow_records.py",
+        plugin_root / "scripts" / "named_child_attestation.py",
+        plugin_root / "scripts" / "gate_evaluator.py",
+        plugin_root / "scripts" / "protocol_probe.py",
+        root / "scripts" / "prove_verified_workflows_runtime.py",
+        root / "docs" / "validation" / "verified-workflows-runtime-proof.json",
+    )
+    references = {
+        "workflow-protocol.md",
+        "gate-policy.md",
+        "validator-evidence-state.md",
+        "worker-manifest.md",
+        "delegation-safety.md",
+    }
+    reference_root = plugin_root / "skills" / "run" / "references"
+    missing = [path.relative_to(root).as_posix() for path in required if not path.is_file()]
+    missing.extend(
+        (reference_root / name).relative_to(root).as_posix()
+        for name in sorted(references)
+        if not (reference_root / name).is_file()
+    )
+    if missing:
+        errors.append(f"verified-workflows: U4 runtime surfaces missing {missing}")
+        return
+    hooks_path = plugin_root / "hooks" / "hooks.json"
+    hooks = load_json(hooks_path, errors)
+    expected_matcher = "^(review-max|review-high|test-medium|scan-low|monitor-low)$"
+    expected_command = 'python3 "$PLUGIN_ROOT/hooks/agent_receipt.py"'
+    if not isinstance(hooks, dict) or set(hooks) != {"hooks"}:
+        errors.append("verified-workflows hooks: top-level fields must be exactly `hooks`")
+    else:
+        events = hooks.get("hooks")
+        if not isinstance(events, dict) or set(events) != {"SubagentStart", "SubagentStop"}:
+            errors.append("verified-workflows hooks: only SubagentStart/Stop are allowed")
+        else:
+            for event_name, groups in events.items():
+                expected_status = (
+                    "Recording Verified Workflows agent start"
+                    if event_name == "SubagentStart"
+                    else "Recording Verified Workflows agent stop"
+                )
+                valid = (
+                    isinstance(groups, list)
+                    and len(groups) == 1
+                    and isinstance(groups[0], dict)
+                    and set(groups[0]) == {"matcher", "hooks"}
+                    and groups[0].get("matcher") == expected_matcher
+                    and isinstance(groups[0].get("hooks"), list)
+                    and len(groups[0]["hooks"]) == 1
+                    and isinstance(groups[0]["hooks"][0], dict)
+                    and set(groups[0]["hooks"][0])
+                    == {"type", "command", "timeout", "statusMessage"}
+                    and groups[0]["hooks"][0].get("type") == "command"
+                    and groups[0]["hooks"][0].get("command") == expected_command
+                    and groups[0]["hooks"][0].get("timeout") == 10
+                    and groups[0]["hooks"][0].get("statusMessage") == expected_status
+                )
+                if not valid:
+                    errors.append(
+                        f"verified-workflows hooks: {event_name} definition is not closed"
+                    )
+    proof_path = root / "docs" / "validation" / "verified-workflows-runtime-proof.json"
+    proof = load_json(proof_path, errors)
+    if proof is None:
+        return
+    try:
+        result = subprocess.run(  # noqa: S603 - fixed repository proof script
+            [sys.executable, str(root / "scripts" / "prove_verified_workflows_runtime.py")],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+        if result.returncode:
+            raise RuntimeError("runtime proof script failed")
+        expected_proof = json.loads(result.stdout)
+        if proof != expected_proof:
+            raise RuntimeError("tracked runtime proof is stale")
+        if proof.get("capability_outcome") not in {
+            "diagnostic",
+            "inline-only",
+            "auth-unavailable",
+        }:
+            raise RuntimeError("runtime proof capability outcome is invalid")
+        if proof.get("live_invocation_performed") is not False:
+            raise RuntimeError("U4 tracked proof must remain a non-mutating characterization")
+        if proof.get("runtime_receipt_ref") is not None:
+            raise RuntimeError("U4 tracked proof must not claim a live receipt")
+        if proof.get("runtime_receipt_sha256") is not None or proof.get(
+            "live_envelope_sha256"
+        ) is not None:
+            raise RuntimeError("U4 tracked proof must not carry live-envelope evidence")
+    except (OSError, RuntimeError, json.JSONDecodeError, subprocess.TimeoutExpired) as exc:
+        errors.append(f"verified-workflows: U4 runtime proof validation failed: {exc}")
 
 
 def is_cross_plugin_module(name: str) -> bool:

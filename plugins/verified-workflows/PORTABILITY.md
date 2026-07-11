@@ -6,8 +6,9 @@
   `38742ece89880a6b140be237edad6d3f13c97b54`
 - Prior Codex adapter: `team-execution` `2.3.0`
 - Canonical Codex target: `verified-workflows` `1.0.0`
-- U9/U3 status: unpublished source with 25 role lenses and five generated profiles; no marketplace,
-  cache, hook-trust, or real-profile mutation
+- U9/U3/U4 status: unpublished source with 25 role lenses, five generated profiles, a root-owned DAG
+  interpreter, closed hook receipts, and severity-first gates; no marketplace, cache, hook-trust,
+  live-child, or real-profile mutation
 
 This is a behavior adaptation, not an upstream byte-parity claim. The frozen path-by-path source
 treatments and old-to-new targets are recorded in
@@ -20,22 +21,60 @@ paths, and is idempotent on a second call. It is not an installer or profile syn
 ## Codex-Native Shape
 
 The Claude team runtime becomes a root-owned Codex workflow DAG. The root thread owns state,
-barriers, mutation, integration, and final adjudication. Native children perform bounded role work
-and return attributable evidence; peer communication is not required.
+barriers, mutation, integration, and final adjudication. The current generic spawn surface cannot
+select or attest the five named execution profiles, so gate-authoritative role work runs inline.
+Candidate native-child chains are diagnostic only; peer communication is not required.
 
 Logical roles are independent of compute profiles. U3 preserves all 25 role behaviors as agent
 lenses, records closed class transitions and role-level boundary caps, and renders exactly five
 catalog-bound model/effort profiles. No current role qualifies as deterministic because every role
 still needs judgment or result interpretation. `scripts/sync_codex_agents.py` proves isolated
 installation, live-then-bundled catalog resolution, collision safety, explicit stale cleanup,
-partitioned readback, exact rollback, and preparing/prepared/applying/committed recovery without claiming
-runtime selection. Implicit `$CODEX_HOME` targets are real; isolated fixtures require an explicit
-target plus sentinel. U4 adds receipt-backed dispatch and validators. U8 alone publishes, installs
-into the real profile, and proves the new package.
+partitioned readback, exact rollback, and preparing/prepared/applying/committed recovery without
+claiming runtime selection. Implicit `$CODEX_HOME` targets are real; isolated fixtures require an
+explicit target plus sentinel.
+
+U4 adapts the peer-team source behavior into a root-owned Codex workflow. The deterministic
+dispatcher parses one closed Workflow Structure and emits intents only. The root persists the intent
+before work and records an authorized subject plus pre-existing Git baseline. Later attempts must
+descend from the prior result, use a fresh execution context, and bind the approved execution class;
+status/clarification messages cannot create a retry or change class. Codex does not consume the
+source's mutable session-tier file. Operator class changes begin a newly approved workflow run
+instead of splicing into an existing receipt chain. The root can record content-addressed
+installed-hook readback, launch, schema-valid result,
+mutation-audit, and root-verification evidence. A named-child claim additionally requires the
+minimal start/stop pair and exact role, lens, profile, model, and child bindings. The evidence is an
+auditable root-accountability diagnostic, not same-user cryptographic or host-issued attestation,
+so it always blocks the gate. Expected effort and configured sandbox come from the profile digest;
+current hooks observe neither directly. Gate evaluation requires all base reviewers plus one
+required validator, opens typed protected evidence, requires exact workflow step coverage and
+dependency chronology, rejects self-acceptance, stays severity first, and caps remediation at three
+cycles with escalation. Resolutions cannot remove a finding until a later affected-role receipt
+consumes the changed descendant subject and revalidates it.
+
+Agent and deterministic-tool runs use whole-repository before/after audits that include ignored
+files, modes, empty directories, symlinks, and hashed Git control state. Deterministic commands also
+bind argv, implementation/schema digests, cwd, timeout, output ceiling, exit status, and protected
+stream hashes/sizes plus typed deterministic output; raw stdout/stderr are never retained. Tester
+and scanner claims derive from protected command-output records. Required monitor/deploy evidence
+waits for an authenticated observation adapter. Root evidence is an
+evidence-ID-to-protected-record map; digest-shaped text is never accepted as evidence. Raw pruning
+requires an unchanged dry-run plan, explicit abandonment for an incomplete start, and entry/byte
+ceilings inside each leaf.
+
+The tracked U4 proof is a sanitized non-mutating characterization. On the current Codex spawn
+surface it records `inline-only`, because the request cannot select or read back a named profile.
+It does not read or copy default authentication, install or trust the unpublished plugin, or claim a
+live receipt. A separate isolated envelope proves installed-byte equality only; it does not claim
+hook trust, a fresh task, or a child. U8 alone publishes, installs into the real profile, and performs
+real-profile cutover proof.
 
 The three frozen upstream selection/gate registries are exact test fixtures, not active legacy
 instructions. Their hashes bind the closed Codex-native selection policy, typed evidence schemas,
 default-branch automation restriction, custom-reviewer contract, and explicit U7 advisory deferral.
+Upstream advisory-seat/convergence and external worker-manifest changes remain assigned to U7;
+Saga fallback/quorum emitter changes remain assigned to U6; release metadata remains U8. U4 claims
+only the source session-tier row and adapts it to immutable approved-row/intent binding.
 
 ## Compatibility Boundary
 
