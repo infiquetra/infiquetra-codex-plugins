@@ -1033,7 +1033,7 @@
       "unit": "U6",
       "kind": "check",
       "artifact_path": "docs/validation/codex-plugin-modernization-u6.json",
-      "artifact_sha256": "3ef8ca23d943ffc964c8c45ec03c7670ee1e145acdf736626dad17378957c941",
+      "artifact_sha256": "0273b7551feaa1793bef6da428e6d46193c47ef0daf81f15c38add1dceeabf33",
       "argv": [
         "PYTHONPATH=.",
         "uv",
@@ -1053,17 +1053,19 @@
         "tests/test_outcome_completion.py",
         "tests/test_outcome_command.py",
         "tests/test_outcome_integration.py",
+        "tests/test_outcome_merge_queue.py",
         "tests/test_engine_bridge_http.py",
         "tests/test_engine_registry_conformance.py",
         "tests/test_engine_registry_cli.py",
         "tests/test_engine_registry_lint.py",
         "tests/test_bridge_receipt_drift.py",
+        "tests/test_u6_branch_coverage.py",
         "tests/test_port_contract.py"
       ],
       "cwd": ".",
       "exit_code": 0,
-      "recorded_at": "2026-07-11T11:56:11Z",
-      "repo_head": "2a96fd51c55ea108fdfa00f593eb7ac5a7bf56d4",
+      "recorded_at": "2026-07-11T12:16:15Z",
+      "repo_head": "ca0337747a03fc15f135fb8cd8f3e804f0d49c29",
       "target_paths": [
         "plugins/fleet-core/scripts/fleet_commons/bridge_receipt.py",
         "plugins/fleet-core/scripts/fleet_commons/tier_resolver.py",
@@ -1101,9 +1103,11 @@
         "tests/test_engine_registry_conformance.py",
         "tests/test_engine_registry_lint.py",
         "tests/test_outcome_completion.py",
+        "tests/test_outcome_merge_queue.py",
+        "tests/test_u6_branch_coverage.py",
         "tests/test_workflow_emitter.py"
       ],
-      "target_tree_sha256": "ba6c4838741c3464965d6fc1fddbcd120055e6acad7881c0928689bace51ec04"
+      "target_tree_sha256": "138cb517efa318d8cf4c23979e0d2a834da8b928198f0ec3160ae78de0772c48"
     }
   ],
   "port_id": "2026-07-10-saga-07517",

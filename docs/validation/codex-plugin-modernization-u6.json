@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "unit": "U6",
-  "recorded_at": "2026-07-11T11:56:11Z",
-  "repo_head": "2a96fd51c55ea108fdfa00f593eb7ac5a7bf56d4",
-  "target_tree_sha256": "ba6c4838741c3464965d6fc1fddbcd120055e6acad7881c0928689bace51ec04",
+  "recorded_at": "2026-07-11T12:16:15Z",
+  "repo_head": "ca0337747a03fc15f135fb8cd8f3e804f0d49c29",
+  "target_tree_sha256": "138cb517efa318d8cf4c23979e0d2a834da8b928198f0ec3160ae78de0772c48",
   "claim": "codex-safe-host-neutral-correctness-and-external-engine-substrate",
   "checks": [
     {
       "name": "u6-focused-suite",
-      "argv": ["PYTHONPATH=.", "uv", "run", "pytest", "-q", "plugins/fleet-core/tests/test_bridge_receipt.py", "plugins/fleet-core/tests/test_tier_resolver.py", "plugins/saga/tests/test_board_progression.py", "plugins/saga/tests/test_outcome_from_objective.py", "plugins/saga/tests/test_execution_spec_tiers.py", "plugins/saga/tests/test_verify_panel_robustness.py", "plugins/saga/tests/test_engine_routing.py", "plugins/saga/tests/test_outcome_board_sync.py", "plugins/verified-workflows/tests/test_workflow_dispatch.py", "tests/test_workflow_emitter.py", "tests/test_outcome_completion.py", "tests/test_outcome_command.py", "tests/test_outcome_integration.py", "tests/test_engine_bridge_http.py", "tests/test_engine_registry_conformance.py", "tests/test_engine_registry_cli.py", "tests/test_engine_registry_lint.py", "tests/test_bridge_receipt_drift.py", "tests/test_port_contract.py"],
+      "argv": ["PYTHONPATH=.", "uv", "run", "pytest", "-q", "plugins/fleet-core/tests/test_bridge_receipt.py", "plugins/fleet-core/tests/test_tier_resolver.py", "plugins/saga/tests/test_board_progression.py", "plugins/saga/tests/test_outcome_from_objective.py", "plugins/saga/tests/test_execution_spec_tiers.py", "plugins/saga/tests/test_verify_panel_robustness.py", "plugins/saga/tests/test_engine_routing.py", "plugins/saga/tests/test_outcome_board_sync.py", "plugins/verified-workflows/tests/test_workflow_dispatch.py", "tests/test_workflow_emitter.py", "tests/test_outcome_completion.py", "tests/test_outcome_command.py", "tests/test_outcome_integration.py", "tests/test_outcome_merge_queue.py", "tests/test_engine_bridge_http.py", "tests/test_engine_registry_conformance.py", "tests/test_engine_registry_cli.py", "tests/test_engine_registry_lint.py", "tests/test_bridge_receipt_drift.py", "tests/test_u6_branch_coverage.py", "tests/test_port_contract.py"],
       "exit_code": 0,
-      "summary": "416 passed"
+      "summary": "503 passed"
     },
     {
       "name": "u5-overlap-regression",
@@ -22,7 +22,7 @@
       "name": "u6-branch-coverage",
       "argv": ["PYTHONPATH=.", "uv", "run", "--group", "dev", "--with", "coverage", "coverage", "run", "--branch", "--include=<ten U6 modules>", "-m", "pytest", "-q", "<U6 behavior tests excluding circular port-evidence assertions>"],
       "exit_code": 0,
-      "summary": "392 passed; 79.778% aggregate branch-aware coverage across 10 U6 modules; execution_spec.py 91%, bridge_receipt.py and board_progression.py 91%, outcome_edges.py 96%"
+      "summary": "479 passed; 90.014% aggregate branch-aware coverage across 10 U6 modules; workflow_emitter.py 100%, outcome_github.py 98%, outcome_edges.py 96%, execution_spec.py 91%"
     },
     {
       "name": "generated-workflow-javascript-syntax",
@@ -71,6 +71,6 @@
     "overlay containment, authentication preflight, signature policy, and emitter drift proof",
     "GitHub owner/repository reference normalization",
     "U5 canonical workflow and outcome-boundary regression coverage",
-    "measured branch-aware U6 module coverage with an explicit non-inflated 79.778% aggregate baseline"
+    "measured branch-aware U6 module coverage at 90.014% across the unchanged ten-module denominator"
   ]
 }
