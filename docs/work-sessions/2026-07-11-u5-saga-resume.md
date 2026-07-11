@@ -30,9 +30,9 @@
   `legacy-unverified` and cannot advance dependent work.
 - Added the canonical readiness adapter and a single non-mutating SessionStart hook for startup,
   resume, and compact context.
-- Recovered an interrupted intent correctly: only acknowledgement and legacy commit states settle
-  deduplication, so an intent without an acknowledgement retries rather than remaining permanently
-  hidden. Reconciliation appends a v2 acknowledgement and cannot rewrite history.
+- Recovered interrupted intent handling without duplicate launch: an unresolved v2 intent remains
+  visible as `intent-created` and blocks automatic relaunch until append-only reconciliation supplies
+  local launch authority or an operator-confirmed handoff.
 - Migrated hierarchy and board-sync fixtures from the synthetic v1 commit to a typed v2 launch
   acknowledgement. The source-only Workflow, fork, subagent, and Goal vehicles now halt visibly
   rather than becoming caller-asserted capabilities.
@@ -42,27 +42,39 @@
   Sol/max/read-only, security as Sol/high/read-only, and concurrency validation as
   Terra/medium/workspace-write. Root verification confirmed the reported launch, reducer,
   compatibility, path-containment, evidence-binding, and instruction-context defects.
-- Commit `1de047d` resolved every U5 P1/P2 finding: production dispatch cannot synthesize launch,
-  launch reconciliation is digest-bound and append-only, one v1/v2 reducer feeds replay/liveness/
-  reporting/export, local stale-lease and acknowledgement races are serialized, Goal/identity
-  combinations fail closed, SessionStart output is bounded and fixed, and active Saga skills emit
-  canonical workflow instructions.
-- Commit `def7179` makes port evidence bind an exact reviewed target tree. The U5 artifact and port
-  manifest now point to that commit and its 36-path tree digest rather than an ancestor-only claim.
+- Commits `1de047d` through `16a3a27` resolved the initial and follow-up P1/P2 findings: production
+  dispatch cannot synthesize launch or handoff; owner-state launch receipts bind an unpredictable
+  run id, intent timestamp, repo identity, owner, and safe mode; Goal and logical-role identity fail
+  closed; legacy acknowledgements reconcile append-only; and mixed canonical/legacy roots halt.
+- Commit `def7179` makes port evidence bind an exact reviewed target tree rather than relying on an
+  ancestor-only claim. Each later remediation refreshed the U5 artifact and manifest against the
+  exact behavior-bearing commit.
+- Commit `7e7f5dd` preserves imported dispatch acknowledgements as inert
+  `outcome.dispatch.audit.v1` records. Export/import/re-export retains history, while dispatch
+  reduction, replay, and reconciliation ignore the archive as authority. Commit `3e4d6de` binds the
+  resulting U5 evidence to that exact code tree.
+- Final fresh-context reruns closed U5 with no P0-P3 findings. The devil's-advocate child was observed
+  from its first host `turn_context` as `review_max`, `gpt-5.6-sol`, `max`, read-only. The concurrency
+  child was observed as `test_medium`, `gpt-5.6-terra`, `medium`, workspace-write and carried the
+  plan's exact role/profile digests plus the `tester-evidence` output contract.
 
 ## Checks
 
 - `PYTHONPATH=. uv run pytest -q plugins/saga/tests tests/test_outcome_dispatcher.py
   tests/test_outcome_backends.py tests/test_outcome_dispatch_migration.py
   tests/test_outcome_command.py tests/test_outcome_integration.py tests/test_outcome_liveness.py
-  tests/test_verified_workflow_readiness.py tests/test_saga_session_context.py` — 431 passed.
+  tests/test_outcome_completion.py tests/test_outcome_replay.py tests/test_capability_degrade.py
+  tests/test_verified_workflow_readiness.py tests/test_saga_session_context.py` — 519 passed.
 - `PYTHONPATH=. uv run pytest -q tests/test_port_contract.py` — 24 passed.
 - `python3 scripts/port_contract.py validate --stage unit --unit U5` — passed.
 - `python3 scripts/build_legacy_workflow_inventory.py --check` and
   `python3 scripts/validate_codex_plugins.py` — passed.
+- The named validator's literal `uv` commands exited 2 because its managed sandbox could not read the
+  user cache. It reran the same suites with an isolated cache and recorded 519 and 24 passes; the root
+  independently ran the literal commands successfully. No product file was modified by validation.
 
 ## Next Step
 
-Re-run the four U5 named-profile lenses against `e2cf3f8..HEAD`; resolve any remaining actionable
-finding, then persist the attested U5 boundary and begin U6. `.serena/project.yml` remains user-owned
+Begin U6 from frozen Claude source ref `46fefb6f17f0c9d0d63858978536d3369ab57dfe`, using the
+approved host-neutral import and engine-substrate workflow. `.serena/project.yml` remains user-owned
 and unstaged.
