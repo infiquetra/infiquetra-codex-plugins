@@ -75,6 +75,8 @@
 
 ## Next Step
 
-Begin U6 from frozen Claude source ref `46fefb6f17f0c9d0d63858978536d3369ab57dfe`, using the
-approved host-neutral import and engine-substrate workflow. `.serena/project.yml` remains user-owned
-and unstaged.
+Begin U6 from the frozen Claude window
+`9470edca65b1db06d2f7562eeb2d5a9e48c34dec..38742ece89880a6b140be237edad6d3f13c97b54`,
+using the approved host-neutral import and engine-substrate workflow. The later observed Claude head
+`46fefb6f17f0c9d0d63858978536d3369ab57dfe` is inventory provenance only and is not a port input.
+`.serena/project.yml` remains user-owned and unstaged.
