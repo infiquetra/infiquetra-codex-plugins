@@ -15,7 +15,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import manifest_store  # noqa: E402
 import provenance_manifest as pm  # noqa: E402
 import run_ledger  # noqa: E402
+import bridge_signatures  # noqa: E402
+import fleet_commons_shim  # noqa: E402
 from engine_resolver import Resolution  # noqa: E402
+
+_bridge_receipt = fleet_commons_shim.load("bridge_receipt")
 
 FAILURE_STATUSES = frozenset({"timeout", "no-output", "error", "malformed", "clone-failed"})
 
@@ -28,13 +32,14 @@ class DispatchError(ValueError):
 
 @dataclass(frozen=True)
 class AdvisoryEvidence:
-    """Evidence returned by an external engine before Claude verification."""
+    """Evidence returned by an external engine before Codex-root verification."""
 
     engine_id: str
     variant: str
     evidence: str
     provenance: dict[str, Any]
     verified_by_claude: bool = False
+    runner_receipt: dict[str, Any] | None = None
     halt: str | None = None
 
 
@@ -82,12 +87,20 @@ def build_agy_envelope(
     else:
         mode = "no-write"
         allowed_writes = []
+    row = resolution.invocation or {}
+    effective_model = model if isinstance(model, str) and model else row.get("model")
+    effort = row.get("effort")
+    if not isinstance(effective_model, str) or not effective_model:
+        raise DispatchError("agy invocation requires the registry model")
+    if not isinstance(effort, str) or not effort:
+        raise DispatchError("agy invocation requires the registry effort")
     envelope = {
         "schema": "agy.delegation.v1",
         "role": "coder",
         "mode": mode,
         "task": resolution.payload,
-        "model": model,
+        "model": effective_model,
+        "effort": effort,
         "write_set": allowed_writes,
         "apply_policy": "preserve-patch",
         "evidence": "summary",
@@ -140,6 +153,13 @@ def dispatch(
 
     invocation = _build_invocation(resolution, model=model, sandbox=sandbox, write_set=write_set)
     result = runner(invocation)
+    if not isinstance(result, dict):
+        raise DispatchError("runner result must be an object")
+    forbidden = sorted({"verdict", "gate_status", "adjudicated"}.intersection(result))
+    if forbidden:
+        raise DispatchError(
+            "external-engine result contains forbidden gate fields: " + ", ".join(forbidden)
+        )
     status = _string_result(result.get("status"), default="malformed")
     output = _string_result(result.get("output"), default="")
     provenance = {
@@ -148,12 +168,28 @@ def dispatch(
         "status": status,
     }
 
+    receipt = result.get("receipt")
+    runner_receipt = dict(receipt) if isinstance(receipt, dict) else None
     if status == "ok":
+        receipt_errors = (
+            ["missing bridge receipt"]
+            if runner_receipt is None
+            else [
+                *_bridge_receipt.validate_receipt(runner_receipt),
+                *bridge_signatures.validate_receipt_signature(
+                    runner_receipt,
+                    evidence_text=output,
+                ),
+            ]
+        )
+        if receipt_errors:
+            raise DispatchError("bridge receipt rejected: " + "; ".join(receipt_errors))
         evidence = AdvisoryEvidence(
             engine_id=resolution.engine_id,
             variant=resolution.variant,
             evidence=output,
             provenance=provenance,
+            runner_receipt=runner_receipt,
         )
     elif status not in FAILURE_STATUSES:
         raise DispatchError(f"runner returned unsupported status {status!r}")
@@ -165,6 +201,7 @@ def dispatch(
             variant=resolution.variant,
             evidence="",
             provenance=provenance,
+            runner_receipt=runner_receipt,
             halt=note,
         )
 
@@ -383,6 +420,41 @@ def downgrade_note(engine: str, reason: str) -> str:
     return f"Downgraded external engine {engine}: {safe_reason}"
 
 
+def build_http_invocation(resolution: Resolution) -> dict[str, Any]:
+    """Build a secret-free generic HTTP invocation from one validated registry row."""
+
+    row = resolution.invocation or {}
+    base_url = row.get("base_url")
+    model = row.get("model")
+    effort = row.get("effort")
+    row_auth = row.get("auth")
+    if not isinstance(base_url, str) or not base_url:
+        raise DispatchError("http invocation missing base_url in registry row data")
+    if not isinstance(model, str) or not model:
+        raise DispatchError("http invocation missing model in registry row data")
+    if not isinstance(effort, str) or not effort:
+        raise DispatchError("http invocation missing effort in registry row data")
+    if not isinstance(row_auth, dict):
+        raise DispatchError("http invocation missing auth in registry row data")
+    key_env = row_auth.get("key_env")
+    if row_auth.get("mode") != "bearer" or not isinstance(key_env, str) or not key_env:
+        raise DispatchError("http invocation requires bearer auth with key_env")
+    invocation = {
+        "via": "engine-bridge-http",
+        "transport": "http",
+        "engine_id": resolution.engine_id,
+        "variant": resolution.variant,
+        "base_url": base_url,
+        "model": model,
+        "effort": effort,
+        # Environment variable name only. The HTTP bridge resolves the secret at request time.
+        "auth": {"mode": "bearer", "key_env": key_env},
+        "task": resolution.payload,
+    }
+    _assert_payload_preserved(invocation["task"], resolution.payload)
+    return invocation
+
+
 def _build_invocation(
     resolution: Resolution,
     *,
@@ -390,8 +462,11 @@ def _build_invocation(
     sandbox: Any = None,
     write_set: list[str] | None = None,
 ) -> dict[str, Any]:
+    row = resolution.invocation or {}
+    if row.get("via") == "engine-bridge-http":
+        return build_http_invocation(resolution)
     if resolution.engine_id == "codex":
-        return build_codex_invocation(resolution, sandbox=sandbox)
+        raise DispatchError("native Codex agents are not external-engine routes")
     if resolution.engine_id == "agy":
         return build_agy_envelope(resolution, model=model, sandbox=sandbox, write_set=write_set)
     raise DispatchError(f"unsupported external engine {resolution.engine_id!r}")
