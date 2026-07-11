@@ -348,7 +348,7 @@
     {
       "classification": "lineage-documentation",
       "path": "docs/portability/codex-saga-07517-drift-classification.md",
-      "sha256": "49b3cef89d09e1da0b5a7d5cd76f7dab4c89062da41218016a4ad8b71fa8919a",
+      "sha256": "4e1f812d20c1ae62ed50eda54ac3d203f0efdbec09617f9e470b14d3312541a5",
       "tokens": [
         "team-execution"
       ]
@@ -364,7 +364,7 @@
     {
       "classification": "lineage-documentation",
       "path": "docs/portability/ports/2026-07-10-saga-07517.json",
-      "sha256": "bc86dff14157093a9d1d0c6fa7a2307cd9b1fef594ac70d8afdeead5da5f2a00",
+      "sha256": "f57ae2273d7a7338280feed56b59a42036fa2fb58a9fe2a2aa5061cdf702a1f3",
       "tokens": [
         "Team Execution",
         "team-execution"
@@ -561,6 +561,14 @@
       ]
     },
     {
+      "classification": "current-pre-cutover-documentation",
+      "path": "docs/validation/codex-plugin-modernization-u7.json",
+      "sha256": "59808562d0aa4f157ec983fcb6883974ca73100c08b88ebfe9d50425df94366f",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
       "classification": "historical-evidence",
       "path": "docs/validation/codex-runtime-capability-snapshot.json",
       "sha256": "7261c1133afc62578e9f5db86e9f63f80208ec6751048c082cc47b137014603c",
@@ -707,7 +715,7 @@
     {
       "classification": "legacy-parser",
       "path": "plugins/fleet-core/scripts/fleet_commons/tier_palette.py",
-      "sha256": "1f7454b3beac26a2ebb3cbb731bf4f8e2dcfc43b7f8ccfdc4840c4496f6a1b4c",
+      "sha256": "c21b3092009a5f597107ae4c387e3c6918aa6445f87341c8f08ee2b3e4417858",
       "tokens": [
         "Team Execution"
       ]
@@ -833,7 +841,7 @@
     {
       "classification": "temporary-saga-writer",
       "path": "plugins/saga/scripts/execution_spec.py",
-      "sha256": "e28d46d2ab80ecec05dd9fd4091c54c6b8341c46ef15f1952edda6882e5ff969",
+      "sha256": "a0b3d0321b82750595afa8d1945810413aee19d95d80d562a990bcf7e6e4f177",
       "tokens": [
         "## Team Structure",
         "team-execution"
@@ -891,7 +899,7 @@
     {
       "classification": "temporary-saga-writer",
       "path": "plugins/saga/scripts/provenance_manifest.py",
-      "sha256": "913c4d8bf0e3194ce2e5ffacd7051d3ad6431ae6f729370193405a272e96c2c3",
+      "sha256": "9407d0a831bcbb753561a7488283d09c908e51e7246b10314c41a38c37577041",
       "tokens": [
         "team-execution"
       ]
@@ -946,7 +954,7 @@
     {
       "classification": "migration-fixture",
       "path": "plugins/saga/tests/test_provenance_manifest.py",
-      "sha256": "bd91b12c18765fedb1876ad06b3316201730c062af450d12a82b4a5e65316453",
+      "sha256": "dc935cf52b8af2538208c0f89f01dc83aac0d242427e805fa44c86568fb73e70",
       "tokens": [
         "team-execution"
       ]

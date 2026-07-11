@@ -948,7 +948,7 @@
       "unit": "U5",
       "kind": "check",
       "artifact_path": "docs/validation/codex-plugin-modernization-u5.json",
-      "artifact_sha256": "123c32c551b8dae3d10f954313d5ad3f65f64daeddfb02db91b224663f0d82fd",
+      "artifact_sha256": "d00232b8f0ee63370c2c7a9a8d44e9a85bffe13e973f897dbbd53b66d22efc89",
       "argv": [
         "PYTHONPATH=.",
         "uv",
@@ -970,8 +970,8 @@
       ],
       "cwd": ".",
       "exit_code": 0,
-      "recorded_at": "2026-07-11T11:06:24Z",
-      "repo_head": "c070c8a83f403b3a09f23e15a8d67ea4eb9f6191",
+      "recorded_at": "2026-07-11T13:26:39Z",
+      "repo_head": "35f6f4b6aa4aa9f06dff2811541975e8fe5675b2",
       "target_paths": [
         "plugins/saga/hooks/hooks.json",
         "plugins/saga/hooks/session_context.py",
@@ -1026,14 +1026,14 @@
         "tests/test_saga_session_context.py",
         "tests/test_verified_workflow_readiness.py"
       ],
-      "target_tree_sha256": "753125da488ce8b9063305b9fad5dfd0111f92a9cd8f4c72546eb28cf629f938"
+      "target_tree_sha256": "b3bcdd2f940fa22ece28d8126a9e8105a15da13fc46864b0add7cee6c0a2edef"
     },
     {
       "evidence_id": "u6-validation",
       "unit": "U6",
       "kind": "check",
       "artifact_path": "docs/validation/codex-plugin-modernization-u6.json",
-      "artifact_sha256": "0273b7551feaa1793bef6da428e6d46193c47ef0daf81f15c38add1dceeabf33",
+      "artifact_sha256": "fb114e10417ed0d70fd158d162f00cd961b002a22377f7dd513e3e493d5ea459",
       "argv": [
         "PYTHONPATH=.",
         "uv",
@@ -1064,8 +1064,8 @@
       ],
       "cwd": ".",
       "exit_code": 0,
-      "recorded_at": "2026-07-11T12:16:15Z",
-      "repo_head": "ca0337747a03fc15f135fb8cd8f3e804f0d49c29",
+      "recorded_at": "2026-07-11T13:26:39Z",
+      "repo_head": "35f6f4b6aa4aa9f06dff2811541975e8fe5675b2",
       "target_paths": [
         "plugins/fleet-core/scripts/fleet_commons/bridge_receipt.py",
         "plugins/fleet-core/scripts/fleet_commons/tier_resolver.py",
@@ -1107,7 +1107,100 @@
         "tests/test_u6_branch_coverage.py",
         "tests/test_workflow_emitter.py"
       ],
-      "target_tree_sha256": "138cb517efa318d8cf4c23979e0d2a834da8b928198f0ec3160ae78de0772c48"
+      "target_tree_sha256": "d95e043613cae6f5d3576323986fa2af88e760a3a3742c0ad2c0c38d50d8b441"
+    },
+    {
+      "evidence_id": "u7-validation",
+      "unit": "U7",
+      "kind": "check",
+      "artifact_path": "docs/validation/codex-plugin-modernization-u7.json",
+      "artifact_sha256": "59808562d0aa4f157ec983fcb6883974ca73100c08b88ebfe9d50425df94366f",
+      "argv": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_bridge_lie_detector.py",
+        "tests/test_chaperone_economics.py",
+        "tests/test_check_empty_delivery.py",
+        "tests/test_effort_ledger.py",
+        "tests/test_engine_dispatch_attestation.py",
+        "tests/test_engine_offer.py",
+        "tests/test_engine_onboarding.py",
+        "tests/test_engine_promotion.py",
+        "tests/test_engine_recommend.py",
+        "tests/test_reconcile.py",
+        "tests/test_spend_authority.py",
+        "tests/test_verified_workflow_advisory.py",
+        "tests/test_engine_bridge_http.py",
+        "plugins/saga/tests/test_engine_routing.py",
+        "plugins/saga/tests/test_provenance_manifest.py",
+        "plugins/verified-workflows/tests/test_gate_evaluator.py",
+        "plugins/verified-workflows/tests/test_agent_receipt.py"
+      ],
+      "cwd": ".",
+      "exit_code": 0,
+      "recorded_at": "2026-07-11T13:26:39Z",
+      "repo_head": "35f6f4b6aa4aa9f06dff2811541975e8fe5675b2",
+      "target_paths": [
+        "plugins/fleet-core/scripts/fleet_commons/tier_palette.py",
+        "plugins/saga/references/effort-policy.yaml",
+        "plugins/saga/references/engine-output-trust-boundary.md",
+        "plugins/saga/references/surface_intent_defaults.yaml",
+        "plugins/saga/scripts/chaperone_economics.py",
+        "plugins/saga/scripts/check_empty_delivery.py",
+        "plugins/saga/scripts/effort_ledger.py",
+        "plugins/saga/scripts/engine_bridge_http.py",
+        "plugins/saga/scripts/engine_dispatch.py",
+        "plugins/saga/scripts/engine_offer.py",
+        "plugins/saga/scripts/engine_onboarding.py",
+        "plugins/saga/scripts/engine_preference.py",
+        "plugins/saga/scripts/engine_promotion.py",
+        "plugins/saga/scripts/engine_recommend.py",
+        "plugins/saga/scripts/execution_spec.py",
+        "plugins/saga/scripts/provenance_manifest.py",
+        "plugins/saga/scripts/reconcile.py",
+        "plugins/saga/scripts/run_ledger.py",
+        "plugins/saga/scripts/spend_authority.py",
+        "plugins/saga/scripts/workflow_emitter.py",
+        "plugins/saga/skills/brainstorm/SKILL.md",
+        "plugins/saga/skills/code-review/SKILL.md",
+        "plugins/saga/skills/doc-review/SKILL.md",
+        "plugins/saga/skills/ideate/SKILL.md",
+        "plugins/saga/skills/ideate/references/convergence-and-partnership.md",
+        "plugins/saga/skills/ideate/references/ideation-artifact.md",
+        "plugins/saga/skills/retro/SKILL.md",
+        "plugins/saga/skills/work/SKILL.md",
+        "plugins/saga/tests/test_engine_routing.py",
+        "plugins/saga/tests/test_provenance_manifest.py",
+        "plugins/verified-workflows/hooks/agent_receipt.py",
+        "plugins/verified-workflows/scripts/gate_evaluator.py",
+        "plugins/verified-workflows/scripts/protected_store.py",
+        "plugins/verified-workflows/skills/run/references/external-engine-workers.md",
+        "plugins/verified-workflows/skills/run/references/worker-manifest.md",
+        "plugins/verified-workflows/skills/run/references/workflow-protocol.md",
+        "plugins/verified-workflows/skills/run/scripts/advisory_reconcile.py",
+        "plugins/verified-workflows/skills/run/scripts/consensus_advisory.py",
+        "tests/fixtures/delegation/claude-clone-agy.jsonl",
+        "tests/fixtures/delegation/claude-clone-codex.jsonl",
+        "tests/fixtures/delegation/empty.jsonl",
+        "tests/fixtures/delegation/real-agy.jsonl",
+        "tests/fixtures/delegation/real-codex.jsonl",
+        "tests/test_bridge_lie_detector.py",
+        "tests/test_chaperone_economics.py",
+        "tests/test_check_empty_delivery.py",
+        "tests/test_effort_ledger.py",
+        "tests/test_engine_bridge_http.py",
+        "tests/test_engine_dispatch_attestation.py",
+        "tests/test_engine_offer.py",
+        "tests/test_engine_onboarding.py",
+        "tests/test_engine_promotion.py",
+        "tests/test_engine_recommend.py",
+        "tests/test_reconcile.py",
+        "tests/test_spend_authority.py",
+        "tests/test_verified_workflow_advisory.py"
+      ],
+      "target_tree_sha256": "6c81e67604c865b80c1c79b8257f29b5440b3d2cdaae0c6ae023b08ccd808436"
     }
   ],
   "port_id": "2026-07-10-saga-07517",
@@ -1724,7 +1817,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
           "ClaudeHook"
@@ -1740,7 +1833,7 @@
         "rationale": "Port only portable audit behavior through current Codex hook and receipt boundaries; the Claude hook file is not copied.",
         "row_id": "src-b338d95f5726605f",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "hook",
         "treatment": "codex-adapt",
         "units": [
@@ -1756,7 +1849,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
           "ClaudeHook"
@@ -1772,7 +1865,7 @@
         "rationale": "Port only portable audit behavior through current Codex hook and receipt boundaries; the Claude hook file is not copied.",
         "row_id": "src-5d7cd0475eaba6b0",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "hook",
         "treatment": "codex-adapt",
         "units": [
@@ -1788,7 +1881,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
           "ClaudeHook"
@@ -1804,7 +1897,7 @@
         "rationale": "Port only portable audit behavior through current Codex hook and receipt boundaries; the Claude hook file is not copied.",
         "row_id": "src-92e754ebd9a44f7d",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "hook",
         "treatment": "codex-adapt",
         "units": [
@@ -1884,7 +1977,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -1900,7 +1993,7 @@
         "rationale": "Adapt effort escrow with the external-engine economics and operator escalation boundary in U7, after dispatch proof exists.",
         "row_id": "src-3fa2deffe1f63f30",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "config",
         "treatment": "codex-adapt",
         "units": [
@@ -1948,7 +2041,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -1964,7 +2057,7 @@
         "rationale": "Adapt provider trust and advisory intent policy to the Codex evidence boundary.",
         "row_id": "src-002f508e1fd19028",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "reference",
         "treatment": "codex-adapt",
         "units": [
@@ -2172,7 +2265,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -2188,7 +2281,7 @@
         "rationale": "Port the host-neutral algorithm or schema directly behind the same tested package boundary; no Claude host primitive is activated.",
         "row_id": "src-98ca6bfe28d7bbef",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "config",
         "treatment": "direct-port",
         "units": [
@@ -2268,7 +2361,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -2284,7 +2377,7 @@
         "rationale": "Adapt the portable algorithm while replacing Claude state or execution paths with the contained Codex boundary.",
         "row_id": "src-5b539096cd40a063",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -2300,7 +2393,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -2316,7 +2409,7 @@
         "rationale": "Port the host-neutral algorithm or schema directly behind the same tested package boundary; no Claude host primitive is activated.",
         "row_id": "src-760cfa4fdf7d9085",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "direct-port",
         "units": [
@@ -2396,7 +2489,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -2412,7 +2505,7 @@
         "rationale": "Adapt the portable algorithm while replacing Claude state or execution paths with the contained Codex boundary.",
         "row_id": "src-044b2fc05b5eac01",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -2492,7 +2585,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -2500,15 +2593,17 @@
         "new_path": "plugins/saga/scripts/engine_offer.py",
         "old_path": null,
         "planned_targets": [
-          "plugins/saga/scripts/engine_offer.py"
+          "plugins/saga/scripts/engine_offer.py",
+          "plugins/saga/scripts/engine_preference.py"
         ],
         "planned_tests": [
+          "tests/test_engine_offer.py",
           "tests/test_reconcile.py"
         ],
         "rationale": "Adapt the portable algorithm while replacing Claude state or execution paths with the contained Codex boundary.",
         "row_id": "src-7064ba5976d9787d",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -2524,7 +2619,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -2540,7 +2635,7 @@
         "rationale": "Port trust, economics, attestation, or reconciliation behavior while keeping external results advisory.",
         "row_id": "src-b21b8fc16d0ac352",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -2588,7 +2683,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -2604,7 +2699,7 @@
         "rationale": "Port the host-neutral algorithm or schema directly behind the same tested package boundary; no Claude host primitive is activated.",
         "row_id": "src-2d6c5fd1bb0c5437",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "direct-port",
         "units": [
@@ -2620,7 +2715,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -2636,7 +2731,7 @@
         "rationale": "Port the host-neutral algorithm or schema directly behind the same tested package boundary; no Claude host primitive is activated.",
         "row_id": "src-f00b8aee9bd24461",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "direct-port",
         "units": [
@@ -2972,7 +3067,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -2988,7 +3083,7 @@
         "rationale": "Port the host-neutral algorithm or schema directly behind the same tested package boundary; no Claude host primitive is activated.",
         "row_id": "src-51db61a792301bb2",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "direct-port",
         "units": [
@@ -3004,7 +3099,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -3020,7 +3115,7 @@
         "rationale": "Preserve persisted v1 Claude-labelled schema values while adapting active adjudicator and operator-facing language to Codex.",
         "row_id": "src-543fc027d4b13007",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -3068,7 +3163,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -3084,7 +3179,7 @@
         "rationale": "Port the host-neutral algorithm or schema directly behind the same tested package boundary; no Claude host primitive is activated.",
         "row_id": "src-82b0e75347ae4bae",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "direct-port",
         "units": [
@@ -3196,7 +3291,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -3212,7 +3307,7 @@
         "rationale": "Adapt the skill guidance to Codex-native advisory engines, evidence trust, and hard-gate boundaries.",
         "row_id": "src-93b0e9c7baa175d6",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "skill",
         "treatment": "codex-adapt",
         "units": [
@@ -3228,7 +3323,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -3244,7 +3339,7 @@
         "rationale": "Adapt the skill guidance to Codex-native advisory engines, evidence trust, and hard-gate boundaries.",
         "row_id": "src-d661ee291f70224b",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "skill",
         "treatment": "codex-adapt",
         "units": [
@@ -3260,7 +3355,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -3276,7 +3371,7 @@
         "rationale": "Adapt the skill guidance to Codex-native advisory engines, evidence trust, and hard-gate boundaries.",
         "row_id": "src-da72d1cf7fa8d1ce",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "skill",
         "treatment": "codex-adapt",
         "units": [
@@ -3292,7 +3387,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -3308,7 +3403,7 @@
         "rationale": "Adapt the skill guidance to Codex-native advisory engines, evidence trust, and hard-gate boundaries.",
         "row_id": "src-86a7862d0ff461a8",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "skill",
         "treatment": "codex-adapt",
         "units": [
@@ -3324,7 +3419,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -3340,7 +3435,7 @@
         "rationale": "Adapt the skill guidance to Codex-native advisory engines, evidence trust, and hard-gate boundaries.",
         "row_id": "src-3fc1a204f440b6fa",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "skill",
         "treatment": "codex-adapt",
         "units": [
@@ -3356,7 +3451,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -3372,7 +3467,7 @@
         "rationale": "Adapt the skill guidance to Codex-native advisory engines, evidence trust, and hard-gate boundaries.",
         "row_id": "src-fb941e30e15d7f3c",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "skill",
         "treatment": "codex-adapt",
         "units": [
@@ -3420,7 +3515,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -3436,7 +3531,7 @@
         "rationale": "Adapt the skill guidance to Codex-native advisory engines, evidence trust, and hard-gate boundaries.",
         "row_id": "src-84f1f5f77e45b882",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "skill",
         "treatment": "codex-adapt",
         "units": [
@@ -3646,7 +3741,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -3663,7 +3758,7 @@
         "rationale": "Port the source external advisory seat and four-bucket convergence report in U7 while preserving zero hard-gate authority; whole-role non-applicability is adapted by omitting the role during approved plan authoring, while selected reviewers retain dimension-level exclusions.",
         "row_id": "src-96204433372add54",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "skill",
         "treatment": "codex-adapt",
         "units": [
@@ -3679,7 +3774,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -3695,7 +3790,7 @@
         "rationale": "Move external-engine consensus into advisory-only Verified Workflows evidence.",
         "row_id": "src-7076ee772e2bf3b9",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "skill",
         "treatment": "codex-adapt",
         "units": [
@@ -3807,7 +3902,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -3825,7 +3920,7 @@
         "rationale": "Port per-unit external-engine manifests, rejected-offload retention, ordered reconciliation, and bounded advisory-jury provenance in U7 without granting external evidence gate authority.",
         "row_id": "src-ccca85af21af8471",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "skill",
         "treatment": "codex-adapt",
         "units": [
@@ -3841,7 +3936,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -3857,7 +3952,7 @@
         "rationale": "Move external-engine consensus into advisory-only Verified Workflows evidence.",
         "row_id": "src-dd3e56b1358e76c7",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -3873,7 +3968,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -3889,7 +3984,7 @@
         "rationale": "Retain the fixture only as an inert trust and substitution oracle for adapted Codex attestation tests.",
         "row_id": "src-24d16d725b7d1b9d",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "fixture",
         "treatment": "codex-adapt",
         "units": [
@@ -3905,7 +4000,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -3921,7 +4016,7 @@
         "rationale": "Retain the fixture only as an inert trust and substitution oracle for adapted Codex attestation tests.",
         "row_id": "src-88c4c56496c870a2",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "fixture",
         "treatment": "codex-adapt",
         "units": [
@@ -3937,7 +4032,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -3953,7 +4048,7 @@
         "rationale": "Retain the fixture only as an inert trust and substitution oracle for adapted Codex attestation tests.",
         "row_id": "src-e3b4536bcac84456",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "fixture",
         "treatment": "codex-adapt",
         "units": [
@@ -3969,7 +4064,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -3985,7 +4080,7 @@
         "rationale": "Retain the fixture only as an inert trust and substitution oracle for adapted Codex attestation tests.",
         "row_id": "src-b9acdd7167ae7c3f",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "fixture",
         "treatment": "codex-adapt",
         "units": [
@@ -4001,7 +4096,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -4017,7 +4112,7 @@
         "rationale": "Retain the fixture only as an inert trust and substitution oracle for adapted Codex attestation tests.",
         "row_id": "src-d98ec7a5634e083e",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "fixture",
         "treatment": "codex-adapt",
         "units": [
@@ -4129,7 +4224,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -4145,7 +4240,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-acaf5b61aad54bd9",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -4257,7 +4352,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -4273,7 +4368,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-f5393f01c421d72b",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -4289,7 +4384,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -4305,7 +4400,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-544860b839dc07ce",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -4321,7 +4416,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -4337,7 +4432,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-c80589d57025097b",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -4545,7 +4640,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -4561,7 +4656,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-5ccb28f3e469a9d9",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -4577,7 +4672,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -4593,7 +4688,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-0b3c4f9a5ab6b965",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -4641,7 +4736,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -4657,7 +4752,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-2943bc78471832fc",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -4673,7 +4768,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -4689,7 +4784,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-2922551564f0c9dc",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -4705,7 +4800,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -4721,7 +4816,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-e4e91c51baac90a5",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -4737,7 +4832,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -4753,7 +4848,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-3abc0d2fc92f5e66",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -4769,7 +4864,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -4785,7 +4880,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-8e0f38ee917401c0",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -4833,7 +4928,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -4849,7 +4944,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-5d3f2676337881bb",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -4865,7 +4960,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -4881,7 +4976,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-4d42100c051f4777",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -4993,7 +5088,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -5009,7 +5104,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-2c41d680cc3ed7d6",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -5025,7 +5120,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -5041,7 +5136,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-8d4b6f363561dad4",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -5057,7 +5152,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -5073,7 +5168,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-d8ba3aff360abfff",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -5153,7 +5248,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -5169,7 +5264,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-90f63d5d5aa03178",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -5185,7 +5280,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -5201,7 +5296,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-8bf24f587b7079f8",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -5217,7 +5312,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -5233,7 +5328,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-08fc41f249e1d710",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -5377,7 +5472,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -5393,7 +5488,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-a564e01f5afe6c43",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -5409,7 +5504,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -5425,7 +5520,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-40f0f8f857d04ef8",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -5505,7 +5600,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -5521,7 +5616,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-6d2c487d391fa7d4",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -5697,7 +5792,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -5713,7 +5808,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-896b321654dfc1ec",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -5729,7 +5824,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -5745,7 +5840,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-b728d18daa4fe341",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -5761,7 +5856,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -5777,7 +5872,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-cef0e8d09e267697",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -5793,7 +5888,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -5809,7 +5904,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-f2a6cefa48b28ad1",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -5893,7 +5988,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -5910,7 +6005,7 @@
         "rationale": "Port the external advisory seat's non-scoring status, absence semantics, and convergence buckets in U7; selected Codex reviewer rows remain the only reviewer gate inputs.",
         "row_id": "src-c7547bbbb7e763f2",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -5926,7 +6021,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u7-validation"
         ],
         "host_primitives": [
 
@@ -5942,7 +6037,7 @@
         "rationale": "Port executable advisory exclusion and deterministic convergence classification in U7 while proving that participated, halted, and absent external seats cannot alter Verified Workflows gate arithmetic.",
         "row_id": "src-626bb531c715e1a0",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [

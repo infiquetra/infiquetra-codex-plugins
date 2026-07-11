@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "unit": "U7",
+  "recorded_at": "2026-07-11T13:26:39Z",
+  "repo_head": "35f6f4b6aa4aa9f06dff2811541975e8fe5675b2",
+  "target_tree_sha256": "6c81e67604c865b80c1c79b8257f29b5440b3d2cdaae0c6ae023b08ccd808436",
+  "claim": "codex-safe-external-engine-trust-economics-attestation-and-advisory-reconciliation",
+  "checks": [
+    {
+      "name": "u7-focused-suite",
+      "argv": ["python3", "-m", "pytest", "-q", "<U7 trust, economics, attestation, reconciliation, advisory, gate, and hook tests>"],
+      "exit_code": 0,
+      "summary": "368 passed"
+    },
+    {
+      "name": "u6-overlap-regression",
+      "argv": ["python3", "-m", "pytest", "-q", "<U6 suite excluding circular port-contract evidence assertions>"],
+      "exit_code": 0,
+      "summary": "488 passed"
+    },
+    {
+      "name": "u5-overlap-regression",
+      "argv": ["python3", "-m", "pytest", "-q", "plugins/saga/tests", "<U5 outcome and Verified Workflows readiness tests>"],
+      "exit_code": 0,
+      "summary": "547 passed"
+    },
+    {
+      "name": "changed-python-ruff",
+      "argv": ["python3", "-m", "ruff", "check", "<U7 changed Python paths>"],
+      "exit_code": 0,
+      "summary": "all checks passed"
+    },
+    {
+      "name": "terra-medium-runtime-scenario",
+      "argv": ["codex", "exec", "--model", "gpt-5.6-terra", "-c", "model_reasoning_effort=medium", "--sandbox", "read-only"],
+      "exit_code": 0,
+      "summary": "turn_context attested model gpt-5.6-terra, effort medium, read-only sandbox, and repository cwd; inspection passed; pytest was rerun by root because the read-only sandbox exposes no writable temporary directory"
+    }
+  ],
+  "review_remediation": [
+    "removed the competing score-based advisory gate path; gate_evaluator remains the sole completion authority",
+    "persisted structural external advisory evidence in the root-owned protected store and verified its exact record at gate evaluation",
+    "split explicit engine preference mutation from the read-only engine offer surface",
+    "derived engine intent vocabulary from Fleet Core and kept offerable intent policy as an explicit subset",
+    "rejected unknown schema keys and non-finite economics across offer, spend, chaperone, provenance, and bridge boundaries",
+    "escaped untrusted external finding text before Markdown rendering",
+    "rejected DNS resolutions containing non-public addresses before live HTTP credential use",
+    "added fixture-backed compatibility checks for saga.manifest.v1, team-execution, fell-back-to-claude, and verified_by_claude"
+  ],
+  "coverage": [
+    "pre-dispatch economics and provider spend ceilings",
+    "bounded HTTP response, no redirects, public DNS resolution, and secret-free receipts",
+    "exact engine, variant, model, effort, invocation, liveness, and output-attestation binding",
+    "empty delivery, substituted engine, disguised fallback, malformed finding, and zero-token failure paths",
+    "typed ordered reconciliation and hash-chained run facts",
+    "dry-run-first provider onboarding with contained expected-digest apply and idempotent readback",
+    "read-only recommendation, offer, and promotion surfaces with an explicit preference mutator",
+    "bounded protected external advisory projection with no score, severity, validator, or gate authority",
+    "legacy persisted v1 vocabulary compatibility"
+  ]
+}
