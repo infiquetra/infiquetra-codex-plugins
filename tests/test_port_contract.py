@@ -240,6 +240,35 @@ def test_failed_misattributed_and_malformed_evidence_is_rejected() -> None:
     assert any("secret-shaped" in error for error in errors)
 
 
+def test_evidence_can_bind_the_exact_current_target_tree() -> None:
+    manifest = load_manifest()
+    artifact = ROOT / "tests/test_port_contract.py"
+    head = contract.resolve_ref(ROOT, "HEAD")
+    target_paths = ["AGENTS.md"]
+    digest = contract.git_tree_digest(ROOT, head, target_paths)
+    manifest["evidence"].append(
+        {
+            "evidence_id": "exact-tree-evidence",
+            "unit": "U2",
+            "kind": "check",
+            "artifact_path": "tests/test_port_contract.py",
+            "artifact_sha256": contract.sha256_file(artifact),
+            "argv": ["python3", "-m", "pytest", "tests/test_port_contract.py"],
+            "cwd": ".",
+            "exit_code": 0,
+            "recorded_at": "2026-07-11T12:00:00Z",
+            "repo_head": head,
+            "target_paths": target_paths,
+            "target_tree_sha256": digest,
+        }
+    )
+    errors = contract.validate_manifest(ROOT, manifest, stage="classification")
+    assert not any("exact-tree-evidence" in error for error in errors)
+    manifest["evidence"][-1]["target_tree_sha256"] = "0" * 64
+    errors = contract.validate_manifest(ROOT, manifest, stage="classification")
+    assert any("target_tree_sha256 is stale" in error for error in errors)
+
+
 def test_unit_gate_rejects_zero_claims() -> None:
     manifest = load_manifest()
     for row in [*manifest["source"]["rows"], *manifest["codex"]["rows"]]:

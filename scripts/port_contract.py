@@ -221,6 +221,17 @@ def git_inventory(repo: Path, base: str, target: str, pathspecs: Sequence[str] =
     return parse_name_status_z(_run_git(repo, args))
 
 
+def git_tree_digest(repo: Path, commit: str, paths: Sequence[str]) -> str:
+    """Hash exact tracked entries for a bounded path set at one commit."""
+    normalized = sorted({validate_repo_path(path) for path in paths})
+    if not normalized:
+        raise ContractError("target_paths must contain at least one repository path")
+    tree = _run_git(repo, ["ls-tree", "-r", "-z", "--full-tree", commit, "--", *normalized])
+    if not tree:
+        raise ContractError("target_paths do not resolve to tracked entries")
+    return sha256_bytes(tree)
+
+
 def row_id(prefix: str, row: Mapping[str, Any]) -> str:
     inventory_row = {
         "change": row.get("change"),
@@ -1031,6 +1042,7 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
     evidence_ids: set[str] = set()
     evidence_by_id: dict[str, dict[str, Any]] = {}
     evidence_keys = {"evidence_id", "unit", "kind", "artifact_path", "artifact_sha256", "argv", "cwd", "exit_code", "recorded_at", "repo_head"}
+    evidence_optional_keys = {"target_paths", "target_tree_sha256"}
     if not isinstance(evidence_entries, list):
         errors.append("evidence must be a list")
         evidence_entries = []
@@ -1039,7 +1051,14 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
         if not isinstance(entry, dict):
             errors.append(f"{label} must be an object")
             continue
-        _exact_keys(entry, evidence_keys, label, errors)
+        actual_keys = set(entry)
+        missing_keys = evidence_keys - actual_keys
+        unexpected_keys = actual_keys - evidence_keys - evidence_optional_keys
+        if missing_keys or unexpected_keys:
+            errors.append(
+                f"{label} keys mismatch: missing={sorted(missing_keys)} "
+                f"unexpected={sorted(unexpected_keys)}"
+            )
         evidence_id = entry.get("evidence_id")
         if not isinstance(evidence_id, str) or evidence_id in evidence_ids:
             errors.append(f"{label}.evidence_id must be unique")
@@ -1081,6 +1100,33 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
                     root, APPROVED_CODEX_EXECUTION_BASE, repo_head
                 ):
                     errors.append(f"{label}.repo_head is outside the approved execution history")
+                target_paths = entry.get("target_paths")
+                target_tree_sha256 = entry.get("target_tree_sha256")
+                if (target_paths is None) != (target_tree_sha256 is None):
+                    errors.append(
+                        f"{label}.target_paths and target_tree_sha256 must be supplied together"
+                    )
+                elif target_paths is not None:
+                    if not isinstance(target_paths, list) or not all(
+                        isinstance(path, str) for path in target_paths
+                    ):
+                        errors.append(f"{label}.target_paths must be a list of repository paths")
+                    else:
+                        _check_digest(target_tree_sha256, f"{label}.target_tree_sha256", errors)
+                        try:
+                            reviewed_digest = git_tree_digest(root, repo_head, target_paths)
+                            current_digest = git_tree_digest(root, "HEAD", target_paths)
+                            unstaged = _run_git(root, ["diff", "--name-only", "--", *target_paths])
+                            staged = _run_git(
+                                root, ["diff", "--cached", "--name-only", "--", *target_paths]
+                            )
+                        except ContractError as exc:
+                            errors.append(f"{label}.target_paths: {exc}")
+                        else:
+                            if reviewed_digest != target_tree_sha256:
+                                errors.append(f"{label}.target_tree_sha256 is stale")
+                            if current_digest != reviewed_digest or unstaged or staged:
+                                errors.append(f"{label} reviewed target tree differs from current source")
 
     references: list[tuple[str, list[str], str]] = []
     for row in source_rows:
