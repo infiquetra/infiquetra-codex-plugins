@@ -63,17 +63,31 @@ def _write_team_ref(repo_root: Path) -> str:
     return TEAM_REF
 
 
+def _launch_ack(req: Any) -> dict[str, str]:
+    return {
+        "ack_kind": "launched",
+        "dispatch_ack_ref": f"protected:{req.dispatch_intent_id}",
+        "leaf_saga_id": f"leaf-{req.outcome_id}-{req.subplot_id}",
+        "producer_kind": "verified-workflow",
+        "run_identity": f"run-{req.outcome_id}",
+        "dispatch_intent_id": req.dispatch_intent_id,
+        "outcome_id": req.outcome_id,
+        "subplot_id": req.subplot_id,
+        "backend": req.backend,
+    }
+
+
 # --------------------------------------------------------------------------- dispatch (R5/R6)
 
 
-def test_dispatch_team_execution_mints_leaf_with_return_channel(tmp_path: Path) -> None:
+def test_dispatch_prepares_but_does_not_claim_launch(tmp_path: Path) -> None:
     ref = _write_team_ref(tmp_path)
     out = D.dispatch(_req("verified-workflow", orchestration_ref=ref, repo_root=tmp_path))
-    assert out["status"] == "dispatched"
+    assert out["status"] == "prepared"
     assert out["backend"] == "verified-workflow"
     assert out["orchestration_ref"] == ref
-    assert out["leaf_saga_id"] == "leaf-ship-x-build"
-    assert out["return_channel"] == "/resume leaf-ship-x-build"  # R9 re-entry token out
+    assert out["proposed_leaf_saga_id"] == "leaf-ship-x-build"
+    assert "return_channel" not in out
 
 
 def test_dispatch_team_execution_without_ref_halts() -> None:
@@ -98,7 +112,7 @@ def test_dispatch_team_execution_invalid_ref_halts(tmp_path: Path) -> None:
 
 
 def test_dispatch_inline_is_available() -> None:
-    assert D.dispatch(_req("inline"))["status"] == "dispatched"
+    assert D.dispatch(_req("inline"))["status"] == "prepared"
 
 
 @pytest.mark.parametrize(
@@ -136,13 +150,13 @@ def test_custom_available_set(tmp_path: Path) -> None:
 # --------------------------------------------------------------------------- make_dispatcher adapter
 
 
-def test_make_dispatcher_returns_typed_launch_acknowledgement(tmp_path: Path) -> None:
+def test_make_dispatcher_returns_only_compatibility_reservation(tmp_path: Path) -> None:
     disp = D.make_dispatcher()
     ref = _write_team_ref(tmp_path)
-    assert disp(_req("verified-workflow", orchestration_ref=ref, repo_root=tmp_path)) == {
-        "ack_kind": "launched", "dispatch_ack_ref": "dispatcher:ship-x:build",
-        "leaf_saga_id": "leaf-ship-x-build",
-    }
+    assert (
+        disp(_req("verified-workflow", orchestration_ref=ref, repo_root=tmp_path))
+        == "leaf-ship-x-build"
+    )
 
 
 def test_make_dispatcher_raises_halt_with_receipt() -> None:
@@ -210,7 +224,7 @@ def test_advance_dispatches_team_execution_node(repo: Path) -> None:
             }
         ],
     )
-    result = OUTCOME.advance(repo, "ship-x", dispatcher=D.make_dispatcher())
+    result = OUTCOME.advance(repo, "ship-x", dispatcher=_launch_ack)
     assert result.dispatched == ["build"]
     assert OUTCOME.attend(repo, "ship-x", "build") == "/resume leaf-ship-x-build"
     store = STORE.Store.for_outcome("ship-x", repo)
@@ -237,7 +251,7 @@ def test_advance_dispatches_team_execution_alias_ref(repo: Path) -> None:
             }
         ],
     )
-    result = OUTCOME.advance(repo, "ship-x", dispatcher=D.make_dispatcher())
+    result = OUTCOME.advance(repo, "ship-x", dispatcher=_launch_ack)
     assert result.dispatched == ["build"]
     store = STORE.Store.for_outcome("ship-x", repo)
     acknowledgements = [
@@ -342,7 +356,13 @@ def test_halt_does_not_starve_other_runnable_leaves(repo: Path) -> None:
             {"subplot_id": "b", "title": "B", "backend": "fork"},
         ],
     )
-    result = OUTCOME.advance(repo, "ship-x", dispatcher=D.make_dispatcher())
+    result = OUTCOME.advance(
+        repo,
+        "ship-x",
+        dispatcher=lambda req: (
+            _launch_ack(req) if req.subplot_id == "a" else D.make_dispatcher()(req)
+        ),
+    )
     assert result.dispatched == ["a"]  # the runnable leaf dispatched despite b's HALT
     assert [h["subplot_id"] for h in result.halted] == ["b"]
 
@@ -379,7 +399,9 @@ def test_cli_dispatch_dry_run(
     monkeypatch.chdir(tmp_path)
     assert D.main(["ship-x", "build", "verified-workflow", "--orchestration-ref", TEAM_REF]) == 0
     out = json.loads(capsys.readouterr().out)
-    assert out["status"] == "dispatched" and out["return_channel"] == "/resume leaf-ship-x-build"
+    assert out["status"] == "prepared"
+    assert out["proposed_leaf_saga_id"] == "leaf-ship-x-build"
+    assert "return_channel" not in out
     assert out["orchestration_ref"] == TEAM_REF
     assert D.main(["ship-x", "build", "fork"]) == 0
     halt = json.loads(capsys.readouterr().out)

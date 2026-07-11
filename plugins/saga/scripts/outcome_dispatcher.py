@@ -109,10 +109,17 @@ def dispatch(req: Any, *, available: Sequence[str] = DEFAULT_AVAILABLE) -> dict[
     if backend not in outcome_spec.NODE_BACKENDS:
         # Persisted source-only values remain readable but are never launched by Codex.
         if backend in outcome_spec.LEGACY_NODE_BACKENDS:
-            receipt = HaltReceipt(str(req.outcome_id), str(req.subplot_id), backend,
-                "legacy source-only backend is unsupported by the Codex dispatcher — HALT; never substitute", tuple(available))
+            receipt = HaltReceipt(
+                str(req.outcome_id),
+                str(req.subplot_id),
+                backend,
+                "legacy source-only backend is unsupported by the Codex dispatcher — HALT; never substitute",
+                tuple(available),
+            )
             return {"status": "halt", "receipt": receipt.to_dict()}
-        raise DispatcherError(f"backend {backend!r} is not in the executor menu {outcome_spec.NODE_BACKENDS}")
+        raise DispatcherError(
+            f"backend {backend!r} is not in the executor menu {outcome_spec.NODE_BACKENDS}"
+        )
     orchestration_ref = str(getattr(req, "orchestration_ref", "") or "").strip()
     if backend == "verified-workflow":
         readiness = _load_verified_workflow_readiness().validate_verified_workflow_ready(
@@ -153,30 +160,26 @@ def dispatch(req: Any, *, available: Sequence[str] = DEFAULT_AVAILABLE) -> dict[
         return {"status": "halt", "receipt": receipt.to_dict()}
     leaf_saga_id = f"leaf-{req.outcome_id}-{req.subplot_id}"
     result = {
-        "status": "dispatched",
+        "status": "prepared",
         "subplot_id": str(req.subplot_id),
         "backend": backend,
-        "leaf_saga_id": leaf_saga_id,
-        # The R9 re-entry token OUT — a stable native handoff, not a drift-prone pasted prompt.
-        "return_channel": f"/resume {leaf_saga_id}",
+        # Compatibility-only reservation. It is not a launch acknowledgement and cannot create a
+        # re-entry target until a skill/runtime adapter supplies authoritative launch evidence.
+        "proposed_leaf_saga_id": leaf_saga_id,
     }
     if backend == "verified-workflow":
         result["orchestration_ref"] = orchestration_ref
     return result
 
 
-def make_dispatcher(*, available: Sequence[str] = DEFAULT_AVAILABLE) -> Callable[[Any], dict[str, str]]:
-    """Adapt an actual launcher acknowledgement for ``outcome.advance``; HALT never substitutes."""
+def make_dispatcher(*, available: Sequence[str] = DEFAULT_AVAILABLE) -> Callable[[Any], str]:
+    """Return the record-only production adapter; it never fabricates launch truth."""
 
-    def _dispatch(req: Any) -> dict[str, str]:
+    def _dispatch(req: Any) -> str:
         result = dispatch(req, available=available)
         if result["status"] == "halt":
             raise BackendHaltError(HaltReceipt(**_receipt_kwargs(result["receipt"])))
-        return {
-            "ack_kind": "launched",
-            "dispatch_ack_ref": f"dispatcher:{req.outcome_id}:{req.subplot_id}",
-            "leaf_saga_id": str(result["leaf_saga_id"]),
-        }
+        return str(result["proposed_leaf_saga_id"])
 
     return _dispatch
 
@@ -392,7 +395,9 @@ def recommend_outcome_backend(
         alternatives.append("manual")
 
     rec["alternatives"] = alternatives
-    rec["unsupported_source_backends"] = sorted(set(unsupported + list(rec.get("unsupported_source_backends", []))))
+    rec["unsupported_source_backends"] = sorted(
+        set(unsupported + list(rec.get("unsupported_source_backends", [])))
+    )
     rec["source_workflow_excluded"] = True
     if frontier_width > _FRONTIER_BUDGET_THRESHOLD and leaf_signals.get("broad_independent_fanout"):
         rec["budget_note"] = (
@@ -400,6 +405,7 @@ def recommend_outcome_backend(
             "using team-execution/manual paths"
         )
     return rec
+
 
 def main(argv: list[str] | None = None) -> int:
     import argparse

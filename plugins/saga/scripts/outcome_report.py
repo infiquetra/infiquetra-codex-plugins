@@ -74,10 +74,16 @@ def _halted_subplots(store: Any) -> set[str]:
     """
     latest: dict[str, str] = {}
     for rec in outcome_store.read_ledger(store):
+        sid = str(rec.get("subplot_id", ""))
+        if not sid:
+            continue
         if rec.get("kind") == "dispatch" and rec.get("phase") in ("halt", "commit"):
-            sid = str(rec.get("subplot_id", ""))
-            if sid:
-                latest[sid] = str(rec.get("phase"))
+            latest[sid] = str(rec.get("phase"))
+        elif rec.get("kind") == "outcome.dispatch.v2" and rec.get("phase") in {
+            "intent",
+            "ack",
+        }:
+            latest[sid] = str(rec.get("phase"))
     return {sid for sid, phase in latest.items() if phase == "halt"}
 
 

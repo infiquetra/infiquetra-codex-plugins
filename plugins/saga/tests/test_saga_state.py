@@ -8,6 +8,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
 
+import pytest
+
 
 def load_saga() -> ModuleType:
     script = Path(__file__).parents[1] / "scripts" / "saga.py"
@@ -62,6 +64,23 @@ def test_goal_continuation_requires_stable_goal_identifier() -> None:
     assert saga.bind_goal_continuation(base, {"title": "not an id"}).continuation_mode == "turn"
     bound = saga.bind_goal_continuation(base, {"goal_id": "goal-123"})
     assert (bound.continuation_mode, bound.continuation_ref) == ("goal", "goal-123")
+
+
+@pytest.mark.parametrize(
+    "changes, message",
+    [
+        ({"continuation_mode": "goal", "continuation_ref": ""}, "stable continuation_ref"),
+        ({"continuation_mode": "turn", "continuation_ref": "goal-123"}, "must not carry"),
+        ({"identity_mode": "logical-role-attested"}, "protected Verified Workflows"),
+    ],
+)
+def test_save_rejects_unbacked_continuation_or_identity(
+    tmp_path: Path, changes: dict[str, str], message: str
+) -> None:
+    candidate = saga.Saga(saga_id="task-invalid", kind="task", id="invalid")
+    candidate = saga._replace(candidate, **changes)
+    with pytest.raises(ValueError, match=message):
+        saga.save(tmp_path, candidate, runner=quiet_git_runner)
 
 
 def test_cli_rejects_source_only_backend(tmp_path: Path) -> None:
@@ -217,7 +236,12 @@ def test_save_refreshes_branch_on_later_save(tmp_path: Path) -> None:
 
         return fake_git
 
-    saga.save(tmp_path, _make_branch_saga(), now=datetime(2026, 6, 2, 14, 5, 10, tzinfo=UTC), runner=git_on("main"))
+    saga.save(
+        tmp_path,
+        _make_branch_saga(),
+        now=datetime(2026, 6, 2, 14, 5, 10, tzinfo=UTC),
+        runner=git_on("main"),
+    )
     assert saga.restore(tmp_path, "issue-42").branch == "main"
 
     later = datetime(2026, 6, 2, 14, 12, 33, tzinfo=UTC)
@@ -312,10 +336,10 @@ def test_save_refreshes_head_and_last_commit_on_later_save(tmp_path: Path) -> No
     assert second.last_commit_sha == "bbb2222ffff"
 
 
-def test_cli_accepts_complete_team_execution_with_plan_ref(tmp_path: Path) -> None:
+def test_cli_accepts_complete_verified_workflow_with_plan_ref(tmp_path: Path) -> None:
     plan = tmp_path / "docs" / "plans" / "repair.md"
     plan.parent.mkdir(parents=True)
-    plan.write_text("# Repair\n\n## Team Structure\n\nroles\n", encoding="utf-8")
+    plan.write_text("# Repair\n\n## Workflow Structure\n\nroles\n", encoding="utf-8")
     script = Path(__file__).parents[1] / "scripts" / "saga.py"
     result = subprocess.run(
         [
@@ -333,9 +357,9 @@ def test_cli_accepts_complete_team_execution_with_plan_ref(tmp_path: Path) -> No
             "--plan-path",
             "docs/plans/repair.md",
             "--orchestration-mode",
-            "team-execution",
+            "verified-workflow",
             "--orchestration-ref",
-            "docs/plans/repair.md#team-structure",
+            "docs/plans/repair.md#workflow-structure",
         ],
         cwd=tmp_path,
         capture_output=True,

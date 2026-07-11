@@ -63,6 +63,20 @@ def _repo(tmp_path: Path) -> Path:
     return repo
 
 
+def _runtime_ack(req: Any) -> dict[str, str]:
+    return {
+        "ack_kind": "launched",
+        "dispatch_ack_ref": f"protected:{req.dispatch_intent_id}",
+        "leaf_saga_id": f"leaf-{req.outcome_id}-{req.subplot_id}",
+        "producer_kind": "verified-workflow",
+        "run_identity": f"run-{req.outcome_id}",
+        "dispatch_intent_id": req.dispatch_intent_id,
+        "outcome_id": req.outcome_id,
+        "subplot_id": req.subplot_id,
+        "backend": req.backend,
+    }
+
+
 class _FakeGitHub:
     """A stateful fake `gh` runner that gates completion on **dispatch** — a leaf's tracking issue/PR
     only resolves once that leaf has a settled dispatch record, so the dispatch seam is load-bearing
@@ -179,7 +193,7 @@ def test_full_outcome_composes_end_to_end(tmp_path: Path) -> None:
         result = ENG.advance(
             repo,
             "ship-auth",
-            dispatcher=D.make_dispatcher(available=SPEC.NODE_BACKENDS),
+            dispatcher=_runtime_ack,
             harvester=ENG.production_harvester(repo, github_runner=gh),
             merge_processor=ENG.production_merge_processor(github_runner=gh),
             worktree_processor=ENG.production_worktree_processor(repo),

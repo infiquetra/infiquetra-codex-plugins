@@ -1,13 +1,82 @@
+"""Canonical and legacy Verified Workflows readiness boundaries."""
+
 from __future__ import annotations
+
 import importlib.util
 from pathlib import Path
 
-PATH = Path(__file__).parents[1] / "plugins/saga/scripts/verified_workflow_readiness.py"
-spec = importlib.util.spec_from_file_location("u5_readiness", PATH); assert spec and spec.loader
-M = importlib.util.module_from_spec(spec); spec.loader.exec_module(M)
+import pytest
 
-def test_canonical_workflow_ref_and_legacy_heading_are_readable(tmp_path):
-    plan = tmp_path / "docs/plans/x.md"; plan.parent.mkdir(parents=True)
-    plan.write_text("## Workflow Structure\n", encoding="utf-8")
-    result = M.validate_verified_workflow_ready(tmp_path, orchestration_mode="verified-workflow", orchestration_ref="docs/plans/x.md#workflow-structure", context="work")
-    assert result.status == "ready" and result.resolved_ref.endswith("#workflow-structure")
+PATH = Path(__file__).parents[1] / "plugins/saga/scripts/verified_workflow_readiness.py"
+spec = importlib.util.spec_from_file_location("u5_readiness", PATH)
+assert spec and spec.loader
+M = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(M)
+
+
+def write_plan(root: Path, heading: str = "Workflow Structure") -> Path:
+    plan = root / "docs/plans/x.md"
+    plan.parent.mkdir(parents=True)
+    plan.write_text(f"## {heading}\n", encoding="utf-8")
+    return plan
+
+
+def validate(root: Path, ref: str, *, mode: str = "verified-workflow") -> object:
+    return M.validate_verified_workflow_ready(
+        root,
+        orchestration_mode=mode,
+        orchestration_ref=ref,
+        context="work",
+    )
+
+
+def test_canonical_workflow_ref_is_ready(tmp_path: Path) -> None:
+    write_plan(tmp_path)
+    result = validate(tmp_path, "docs/plans/x.md#workflow-structure")
+    assert result.status == "ready"
+    assert result.resolved_ref.endswith("#workflow-structure")
+
+
+def test_legacy_ref_is_readable_only_in_explicit_legacy_mode(tmp_path: Path) -> None:
+    write_plan(tmp_path, "Team Structure")
+    ref = "docs/plans/x.md#team-structure"
+    assert validate(tmp_path, ref).status == "blocked"
+    legacy = validate(tmp_path, ref, mode="team-execution")
+    assert legacy.status == "ready"
+    assert "legacy" in legacy.reason.lower()
+
+
+@pytest.mark.parametrize(
+    "ref",
+    [
+        "/tmp/outside.md#workflow-structure",
+        "../outside.md#workflow-structure",
+        "docs/plans/x.md#team-structure",
+    ],
+)
+def test_canonical_ref_rejects_absolute_traversal_and_legacy_anchor(
+    tmp_path: Path, ref: str
+) -> None:
+    write_plan(tmp_path)
+    assert validate(tmp_path, ref).status == "blocked"
+
+
+def test_canonical_ref_rejects_symlink_escape(tmp_path: Path) -> None:
+    outside = tmp_path.parent / "outside-workflow.md"
+    outside.write_text("## Workflow Structure\n", encoding="utf-8")
+    plan = tmp_path / "docs/plans/x.md"
+    plan.parent.mkdir(parents=True)
+    plan.symlink_to(outside)
+    assert validate(tmp_path, "docs/plans/x.md#workflow-structure").status == "blocked"
+
+
+def test_canonical_state_root_blocks_mixed_legacy_root(tmp_path: Path) -> None:
+    gitignore = tmp_path / ".gitignore"
+    gitignore.write_text(".codex/verified-workflows/\n", encoding="utf-8")
+    canonical = tmp_path / ".codex/verified-workflows/run"
+    legacy = tmp_path / ".codex/team-execution"
+    canonical.mkdir(parents=True)
+    legacy.mkdir(parents=True)
+    result = validate(tmp_path, ".codex/verified-workflows/run/")
+    assert result.status == "blocked"
+    assert "both exist" in result.reason

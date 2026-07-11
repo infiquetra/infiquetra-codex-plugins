@@ -8,7 +8,7 @@ description: Coordinate a whole outcome as a durable Codex Saga DAG. Use for sta
 `saga:outcome` is the Codex-native OutcomeOrchestrator surface. It sits above
 single work-thread sagas and coordinates a durable DAG of subplots. Leaf work
 still routes through native Saga surfaces such as `saga:plan`, `saga:work`,
-`saga:qa`, `saga:code-review`, `saga:resume`, or `team-execution`.
+`saga:qa`, `saga:code-review`, `saga:resume`, or `verified-workflows:run`.
 
 The coordinator has two invariants:
 
@@ -68,7 +68,7 @@ Active Codex backend floor:
 
 - `inline`
 - `manual`
-- `team-execution`
+- `verified-workflow`
 
 Conditional backend:
 

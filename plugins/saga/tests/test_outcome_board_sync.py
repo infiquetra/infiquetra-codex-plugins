@@ -129,7 +129,9 @@ def test_default_schema_path_resolves_installed_cache_sibling(tmp_path: Path) ->
 
     for name in ("outcome_board_sync.py", "plugin_dependency_resolver.py"):
         (scripts / name).write_bytes((SCRIPTS / name).read_bytes())
-    spec = importlib.util.spec_from_file_location("sync_installed_cache", scripts / "outcome_board_sync.py")
+    spec = importlib.util.spec_from_file_location(
+        "sync_installed_cache", scripts / "outcome_board_sync.py"
+    )
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     sys.path.insert(0, str(scripts))
@@ -345,7 +347,9 @@ def test_ae8_retry_on_transient_failure_succeeds(tmp_path: Path) -> None:
         if call_count["n"] == 1 and op_kind == "set-field-status":
             raise RuntimeError("transient network error")
 
-    result = SYNC_MOD.reconcile_board(spec, store, board_writer=flaky_writer, max_attempts=3, sleep=lambda _s: None)
+    result = SYNC_MOD.reconcile_board(
+        spec, store, board_writer=flaky_writer, max_attempts=3, sleep=lambda _s: None
+    )
 
     sf_records = [r for r in result if r.get("op_kind") == "set-field-status"]
     assert sf_records and sf_records[0]["status"] == "written", (
@@ -372,7 +376,9 @@ def test_ae8_always_fails_surfaced_and_retryable(tmp_path: Path) -> None:
     def always_fail(*, op_kind: str, repo: str, number: int, payload: dict) -> None:
         raise RuntimeError("always fails")
 
-    result1 = SYNC_MOD.reconcile_board(spec, store, board_writer=always_fail, max_attempts=3, sleep=lambda _s: None)
+    result1 = SYNC_MOD.reconcile_board(
+        spec, store, board_writer=always_fail, max_attempts=3, sleep=lambda _s: None
+    )
 
     failed = [
         r for r in result1 if r.get("op_kind") == "set-field-status" and r["status"] == "failed"
@@ -548,10 +554,22 @@ def test_advance_threads_project_to_reconcile_board_for_nondefault_project(tmp_p
 
         writer = RecordingWriter()
         result = ENG_MOD.advance(
-            repo, "o", autonomous=True, board_writer=writer, project=project, attending=False,
-            dispatcher=lambda _req: {
-                "ack_kind": "launched", "dispatch_ack_ref": "test:leaf1",
+            repo,
+            "o",
+            autonomous=True,
+            board_writer=writer,
+            project=project,
+            attending=False,
+            dispatcher=lambda req: {
+                "ack_kind": "launched",
+                "dispatch_ack_ref": "test:leaf1",
                 "leaf_saga_id": "l-leaf1",
+                "producer_kind": "verified-workflow",
+                "run_identity": "run-o",
+                "dispatch_intent_id": req.dispatch_intent_id,
+                "outcome_id": req.outcome_id,
+                "subplot_id": req.subplot_id,
+                "backend": req.backend,
             },
         )
 

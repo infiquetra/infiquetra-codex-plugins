@@ -215,8 +215,8 @@ lifecycle_phase: work
 phase_status: in_progress
 status: active
 next_step: "wire /resume to call saga.restore"
-orchestration_mode: team-execution
-orchestration_ref: docs/plans/2026-06-02-saga-foundation.md#team-structure
+orchestration_mode: verified-workflow
+orchestration_ref: docs/plans/2026-06-02-saga-foundation.md#workflow-structure
 issue_ref: "infiquetra/infiquetra-codex-plugins#42"
 destination: pr
 round: 2
@@ -284,7 +284,8 @@ LIFECYCLE_PHASES   = ("ideation", "brainstorm", "plan", "review", "work", "qa", 
 PHASE_STATUSES     = ("pending", "in_progress", "complete")
 STATUSES           = ("active", "blocked", "paused", "handed-off", "done", "abandoned")
 DESTINATIONS       = ("plan-only", "pr", "merge", "nonprod-deploy")
-ORCHESTRATION_MODES = ("inline", "manual", "team-execution")
+ORCHESTRATION_MODES = ("inline", "manual", "verified-workflow")
+LEGACY_ORCHESTRATION_MODES = ("team-execution",)
 ```
 
 `destination` mirrors `lifecycle_state.normalize_destination`'s canonical set — use that helper to normalize
@@ -292,12 +293,13 @@ user-facing labels (`deploy` -> `nonprod-deploy`, etc.) before storing.
 
 ### 4.1 Runtime capability dimensions
 
-`ORCHESTRATION_MODES` is the accepted legacy v1 parser enum, not a menu of every Codex feature. The
+`ORCHESTRATION_MODES` is the canonical write enum; the exact legacy alias is read-only compatibility,
+not a menu of every Codex feature. The
 current capability contract separates:
 
 - Saga lifecycle/state;
 - current-turn or explicitly bound Goal continuation;
-- inline, manual, legacy Team Execution, or planned Verified Workflow mode;
+- inline, manual, or Verified Workflow mode, with legacy Team Execution readable but not emitted;
 - inline, deterministic-tool, generic-subagent, or attested named-profile step vehicle;
 - generic or logical-role-attested identity;
 - profile model/effort policy and its independent readback evidence; and

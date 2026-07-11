@@ -388,11 +388,9 @@ def test_degrade_record_is_not_double_listed_after_a_crash(tmp_path: Path) -> No
     assert len(degrades) == 1 and len(commits) == 0  # legacy source backend remains halted
 
 
-def test_cli_dispatch_dry_run_still_works(
-    tmp_path: Path, monkeypatch: Any, capsys: Any
-) -> None:
+def test_cli_dispatch_dry_run_still_works(tmp_path: Path, monkeypatch: Any, capsys: Any) -> None:
     # the U4 dry-run CLI is unchanged by the U9 menu expansion
     _write_team_ref(tmp_path)
     monkeypatch.chdir(tmp_path)
     assert D.main(["o", "build", "verified-workflow", "--orchestration-ref", TEAM_REF]) == 0
-    assert json.loads(capsys.readouterr().out)["status"] == "dispatched"
+    assert json.loads(capsys.readouterr().out)["status"] == "prepared"

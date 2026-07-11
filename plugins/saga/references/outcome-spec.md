@@ -49,14 +49,16 @@ holds no authoritative in-memory DAG (R29):
 | `guarantee_tags[]` / `degrade_policy` | the degrade contract (KTD9), enforced in the degrade path, **not** in `recompile_for_tier` |
 | `timeout_seconds` / `heartbeat_seconds` | liveness budgets (R31); `null` = untimed (attended leaves) |
 | `depends_on[]` | dependency barriers — the DAG edges |
-| `leaf_saga_id` | the leaf saga this subplot dispatches to (set at dispatch) |
+| `leaf_saga_id` | the real leaf Saga identifier, recorded only by a typed launched acknowledgement |
 | `child_spec_ref` | typed parent→child link (KTD10): when set, the node **is** an outcome and reconcile recurses. Never overload saga's `orchestration_ref`. |
 | `github` / `worktree` / `evidence` / `cost` | open pass-through maps; detailed schemas land in the consuming units (U5/U6/U7/U10) |
 
 ### Node state machine (`NODE_STATES`)
 
 ```
-pending → ready → dispatched → running → done            (success, R11)
+pending → ready → intent-created → dispatched → running → done   (typed launch, R11)
+                              ↘ handed-off                       (settled, no dependent progress)
+legacy commit → legacy-unverified                               (settled, reconciliation required)
                                        ↘ failed           (terminal-retryable → leaf `work`, R12)
                                        ↘ rejected         (NEGATIVE terminal — PR closed, branch gone, R32)
                                        ↘ stalled          (NEGATIVE terminal — liveness timeout, R31)

@@ -174,27 +174,27 @@ recommendation from the work shape, pre-select it, surface the alternatives (inc
 confirm with the operator, and record what they picked via `--orchestration-operator-choice` and the
 effective backend via `--orchestration-mode`.
 
-If the effective backend is `team-execution`, validate the Phase A receipt after restore and before
+If the effective backend is `verified-workflow`, validate the canonical receipt after restore and before
 saving the work tick or mutating code:
 
 ```bash
-python3 plugins/saga/scripts/team_execution_readiness.py validate \
-  --mode team-execution \
+python3 plugins/saga/scripts/verified_workflow_readiness.py validate \
+  --mode verified-workflow \
   --ref <orchestration_ref> \
   --context work \
   --plan-path docs/plans/YYYY-MM-DD-<topic>-plan.md
 ```
 
-When the result is ready, read the `## Team Structure` or protected evidence root and follow the
-Team Execution skill for Phase B. When the result is blocked, repair Phase A or halt for the operator;
-do not continue through the normal inline/subagent execution path with Team Execution metadata still
+When the result is ready, read `## Workflow Structure` or the protected evidence root and follow the
+Verified Workflows run skill. When blocked, repair the evidence or halt for the operator;
+do not continue through the normal inline/subagent execution path with Verified Workflows metadata still
 attached.
 
 Then mint/advance the work-thread saga to `lifecycle_phase=work`. Set `--issue-ref` (the issue case — the
 saga-spec §11 `issue_ref`-adoption write), `--plan-path` whenever a plan exists, and save **on the work
 branch** — these are the identity keys a standalone `/code-review` matches on (`issue_ref` / `plan_path` /
 `branch`) to find and append to this exact thread. Include `--orchestration-ref` only for
-`team-execution`; omit it for `inline` and `manual`:
+`verified-workflow`; omit it for `inline` and `manual`:
 
 ```bash
 python3 plugins/saga/scripts/saga.py save \
@@ -205,10 +205,10 @@ python3 plugins/saga/scripts/saga.py save \
   --phase-status in_progress \
   --plan-path docs/plans/YYYY-MM-DD-<topic>-plan.md \
   --destination <plan-only|pr|merge|nonprod-deploy> \
-  --orchestration-recommended <inline|manual|team-execution> \
-  --orchestration-operator-choice <inline|manual|team-execution> \
-  --orchestration-mode <inline|manual|team-execution> \
-  --orchestration-ref docs/plans/YYYY-MM-DD-<topic>-plan.md#team-structure \
+  --orchestration-recommended <inline|manual|verified-workflow> \
+  --orchestration-operator-choice <inline|manual|verified-workflow> \
+  --orchestration-mode <inline|manual|verified-workflow> \
+  --orchestration-ref docs/plans/YYYY-MM-DD-<topic>-plan.md#workflow-structure \
   --rounds-seen "1"
 ```
 
@@ -224,9 +224,10 @@ git-ignored, machine-local). Never set `next_round` — it is derived from `roun
 
 Execute **one meaningful phase at a time** per `references/execution-strategy.md`:
 
-- **Team Execution Phase B** — when Phase 1.4 validated `orchestration_mode=team-execution`, consume the
-  `## Team Structure` and run the Team Execution skill's execution protocol. Delegated Team Execution
-  is preferred when the runtime is available; serial Team Execution is the fallback when delegation is
+- **Verified Workflows execution** — when Phase 1.4 validated
+  `orchestration_mode=verified-workflow`, consume `## Workflow Structure` and run the canonical
+  root-owned workflow protocol. Named-profile execution is preferred when the runtime is available;
+  truthful inline execution is the fallback when delegation is
   absent or backpressured. A true fallback to `inline` requires an explicit recorded
   `orchestration_downgrade` rationale before code mutation.
 - **Execution strategy** — inline / serial subagents / parallel subagents, chosen from task count and

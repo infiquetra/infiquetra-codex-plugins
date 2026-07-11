@@ -58,11 +58,25 @@ def repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 def _recorder():
     calls: list[str] = []
 
-    def dispatcher(req: Any) -> str:
+    def dispatcher(req: Any) -> dict[str, str]:
         calls.append(req.subplot_id)
-        return f"leaf-{req.subplot_id}"
+        return _runtime_ack(req)
 
     return dispatcher, calls
+
+
+def _runtime_ack(req: Any) -> dict[str, str]:
+    return {
+        "ack_kind": "launched",
+        "dispatch_ack_ref": f"protected:{req.dispatch_intent_id}",
+        "leaf_saga_id": f"leaf-{req.subplot_id}",
+        "producer_kind": "verified-workflow",
+        "run_identity": f"run-{req.outcome_id}",
+        "dispatch_intent_id": req.dispatch_intent_id,
+        "outcome_id": req.outcome_id,
+        "subplot_id": req.subplot_id,
+        "backend": req.backend,
+    }
 
 
 # --------------------------------------------------------------------------- start / status
@@ -134,13 +148,13 @@ def test_advance_is_idempotent_no_duplicate_dispatch(repo: Path) -> None:
     assert second.dispatched == []  # already dispatched -> no re-dispatch
     assert calls == ["design"]  # dispatcher NOT called again
     store = STORE.Store.for_outcome("ship-x", repo)
-    # one settled dispatch (commit) for design, never two
-    commits = [
+    # one settled typed acknowledgement for design, never two
+    acknowledgements = [
         r
         for r in STORE.read_ledger(store)
-        if r.get("kind") == "dispatch" and r.get("phase") == "commit"
+        if r.get("kind") == "outcome.dispatch.v2" and r.get("phase") == "ack"
     ]
-    assert len(commits) == 1
+    assert len(acknowledgements) == 1
 
 
 def test_concurrent_reentrant_advance_does_not_double_dispatch(repo: Path) -> None:
@@ -150,28 +164,28 @@ def test_concurrent_reentrant_advance_does_not_double_dispatch(repo: Path) -> No
     M.start(repo, "ship-x", "Ship feature X")
     calls: list[str] = []
 
-    def reentrant(req: Any) -> str:
+    def reentrant(req: Any) -> dict[str, str]:
         calls.append(req.subplot_id)
         if len(calls) == 1:  # re-enter once, mid-dispatch, as a "concurrent" tick
             M.advance(repo, "ship-x", dispatcher=reentrant)
-        return f"leaf-{req.subplot_id}"
+        return _runtime_ack(req)
 
     M.advance(repo, "ship-x", dispatcher=reentrant)
     assert calls == ["design"]  # the nested advance no-op'd on the held lease -> single dispatch
     store = STORE.Store.for_outcome("ship-x", repo)
-    commits = [
+    acknowledgements = [
         r
         for r in STORE.read_ledger(store)
-        if r.get("kind") == "dispatch" and r.get("phase") == "commit"
+        if r.get("kind") == "outcome.dispatch.v2" and r.get("phase") == "ack"
     ]
-    assert len(commits) == 1
+    assert len(acknowledgements) == 1
 
 
 def test_negative_terminal_leaf_shows_failed_not_dispatched(repo: Path) -> None:
     # A dispatched leaf that reaches a NEGATIVE terminal must render as its actual terminal state,
     # not stay masked as "dispatched" (a dead leaf must not look in-flight).
     M.start(repo, "ship-x", "Ship feature X")
-    M.advance(repo, "ship-x")  # dispatch design
+    M.advance(repo, "ship-x", dispatcher=_runtime_ack)  # dispatch design
     store = STORE.Store.for_outcome("ship-x", repo)
     STORE.write_completion_event(
         store, STORE.CompletionEvent(subplot_id="design", state="failed", idempotency_key="kf")
@@ -182,12 +196,12 @@ def test_negative_terminal_leaf_shows_failed_not_dispatched(repo: Path) -> None:
 
 def test_advance_unlocks_next_layer_after_completion(repo: Path) -> None:
     M.start(repo, "ship-x", "Ship feature X")
-    M.advance(repo, "ship-x")  # dispatch design
+    M.advance(repo, "ship-x", dispatcher=_runtime_ack)  # dispatch design
     store = STORE.Store.for_outcome("ship-x", repo)
     STORE.write_completion_event(
         store, STORE.CompletionEvent(subplot_id="design", state="done", idempotency_key="kd")
     )
-    result = M.advance(repo, "ship-x")  # now build is ready
+    result = M.advance(repo, "ship-x", dispatcher=_runtime_ack)  # now build is ready
     assert result.dispatched == ["build"]
 
 
@@ -196,13 +210,13 @@ def test_advance_loop_runs_until_quiescent(repo: Path) -> None:
     M.start(repo, "ship-x", "Ship feature X")
     store = STORE.Store.for_outcome("ship-x", repo).ensure()
 
-    def auto_complete(req: Any) -> str:
+    def auto_complete(req: Any) -> dict[str, str]:
         leaf = f"leaf-{req.subplot_id}"
         STORE.write_completion_event(
             store,
             STORE.CompletionEvent(subplot_id=req.subplot_id, state="done", idempotency_key=leaf),
         )
-        return leaf
+        return _runtime_ack(req)
 
     result = M.advance(repo, "ship-x", loop=True, dispatcher=auto_complete)
     assert sorted(result.dispatched) == ["build", "design"]
@@ -223,8 +237,8 @@ def test_second_concurrent_advance_noops_on_held_lease(repo: Path) -> None:
 
 def test_attend_prints_native_resume_handoff(repo: Path) -> None:
     M.start(repo, "ship-x", "Ship feature X")
-    M.advance(repo, "ship-x", dispatcher=lambda req: f"leaf-saga-{req.subplot_id}")
-    assert M.attend(repo, "ship-x", "design") == "/resume leaf-saga-design"
+    M.advance(repo, "ship-x", dispatcher=_runtime_ack)
+    assert M.attend(repo, "ship-x", "design") == "/resume leaf-design"
 
 
 def test_attend_undispatched_leaf_errors(repo: Path) -> None:
@@ -256,12 +270,12 @@ def test_export_import_roundtrips_across_repos(
     repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     M.start(repo, "ship-x", "Ship feature X")
-    M.advance(repo, "ship-x")  # dispatch design (creates dispatch ledger records)
+    M.advance(repo, "ship-x", dispatcher=_runtime_ack)  # typed launch for design
     store = STORE.Store.for_outcome("ship-x", repo)
     STORE.write_completion_event(
         store, STORE.CompletionEvent(subplot_id="design", state="done", idempotency_key="kd")
     )
-    M.advance(repo, "ship-x")  # design done -> dispatch build
+    M.advance(repo, "ship-x", dispatcher=_runtime_ack)  # typed launch for build
     bundle = M.export_bundle(repo, "ship-x")
     assert bundle["schema"] == "outcome-bundle/1"
     assert any(e["subplot_id"] == "design" for e in bundle["completion_events"])
@@ -308,15 +322,16 @@ def test_cli_start_advance_status(repo: Path, capsys: pytest.CaptureFixture[str]
     assert M.main(["--repo-root", str(repo), "advance", "ship-x"]) == 0
     gated = json.loads(capsys.readouterr().out)
     assert gated["dispatched"] == [] and gated["gated"] == ["design"]
-    # approve, then advance -> the frontier dispatches.
+    # Approve, then production advance records only the compatibility reservation; it cannot claim
+    # launch without a skill/runtime acknowledgement.
     assert M.main(["--repo-root", str(repo), "approve", "ship-x"]) == 0
     capsys.readouterr()
     assert M.main(["--repo-root", str(repo), "advance", "ship-x"]) == 0
     out = json.loads(capsys.readouterr().out)
-    assert out["dispatched"] == ["design"]
+    assert out["dispatched"] == []
     assert M.main(["--repo-root", str(repo), "status", "ship-x"]) == 0
     st = json.loads(capsys.readouterr().out)
-    assert st["states"]["design"] == "dispatched"
+    assert st["states"]["design"] == "legacy-unverified"
 
 
 def test_cli_missing_outcome_errors(repo: Path, capsys: pytest.CaptureFixture[str]) -> None:

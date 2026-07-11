@@ -145,7 +145,7 @@ python3 plugins/saga/scripts/saga.py restore --saga-id <issue-N|task-slug>
 
 `restore` reads the latest tick (cold, branch-agnostic, no git / network). Re-enter at the restored
 `lifecycle_phase` / `phase_status` and route from there (Phase 2). If `orchestration_ref` is set, this
-thread is mid-flight inside a `/loop`-OWNED offload (a router-level team-execution handoff `/loop` authored) —
+thread is mid-flight inside a `/loop`-owned workflow handoff —
 **REPORT** the offload (its `orchestration_mode` + `orchestration_ref`) and let the operator decide,
 rather than blindly re-dispatching it. Read `orchestration_ref` via `restore` (it is on the full
 envelope), not via the `scan` candidate.
@@ -237,7 +237,7 @@ doc-review P0/P1 gate) and **every handoff** for operator confirmation. See
 
 For a **router-level broad fan-out** that `/loop` itself owns — e.g. a multi-issue sweep across many
 threads, where `/loop` (not a single routed command) is the driver — `/loop` offers the execution
-backend per `references/operator-choice.md` and may author a team-execution handoff itself:
+backend per `references/operator-choice.md` and may author a Verified Workflows handoff itself:
 
 ```bash
 python3 plugins/saga/scripts/lifecycle_state.py recommend-backend \
@@ -247,8 +247,8 @@ python3 plugins/saga/scripts/lifecycle_state.py recommend-backend \
 Recommend the cheapest-correct backend, surface the alternatives (escalation one step), confirm with
 the operator, and record `--orchestration-mode` + `--orchestration-ref` in the routing tick (Phase 4)
 **only in this `/loop`-owned-offload case** — never on an ordinary single-skill route. If
-team-execution delegation is unavailable or backpressured, use serial Team Execution. If Team Execution
-itself is unsafe or impossible, halt for repair or record an explicit downgrade before using `loop`'s
+named-profile delegation is unavailable or backpressured, use truthful inline workflow execution. If
+Verified Workflows itself is unsafe or impossible, halt for repair or record an explicit downgrade before using `loop`'s
 own phase-walk.
 
 ---
@@ -316,6 +316,6 @@ continue the walk (Drive).
   the cold-start entry, the main chain, the off-chain commands, the routing gates, the
   destination-class meaning, and the stub-target advisory rule.
 - `references/drive-and-resume.md` — the Drive cross-phase walk (agent-sequential, pause-at-gates, the
-  across-vs-within boundary with `/work`, when `/loop` authors a team-execution handoff) and the Resume contract
+  across-vs-within boundary with `/work`, when `/loop` authors a Verified Workflows handoff) and the Resume contract
   (scan -> restore -> route, the routing-tick shape, the volatile-vs-committed durability split, the
   inline cold reconstruction, and the opt-in `/resume` advisory).

@@ -51,10 +51,13 @@ def _dispatch(store: Any, sid: str, at: float) -> None:
     STORE.append_ledger(
         store,
         {
-            "phase": "commit",
-            "kind": "dispatch",
-            "key": f"d:{sid}",
+            "phase": "ack",
+            "kind": "outcome.dispatch.v2",
+            "key": f"dispatch-intent:o:{sid}",
+            "dispatch_intent_id": f"dispatch-intent:o:{sid}",
             "subplot_id": sid,
+            "ack_kind": "launched",
+            "dispatch_ack_ref": f"protected:{sid}",
             "leaf_saga_id": f"l-{sid}",
             "at": at,
         },
@@ -147,7 +150,7 @@ def test_only_dispatched_leaves_are_liveness_checked(tmp_path: Path) -> None:
 
 
 def test_legacy_dispatch_without_timestamp_is_skipped(tmp_path: Path) -> None:
-    # a dispatch commit record with no `at` (pre-U9) cannot be judged for liveness -> skipped, not crashed.
+    # A legacy commit is unverified launch state and never enters liveness enforcement.
     spec = _spec([{"subplot_id": "a", "title": "a", "kind": "code", "timeout_seconds": 10}])
     store = _store(tmp_path)
     STORE.append_ledger(

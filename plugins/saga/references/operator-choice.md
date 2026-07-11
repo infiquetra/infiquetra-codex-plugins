@@ -1,6 +1,6 @@
 # Codex Operator-Choice Framework
 
-**Status:** U1 runtime characterization and migration contract.
+**Status:** U5 canonical workflow boundary; installed cutover remains gated by U8.
 
 Do not use one backend menu to describe unrelated Codex capabilities. A feature flag, installed
 file, requested model, or caller boolean is not proof that a workflow or child executed.
@@ -11,11 +11,11 @@ file, requested model, or caller boolean is not proof that a workflow or child e
 |---|---|---|
 | Lifecycle and state | `saga` | Saga owns durable lifecycle, outcome state, routing, and handoff receipts. |
 | Continuation | `turn`; explicit `goal` | The current task is the default. Goal is opt-in long-running continuation and requires a stable tool result before binding. |
-| Workflow mode | `inline`; `manual`; legacy-current `team-execution`; planned-unproved `verified-workflow` | A root-owned method for steps, roles, gates, and receipts. Claude Workflow is unsupported. |
+| Workflow mode | `inline`; `manual`; `verified-workflow`; legacy-readable `team-execution` | A root-owned method for steps, roles, gates, and receipts. Claude Workflow is unsupported. |
 | Step vehicle | `inline`; `deterministic-tool`; `generic-subagent`; runtime-selected `named-profile-subagent` | How one workflow step actually runs. A subagent is a vehicle, not a Saga backend. |
 | Role identity | `generic`; `named-profile-selected`; planned-unproved `logical-role-attested` | Whether evidence proves only a child, a selected profile, or the complete logical role/lens binding. |
 | Execution-class control | prompt steering is advisory; V2 `agent_type` selects custom-agent TOML; direct model/effort overrides are not workflow policy | Model, effort, sandbox, instructions, and tool policy belong to a reusable profile; effectiveness still needs child readback. |
-| Hooks | observe is configurable; persistence is planned; guarding is deferred | Hooks extend events. They are not workflow modes, continuation modes, or leaf executors. |
+| Hooks | observe and bounded persistence are implemented; guarding is deferred | Hooks extend events. They are not workflow modes, continuation modes, or leaf executors. |
 
 The canonical live snapshot is
 `../../../docs/validation/codex-runtime-capability-snapshot.json`. Historical classifications are
@@ -48,19 +48,18 @@ Therefore:
 Ultra is a root orchestration control because it adds automatic delegation. It is not the next leaf
 effort above `max` and cannot satisfy a workflow role by itself.
 
-## Current Transitional Recommendation
+## Current Recommendation
 
-Until U5 lands the canonical workflow vocabulary, the existing
-`plugins/saga/scripts/lifecycle_state.py recommend-backend` helper continues to return the accepted v1
-values `inline`, `manual`, or legacy `team-execution`. Treat that result as a workflow recommendation,
-not a capability attestation. It must not activate source Workflow, fork, Goal, hooks, or a subagent
-as an executor solely from caller-supplied booleans.
+`plugins/saga/scripts/lifecycle_state.py recommend-backend` returns canonical `inline`, `manual`, or
+`verified-workflow`. Treat that result as a workflow recommendation, not capability attestation. It
+must not activate source Workflow, fork, Goal, hooks, or a subagent as an executor solely from
+caller-supplied booleans.
 
 Use `inline` when the root can safely own the work. Use `manual` when automation is unsafe or
-unavailable. Existing `team-execution` values remain readable during migration, but new
-`verified-workflow` claims stay planned-unproved until U5-U8 land the package, complete receipt, and
-cutover gates. The U4 fresh-task proof establishes named profile selection only; it does not grant a
-logical role result gate authority.
+unavailable. Existing `team-execution` values remain readable but cannot authorize a new run. A new
+`verified-workflow` run requires canonical readiness plus matching runtime evidence; U8 still owns
+installed cutover. The U4 fresh-task proof establishes named profile selection only; it does not grant
+an unjoined logical-role result gate authority.
 
 ## Transitional Saga State
 
@@ -71,8 +70,8 @@ in `orchestration_ref`.
 
 These fields remain parser-compatible through the migration. An explicit operator choice must not be
 inferred from the effective mode. A mismatch requires a non-empty downgrade reason. Legacy
-`team-execution` and `## Team Structure` receipts remain read-only history; U5 introduces canonical
-workflow, continuation, vehicle, and identity fields and emits only new vocabulary.
+`team-execution` and `## Team Structure` receipts remain read-only history; new writes use canonical
+workflow, continuation, vehicle, and identity vocabulary only.
 
 ## Non-Executors
 
