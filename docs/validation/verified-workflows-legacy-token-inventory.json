@@ -296,6 +296,15 @@
     },
     {
       "classification": "lineage-documentation",
+      "path": "docs/portability/codex-plugin-modernization-cutover-and-rollback.md",
+      "sha256": "02896fc8363690da5d870ff1c39468d1f6b10324dcf7baf8ee6974fa67328083",
+      "tokens": [
+        "Team Execution",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "lineage-documentation",
       "path": "docs/portability/codex-saga-041-harness-delta.md",
       "sha256": "3f834638c7119cb81de1107baa8c7b0526c0fc260b11c9be517835bbf5cdac34",
       "tokens": [
@@ -452,6 +461,14 @@
     },
     {
       "classification": "migration-documentation",
+      "path": "docs/validation/codex-plugin-modernization-cutover.json",
+      "sha256": "4e7df8eb2190c8fcc76e004a4aeaa95306b4d9ae798db6f41ae9610a877e0ad4",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-documentation",
       "path": "docs/validation/codex-plugin-modernization-u7.json",
       "sha256": "cb54dfb074b0ba01ae53291d43681d2cf02b78bae39ae1da121e6a2269506df6",
       "tokens": [
@@ -469,7 +486,7 @@
     {
       "classification": "migration-documentation",
       "path": "docs/validation/saga-family-codex-proof.md",
-      "sha256": "fb1c1372933498bea0e319d27baa0a5fa8cbcf15a020b94f73231d7b80d52356",
+      "sha256": "8b4b7d92a662b6ab27456c50d83303a4976c0e96c47cc8440a7093408ed7f396",
       "tokens": [
         ".codex/team-execution/",
         "team-execution"

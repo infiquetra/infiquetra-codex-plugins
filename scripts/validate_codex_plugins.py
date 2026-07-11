@@ -506,7 +506,7 @@ def validate_repository(root: Path, mode: str = "current") -> list[str]:
         validate_verified_workflows_canonical_surface(root, errors)
         validate_saga_workflow_independence(root, errors)
         validate_legacy_workflow_token_allowlist(root, errors, mode="cutover")
-        validate_cutover_evidence(root, errors)
+        validate_cutover_evidence(root, mode, errors)
     elif mode == "cutover":
         expected_plugins = TARGET_EXPECTED_PLUGINS
         validate_marketplace(root, expected_plugins, errors)
@@ -514,7 +514,7 @@ def validate_repository(root: Path, mode: str = "current") -> list[str]:
         validate_verified_workflows_canonical_surface(root, errors)
         validate_saga_workflow_independence(root, errors)
         validate_legacy_workflow_token_allowlist(root, errors, mode="cutover")
-        validate_cutover_evidence(root, errors)
+        validate_cutover_evidence(root, mode, errors)
     else:
         expected_plugins = TARGET_EXPECTED_PLUGINS
         validate_target_fixture(root, errors)
@@ -1877,11 +1877,23 @@ def validate_saga_family_docs(root: Path, errors: list[str]) -> None:
         errors.append("portability matrix still marks team-execution as blocked")
 
 
-def validate_cutover_evidence(root: Path, errors: list[str]) -> None:
+def validate_cutover_evidence(root: Path, mode: str, errors: list[str]) -> None:
     proof_doc = root / "docs" / "validation" / "saga-family-codex-proof.md"
     proof_schema = root / "docs" / "validation" / "saga-family-codex-proof.schema.json"
     rollback_doc = root / "docs" / "cutover" / "saga-family-rollback-and-split.md"
-    for path in (proof_doc, proof_schema, rollback_doc):
+    modernization_doc = (
+        root / "docs" / "portability" / "codex-plugin-modernization-cutover-and-rollback.md"
+    )
+    modernization_record = (
+        root / "docs" / "validation" / "codex-plugin-modernization-cutover.json"
+    )
+    for path in (
+        proof_doc,
+        proof_schema,
+        rollback_doc,
+        modernization_doc,
+        modernization_record,
+    ):
         if not path.is_file():
             errors.append(f"cutover evidence missing `{path.relative_to(root)}`")
 
@@ -1911,6 +1923,123 @@ def validate_cutover_evidence(root: Path, errors: list[str]) -> None:
                 errors.append(
                     f"{rollback_doc.relative_to(root)} missing rollback/split phrase `{phrase}`"
                 )
+
+    validate_modernization_cutover_record(root, modernization_record, mode, errors)
+
+
+def validate_modernization_cutover_record(
+    root: Path,
+    path: Path,
+    mode: str,
+    errors: list[str],
+) -> None:
+    payload = load_json(path, errors)
+    if payload is None:
+        return
+    expected_keys = {
+        "schema_version",
+        "recorded_at",
+        "source_head",
+        "status",
+        "versions",
+        "rollback_bundle",
+        "pre_state",
+        "clean_home_lane",
+        "seeded_migration_lane",
+        "real_profile",
+        "sanitization",
+    }
+    if set(payload) != expected_keys:
+        errors.append(f"{path.relative_to(root)} fields must be {sorted(expected_keys)}")
+    if payload.get("schema_version") != 1:
+        errors.append(f"{path.relative_to(root)} schema_version must be 1")
+    source_head = payload.get("source_head")
+    if not isinstance(source_head, str) or re.fullmatch(r"[0-9a-f]{40}", source_head) is None:
+        errors.append(f"{path.relative_to(root)} source_head must be a full commit")
+    else:
+        resolved = subprocess.run(
+            ["git", "rev-parse", source_head],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        ancestor = subprocess.run(
+            ["git", "merge-base", "--is-ancestor", source_head, "HEAD"],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if resolved.returncode != 0 or resolved.stdout.strip() != source_head:
+            errors.append(f"{path.relative_to(root)} source_head is unavailable")
+        elif ancestor.returncode != 0:
+            errors.append(f"{path.relative_to(root)} source_head is not current history")
+    expected_versions = {
+        "fleet-core": TARGET_EXPECTED_PLUGINS["fleet-core"]["version"],
+        "saga": TARGET_EXPECTED_PLUGINS["saga"]["version"],
+        "verified-workflows": TARGET_EXPECTED_PLUGINS["verified-workflows"]["version"],
+        "retired-team-execution": "2.3.0",
+    }
+    if payload.get("versions") != expected_versions:
+        errors.append(f"{path.relative_to(root)} version readback is stale")
+    rollback = payload.get("rollback_bundle")
+    if not isinstance(rollback, dict) or rollback.get("sha256") != (
+        "03d6193260328b9e880dd3f0b64737fda565591ed8eb948f020e92538b038563"
+    ):
+        errors.append(f"{path.relative_to(root)} rollback bundle digest is invalid")
+    elif (
+        rollback.get("directory_mode") != "0700"
+        or rollback.get("archive_mode") != "0600"
+        or rollback.get("restore_shape_validated") is not True
+        or rollback.get("committed") is not False
+    ):
+        errors.append(f"{path.relative_to(root)} rollback bundle policy is invalid")
+    clean = payload.get("clean_home_lane")
+    if not isinstance(clean, dict) or (
+        clean.get("plugin_cli_commands_succeeded") is not True
+        or clean.get("installed_plugin_count") != 10
+        or clean.get("legacy_workflow_active") is not False
+        or clean.get("canonical_workflow_active") is not True
+        or clean.get("profile_counts")
+        != {"canonical": 5, "legacy": 0, "unmanaged": 0}
+        or clean.get("isolated_credentials_copied") is not False
+    ):
+        errors.append(f"{path.relative_to(root)} clean-home evidence is invalid")
+    seeded = payload.get("seeded_migration_lane")
+    if not isinstance(seeded, dict) or (
+        seeded.get("plugin_pre_sha256") != seeded.get("plugin_restored_sha256")
+        or seeded.get("plugin_archive_pre_sha256")
+        != seeded.get("plugin_archive_restored_sha256")
+        or seeded.get("profile_pre_state_sha256")
+        != seeded.get("profile_restored_sha256")
+        or seeded.get("profile_archive_pre_sha256")
+        != seeded.get("profile_archive_restored_sha256")
+        or seeded.get("duplicate_workflow_surface") is not False
+        or seeded.get("rollback_exact") is not True
+    ):
+        errors.append(f"{path.relative_to(root)} seeded migration/rollback evidence is invalid")
+    sanitization = payload.get("sanitization")
+    if not isinstance(sanitization, dict) or set(sanitization.values()) != {False}:
+        errors.append(f"{path.relative_to(root)} sanitization declaration is invalid")
+    try:
+        raw_text = path.read_text(encoding="utf-8")
+    except OSError:
+        raw_text = ""
+    if any(token in raw_text for token in ('/Users/', 'file://', '"HOME"', '"CODEX_HOME"')):
+        errors.append(f"{path.relative_to(root)} contains an unsanitized local value")
+    real = payload.get("real_profile")
+    if not isinstance(real, dict):
+        errors.append(f"{path.relative_to(root)} real_profile must be an object")
+    elif mode == "cutover" and (
+        payload.get("status") != "cutover-complete"
+        or real.get("apply_started") is not True
+        or real.get("applied") is not True
+        or real.get("fresh_session") != "passed"
+        or not isinstance(real.get("installed_readback"), dict)
+        or not isinstance(real.get("profile_readback"), dict)
+    ):
+        errors.append(f"{path.relative_to(root)} real-profile cutover evidence is incomplete")
 
 
 def validate_deletion_migration_map(root: Path, errors: list[str]) -> None:
