@@ -16,7 +16,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from scripts import build_saga_docs_facts
+from scripts import build_saga_docs_facts  # noqa: E402
 
 ASSET_ROOT = Path("docs/saga/visual-assets")
 ATLAS_SVG = "saga-lifecycle-atlas.svg"
@@ -134,7 +134,7 @@ def atlas_card(
 ) -> str:
     row_y = y + 154
     parts = [
-        f'<g filter="url(#softShadow)">',
+        '<g filter="url(#softShadow)">',
         rect(x, y, 176, 560, fill=PANEL, stroke="#dbe3ef", radius=10),
         f'<rect x="{x}" y="{y}" width="176" height="66" rx="10" fill="{color}"/>',
         f'<rect x="{x}" y="{y + 48}" width="176" height="18" fill="{color}"/>',
@@ -221,7 +221,7 @@ def render_atlas(facts: dict) -> str:
             "artifact": "docs/reviews/\nQA evidence",
             "maturity": "resume-ready",
             "gate": "quality gate",
-            "owner": "saga + team-execution",
+            "owner": "saga + verified-workflows",
         },
         {
             "title": "Handoff",
@@ -276,7 +276,7 @@ def render_atlas(facts: dict) -> str:
             wrapped_text(
                 715,
                 871,
-                "Saga routes and records context. Mission Control mutates SDLC state, Team Execution owns review evidence, and Deploy owns tags.",
+                "Saga routes and records context. Mission Control mutates SDLC state, Verified Workflows owns review evidence, and Deploy owns tags.",
                 width=96,
                 size=17,
                 line_height=22,
@@ -336,7 +336,7 @@ def render_ownership_boundaries(facts: dict) -> str:
     owners = [
         ("saga", BLUE),
         ("mission-control", TEAL),
-        ("team-execution", VIOLET),
+        ("verified-workflows", VIOLET),
         ("deploy", GREEN),
     ]
     body = [

@@ -8,6 +8,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
 
+import pytest
+
 
 def load_saga() -> ModuleType:
     script = Path(__file__).parents[1] / "scripts" / "saga.py"
@@ -29,7 +31,7 @@ def quiet_git_runner(*_args: object, **_kwargs: object) -> SimpleNamespace:
 
 def test_saga_state_uses_codex_root(tmp_path: Path) -> None:
     assert saga.STATE_DIR == Path(".codex/saga")
-    assert saga.ORCHESTRATION_MODES == ("inline", "manual", "team-execution")
+    assert saga.ORCHESTRATION_MODES == ("inline", "manual", "verified-workflow")
 
     result = saga.save(
         tmp_path,
@@ -54,7 +56,79 @@ def test_saga_state_uses_codex_root(tmp_path: Path) -> None:
 
     state = json.loads(state_path.read_text(encoding="utf-8"))
     assert state["active_saga_id"] == "task-codex-port"
-    assert state["sagas"]["task-codex-port"]["orchestration_mode"] == "team-execution"
+    assert state["sagas"]["task-codex-port"]["orchestration_mode"] == "verified-workflow"
+
+
+def test_goal_continuation_requires_stable_goal_identifier() -> None:
+    base = saga.Saga(saga_id="task-goal", kind="task", id="goal")
+    assert saga.bind_goal_continuation(base, {"title": "not an id"}).continuation_mode == "turn"
+    bound = saga.bind_goal_continuation(base, {"goal_id": "goal-123"})
+    assert (bound.continuation_mode, bound.continuation_ref) == ("goal", "goal-123")
+
+
+@pytest.mark.parametrize(
+    "changes, message",
+    [
+        ({"continuation_mode": "goal", "continuation_ref": ""}, "stable continuation_ref"),
+        (
+            {"continuation_mode": "goal", "continuation_ref": "goal-123"},
+            "successful Goal tool result",
+        ),
+        ({"continuation_mode": "turn", "continuation_ref": "goal-123"}, "must not carry"),
+        ({"identity_mode": "logical-role-attested"}, "protected role-result adapter"),
+    ],
+)
+def test_save_rejects_unbacked_continuation_or_identity(
+    tmp_path: Path, changes: dict[str, str], message: str
+) -> None:
+    candidate = saga.Saga(saga_id="task-invalid", kind="task", id="invalid")
+    candidate = saga._replace(candidate, **changes)
+    with pytest.raises(ValueError, match=message):
+        saga.save(tmp_path, candidate, runner=quiet_git_runner)
+
+
+def test_save_binds_new_goal_only_from_supplied_tool_result(tmp_path: Path) -> None:
+    candidate = saga.Saga(
+        saga_id="task-goal-save",
+        kind="task",
+        id="goal-save",
+        continuation_mode="goal",
+    )
+    saga.save(
+        tmp_path,
+        candidate,
+        runner=quiet_git_runner,
+        goal_result={"goal_id": "goal-123"},
+    )
+    restored = saga.restore(tmp_path, "task-goal-save")
+    assert restored is not None
+    assert (restored.continuation_mode, restored.continuation_ref) == ("goal", "goal-123")
+
+
+def test_goal_result_without_explicit_request_is_rejected(tmp_path: Path) -> None:
+    candidate = saga.Saga(saga_id="task-goal-implicit", kind="task", id="goal-implicit")
+    with pytest.raises(ValueError, match="explicit goal continuation request"):
+        saga.save(
+            tmp_path,
+            candidate,
+            runner=quiet_git_runner,
+            goal_result={"goal_id": "goal-123"},
+        )
+
+
+@pytest.mark.parametrize("flag", ["--continuation-mode", "--continuation-ref", "--identity-mode"])
+def test_generic_save_cli_rejects_attestation_flags(tmp_path: Path, flag: str) -> None:
+    script = Path(__file__).parents[1] / "scripts" / "saga.py"
+    value = "goal" if flag == "--continuation-mode" else "claim"
+    result = subprocess.run(
+        [sys.executable, str(script), "save", "--kind", "task", "--id", "claim", flag, value],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode != 0
+    assert "unrecognized arguments" in result.stderr
 
 
 def test_cli_rejects_source_only_backend(tmp_path: Path) -> None:
@@ -79,6 +153,54 @@ def test_cli_rejects_source_only_backend(tmp_path: Path) -> None:
 
     assert result.returncode != 0
     assert "invalid choice" in result.stderr
+
+
+def test_explicit_default_scalar_replaces_prior_value(tmp_path: Path) -> None:
+    """A supplied default must not inherit the previous tick's non-default."""
+
+    initial = saga.Saga(
+        saga_id="task-default-scalar",
+        kind="task",
+        id="default-scalar",
+        destination="merge",
+        phase_status="complete",
+    )
+    saga.save(tmp_path, initial, runner=quiet_git_runner)
+
+    args = saga.parse_args(
+        [
+            "save",
+            "--kind",
+            "task",
+            "--id",
+            "default-scalar",
+            "--destination=plan-only",
+            "--phase-status",
+            "pending",
+        ]
+    )
+    saga.save(
+        tmp_path,
+        saga._build_save_saga(args),
+        explicit_scalars=saga._explicit_save_scalars(
+            [
+                "save",
+                "--kind",
+                "task",
+                "--id",
+                "default-scalar",
+                "--destination=plan-only",
+                "--phase-status",
+                "pending",
+            ]
+        ),
+        runner=quiet_git_runner,
+    )
+
+    restored = saga.restore(tmp_path, "task-default-scalar")
+    assert restored is not None
+    assert restored.destination == "plan-only"
+    assert restored.phase_status == "pending"
 
 
 def test_cli_rejects_complete_team_execution_without_ref(tmp_path: Path) -> None:
@@ -162,7 +284,12 @@ def test_save_refreshes_branch_on_later_save(tmp_path: Path) -> None:
 
         return fake_git
 
-    saga.save(tmp_path, _make_branch_saga(), now=datetime(2026, 6, 2, 14, 5, 10, tzinfo=UTC), runner=git_on("main"))
+    saga.save(
+        tmp_path,
+        _make_branch_saga(),
+        now=datetime(2026, 6, 2, 14, 5, 10, tzinfo=UTC),
+        runner=git_on("main"),
+    )
     assert saga.restore(tmp_path, "issue-42").branch == "main"
 
     later = datetime(2026, 6, 2, 14, 12, 33, tzinfo=UTC)
@@ -257,10 +384,10 @@ def test_save_refreshes_head_and_last_commit_on_later_save(tmp_path: Path) -> No
     assert second.last_commit_sha == "bbb2222ffff"
 
 
-def test_cli_accepts_complete_team_execution_with_plan_ref(tmp_path: Path) -> None:
+def test_cli_accepts_complete_verified_workflow_with_plan_ref(tmp_path: Path) -> None:
     plan = tmp_path / "docs" / "plans" / "repair.md"
     plan.parent.mkdir(parents=True)
-    plan.write_text("# Repair\n\n## Team Structure\n\nroles\n", encoding="utf-8")
+    plan.write_text("# Repair\n\n## Workflow Structure\n\nroles\n", encoding="utf-8")
     script = Path(__file__).parents[1] / "scripts" / "saga.py"
     result = subprocess.run(
         [
@@ -278,9 +405,9 @@ def test_cli_accepts_complete_team_execution_with_plan_ref(tmp_path: Path) -> No
             "--plan-path",
             "docs/plans/repair.md",
             "--orchestration-mode",
-            "team-execution",
+            "verified-workflow",
             "--orchestration-ref",
-            "docs/plans/repair.md#team-structure",
+            "docs/plans/repair.md#workflow-structure",
         ],
         cwd=tmp_path,
         capture_output=True,

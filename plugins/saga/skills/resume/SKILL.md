@@ -173,29 +173,29 @@ journal sections. Then **read the committed `docs/*` the ticks point at** (`plan
 Reconcile the trajectory (all ticks) against the PR reality (`reviewDecision` / `mergedAt` / round) and
 the committed docs, then produce the reconstructed state:
 
-- **Team Execution repair check** — if any restored tick or durable artifact carries
-  `orchestration_mode=team-execution`, validate the restored ref before routing:
+- **Workflow repair check** — if a restored tick carries canonical `verified-workflow` or legacy
+  `team-execution`, validate the restored ref with its original mode before routing:
 
   ```bash
-  python3 plugins/saga/scripts/team_execution_readiness.py validate \
-    --mode team-execution \
+  python3 plugins/saga/scripts/verified_workflow_readiness.py validate \
+    --mode <verified-workflow|team-execution> \
     --ref <orchestration_ref> \
     --context resume \
     --plan-path docs/plans/YYYY-MM-DD-<topic>-plan.md
   ```
 
-  Detect and name these contradictions: empty ref, missing Team Structure, generic-subagent evidence
-  presented as Team Execution, `inline-assist` or inline prose with Team Execution metadata, and stale
+  Detect and name these contradictions: empty ref, missing Workflow Structure, generic-subagent evidence
+  presented as role-attested, inline prose with workflow metadata, mixed canonical/legacy roots, and stale
   instruction roots.
   Treat stale instruction roots conservatively: flag them only when the tick chain or committed
-  artifacts name an installed cache root such as `.codex/plugins/cache/...`, name a Saga or Team
-  Execution version older than the repo source being read, or otherwise point to non-repo
+  artifacts name an installed cache root such as `.codex/plugins/cache/...`, name a Saga or workflow
+  version older than the repo source being read, or otherwise point to non-repo
   instructions. When stale instruction roots are suspected, reread current repo skill files before
   routing.
 
-  If the ref is ready, route the reconstructed state to `/work` so it can enter Team Execution Phase B.
-  If the ref is blocked, repair Phase A, record an explicit `orchestration_downgrade` rationale, or
-  halt for the operator. Do not preserve Team Execution metadata while routing to an inline execution
+  If the canonical ref is ready, route the reconstructed state to `/work` for Verified Workflows.
+  Legacy-ready evidence remains labeled read-only and cannot attest a new run. If blocked, repair the
+  evidence, record an explicit `orchestration_downgrade` rationale, or halt for the operator. Do not preserve workflow metadata while routing to an inline execution
   path.
 - **phase / destination** — the current `lifecycle_phase` / `phase_status`, the `destination` class.
 - **blockers** — open vs cleared (a blocker a later tick or a merged PR resolved is **cleared**, not open).
@@ -288,9 +288,10 @@ prefixed `saga_id` as `--id` re-derives `task-task-<slug>` and forks. The `--sag
 both. Use the EXACT id `restore` reported (`issue-<N>` / `task-<slug>`). Carry `lifecycle_phase`
 **forward** (never clobber a consumer's phase); **never** set `next_round` (derived, §6.1):
 
-Before writing this tick, run the Phase 3a Team Execution readiness validation for any reconstructed
-`team-execution` state. The tick must carry repaired executable state, an explicit downgrade rationale,
-or a halted operator-facing blocker; it must not write a fresh metadata-only Team Execution re-entry.
+Before writing this tick, run the Phase 3a workflow readiness validation for any reconstructed
+canonical or legacy workflow state. The tick must carry repaired executable state, an explicit
+downgrade rationale, or a halted operator-facing blocker; it must not write fresh metadata-only
+workflow re-entry.
 
 ```bash
 python3 plugins/saga/scripts/saga.py save \

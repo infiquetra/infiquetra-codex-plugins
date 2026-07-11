@@ -14,7 +14,7 @@ Two invariants this module enforces structurally:
   off to a backend via an injected ``dispatcher`` and records it) and *harvests* (reads completion
   events). It never runs a leaf's work in the advance process — so a coordinator failure can never
   collapse the whole DAG into one inline context. The default dispatcher is record-only; real
-  backends (team-execution, workflows, ``/goal``, …) arrive in U4/U9 as dispatcher implementations.
+  backends arrive through explicit dispatcher implementations.
 * **Status is derived on read** (R17/R29). There is no operator-writable status field. A node's live
   state is *computed* every call from the committed spec + completion events + dispatch records —
   never read from a stored scalar — so the cockpit physically cannot drift.
@@ -31,10 +31,14 @@ offline with no real git repo, no backend, and no wall clock; no I/O at import.
 
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
+import math
 import os
 import re
+import secrets
+import stat
 import sys
 import time
 from collections.abc import Callable, Sequence
@@ -52,6 +56,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import outcome_dispatcher  # noqa: E402
 import outcome_spec  # noqa: E402  (after the sys.path shim, by design)
 import outcome_store  # noqa: E402
+import fleet_commons_shim  # noqa: E402
+
+_workflow_compat = fleet_commons_shim.load("workflow_compat")
+MAX_LAUNCH_RECEIPT_AGE_SECONDS = 24 * 60 * 60
+DISPATCH_AUDIT_KIND = "outcome.dispatch.audit.v1"
 
 # Where the canonical spec lives on the outcome's own branch (KTD1/R26). The committed spec is the
 # structural source of truth; the store under the git-common-dir is its performance cache.
@@ -69,7 +78,8 @@ class OutcomeError(ValueError):
 # A dispatcher hands a ready leaf off to a backend and returns its leaf saga id. It MUST NOT run the
 # leaf's work in-process (R3) — it records/launches and returns. The record-only default is the
 # skeleton; U4/U9 supply real backend dispatchers with the same signature.
-Dispatcher = Callable[["DispatchRequest"], str]
+DispatchAcknowledgement = dict[str, str]
+Dispatcher = Callable[["DispatchRequest"], str | DispatchAcknowledgement]
 
 
 @dataclass(frozen=True)
@@ -82,26 +92,354 @@ class DispatchRequest:
     backend: str
     repo_root: Path
     orchestration_ref: str = ""
+    dispatch_intent_id: str = ""
+    run_identity: str = ""
+    intent_created_at: float = 0.0
 
 
 def _default_dispatcher(req: DispatchRequest) -> str:
     """Record-only dispatch: mint a stable leaf saga id, run NOTHING (R3).
 
-    Real execution backends (team-execution, cc-workflows-ultracode, ``/goal``, fork, subagent,
-    manual) are dispatcher implementations that arrive in U4/U9. The skeleton just allocates the
+    Real execution backends are dispatcher implementations. The skeleton just allocates the
     handoff address; the leaf is executed by its own native saga, never here.
     """
-    if req.backend == "team-execution" and not req.orchestration_ref.strip():
+    if req.backend == "verified-workflow" and not req.orchestration_ref.strip():
         raise outcome_dispatcher.BackendHaltError(
             outcome_dispatcher.HaltReceipt(
                 outcome_id=req.outcome_id,
                 subplot_id=req.subplot_id,
                 backend=req.backend,
-                reason="missing orchestration_ref for team-execution dispatch",
+                reason="missing orchestration_ref for verified-workflow dispatch",
                 available=outcome_dispatcher.DEFAULT_AVAILABLE,
             )
         )
     return f"leaf-{req.outcome_id}-{req.subplot_id}"
+
+
+def reconcile_dispatch_ack(
+    store: Any,
+    *,
+    repo_root: Path,
+    outcome_id: str,
+    subplot_id: str,
+    ack_kind: str,
+    dispatch_ack_ref: str,
+    leaf_saga_id: str = "",
+) -> dict[str, str]:
+    """Append an evidence-backed v2 acknowledgement for an unsettled dispatch intent.
+
+    This is intentionally append-only.  A caller must supply either a contained launch receipt
+    plus the real leaf id, or an operator-confirmed handoff reference; it cannot turn a synthetic
+    v1 id into launch proof.
+    """
+    if ack_kind not in {"launched", "handed-off"}:
+        raise OutcomeError("ack_kind must be `launched` or `handed-off`")
+    ref = dispatch_ack_ref.strip()
+    leaf = leaf_saga_id.strip()
+    if ack_kind == "launched" and not leaf:
+        raise OutcomeError("launched acknowledgement requires a real leaf_saga_id")
+    if ack_kind == "handed-off" and leaf:
+        raise OutcomeError("handed-off acknowledgement must not claim a leaf_saga_id")
+    intent_id = f"dispatch-intent:{outcome_id}:{subplot_id}"
+    records = outcome_store.read_ledger(store)
+    intents = [
+        rec
+        for rec in records
+        if rec.get("kind") == "outcome.dispatch.v2"
+        and rec.get("phase") == "intent"
+        and rec.get("key") == intent_id
+    ]
+    legacy = [
+        rec
+        for rec in records
+        if rec.get("kind") == "dispatch"
+        and rec.get("phase") == "commit"
+        and rec.get("subplot_id") == subplot_id
+    ]
+    prior_acks = [
+        rec
+        for rec in records
+        if rec.get("kind") == "outcome.dispatch.v2"
+        and rec.get("phase") in {"ack", "authority-ack"}
+        and rec.get("key") == intent_id
+    ]
+    if any(
+        rec.get("receipt_authority") in {"owner-user-state-v1", "operator-confirmed-v1"}
+        for rec in prior_acks
+    ):
+        raise OutcomeError("dispatch intent is already authoritatively acknowledged")
+    if not intents:
+        if not legacy:
+            raise OutcomeError("no dispatch intent or legacy commit exists to reconcile")
+        legacy_backend = str(legacy[-1].get("backend", "manual"))
+        canonical_backend = (
+            "verified-workflow" if legacy_backend == "team-execution" else legacy_backend
+        )
+        if ack_kind == "launched":
+            run_identity, issued_at = _peek_launch_receipt_identity(Path(repo_root), ref)
+        else:
+            run_identity, issued_at = ref, time.time()
+        migrated_intent = {
+            "phase": "intent",
+            "kind": "outcome.dispatch.v2",
+            "key": intent_id,
+            "dispatch_intent_id": intent_id,
+            "subplot_id": subplot_id,
+            "backend": canonical_backend,
+            "run_identity": run_identity,
+            "at": issued_at,
+            "migration_from_key": str(legacy[-1].get("key", "")),
+            "migration_from_backend": legacy_backend,
+        }
+        outcome_store.append_ledger_once(store, migrated_intent)
+        intents = [migrated_intent]
+    backend = str(intents[-1].get("backend", ""))
+    intent_run_identity = str(intents[-1].get("run_identity", ""))
+    intent_created_at = float(intents[-1].get("at", 0.0) or 0.0)
+    receipt_fields: dict[str, str]
+    if ack_kind == "launched":
+        if (
+            not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,159}", intent_run_identity)
+            or not math.isfinite(intent_created_at)
+            or intent_created_at <= 0
+        ):
+            raise OutcomeError(
+                "dispatch intent lacks fresh run authority; reconcile it as a handoff or restart"
+            )
+        receipt_fields = _load_launch_receipt(
+            Path(repo_root),
+            ref,
+            outcome_id=outcome_id,
+            subplot_id=subplot_id,
+            backend=backend,
+            dispatch_intent_id=intent_id,
+            leaf_saga_id=leaf,
+            run_identity=intent_run_identity,
+            intent_created_at=intent_created_at,
+        )
+    else:
+        if not re.fullmatch(r"operator:[A-Za-z0-9][A-Za-z0-9._:@/-]{0,159}", ref):
+            raise OutcomeError("handed-off acknowledgement requires a bounded operator reference")
+        receipt_fields = {"producer_kind": "operator", "run_identity": ref}
+    record = {
+        "phase": "authority-ack" if prior_acks else "ack",
+        "kind": "outcome.dispatch.v2",
+        "key": intent_id,
+        "dispatch_intent_id": intent_id,
+        "subplot_id": subplot_id,
+        "backend": backend,
+        "ack_kind": ack_kind,
+        "dispatch_ack_ref": ref,
+        "receipt_authority": (
+            "owner-user-state-v1" if ack_kind == "launched" else "operator-confirmed-v1"
+        ),
+        "at": time.time(),
+        **receipt_fields,
+    }
+    if leaf:
+        record["leaf_saga_id"] = leaf
+    if not outcome_store.append_ledger_once(store, record):
+        raise OutcomeError("dispatch intent is already acknowledged")
+    return record
+
+
+def _load_launch_receipt(
+    repo_root: Path,
+    ref: str,
+    *,
+    outcome_id: str,
+    subplot_id: str,
+    backend: str,
+    dispatch_intent_id: str,
+    leaf_saga_id: str,
+    run_identity: str,
+    intent_created_at: float,
+) -> dict[str, str]:
+    """Load one fresh, run-bound receipt from the owner-controlled user-state root."""
+
+    content, expected_sha256 = _read_launch_receipt(repo_root, ref)
+    return _validate_launch_receipt_content(
+        content,
+        expected_sha256=expected_sha256,
+        outcome_id=outcome_id,
+        subplot_id=subplot_id,
+        backend=backend,
+        dispatch_intent_id=dispatch_intent_id,
+        leaf_saga_id=leaf_saga_id,
+        run_identity=run_identity,
+        intent_created_at=intent_created_at,
+    )
+
+
+def _read_launch_receipt(repo_root: Path, ref: str) -> tuple[bytes, str]:
+    path_text, marker, expected_sha256 = ref.partition("#sha256=")
+    if not marker or not re.fullmatch(r"[0-9a-f]{64}", expected_sha256):
+        raise OutcomeError("launch receipt ref must end with #sha256=<64 lowercase hex>")
+    state_ref = f"{_workflow_compat.emit(_workflow_compat.USER_STATE_ROOT)}{repo_root.name}/"
+    receipt_prefix = f"{state_ref}dispatch-receipts/"
+    if not path_text.startswith(receipt_prefix):
+        raise OutcomeError("launch receipt must use the canonical protected user-state root")
+    suffix = Path(path_text.removeprefix(receipt_prefix))
+    if not suffix.parts or suffix.is_absolute() or ".." in suffix.parts:
+        raise OutcomeError("launch receipt path escapes the protected receipt root")
+    state_root = Path(state_ref).expanduser()
+    allowed = state_root / "dispatch-receipts"
+    candidate = allowed / suffix
+    try:
+        candidate.resolve().relative_to(allowed.resolve())
+    except (OSError, ValueError) as exc:
+        raise OutcomeError("launch receipt path escapes the protected receipt root") from exc
+    home = Path.home()
+    try:
+        relative = candidate.relative_to(home)
+    except ValueError as exc:
+        raise OutcomeError("launch receipt path escapes the user home") from exc
+    current = home
+    for part in relative.parts:
+        current = current / part
+        try:
+            if current.is_symlink():
+                raise OutcomeError("launch receipt path must not contain symlinks")
+        except OSError as exc:
+            raise OutcomeError("launch receipt path could not be inspected") from exc
+    _validate_receipt_state_identity(repo_root, state_root)
+    try:
+        fd = os.open(candidate, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+    except OSError as exc:
+        raise OutcomeError("launch receipt is missing or unreadable") from exc
+    try:
+        metadata = os.fstat(fd)
+        if (
+            not stat.S_ISREG(metadata.st_mode)
+            or metadata.st_size > 64 * 1024
+            or metadata.st_uid != os.getuid()
+            or metadata.st_mode & 0o022
+        ):
+            raise OutcomeError("launch receipt must be an owner-controlled bounded regular file")
+        content = os.read(fd, metadata.st_size + 1)
+    finally:
+        os.close(fd)
+    return content, expected_sha256
+
+
+def _validate_receipt_state_identity(repo_root: Path, state_root: Path) -> None:
+    try:
+        metadata = state_root.stat()
+    except OSError as exc:
+        raise OutcomeError("protected user-state root is missing") from exc
+    if (
+        not stat.S_ISDIR(metadata.st_mode)
+        or metadata.st_uid != os.getuid()
+        or metadata.st_mode & 0o022
+    ):
+        raise OutcomeError("protected user-state root is not owner-controlled")
+    marker = state_root / ".repo-identity.json"
+    try:
+        fd = os.open(marker, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+    except OSError as exc:
+        raise OutcomeError("protected user-state root lacks repository identity proof") from exc
+    try:
+        marker_stat = os.fstat(fd)
+        if (
+            not stat.S_ISREG(marker_stat.st_mode)
+            or marker_stat.st_size > 4096
+            or marker_stat.st_uid != os.getuid()
+            or marker_stat.st_mode & 0o022
+        ):
+            raise OutcomeError("repository identity proof is not owner-controlled")
+        marker_content = os.read(fd, marker_stat.st_size + 1)
+    finally:
+        os.close(fd)
+    try:
+        identity = json.loads(marker_content)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise OutcomeError("repository identity proof is invalid JSON") from exc
+    expected = {
+        "schema": "saga.workflow-repo-identity.v1",
+        "repo_root_sha256": hashlib.sha256(repo_root.resolve().as_posix().encode()).hexdigest(),
+    }
+    if identity != expected:
+        raise OutcomeError("repository identity proof does not match this repository")
+
+
+def _peek_launch_receipt_identity(repo_root: Path, ref: str) -> tuple[str, float]:
+    content, expected_sha256 = _read_launch_receipt(repo_root, ref)
+    if hashlib.sha256(content).hexdigest() != expected_sha256:
+        raise OutcomeError("launch receipt digest does not match")
+    try:
+        receipt = json.loads(content)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise OutcomeError("launch receipt is not valid JSON") from exc
+    if not isinstance(receipt, dict):
+        raise OutcomeError("launch receipt must be a JSON object")
+    run_identity = str(receipt.get("run_identity", ""))
+    issued_at = receipt.get("issued_at")
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,159}", run_identity):
+        raise OutcomeError("launch receipt run_identity is missing or unsafe")
+    if (
+        isinstance(issued_at, bool)
+        or not isinstance(issued_at, (int, float))
+        or not math.isfinite(float(issued_at))
+    ):
+        raise OutcomeError("launch receipt issued_at is missing or invalid")
+    if not 0 <= time.time() - float(issued_at) <= MAX_LAUNCH_RECEIPT_AGE_SECONDS:
+        raise OutcomeError("launch receipt is outside the freshness window")
+    return run_identity, float(issued_at)
+
+
+def _validate_launch_receipt_content(
+    content: bytes,
+    *,
+    expected_sha256: str,
+    outcome_id: str,
+    subplot_id: str,
+    backend: str,
+    dispatch_intent_id: str,
+    leaf_saga_id: str,
+    run_identity: str,
+    intent_created_at: float,
+) -> dict[str, str]:
+    actual_sha256 = hashlib.sha256(content).hexdigest()
+    if actual_sha256 != expected_sha256:
+        raise OutcomeError("launch receipt digest does not match")
+    try:
+        receipt = json.loads(content)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise OutcomeError("launch receipt is not valid JSON") from exc
+    if not isinstance(receipt, dict):
+        raise OutcomeError("launch receipt must be a JSON object")
+    expected = {
+        "schema": "saga.outcome-dispatch-launch.v1",
+        "producer_kind": _workflow_compat.emit(_workflow_compat.PRODUCER_KIND),
+        "outcome_id": outcome_id,
+        "subplot_id": subplot_id,
+        "backend": backend,
+        "dispatch_intent_id": dispatch_intent_id,
+        "leaf_saga_id": leaf_saga_id,
+        "run_identity": run_identity,
+    }
+    for key, value in expected.items():
+        if receipt.get(key) != value:
+            raise OutcomeError(f"launch receipt {key} does not match the dispatch intent")
+    issued_at = receipt.get("issued_at")
+    if (
+        isinstance(issued_at, bool)
+        or not isinstance(issued_at, (int, float))
+        or not math.isfinite(float(issued_at))
+    ):
+        raise OutcomeError("launch receipt issued_at is missing or invalid")
+    current_time = time.time()
+    if (
+        float(issued_at) < intent_created_at
+        or float(issued_at) > current_time + 60
+        or current_time - float(issued_at) > MAX_LAUNCH_RECEIPT_AGE_SECONDS
+    ):
+        raise OutcomeError("launch receipt is stale or predates the dispatch intent")
+    return {
+        "producer_kind": str(receipt["producer_kind"]),
+        "run_identity": str(receipt["run_identity"]),
+        "receipt_sha256": actual_sha256,
+    }
 
 
 def _append_ledger_once(store: Any, record: dict[str, Any]) -> bool:
@@ -114,20 +452,21 @@ def _append_ledger_once(store: Any, record: dict[str, Any]) -> bool:
     double-lists the degradation. Deduping on ``(phase, key)`` (the ``import_bundle`` pattern) bounds
     both. Returns True if the record was appended, False if it was already present.
     """
-    phase, key = record.get("phase"), record.get("key")
-    for rec in outcome_store.read_ledger(store):
-        if rec.get("phase") == phase and rec.get("key") == key:
-            return False
-    outcome_store.append_ledger(store, record)
-    return True
+    return outcome_store.append_ledger_once(store, record)
 
 
 def _team_execution_orchestration_ref(node: Any) -> str:
-    """Return the Team Execution receipt ref from node evidence, including the legacy alias."""
+    """Return the canonical receipt ref while accepting one exact legacy evidence key."""
     evidence = getattr(node, "evidence", {}) or {}
     if not isinstance(evidence, dict):
         return ""
-    return str(evidence.get("orchestration_ref") or evidence.get("team_execution_ref") or "").strip()
+    canonical_key = _workflow_compat.emit(_workflow_compat.EVIDENCE_REF)
+    legacy_key = _workflow_compat.legacy_values(_workflow_compat.EVIDENCE_REF)[0]
+    canonical = str(evidence.get(canonical_key) or evidence.get("orchestration_ref") or "").strip()
+    legacy = str(evidence.get(legacy_key) or "").strip()
+    if canonical and legacy and canonical != legacy:
+        raise OutcomeError("canonical and legacy workflow evidence refs conflict")
+    return canonical or legacy
 
 
 def _validate_team_execution_orchestration_ref(
@@ -138,9 +477,9 @@ def _validate_team_execution_orchestration_ref(
     ref: str,
     available: Sequence[str] | None,
 ) -> tuple[str, outcome_dispatcher.HaltReceipt | None]:
-    result = _load_team_execution_readiness().validate_team_execution_ready(
+    result = _load_verified_workflow_readiness().validate_verified_workflow_ready(
         repo_root,
-        orchestration_mode="team-execution",
+        orchestration_mode="verified-workflow",
         orchestration_ref=ref,
         context="outcome-dispatch",
         plan_path=_plan_path_from_ref(ref),
@@ -151,12 +490,14 @@ def _validate_team_execution_orchestration_ref(
             outcome_dispatcher.HaltReceipt(
                 outcome_id=outcome_id,
                 subplot_id=subplot_id,
-                backend="team-execution",
+                backend="verified-workflow",
                 reason=(
-                    f"team-execution not ready for outcome-dispatch: {result.reason}; "
+                    f"verified-workflow not ready for outcome-dispatch: {result.reason}; "
                     f"{result.repair_hint}"
                 ),
-                available=tuple(available) if available is not None else outcome_dispatcher.DEFAULT_AVAILABLE,
+                available=tuple(available)
+                if available is not None
+                else outcome_dispatcher.DEFAULT_AVAILABLE,
             ),
         )
     return (result.resolved_ref or ref, None)
@@ -167,9 +508,9 @@ def _plan_path_from_ref(ref: str) -> str:
     return path if path.startswith("docs/plans/") else ""
 
 
-def _load_team_execution_readiness() -> Any:
-    path = Path(__file__).resolve().parent / "team_execution_readiness.py"
-    spec = importlib.util.spec_from_file_location("team_execution_readiness", path)
+def _load_verified_workflow_readiness() -> Any:
+    path = Path(__file__).resolve().parent / "verified_workflow_readiness.py"
+    spec = importlib.util.spec_from_file_location("verified_workflow_readiness", path)
     if spec is None or spec.loader is None:
         raise ImportError(f"Unable to load {path}")
     module = importlib.util.module_from_spec(spec)
@@ -356,7 +697,8 @@ def nodes_from_parent_issue(
 ) -> tuple[list[dict[str, Any]], list[dict[str, str]], str]:
     """Build outcome node dicts from a GitHub issue's direct sub-issues.
 
-    Returns ``(nodes, dropped_edges, parent_title)``. Each node carries ``subplot_id=sub-<N>``, a
+    Returns ``(nodes, dropped_edges, parent_title)``. Each node carries a stable number-only subplot
+    id unless duplicate issue numbers across repositories require a repo-qualified id, a
     ``kind`` from the sub-issue's labels (``non-code`` label -> ``non-code``, else ``code``), an authored
     ``state`` from the sub-issue's state+reason, a ``github`` provenance stamp the reconcile/board-sync
     consumers read, and ``depends_on`` from the inferred (cycle-safe) edges.
@@ -370,7 +712,8 @@ def nodes_from_parent_issue(
     for sub in subissues:
         labels = {str(x).lower() for x in (sub.get("labels") or [])}
         if "capability" in labels or int(sub.get("sub_issue_count") or 0) > 0:
-            tracker_children.append(f"{owner}/{repo}#{sub['number']}")
+            child_repo = str(sub.get("repo") or f"{owner}/{repo}")
+            tracker_children.append(f"{child_repo}#{sub['number']}")
     if tracker_children:
         refs = ", ".join(tracker_children)
         raise OutcomeError(
@@ -380,12 +723,14 @@ def nodes_from_parent_issue(
         )
 
     depends_on_by_subplot, dropped = outcome_edges.edges_from_relationships(subissues)
+    subplot_ids = outcome_edges.subplot_ids_for_subissues(subissues)
 
     repo_full = f"{owner}/{repo}"
     nodes: list[dict[str, Any]] = []
     for sub in subissues:
         n = sub["number"]
-        sid = f"sub-{n}"
+        raw_repo = str(sub.get("repo") or "")
+        sid = subplot_ids[(raw_repo, int(n))]
         labels = [str(x).lower() for x in (sub.get("labels") or [])]
         kind = "non-code" if "non-code" in labels else "code"
         node: dict[str, Any] = {
@@ -395,7 +740,11 @@ def nodes_from_parent_issue(
             "state": _ingest_state(sub.get("state"), sub.get("state_reason")),
             # Stamp the sub-issue's OWN number (fully-qualified) so reconcile/board-sync resolve it,
             # never the parent issue (#375 KTD4/R5).
-            "github": {"repo": repo_full, "issue": f"{repo_full}#{n}", "sub_issue": n},
+            "github": {
+                "repo": raw_repo or repo_full,
+                "issue": f"{raw_repo or repo_full}#{n}",
+                "sub_issue": n,
+            },
         }
         deps = depends_on_by_subplot.get(sid)
         if deps:
@@ -459,20 +808,23 @@ LIVE_BLOCKED = "blocked"
 
 
 def _dispatch_records(store: Any) -> dict[str, str]:
-    """subplot_id -> leaf_saga_id for every SETTLED dispatch (a ``commit`` record in the ledger).
+    """Return real leaf ids only for typed v2 launch acknowledgements."""
 
-    Keyed on the ``commit`` phase, not ``intent``: a dispatch is recorded intent -> effect -> commit,
-    so a leaf whose intent was written but whose dispatch then failed (no commit) is NOT counted as
-    dispatched here — it falls back to the frontier and is re-driven, and ``replay_pending`` flags its
-    dangling intent. This makes the dedup durable AND a failed dispatch recoverable rather than stuck.
-    """
     out: dict[str, str] = {}
-    for rec in outcome_store.read_ledger(store):
-        if rec.get("kind") == "dispatch" and rec.get("phase") == "commit":
-            sid = str(rec.get("subplot_id", ""))
-            if sid:
-                out[sid] = str(rec.get("leaf_saga_id", ""))
+    for sid, reduced in outcome_store.reduce_dispatch_ledger(store).items():
+        record = reduced["record"]
+        if reduced["state"] == "dispatched" and record.get("leaf_saga_id"):
+            out[sid] = str(record["leaf_saga_id"])
     return out
+
+
+def _dispatch_ledger_states(store: Any) -> dict[str, str]:
+    """Derive dispatch state through the shared append-only v1/v2 reducer."""
+
+    return {
+        sid: str(reduced["state"])
+        for sid, reduced in outcome_store.reduce_dispatch_ledger(store).items()
+    }
 
 
 def _terminal_state_map(store: Any) -> dict[str, str]:
@@ -497,6 +849,7 @@ def derive_states(spec: outcome_spec.OutcomeSpec, store: Any) -> dict[str, str]:
     success = outcome_store.completed_subplots(store, successful_only=True)
     terminals = _terminal_state_map(store)
     dispatched = _dispatch_records(store)
+    ledger_states = _dispatch_ledger_states(store)
     frontier = set(outcome_spec.ready_frontier(spec, success))
     states: dict[str, str] = {}
     for node in spec.nodes:
@@ -507,6 +860,8 @@ def derive_states(spec: outcome_spec.OutcomeSpec, store: Any) -> dict[str, str]:
             states[sid] = terminals[sid]  # negative terminal — surfaced, not masked
         elif sid in dispatched:
             states[sid] = LIVE_DISPATCHED
+        elif sid in ledger_states:
+            states[sid] = ledger_states[sid]
         elif sid in frontier:
             states[sid] = LIVE_READY
         else:
@@ -827,7 +1182,11 @@ def _reconcile_once(
     silent substitution.
     """
     success = outcome_store.completed_subplots(store)  # success-only -> the frontier input
-    settled = set(_dispatch_records(store))  # subplots with a COMMIT dispatch record
+    settled = {
+        sid
+        for sid, reduced in outcome_store.reduce_dispatch_ledger(store).items()
+        if reduced.get("settled")
+    }
     dispatched: list[str] = []
     halted: list[dict[str, Any]] = []
     gated: list[str] = []
@@ -886,10 +1245,10 @@ def _reconcile_once(
         key = f"dispatch:{sid}"
         orchestration_ref = (
             _team_execution_orchestration_ref(node)
-            if resolved_backend == "team-execution"
+            if resolved_backend == "verified-workflow"
             else ""
         )
-        if resolved_backend == "team-execution":
+        if resolved_backend == "verified-workflow":
             orchestration_ref, ref_halt = _validate_team_execution_orchestration_ref(
                 Path(repo_root),
                 outcome_id=spec.outcome_id,
@@ -900,12 +1259,41 @@ def _reconcile_once(
             if ref_halt is not None:
                 outcome_store.release_lease(store, f"dispatch-{sid}", holder)
                 receipt = ref_halt.to_dict()
-                _append_ledger_once(store, {"phase": "halt", "kind": "dispatch", "key": key, **receipt})
+                _append_ledger_once(
+                    store, {"phase": "halt", "kind": "dispatch", "key": key, **receipt}
+                )
                 halted.append(receipt)
                 continue
-        outcome_store.append_ledger(
-            store, {"phase": "intent", "kind": "dispatch", "key": key, "subplot_id": sid}
+        intent_id = f"dispatch-intent:{spec.outcome_id}:{sid}"
+        intent_run_identity = f"outcome-run-{secrets.token_hex(16)}"
+        intent_created_at = time.time()
+        intent_created = outcome_store.append_ledger_once(
+            store,
+            {
+                "phase": "intent",
+                "kind": "outcome.dispatch.v2",
+                "key": intent_id,
+                "dispatch_intent_id": intent_id,
+                "subplot_id": sid,
+                "backend": resolved_backend,
+                "run_identity": intent_run_identity,
+                "at": intent_created_at,
+            },
         )
+        if not intent_created:
+            outcome_store.release_lease(store, f"dispatch-{sid}", holder)
+            halted.append(
+                {
+                    "kind": "halt",
+                    "subplot_id": sid,
+                    "backend": resolved_backend,
+                    "reason": (
+                        "dispatch intent already exists without an acknowledgement; "
+                        "reconcile launch evidence or an operator handoff before retrying"
+                    ),
+                }
+            )
+            continue
         request = DispatchRequest(
             outcome_id=spec.outcome_id,
             subplot_id=sid,
@@ -913,9 +1301,12 @@ def _reconcile_once(
             backend=resolved_backend,
             repo_root=Path(repo_root),
             orchestration_ref=orchestration_ref,
+            dispatch_intent_id=intent_id,
+            run_identity=intent_run_identity,
+            intent_created_at=intent_created_at,
         )
         try:
-            leaf_saga_id = dispatch(request)
+            acknowledgement = dispatch(request)
         except outcome_dispatcher.BackendHaltError as halt:
             # A dispatcher-raised HALT (legacy / a restricted injected dispatcher). Release the lock so a
             # later tick re-attempts + re-surfaces it; record the receipt durably; never abort the tick.
@@ -932,19 +1323,117 @@ def _reconcile_once(
             # intent) cannot double-list the degradation.
             _append_ledger_once(store, {"phase": "degrade", "key": key, **degrade_receipt})
             degraded.append(degrade_receipt)
-        commit_record = {
-            "phase": "commit",
-            "kind": "dispatch",
-            "key": key,
-            "subplot_id": sid,
-            "leaf_saga_id": leaf_saga_id,
-            "backend": resolved_backend,
-            "at": now(),  # dispatch timestamp for the U9 liveness check (R31)
-        }
-        if request.orchestration_ref:
-            commit_record["orchestration_ref"] = request.orchestration_ref
-        outcome_store.append_ledger(store, commit_record)
-        dispatched.append(sid)
+        if isinstance(acknowledgement, dict):
+            if acknowledgement.get("status") == "prepared":
+                outcome_store.release_lease(store, f"dispatch-{sid}", holder)
+                continue
+            ack_kind = acknowledgement.get("ack_kind")
+            ack_ref = str(acknowledgement.get("dispatch_ack_ref", "")).strip()
+            leaf_saga_id = str(acknowledgement.get("leaf_saga_id", "")).strip()
+            producer_kind = str(acknowledgement.get("producer_kind", "")).strip()
+            run_identity = str(acknowledgement.get("run_identity", "")).strip()
+            binding_matches = all(
+                str(acknowledgement.get(key, "")) == expected
+                for key, expected in (
+                    ("dispatch_intent_id", intent_id),
+                    ("outcome_id", spec.outcome_id),
+                    ("subplot_id", sid),
+                    ("backend", resolved_backend),
+                )
+            )
+            if (
+                ack_kind != "launched"
+                or not ack_ref
+                or not binding_matches
+                or producer_kind != _workflow_compat.emit(_workflow_compat.PRODUCER_KIND)
+                or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,159}", run_identity)
+                or (ack_kind == "launched" and not leaf_saga_id)
+            ):
+                outcome_store.release_lease(store, f"dispatch-{sid}", holder)
+                halted.append(
+                    {
+                        "kind": "halt",
+                        "subplot_id": sid,
+                        "backend": resolved_backend,
+                        "reason": "invalid dispatch acknowledgement",
+                    }
+                )
+                continue
+            receipt_fields: dict[str, str] = {}
+            if ack_kind == "launched":
+                try:
+                    receipt_fields = _load_launch_receipt(
+                        Path(repo_root),
+                        ack_ref,
+                        outcome_id=spec.outcome_id,
+                        subplot_id=sid,
+                        backend=resolved_backend,
+                        dispatch_intent_id=intent_id,
+                        leaf_saga_id=leaf_saga_id,
+                        run_identity=intent_run_identity,
+                        intent_created_at=intent_created_at,
+                    )
+                except OutcomeError as exc:
+                    outcome_store.release_lease(store, f"dispatch-{sid}", holder)
+                    halted.append(
+                        {
+                            "kind": "halt",
+                            "subplot_id": sid,
+                            "backend": resolved_backend,
+                            "reason": f"invalid dispatch launch receipt: {exc}",
+                        }
+                    )
+                    continue
+                if (
+                    receipt_fields["producer_kind"] != producer_kind
+                    or receipt_fields["run_identity"] != run_identity
+                ):
+                    outcome_store.release_lease(store, f"dispatch-{sid}", holder)
+                    halted.append(
+                        {
+                            "kind": "halt",
+                            "subplot_id": sid,
+                            "backend": resolved_backend,
+                            "reason": "dispatch acknowledgement conflicts with its launch receipt",
+                        }
+                    )
+                    continue
+            record = {
+                "phase": "ack",
+                "kind": "outcome.dispatch.v2",
+                "key": intent_id,
+                "dispatch_intent_id": intent_id,
+                "subplot_id": sid,
+                "backend": resolved_backend,
+                "ack_kind": ack_kind,
+                "dispatch_ack_ref": ack_ref,
+                "receipt_authority": "owner-user-state-v1",
+                "producer_kind": producer_kind,
+                "run_identity": run_identity,
+                "at": now(),
+                **receipt_fields,
+            }
+            if orchestration_ref:
+                record["orchestration_ref"] = orchestration_ref
+            if ack_kind == "launched":
+                record["leaf_saga_id"] = leaf_saga_id
+            appended = outcome_store.append_ledger_once(store, record)
+            if ack_kind == "launched" and appended:
+                dispatched.append(sid)
+        else:
+            # Compatibility-only: a v1 dispatcher supplied a synthetic id. It settles dedupe but cannot progress.
+            outcome_store.append_ledger_once(
+                store,
+                {
+                    "phase": "commit",
+                    "kind": "dispatch",
+                    "key": key,
+                    "subplot_id": sid,
+                    "leaf_saga_id": str(acknowledgement),
+                    "backend": resolved_backend,
+                    "at": now(),
+                },
+            )
     return dispatched, halted, gated, degraded
 
 
@@ -990,13 +1479,42 @@ def export_bundle(
     for node in spec.nodes:
         for ev in outcome_store.read_completion_events(store, node.subplot_id):
             events.append(ev.to_dict())
+    ledger_records = outcome_store.read_ledger(store)
+    all_dispatch_records = [
+        record
+        for record in ledger_records
+        if record.get("kind") in {"dispatch", "outcome.dispatch.v2"}
+    ]
+    dispatch_ledger = [
+        record
+        for record in all_dispatch_records
+        if record.get("phase") not in {"ack", "authority-ack"}
+    ]
+    direct_dispatch_audit = [
+        record for record in all_dispatch_records if record.get("phase") in {"ack", "authority-ack"}
+    ]
+    archived_dispatch_audit = [
+        record["record"]
+        for record in ledger_records
+        if record.get("kind") == DISPATCH_AUDIT_KIND
+        and record.get("phase") == "archive"
+        and isinstance(record.get("record"), dict)
+    ]
+    dispatch_audit: list[dict[str, Any]] = []
+    seen_audit: set[str] = set()
+    for record in [*direct_dispatch_audit, *archived_dispatch_audit]:
+        digest = _dispatch_audit_digest(record)
+        if digest in seen_audit:
+            continue
+        seen_audit.add(digest)
+        dispatch_audit.append(record)
     return {
         "schema": "outcome-bundle/1",
         "spec": spec.to_dict(),
         "completion_events": events,
-        "dispatch_ledger": [
-            r for r in outcome_store.read_ledger(store) if r.get("kind") == "dispatch"
-        ],
+        "dispatch_ledger": dispatch_ledger,
+        "dispatch_audit": dispatch_audit,
+        "dispatch_receipts": {},
     }
 
 
@@ -1006,27 +1524,227 @@ def import_bundle(
     """Reconstruct an outcome from a bundle: write the spec to the branch + replay events/records.
 
     Fully **idempotent** — re-importing the same bundle does not duplicate state: completion events
-    replay through the write-once, idempotency-keyed store; dispatch ledger records are deduped
-    against the existing ledger by their ``(phase, key)`` so the ledger does not grow on re-import.
+    replay through the write-once, idempotency-keyed store; active dispatch records are deduped by
+    ``(phase, key)`` and inert audit records by their content digest.
     """
     if bundle.get("schema") != "outcome-bundle/1":
         raise OutcomeError(f"unrecognized bundle schema {bundle.get('schema')!r}")
     spec = outcome_spec.OutcomeSpec.from_dict(bundle["spec"])
     spec.validate()
+    records = bundle.get("dispatch_ledger", [])
+    receipt_writes = _validate_import_dispatch_ledger(
+        repo_root,
+        spec,
+        records,
+        bundle.get("dispatch_receipts", {}),
+    )
+    audit_wrappers = _validate_import_dispatch_audit(
+        spec,
+        records,
+        bundle.get("dispatch_audit", []),
+    )
+    raw_events = bundle.get("completion_events", [])
+    if not isinstance(raw_events, list) or len(raw_events) > 10000:
+        raise OutcomeError("completion_events must be a bounded list")
+    completion_events = [outcome_store.CompletionEvent.from_dict(event) for event in raw_events]
+    for path, content in receipt_writes:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        temporary = path.with_suffix(path.suffix + ".import.tmp")
+        temporary.write_bytes(content)
+        os.replace(temporary, path)
     save_spec(repo_root, spec)
     store = _store(repo_root, spec.outcome_id, runner=runner)
-    for ev_dict in bundle.get("completion_events", []):
-        outcome_store.write_completion_event(
-            store, outcome_store.CompletionEvent.from_dict(ev_dict)
-        )
+    for event in completion_events:
+        outcome_store.write_completion_event(store, event)
     existing = {(str(r.get("phase")), str(r.get("key"))) for r in outcome_store.read_ledger(store)}
-    for rec in bundle.get("dispatch_ledger", []):
+    for rec in [*records, *audit_wrappers]:
         ident = (str(rec.get("phase")), str(rec.get("key")))
         if ident in existing:
             continue  # already present -> skip so re-import does not grow the ledger
         outcome_store.append_ledger(store, rec)
         existing.add(ident)
     return spec
+
+
+def _dispatch_audit_digest(record: dict[str, Any]) -> str:
+    """Return the stable identity for one inert, non-authoritative audit record."""
+
+    payload = json.dumps(record, sort_keys=True, separators=(",", ":"), allow_nan=False)
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def _validate_import_dispatch_audit(
+    spec: outcome_spec.OutcomeSpec,
+    dispatch_records: object,
+    audit_records: object,
+) -> list[dict[str, Any]]:
+    """Validate and wrap imported acknowledgements so they remain visible but never authoritative."""
+
+    if not isinstance(audit_records, list) or len(audit_records) > 10000:
+        raise OutcomeError("dispatch_audit must contain bounded non-authoritative acknowledgements")
+    if not isinstance(dispatch_records, list):
+        raise OutcomeError("dispatch_ledger must be a bounded list")
+    subplot_ids = {node.subplot_id for node in spec.nodes}
+    intents = {
+        str(record.get("key")): record
+        for record in dispatch_records
+        if isinstance(record, dict)
+        and record.get("kind") == "outcome.dispatch.v2"
+        and record.get("phase") == "intent"
+    }
+    allowed = {
+        "phase",
+        "kind",
+        "key",
+        "dispatch_intent_id",
+        "subplot_id",
+        "backend",
+        "ack_kind",
+        "dispatch_ack_ref",
+        "producer_kind",
+        "run_identity",
+        "receipt_sha256",
+        "receipt_authority",
+        "leaf_saga_id",
+        "orchestration_ref",
+        "at",
+    }
+    seen: set[str] = set()
+    wrappers: list[dict[str, Any]] = []
+    for record in audit_records:
+        if not isinstance(record, dict) or not set(record).issubset(allowed):
+            raise OutcomeError(
+                "dispatch_audit must contain bounded non-authoritative acknowledgements"
+            )
+        phase = str(record.get("phase", ""))
+        key = str(record.get("key", ""))
+        subplot_id = str(record.get("subplot_id", ""))
+        intent_id = f"dispatch-intent:{spec.outcome_id}:{subplot_id}"
+        at = record.get("at")
+        intent = intents.get(intent_id)
+        if (
+            record.get("kind") != "outcome.dispatch.v2"
+            or phase not in {"ack", "authority-ack"}
+            or subplot_id not in subplot_ids
+            or key != intent_id
+            or record.get("dispatch_intent_id") != intent_id
+            or intent is None
+            or record.get("backend") != intent.get("backend")
+            or record.get("ack_kind") not in {"launched", "handed-off"}
+            or not isinstance(record.get("dispatch_ack_ref"), str)
+            or not record["dispatch_ack_ref"]
+            or len(record["dispatch_ack_ref"]) > 4096
+            or isinstance(at, bool)
+            or not isinstance(at, (int, float))
+            or not math.isfinite(float(at))
+        ):
+            raise OutcomeError(
+                "dispatch_audit must contain bounded non-authoritative acknowledgements"
+            )
+        digest = _dispatch_audit_digest(record)
+        if digest in seen:
+            raise OutcomeError(
+                "dispatch_audit must contain bounded non-authoritative acknowledgements"
+            )
+        seen.add(digest)
+        wrappers.append(
+            {
+                "kind": DISPATCH_AUDIT_KIND,
+                "phase": "archive",
+                "key": f"dispatch-audit:{digest}",
+                "record": record,
+            }
+        )
+    return wrappers
+
+
+def _validate_import_dispatch_ledger(
+    repo_root: Path,
+    spec: outcome_spec.OutcomeSpec,
+    records: object,
+    receipt_payloads: object,
+) -> list[tuple[Path, bytes]]:
+    """Validate portable dispatch authority before import performs any writes."""
+
+    if not isinstance(records, list) or len(records) > 10000:
+        raise OutcomeError("dispatch_ledger must be a bounded list")
+    if not isinstance(receipt_payloads, dict) or len(receipt_payloads) > len(records):
+        raise OutcomeError("dispatch_receipts must be a bounded object")
+    subplot_ids = {node.subplot_id for node in spec.nodes}
+    intents: dict[str, dict[str, Any]] = {}
+    seen: set[tuple[str, str]] = set()
+
+    for raw in records:
+        if not isinstance(raw, dict):
+            raise OutcomeError("dispatch_ledger records must be objects")
+        kind = raw.get("kind")
+        phase = raw.get("phase")
+        key = str(raw.get("key", ""))
+        subplot_id = str(raw.get("subplot_id", ""))
+        if subplot_id not in subplot_ids or not key or (str(phase), key) in seen:
+            raise OutcomeError("dispatch_ledger contains an invalid or duplicate record")
+        seen.add((str(phase), key))
+        if kind == "dispatch":
+            if phase not in {"commit", "halt"}:
+                raise OutcomeError("legacy dispatch record has an invalid phase")
+            continue
+        if kind != "outcome.dispatch.v2" or phase not in {"intent", "ack", "authority-ack"}:
+            raise OutcomeError("dispatch_ledger contains an unsupported record")
+        allowed = {
+            "phase",
+            "kind",
+            "key",
+            "dispatch_intent_id",
+            "subplot_id",
+            "backend",
+            "run_identity",
+            "at",
+            "migration_from_key",
+            "migration_from_backend",
+        }
+        if phase in {"ack", "authority-ack"}:
+            allowed = {
+                "phase",
+                "kind",
+                "key",
+                "dispatch_intent_id",
+                "subplot_id",
+                "backend",
+                "ack_kind",
+                "dispatch_ack_ref",
+                "producer_kind",
+                "run_identity",
+                "receipt_sha256",
+                "receipt_authority",
+                "leaf_saga_id",
+                "orchestration_ref",
+                "at",
+            }
+        if not set(raw).issubset(allowed):
+            raise OutcomeError("dispatch record contains unrecognized fields")
+        intent_id = f"dispatch-intent:{spec.outcome_id}:{subplot_id}"
+        if key != intent_id or raw.get("dispatch_intent_id") != intent_id:
+            raise OutcomeError("dispatch record does not bind the outcome intent")
+        if phase == "intent":
+            if (
+                intent_id in intents
+                or raw.get("backend") not in outcome_spec.NODE_BACKENDS
+                or not re.fullmatch(
+                    r"[A-Za-z0-9][A-Za-z0-9._:-]{0,159}", str(raw.get("run_identity", ""))
+                )
+                or isinstance(raw.get("at"), bool)
+                or not isinstance(raw.get("at"), (int, float))
+                or not math.isfinite(float(raw["at"]))
+            ):
+                raise OutcomeError("dispatch intent is duplicate or incomplete")
+            intents[intent_id] = raw
+            continue
+        raise OutcomeError(
+            "authoritative dispatch acknowledgements are not portable; reconcile them locally"
+        )
+    if receipt_payloads:
+        raise OutcomeError("dispatch_receipts require a local authoritative acknowledgement")
+    return []
 
 
 # ---------------------------------------------------------------------------
@@ -1209,16 +1927,6 @@ def main(argv: list[str] | None = None) -> int:
         help="target mission-control board/workflow for autonomous board-sync (U4/#326)",
     )
     p_advance.add_argument(
-        "--host-capable",
-        action="store_true",
-        help="this host can run the forked-context backends (fork/subagent/goal)",
-    )
-    p_advance.add_argument(
-        "--workflow-available",
-        action="store_true",
-        help="this host can run cc-workflows-ultracode (the Workflow tool is present)",
-    )
-    p_advance.add_argument(
         "--persist",
         action="store_true",
         help="commit + push the spec to the outcome branch after advancing (R26/R27 durability)",
@@ -1281,6 +1989,15 @@ def main(argv: list[str] | None = None) -> int:
     p_reconcile.add_argument(
         "--resolve", metavar="DRIFT_ID", help="apply --action to the drift with this id"
     )
+
+    p_dispatch_ack = sub.add_parser(
+        "reconcile-dispatch", help="append an evidence-backed v2 dispatch acknowledgement"
+    )
+    p_dispatch_ack.add_argument("outcome_id")
+    p_dispatch_ack.add_argument("subplot_id")
+    p_dispatch_ack.add_argument("--ack-kind", choices=("launched", "handed-off"), required=True)
+    p_dispatch_ack.add_argument("--dispatch-ack-ref", required=True)
+    p_dispatch_ack.add_argument("--leaf-saga-id", default="")
     p_reconcile.add_argument(
         "--action", choices=("accept-board", "re-assert", "hold"), help="resolution for --resolve"
     )
@@ -1321,9 +2038,7 @@ def main(argv: list[str] | None = None) -> int:
             # HALTs when attended/guaranteed/side-effected, else degrades one rung when --autonomous.
             import outcome_decompose
 
-            avail = outcome_dispatcher.resolve_available(
-                host_capable=args.host_capable, workflow_available=args.workflow_available
-            )
+            avail = outcome_dispatcher.resolve_available()
             # The dispatcher mints any backend the degrade decision resolves to (it never halts here —
             # _reconcile_once owns the HALT/degrade decision via degrade_decision with `avail`).
             result = advance(
@@ -1418,6 +2133,20 @@ def main(argv: list[str] | None = None) -> int:
             bundle = json.loads(Path(args.path).read_text(encoding="utf-8"))
             spec = import_bundle(root, bundle)
             print(json.dumps({"imported": spec.outcome_id, "nodes": len(spec.nodes)}))
+        elif args.command == "reconcile-dispatch":
+            print(
+                json.dumps(
+                    reconcile_dispatch_ack(
+                        _store(root, args.outcome_id),
+                        repo_root=root,
+                        outcome_id=args.outcome_id,
+                        subplot_id=args.subplot_id,
+                        ack_kind=args.ack_kind,
+                        dispatch_ack_ref=args.dispatch_ack_ref,
+                        leaf_saga_id=args.leaf_saga_id,
+                    )
+                )
+            )
         elif args.command == "reconcile":
             # #295 U5: explicit board<->saga drift detection (read-only on the world; no lease).
             import outcome_github  # noqa: PLC0415

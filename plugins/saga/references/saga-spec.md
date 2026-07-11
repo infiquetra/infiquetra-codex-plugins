@@ -118,8 +118,11 @@ construct a `Saga` (no default); all others have the listed default.
 | `phase_status` | enum | — | `pending` | Phase completion (§4) — **MUST** be in `PHASE_STATUSES`. |
 | `status` | enum | — | `active` | Thread disposition (§4) — **MUST** be in `STATUSES`, **MUST NOT** be `pending`/`in_progress`. |
 | `next_step` | str | — | `""` | The one imperative resume anchor (top of `## Remaining`). |
-| `orchestration_mode` | enum | — | `inline` | How work runs — decision contract in `references/operator-choice.md`; **MUST** be in `ORCHESTRATION_MODES`. |
-| `orchestration_ref` | str | — | `""` | Empty for `inline` / `manual`; for executable `team-execution`, points to a `## Team Structure` receipt or protected evidence root. |
+| `orchestration_mode` | enum | — | `inline` | Canonical workflow mode: `inline`, `manual`, or `verified-workflow`. Readers accept legacy `team-execution`; new serializers emit only canonical vocabulary. |
+| `continuation_mode` | enum | — | `turn` | `turn` or explicitly bound `goal`; a Goal binding requires a stable tool-returned identifier. |
+| `continuation_ref` | str | — | `""` | Stable Goal identifier only when `continuation_mode=goal`. |
+| `identity_mode` | enum | — | `generic` | `generic` or `logical-role-attested`; identity is distinct from workflow mode. |
+| `orchestration_ref` | str | — | `""` | Empty for `inline` / `manual`; for legacy `team-execution`, points to a `## Team Structure` receipt or protected evidence root. Legacy evidence is readable but does not attest a new Verified Workflow run. |
 | `issue_ref` | str | — | `""` | `owner/repo#N` pointer; empty for plan-only / pre-issue work. |
 | `destination` | enum | — | `plan-only` | Routing intent — **MUST** be in `DESTINATIONS`. Mirrors `lifecycle_state`. |
 | `round` | int | — | `0` | Current PR/iteration round. |
@@ -212,8 +215,8 @@ lifecycle_phase: work
 phase_status: in_progress
 status: active
 next_step: "wire /resume to call saga.restore"
-orchestration_mode: team-execution
-orchestration_ref: docs/plans/2026-06-02-saga-foundation.md#team-structure
+orchestration_mode: verified-workflow
+orchestration_ref: docs/plans/2026-06-02-saga-foundation.md#workflow-structure
 issue_ref: "infiquetra/infiquetra-codex-plugins#42"
 destination: pr
 round: 2
@@ -281,11 +284,30 @@ LIFECYCLE_PHASES   = ("ideation", "brainstorm", "plan", "review", "work", "qa", 
 PHASE_STATUSES     = ("pending", "in_progress", "complete")
 STATUSES           = ("active", "blocked", "paused", "handed-off", "done", "abandoned")
 DESTINATIONS       = ("plan-only", "pr", "merge", "nonprod-deploy")
-ORCHESTRATION_MODES = ("inline", "manual", "team-execution")
+ORCHESTRATION_MODES = ("inline", "manual", "verified-workflow")
+LEGACY_ORCHESTRATION_MODES = ("team-execution",)
 ```
 
 `destination` mirrors `lifecycle_state.normalize_destination`'s canonical set — use that helper to normalize
 user-facing labels (`deploy` -> `nonprod-deploy`, etc.) before storing.
+
+### 4.1 Runtime capability dimensions
+
+`ORCHESTRATION_MODES` is the canonical write enum; the exact legacy alias is read-only compatibility,
+not a menu of every Codex feature. The
+current capability contract separates:
+
+- Saga lifecycle/state;
+- current-turn or explicitly bound Goal continuation;
+- inline, manual, or Verified Workflow mode, with legacy Team Execution readable but not emitted;
+- inline, deterministic-tool, generic-subagent, or attested named-profile step vehicle;
+- generic or logical-role-attested identity;
+- profile model/effort policy and its independent readback evidence; and
+- hook observation/persistence behavior.
+
+Goal, hooks, fork, source Workflow, and subagents are not additional values in this v1 enum. New
+serializers remain on the v1 vocabulary until U5 implements read-old/write-new fields and central
+legacy aliases; callers must not infer availability from a feature flag or boolean.
 
 ---
 

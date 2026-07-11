@@ -1,58 +1,109 @@
 #!/usr/bin/env python3
-"""Canonical fleet tier palette — the model/effort vocabulary shared across plugins.
+"""Canonical Fleet Core model, effort, and Codex execution-class policy.
 
-Moved verbatim from ``plugins/saga/scripts/execution_spec.py`` (fleet-commons first
-mover, issue #463 / DECISIONS ``{#fleet-commons-mechanism-463}``), then made
-registry-backed in #370: the ordered ``MODELS`` / ``EFFORTS`` tuples are **derived at
-import** from the explicit ``rank`` / ``rung`` indices in ``models.json`` rather than
-hand-ordered here. saga re-exports these names through its vendored
-``fleet_commons_shim``; other consumers load this module the same way. Content changes
-here are additive-only within fleet-core 0.x (KTD5): a consumer never breaks because
-fleet-core updated.
+``models.json`` contains two deliberately separate vocabularies:
 
-ORDERING IS LOAD-BEARING (``{#tier-vocab-ordering}``): consumers merge tiers
-upgrade-only via ``min(MODELS.index)`` / ``max(EFFORTS.index)``, so MODELS is
-strongest-first and EFFORTS is weakest-first. Use ``model_rank()`` / ``effort_rank()``
-(or the ``escalate`` / ``downgrade`` / ``clamp`` ladder ops) instead of re-deriving
-index arithmetic. To add a model/effort, edit ``models.json`` — never a second bare
-literal. See ``plugins/fleet-core/references/tier-palette.md``.
+* Claude-derived lineage tiers retained for existing Saga and Team Execution consumers; and
+* Codex execution classes plus the scalar ``low..max`` effort ladder used by new profiles.
+
+Ultra is catalog truth but is not a scalar effort and is never a leaf execution class. Logical
+roles and allowed class transitions belong to Verified Workflows, not this module.
 """
 
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 MODELS_REGISTRY_PATH = Path(__file__).resolve().parent / "models.json"
+STRONGEST_SUPPORTED = "strongest-supported"
 
 
 class TierPaletteError(ValueError):
-    """Raised when ``models.json`` is malformed (bad rank/rung/ceiling)."""
+    """Raised when the single policy registry is malformed."""
 
 
-def _load_registry(path: Path = MODELS_REGISTRY_PATH) -> dict:
-    with open(path, encoding="utf-8") as handle:
-        return json.load(handle)
+@dataclass(frozen=True)
+class ModelCandidate:
+    model: str
+    effort: str
 
 
-def _derive_ordered(rows: dict, index_key: str, kind: str) -> tuple[str, ...]:
-    """Return names ordered by their explicit integer index (0..n-1, contiguous, unique).
+@dataclass(frozen=True)
+class ExecutionClassPolicy:
+    name: str
+    description: str
+    workspace_boundary: str
+    external_boundary: str
+    preferred: ModelCandidate
+    fallbacks: tuple[ModelCandidate, ...]
 
-    A missing/duplicate/gapped/non-int index raises ``TierPaletteError`` at import —
-    a silently mis-ordered tuple would corrupt every upgrade-only tier merge downstream.
-    """
+    @property
+    def candidates(self) -> tuple[ModelCandidate, ...]:
+        return (self.preferred, *self.fallbacks)
+
+    @property
+    def requested_effort(self) -> str:
+        return self.preferred.effort
+
+
+@dataclass(frozen=True)
+class RootOrchestrationPolicy:
+    preferred_model: str
+    fallback_models: tuple[str, ...]
+    default_effort: str
+    ultra_requires_explicit_selection: bool
+    ultra_requires_independent_fanout: bool
+    ultra_leaf_allowed: bool
+
+    @property
+    def models(self) -> tuple[str, ...]:
+        return (self.preferred_model, *self.fallback_models)
+
+
+def _load_registry(path: Path = MODELS_REGISTRY_PATH) -> dict[str, Any]:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise TierPaletteError(f"could not load {path}: {exc}") from exc
+    if not isinstance(value, dict):
+        raise TierPaletteError(f"{path}: top level must be an object")
+    if value.get("schema_version") != 2:
+        raise TierPaletteError(f"{path}: schema_version must be 2")
+    required = {
+        "lineage_models",
+        "lineage_efforts",
+        "scalar_efforts",
+        "execution_classes",
+        "root_orchestration_profiles",
+    }
+    missing = required - set(value)
+    if missing:
+        raise TierPaletteError(f"{path}: missing registry sections {sorted(missing)}")
+    allowed = {"schema_version", "_comment", *required}
+    unexpected = set(value) - allowed
+    if unexpected:
+        raise TierPaletteError(f"{path}: unexpected registry sections {sorted(unexpected)}")
+    return value
+
+
+def _derive_ordered(rows: object, index_key: str, kind: str) -> tuple[str, ...]:
+    if not isinstance(rows, dict) or not rows:
+        raise TierPaletteError(f"{kind} registry must be a non-empty object")
     indexed: list[tuple[int, str]] = []
     seen: set[int] = set()
     for name, row in rows.items():
-        if index_key not in row:
-            raise TierPaletteError(f"{kind} {name!r} missing {index_key!r} in models.json")
-        idx = row[index_key]
-        if not isinstance(idx, int) or isinstance(idx, bool):
-            raise TierPaletteError(f"{kind} {name!r} {index_key} must be an int, got {idx!r}")
-        if idx in seen:
-            raise TierPaletteError(f"{kind} {index_key} {idx} is duplicated in models.json")
-        seen.add(idx)
-        indexed.append((idx, name))
+        if not isinstance(name, str) or not isinstance(row, dict):
+            raise TierPaletteError(f"{kind} rows must map names to objects")
+        index = row.get(index_key)
+        if not isinstance(index, int) or isinstance(index, bool):
+            raise TierPaletteError(f"{kind} {name!r} {index_key} must be an integer")
+        if index in seen:
+            raise TierPaletteError(f"{kind} {index_key} {index} is duplicated")
+        seen.add(index)
+        indexed.append((index, name))
     if seen != set(range(len(indexed))):
         raise TierPaletteError(
             f"{kind} {index_key} values {sorted(seen)} are not contiguous 0..{len(indexed) - 1}"
@@ -60,181 +111,289 @@ def _derive_ordered(rows: dict, index_key: str, kind: str) -> tuple[str, ...]:
     return tuple(name for _, name in sorted(indexed))
 
 
-def _derive_effort_ceilings(registry: dict, efforts: tuple[str, ...]) -> dict[str, str]:
-    """Map each model to its ``effort_ceiling``; raise on a missing/unknown ceiling."""
+def _string(value: object, where: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise TierPaletteError(f"{where} must be a non-empty string")
+    return value
+
+
+_REGISTRY = _load_registry()
+
+# Compatibility vocabulary. These names are source-lineage identifiers, not active Codex model
+# selection. U3/U6 migrate consumers onto EXECUTION_CLASSES/SCALAR_EFFORTS before cutover.
+MODELS = _derive_ordered(_REGISTRY["lineage_models"], "rank", "lineage model")
+EFFORTS = _derive_ordered(_REGISTRY["lineage_efforts"], "rung", "lineage effort")
+
+# Authoritative Codex scalar ladder. Ultra is intentionally absent.
+SCALAR_EFFORTS = _derive_ordered(_REGISTRY["scalar_efforts"], "rung", "scalar effort")
+if SCALAR_EFFORTS != ("low", "medium", "high", "xhigh", "max"):
+    raise TierPaletteError(
+        "scalar_efforts must be exactly ('low', 'medium', 'high', 'xhigh', 'max')"
+    )
+
+
+def _derive_effort_ceilings() -> dict[str, str]:
     ceilings: dict[str, str] = {}
-    for name, row in registry["models"].items():
+    for name, row in _REGISTRY["lineage_models"].items():
         ceiling = row.get("effort_ceiling")
-        if ceiling is None:
-            raise TierPaletteError(f"model {name!r} missing 'effort_ceiling' in models.json")
-        if ceiling not in efforts:
+        if ceiling not in EFFORTS:
             raise TierPaletteError(
-                f"model {name!r} effort_ceiling {ceiling!r} is not a known effort {efforts}"
+                f"lineage model {name!r} effort_ceiling {ceiling!r} is not in {EFFORTS}"
             )
         ceilings[name] = ceiling
     return ceilings
 
 
-_REGISTRY = _load_registry()
-
-# Closed model vocabulary, strongest-first — derived from models.json ``rank``.
-# Consumers validate authored tiers against this set so a typo ("opus-high") fails
-# loudly instead of silently producing an un-runnable dispatch.
-MODELS = _derive_ordered(_REGISTRY["models"], "rank", "model")
-
-# Closed effort vocabulary, weakest-first — derived from models.json ``rung``.
-EFFORTS = _derive_ordered(_REGISTRY["efforts"], "rung", "effort")
-
-# Per-model effort ceiling: the strongest effort the model actually runs. haiku
-# clamps below xhigh; the ladder ops and Tier.validate() consult this (#370).
-_EFFORT_CEILINGS = _derive_effort_ceilings(_REGISTRY, EFFORTS)
-
-# Models cheap enough that budget-discipline lessons (brevity, mandatory final
-# emit, skim-don't-read, batch concurrency) MUST be baked into generated agent
-# prompts. Public at the canonical home; saga's re-export keeps its private
-# ``_CHEAP_MODELS`` alias.
-CHEAP_MODELS = ("haiku",)
-
-# Delegation-intent vocabulary for an engine/capability unit: ``offload`` wants a
-# cheap chaperone (the delegation is net-negative otherwise); ``second-opinion``
-# wants an expensive one (adversarial verification IS the product).
-ENGINE_INTENTS = ("offload", "second-opinion")
-
-
-def _derive_codex_mapping(registry: dict) -> dict[str, tuple[str, str]]:
-    """Map each lineage tier name to its active ``(codex_model, codex_effort)`` pair (KTD3).
-
-    Codex dual-palette adaptation: the ordered MODELS vocabulary stays the Claude lineage
-    names so upstream code diffs cleanly, while each row carries the Codex model + effort
-    actually dispatched. A missing/mistyped mapping raises at import — a silent hole would let
-    the validator-derived TEAM_EXECUTION_MODEL_HINTS drift from the registry.
-    """
+def _derive_codex_mapping() -> dict[str, tuple[str, str]]:
     mapping: dict[str, tuple[str, str]] = {}
-    for name, row in registry["models"].items():
-        codex_model = row.get("codex_model")
-        codex_effort = row.get("codex_effort")
-        if not isinstance(codex_model, str) or not codex_model:
+    for name, row in _REGISTRY["lineage_models"].items():
+        model = _string(row.get("codex_model"), f"lineage model {name!r}.codex_model")
+        effort = row.get("codex_effort")
+        if effort not in EFFORTS:
             raise TierPaletteError(
-                f"model {name!r} missing a string 'codex_model' in models.json"
+                f"lineage model {name!r}.codex_effort {effort!r} is not in {EFFORTS}"
             )
-        if codex_effort not in EFFORTS:
-            raise TierPaletteError(
-                f"model {name!r} codex_effort {codex_effort!r} is not a known effort {EFFORTS}"
-            )
-        mapping[name] = (codex_model, codex_effort)
+        mapping[name] = (model, effort)
     return mapping
 
 
-# Lineage-tier -> active Codex (model, effort) mapping, derived from models.json (KTD3).
-_CODEX_MAPPING = _derive_codex_mapping(_REGISTRY)
+_EFFORT_CEILINGS = _derive_effort_ceilings()
+_CODEX_MAPPING = _derive_codex_mapping()
+CHEAP_MODELS = ("haiku",)
+ENGINE_INTENTS = ("offload", "second-opinion", "divergence")
+
+
+def _candidate(value: object, where: str, requested_effort: str | None = None) -> ModelCandidate:
+    if not isinstance(value, dict) or set(value) != {"model", "effort"}:
+        raise TierPaletteError(f"{where} must contain exactly model and effort")
+    model = _string(value.get("model"), f"{where}.model")
+    effort = value.get("effort")
+    if effort != STRONGEST_SUPPORTED and effort not in SCALAR_EFFORTS:
+        raise TierPaletteError(
+            f"{where}.effort {effort!r} must be scalar or {STRONGEST_SUPPORTED!r}"
+        )
+    if requested_effort is None and effort == STRONGEST_SUPPORTED:
+        raise TierPaletteError(f"{where}: preferred effort cannot be {STRONGEST_SUPPORTED!r}")
+    if requested_effort is not None and effort not in {requested_effort, STRONGEST_SUPPORTED}:
+        raise TierPaletteError(
+            f"{where}.effort must preserve class effort {requested_effort!r} or request strongest"
+        )
+    return ModelCandidate(model=model, effort=str(effort))
+
+
+def _derive_execution_classes() -> tuple[ExecutionClassPolicy, ...]:
+    rows = _REGISTRY["execution_classes"]
+    ordered = _derive_ordered(rows, "order", "execution class")
+    allowed_keys = {
+        "order",
+        "description",
+        "workspace_boundary",
+        "external_boundary",
+        "preferred",
+        "fallbacks",
+    }
+    policies: list[ExecutionClassPolicy] = []
+    for name in ordered:
+        row = rows[name]
+        if set(row) != allowed_keys:
+            raise TierPaletteError(
+                f"execution class {name!r} keys must be exactly {sorted(allowed_keys)}"
+            )
+        preferred = _candidate(row["preferred"], f"execution class {name!r}.preferred")
+        fallbacks_raw = row["fallbacks"]
+        if not isinstance(fallbacks_raw, list) or not fallbacks_raw:
+            raise TierPaletteError(f"execution class {name!r}.fallbacks must be non-empty")
+        fallbacks = tuple(
+            _candidate(
+                value,
+                f"execution class {name!r}.fallbacks[{index}]",
+                preferred.effort,
+            )
+            for index, value in enumerate(fallbacks_raw)
+        )
+        candidates = (preferred, *fallbacks)
+        if len({candidate.model for candidate in candidates}) != len(candidates):
+            raise TierPaletteError(f"execution class {name!r} repeats a candidate model")
+        policies.append(
+            ExecutionClassPolicy(
+                name=name,
+                description=_string(row["description"], f"execution class {name!r}.description"),
+                workspace_boundary=_string(
+                    row["workspace_boundary"],
+                    f"execution class {name!r}.workspace_boundary",
+                ),
+                external_boundary=_string(
+                    row["external_boundary"],
+                    f"execution class {name!r}.external_boundary",
+                ),
+                preferred=preferred,
+                fallbacks=fallbacks,
+            )
+        )
+    return tuple(policies)
+
+
+_EXECUTION_CLASS_POLICIES = _derive_execution_classes()
+EXECUTION_CLASSES = tuple(policy.name for policy in _EXECUTION_CLASS_POLICIES)
+_EXECUTION_CLASS_BY_NAME = {policy.name: policy for policy in _EXECUTION_CLASS_POLICIES}
+
+
+def _derive_root_policy() -> RootOrchestrationPolicy:
+    profiles = _REGISTRY["root_orchestration_profiles"]
+    if not isinstance(profiles, dict) or set(profiles) != {"root"}:
+        raise TierPaletteError("root_orchestration_profiles must contain exactly 'root'")
+    row = profiles["root"]
+    allowed = {"preferred_model", "fallback_models", "default_effort", "ultra"}
+    if not isinstance(row, dict) or set(row) != allowed:
+        raise TierPaletteError(f"root orchestration keys must be exactly {sorted(allowed)}")
+    fallback_models = row["fallback_models"]
+    if not isinstance(fallback_models, list) or not fallback_models:
+        raise TierPaletteError("root fallback_models must be a non-empty list")
+    models = (
+        _string(row["preferred_model"], "root.preferred_model"),
+        *(_string(value, "root.fallback_models[]") for value in fallback_models),
+    )
+    if len(set(models)) != len(models):
+        raise TierPaletteError("root orchestration repeats a model")
+    default_effort = row["default_effort"]
+    if default_effort not in SCALAR_EFFORTS:
+        raise TierPaletteError("root.default_effort must be scalar")
+    ultra = row["ultra"]
+    ultra_keys = {
+        "requires_explicit_selection",
+        "requires_independent_fanout",
+        "leaf_allowed",
+    }
+    if not isinstance(ultra, dict) or set(ultra) != ultra_keys:
+        raise TierPaletteError(f"root.ultra keys must be exactly {sorted(ultra_keys)}")
+    if not all(isinstance(ultra[key], bool) for key in ultra_keys):
+        raise TierPaletteError("root.ultra flags must be booleans")
+    if ultra["leaf_allowed"]:
+        raise TierPaletteError("Ultra must never be allowed for leaf execution")
+    return RootOrchestrationPolicy(
+        preferred_model=models[0],
+        fallback_models=tuple(models[1:]),
+        default_effort=default_effort,
+        ultra_requires_explicit_selection=ultra["requires_explicit_selection"],
+        ultra_requires_independent_fanout=ultra["requires_independent_fanout"],
+        ultra_leaf_allowed=ultra["leaf_allowed"],
+    )
+
+
+_ROOT_ORCHESTRATION_POLICY = _derive_root_policy()
+
+
+def execution_class_policy(name: str) -> ExecutionClassPolicy:
+    try:
+        return _EXECUTION_CLASS_BY_NAME[name]
+    except KeyError:
+        raise ValueError(
+            f"unknown execution class {name!r}; expected one of {EXECUTION_CLASSES}"
+        ) from None
+
+
+def execution_class_policies() -> tuple[ExecutionClassPolicy, ...]:
+    return _EXECUTION_CLASS_POLICIES
+
+
+def root_orchestration_policy() -> RootOrchestrationPolicy:
+    return _ROOT_ORCHESTRATION_POLICY
 
 
 def model_rank(model: str) -> int:
-    """Rank of ``model`` with 0 the strongest; raises ValueError when unknown."""
     try:
         return MODELS.index(model)
     except ValueError:
-        raise ValueError(f"unknown model {model!r}; expected one of {MODELS}") from None
+        raise ValueError(f"unknown lineage model {model!r}; expected one of {MODELS}") from None
 
 
 def effort_rank(effort: str) -> int:
-    """Rank of ``effort`` with 0 the weakest; raises ValueError when unknown."""
     try:
         return EFFORTS.index(effort)
     except ValueError:
-        raise ValueError(f"unknown effort {effort!r}; expected one of {EFFORTS}") from None
+        raise ValueError(f"unknown lineage effort {effort!r}; expected one of {EFFORTS}") from None
+
+
+def scalar_effort_rank(effort: str) -> int:
+    try:
+        return SCALAR_EFFORTS.index(effort)
+    except ValueError:
+        raise ValueError(
+            f"unknown scalar effort {effort!r}; expected one of {SCALAR_EFFORTS}"
+        ) from None
 
 
 def effort_ceiling(model: str) -> str:
-    """The strongest effort ``model`` actually runs; raises ValueError when unknown."""
     try:
         return _EFFORT_CEILINGS[model]
     except KeyError:
-        raise ValueError(f"unknown model {model!r}; expected one of {MODELS}") from None
+        raise ValueError(f"unknown lineage model {model!r}; expected one of {MODELS}") from None
 
 
 def codex_model(model: str) -> str:
-    """Active Codex model dispatched for lineage tier ``model`` (KTD3); raises when unknown."""
     try:
         return _CODEX_MAPPING[model][0]
     except KeyError:
-        raise ValueError(f"unknown model {model!r}; expected one of {MODELS}") from None
+        raise ValueError(f"unknown lineage model {model!r}; expected one of {MODELS}") from None
 
 
 def codex_effort(model: str) -> str:
-    """Active Codex effort paired with lineage tier ``model`` (KTD3); raises when unknown."""
     try:
         return _CODEX_MAPPING[model][1]
     except KeyError:
-        raise ValueError(f"unknown model {model!r}; expected one of {MODELS}") from None
+        raise ValueError(f"unknown lineage model {model!r}; expected one of {MODELS}") from None
 
 
 def codex_tier(model: str) -> tuple[str, str]:
-    """The ``(codex_model, codex_effort)`` pair for lineage tier ``model`` (KTD3)."""
     try:
         return _CODEX_MAPPING[model]
     except KeyError:
-        raise ValueError(f"unknown model {model!r}; expected one of {MODELS}") from None
+        raise ValueError(f"unknown lineage model {model!r}; expected one of {MODELS}") from None
 
-
-# ---------------------------------------------------------------------------
-# Ladder operations (#370). The two vocabularies run in OPPOSITE directions —
-# MODELS is strongest-first (rank 0 strong), EFFORTS is weakest-first (rung 0
-# weak) — so every op reasons in *strength* (higher = stronger) and a caller
-# never touches raw ``.index()`` arithmetic ({#tier-vocab-ordering}).
-# ---------------------------------------------------------------------------
 
 _LADDERS: dict[str, tuple[str, ...]] = {"model": MODELS, "effort": EFFORTS}
 _STRONGEST_FIRST: dict[str, bool] = {"model": True, "effort": False}
 
 
 def _strength(kind: str, value: str) -> int:
-    """Strength position on the ``kind`` ladder (higher = stronger), direction-agnostic."""
     if kind not in _LADDERS:
-        raise ValueError(f"unknown ladder {kind!r}; expected 'model' or 'effort'")
+        raise ValueError(f"unknown lineage ladder {kind!r}; expected 'model' or 'effort'")
     ladder = _LADDERS[kind]
     try:
-        idx = ladder.index(value)
+        index = ladder.index(value)
     except ValueError:
         raise ValueError(f"unknown {kind} {value!r}; expected one of {ladder}") from None
-    return (len(ladder) - 1 - idx) if _STRONGEST_FIRST[kind] else idx
+    return len(ladder) - 1 - index if _STRONGEST_FIRST[kind] else index
 
 
 def _from_strength(kind: str, strength: int) -> str:
     ladder = _LADDERS[kind]
-    strength = max(0, min(strength, len(ladder) - 1))
-    idx = (len(ladder) - 1 - strength) if _STRONGEST_FIRST[kind] else strength
-    return ladder[idx]
+    bounded = max(0, min(strength, len(ladder) - 1))
+    index = len(ladder) - 1 - bounded if _STRONGEST_FIRST[kind] else bounded
+    return ladder[index]
 
 
 def escalate(kind: str, value: str, steps: int = 1, *, ceiling: str | None = None) -> str:
-    """Return ``value`` moved ``steps`` stronger on the ``kind`` ladder.
-
-    Escalating past the strongest rung (or past ``ceiling`` when given) is a no-op,
-    never an error.
-    """
-    strength = _strength(kind, value)  # validates kind + value before any ladder access
+    strength = _strength(kind, value)
     top = len(_LADDERS[kind]) - 1
     if ceiling is not None:
         top = min(top, _strength(kind, ceiling))
-    # escalate only ever strengthens: a ceiling weaker than the current value is a no-op,
-    # never a down-push (the outer max keeps the result >= the input strength).
     return _from_strength(kind, max(strength, min(strength + steps, top)))
 
 
 def downgrade(kind: str, value: str, steps: int = 1, *, floor: str | None = None) -> str:
-    """Return ``value`` moved ``steps`` weaker; past the weakest rung (or a floor stronger
-    than ``value``) is a no-op, never an up-push."""
-    strength = _strength(kind, value)  # validates kind + value before any ladder access
-    bottom = 0
-    if floor is not None:
-        bottom = max(bottom, _strength(kind, floor))
-    # downgrade only ever weakens: a floor stronger than the current value is a no-op.
+    strength = _strength(kind, value)
+    bottom = max(0, _strength(kind, floor)) if floor is not None else 0
     return _from_strength(kind, min(strength, max(strength - steps, bottom)))
 
 
-def clamp(kind: str, value: str, *, floor: str | None = None, ceiling: str | None = None) -> str:
-    """Clamp ``value`` between ``floor`` and ``ceiling`` (by strength) on the ``kind`` ladder."""
+def clamp(
+    kind: str,
+    value: str,
+    *,
+    floor: str | None = None,
+    ceiling: str | None = None,
+) -> str:
     strength = _strength(kind, value)
     if floor is not None:
         strength = max(strength, _strength(kind, floor))
@@ -244,12 +403,10 @@ def clamp(kind: str, value: str, *, floor: str | None = None, ceiling: str | Non
 
 
 def stronger(kind: str, a: str, b: str) -> str:
-    """The stronger of two values on the ``kind`` ladder (upgrade-only merge primitive)."""
     return a if _strength(kind, a) >= _strength(kind, b) else b
 
 
 def strongest(kind: str, values: object) -> str:
-    """The strongest value among ``values`` on the ``kind`` ladder (upgrade-only merge)."""
     items = list(values)  # type: ignore[call-overload]
     if not items:
         raise ValueError("strongest() requires at least one value")
@@ -260,16 +417,10 @@ def strongest(kind: str, values: object) -> str:
 
 
 def supports_effort(model: str, effort: str) -> bool:
-    """True iff ``model`` can run ``effort`` (effort at or below the model's ceiling)."""
     return effort_rank(effort) <= effort_rank(effort_ceiling(model))
 
 
 def clamp_effort_to_model(model: str, effort: str) -> tuple[str, str | None]:
-    """Return ``(effort_or_ceiling, note_or_None)`` — clamp ``effort`` to the model's ceiling.
-
-    AC5: escalating a haiku unit toward xhigh resolves to haiku's real ceiling with the
-    clamp surfaced as a note, rather than silently producing an un-runnable tier.
-    """
     ceiling = effort_ceiling(model)
     if effort_rank(effort) > effort_rank(ceiling):
         return ceiling, f"effort {effort!r} exceeds {model!r} ceiling; clamped to {ceiling!r}"

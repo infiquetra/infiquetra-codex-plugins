@@ -1,1 +1,37 @@
-{"name":"fleet-core","version":"0.5.0","description":"Fleet-commons library plugin (Codex adapter): canonical home for cross-plugin shared primitives (tier palette, tier resolver, effort rider, retry/backoff) plus the vendored resolution shim's canonical copy. Scripts-only — no skills, commands, or agents.","author":{"name":"Infiquetra","email":"hello@infiquetra.com","url":"https://github.com/infiquetra"},"homepage":"https://github.com/infiquetra/infiquetra-codex-plugins/tree/main/plugins/fleet-core","repository":"https://github.com/infiquetra/infiquetra-codex-plugins","license":"MIT","keywords":["fleet-commons","shared-primitives","tier-palette","tier-resolver","effort-rider","retry-backoff","library","infiquetra"]}
+{
+  "name": "fleet-core",
+  "version": "0.8.4+codex.20260711134422",
+  "description": "Fleet-commons library plugin (Codex adapter): canonical home for cross-plugin shared primitives (tier palette, tier resolver, effort rider, retry/backoff) plus the vendored resolution shim's canonical copy. Scripts-only \u2014 no skills, commands, or agents.",
+  "author": {
+    "name": "Infiquetra",
+    "email": "hello@infiquetra.com",
+    "url": "https://github.com/infiquetra"
+  },
+  "homepage": "https://github.com/infiquetra/infiquetra-codex-plugins/tree/main/plugins/fleet-core",
+  "repository": "https://github.com/infiquetra/infiquetra-codex-plugins",
+  "license": "MIT",
+  "keywords": [
+    "fleet-commons",
+    "shared-primitives",
+    "tier-palette",
+    "tier-resolver",
+    "effort-rider",
+    "retry-backoff",
+    "library",
+    "infiquetra"
+  ],
+  "interface": {
+    "displayName": "Fleet Core",
+    "shortDescription": "Shared model, effort, retry, and compatibility primitives.",
+    "longDescription": "Provides the scripts-only shared library used by Infiquetra Codex plugins for model catalogs, execution classes, effort policy, retry behavior, and compatibility readers.",
+    "developerName": "Infiquetra",
+    "category": "Coding",
+    "capabilities": [
+      "Read"
+    ],
+    "brandColor": "#315C8A",
+    "defaultPrompt": [
+      "Use Fleet Core only as a shared library dependency for another Infiquetra plugin."
+    ]
+  }
+}

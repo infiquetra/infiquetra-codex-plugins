@@ -1,0 +1,133 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-07-11T16:17:12Z",
+  "source_head": "8077ac8d6b36e1eac7dc9d350fbe087342dcd9d0",
+  "status": "cutover-complete",
+  "versions": {
+    "fleet-core": "0.8.4+codex.20260711134422",
+    "saga": "0.75.17+codex.20260711160644",
+    "verified-workflows": "1.0.0+codex.20260711160140",
+    "retired-team-execution": "2.3.0"
+  },
+  "rollback_bundle": {
+    "path_class": ".codex/cutover/<run-id>/rollback.tar",
+    "sha256": "03d6193260328b9e880dd3f0b64737fda565591ed8eb948f020e92538b038563",
+    "directory_mode": "0700",
+    "archive_mode": "0600",
+    "restore_shape_validated": true,
+    "committed": false
+  },
+  "pre_state": {
+    "marketplace_sha256": "42803919b39b720599b9692bfdcd95bcfe8c31b06ebb2c976aacaa890fdfea8a",
+    "config_sha256": "618869b5a268bfb5624b17eda2fdfc20ed64a0b3c5b7efa15ae062c090137f63",
+    "hooks_sha256": "b326320b0e6d0fa89d198164dbe0f8e4ffcd6ed23784c8bf75f628230171f5ed",
+    "agent_inventory_sha256": "1bbcde157bd952f8ec3a8fac54515d543e72ca720611a72ca1e5bcff80e78fdf",
+    "agent_counts": {
+      "canonical": 0,
+      "legacy": 0,
+      "unmanaged": 4
+    },
+    "installed_infiquetra_plugins": {
+      "deploy": "0.1.1",
+      "home-lab-ops": "1.0.0",
+      "mission-control": "2.3.0",
+      "python-toolkit": "1.0.0",
+      "saga": "0.65.1",
+      "team-execution": "2.3.0",
+      "test-suite": "2.0.0",
+      "unifi": "1.1.0"
+    }
+  },
+  "clean_home_lane": {
+    "run_id": "20260711-u8-clean",
+    "proof_sha256": "8e24cd476728fb108ab71af8459c2387724b487c78215da0f9309bb464917599",
+    "plugin_cli_commands_succeeded": true,
+    "installed_plugin_count": 10,
+    "legacy_workflow_active": false,
+    "canonical_workflow_active": true,
+    "hook_definition_sha256": "8f5eca1811d2ea751c7eecbded0fab704c54496f6b9a82f5feda01d260aae9e1",
+    "run_skill_sha256": "41196210fe6294695c16377f908c49c2f281074ca29090444f8c4202301783f7",
+    "saga_plan_skill_sha256": "a05d31519d7a9a2741554f3555e97135ff2a8a5c782640972a26cceebbf90744",
+    "profile_sync_sha256": "4589862ddc9a1358189a4f2e2ef0f74db24273d315d281e187679a118fe41556",
+    "profile_pre_state_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "profile_readback_sha256": "f22c7709c082aec2a8648571e10e2753d15e8984f552d89dfe8655b4c5c20e46",
+    "profile_counts": {
+      "canonical": 5,
+      "legacy": 0,
+      "unmanaged": 0
+    },
+    "isolated_credentials_copied": false,
+    "fresh_authenticated_task": "not-run-no-isolated-auth"
+  },
+  "seeded_migration_lane": {
+    "source": "protected rollback bundle plus frozen legacy agent tree",
+    "plugin_pre_sha256": "727811765fe1e10bef85491f31aef134a66ca9e73bc603745189179fba6ee8f7",
+    "plugin_migrated_sha256": "5dee92a6761d958dbe60394bad99ff184d562b72aa42fd5e62b5d43047711f28",
+    "plugin_restored_sha256": "727811765fe1e10bef85491f31aef134a66ca9e73bc603745189179fba6ee8f7",
+    "plugin_archive_pre_sha256": "280b141f6a3a29d7c86c01a3c5ff4a2cb0a0249c47ca2d28da51ae4a8cf75708",
+    "plugin_archive_restored_sha256": "280b141f6a3a29d7c86c01a3c5ff4a2cb0a0249c47ca2d28da51ae4a8cf75708",
+    "profile_apply_sha256": "3b97976e0339a0a61f87b0b679ff04bb117fdc098cc04ff0252cc1d6d2b91c6e",
+    "profile_pre_state_sha256": "dbdee1b4adce73cb598976188e1bf81b56730395446412ebb0684f4ee6a7a5c4",
+    "profile_migrated_sha256": "ab1bf7a15d633289351904eca6856c1b7158d7abde815f7448a33ae66295c4fc",
+    "profile_restored_sha256": "dbdee1b4adce73cb598976188e1bf81b56730395446412ebb0684f4ee6a7a5c4",
+    "profile_archive_pre_sha256": "53a0401d5c1642113b1d4108d096c4b2238c50019def4ac0542a67764a00736c",
+    "profile_archive_restored_sha256": "53a0401d5c1642113b1d4108d096c4b2238c50019def4ac0542a67764a00736c",
+    "profile_pre_counts": {
+      "canonical": 0,
+      "legacy": 25,
+      "unmanaged": 4
+    },
+    "profile_migrated_counts": {
+      "canonical": 5,
+      "legacy": 0,
+      "unmanaged": 4
+    },
+    "duplicate_workflow_surface": false,
+    "legacy_read_canonical_write_tests": "18-passed",
+    "rollback_exact": true
+  },
+  "real_profile": {
+    "apply_started": true,
+    "applied": true,
+    "fresh_session": "passed",
+    "rollback_status": "not-needed-post-readback",
+    "installed_readback": {
+      "marketplace_source": "local-cutover-checkout",
+      "installed_plugin_count": 10,
+      "legacy_workflow_active": false,
+      "canonical_workflow_active": true,
+      "source_cache_parity": true,
+      "saga_version": "0.75.17+codex.20260711160644",
+      "verified_workflows_version": "1.0.0+codex.20260711160140"
+    },
+    "profile_readback": {
+      "counts": {
+        "canonical": 5,
+        "legacy": 0,
+        "unmanaged": 4
+      },
+      "state_sha256": "c9cd015383d72d3ce56240c2976141aabff1b6ef56d0ba6ae2b0c4c1b46a8de3",
+      "canonical_sha256": "28767a462d5c0a9813de2ee9ecf5a9c44fd81219468f0f1583de7c6973f48f2e",
+      "fresh_child": {
+        "agent_type": "test_medium",
+        "active_model": "gpt-5.6-terra",
+        "effort": "medium",
+        "permission_mode": "default",
+        "profile_sha256": "fca08003678c3aa14af45ab2f4c63d2ae63d331e2f6a5caae89b62d962f57229",
+        "hook_definition_sha256": "8f5eca1811d2ea751c7eecbded0fab704c54496f6b9a82f5feda01d260aae9e1",
+        "hook_handler_sha256": "06161231953398dfdd207090b31f9b665d327c92b501475aaa64e37897629e11",
+        "repo_head": "b6e0e4d067c50b60101b3816457f503fa17a8539",
+        "readback": "passed",
+        "mutation": "none"
+      },
+      "normalized_mechanism_sha256": "5a68a8e0e0dde994a61898eaed2615dfcfd9e5a07f701d56153789db94fe32ec",
+      "final_raw_pair_status": "preserved"
+    }
+  },
+  "sanitization": {
+    "absolute_paths": false,
+    "raw_config_or_trust_values": false,
+    "prompts_or_transcripts": false,
+    "credentials_or_environment": false
+  }
+}

@@ -205,7 +205,7 @@ symptom, keep investigating.
 
 **Parallel read-only sub-agents (offer).** When hypotheses are **evidence-bottlenecked across clearly
 independent subsystems**, OFFER a backend per `../../references/operator-choice.md` (`inline` /
-`team-execution`) to dispatch read-only probes in parallel — each with one
+`verified-workflow`) to dispatch read-only probes in parallel — each with one
 explicit hypothesis and a structured evidence-return format, **no edits**. Never auto-spawn; skip when
 hypotheses depend on each other. Parallel sub-agents use **generic** `Explore` / `Task` agents (this
 plugin has no `agents/` dir).

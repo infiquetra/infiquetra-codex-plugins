@@ -54,23 +54,33 @@ def _sub(
     number: int,
     title: str,
     *,
+    repo: str | None = None,
     state: str = "OPEN",
     state_reason: str | None = None,
     labels: list[str] | None = None,
-    tracked: list[int] | None = None,
+    tracked: list[int | tuple[str, int]] | None = None,
     child_count: int = 0,
 ) -> dict[str, Any]:
-    return {
+    tracked_nodes = [
+        {"number": item[1], "repository": {"nameWithOwner": item[0]}}
+        if isinstance(item, tuple)
+        else {"number": item}
+        for item in (tracked or [])
+    ]
+    node = {
         "number": number,
         "title": title,
         "state": state,
         "stateReason": state_reason,
-        "url": f"https://github.com/o/r/issues/{number}",
+        "url": f"https://github.com/{repo or 'o/r'}/issues/{number}",
         "labels": {"nodes": [{"name": name} for name in (labels or [])]},
         "assignees": {"nodes": []},
-        "trackedIssues": {"nodes": [{"number": t} for t in (tracked or [])]},
+        "trackedIssues": {"nodes": tracked_nodes},
         "subIssues": {"totalCount": child_count},
     }
+    if repo is not None:
+        node["repository"] = {"nameWithOwner": repo}
+    return node
 
 
 def _runner_for(subs: list[dict[str, Any]], *, parent_title: str = "Objective X") -> Any:
@@ -131,6 +141,36 @@ def test_edges_from_relationships_drops_cycle() -> None:
     assert dropped == [{"reason": "cycle", "from": "sub-2", "to": "sub-1"}]
 
 
+def test_edges_resolve_cross_repo_duplicate_numbers() -> None:
+    tenant = "infiquetra/campps-tenant-setup"
+    identity = "infiquetra/campps-identity-access"
+    subissues = [
+        {"number": 95, "repo": tenant, "blocked_by": [{"number": 95, "repo": identity}]},
+        {"number": 95, "repo": identity, "blocked_by": []},
+    ]
+
+    depends_on, dropped = EDGES.edges_from_relationships(subissues)
+
+    ids = EDGES.subplot_ids_for_subissues(subissues)
+    tenant_id = ids[("infiquetra/campps-tenant-setup", 95)]
+    identity_id = ids[("infiquetra/campps-identity-access", 95)]
+    assert depends_on == {tenant_id: [identity_id]}
+    assert dropped == []
+
+
+def test_edges_drop_ambiguous_legacy_number_reference() -> None:
+    subissues = [
+        {"number": 96, "repo": "infiquetra/a", "blocked_by": [95]},
+        {"number": 95, "repo": "infiquetra/a", "blocked_by": []},
+        {"number": 95, "repo": "infiquetra/b", "blocked_by": []},
+    ]
+
+    depends_on, dropped = EDGES.edges_from_relationships(subissues)
+
+    assert depends_on == {}
+    assert dropped == [{"reason": "ambiguous", "from": "sub-96", "to": "sub-95"}]
+
+
 # --------------------------------------------------------------------------- nodes_from_parent_issue
 
 
@@ -149,6 +189,42 @@ def test_nodes_from_parent_issue_builds_nodes_with_kind_and_github_stamp() -> No
     assert by_sid["sub-2"]["kind"] == "code"
     assert by_sid["sub-2"]["depends_on"] == ["sub-1"]
     assert by_sid["sub-1"]["github"] == {"repo": "o/r", "issue": "o/r#1", "sub_issue": 1}
+
+
+def test_cross_repo_duplicate_numbers_get_unique_ids_and_true_stamps() -> None:
+    tenant = "infiquetra/campps-tenant-setup"
+    identity = "infiquetra/campps-identity-access"
+    subs = [
+        _sub(95, "Tenant", repo=tenant, tracked=[(identity, 95)]),
+        _sub(95, "Identity", repo=identity),
+    ]
+
+    nodes, dropped, _title = ENG.nodes_from_parent_issue(
+        "infiquetra", "campps-context-library", 69, runner=_runner_for(subs)
+    )
+
+    by_sid = {node["subplot_id"]: node for node in nodes}
+    ids = EDGES.subplot_ids_for_subissues(
+        [{"repo": tenant, "number": 95}, {"repo": identity, "number": 95}]
+    )
+    tenant_id = ids[(tenant, 95)]
+    identity_id = ids[(identity, 95)]
+    assert set(by_sid) == {tenant_id, identity_id}
+    assert by_sid[tenant_id]["github"]["repo"] == tenant
+    assert by_sid[identity_id]["github"]["repo"] == identity
+    assert by_sid[tenant_id]["depends_on"] == [identity_id]
+    assert dropped == []
+
+
+def test_repo_qualified_ids_do_not_collide_when_slug_text_matches() -> None:
+    subissues = [
+        {"repo": "a-b/c", "number": 7},
+        {"repo": "a/b-c", "number": 7},
+    ]
+
+    ids = EDGES.subplot_ids_for_subissues(subissues)
+
+    assert len(set(ids.values())) == 2
 
 
 def test_nodes_from_parent_issue_ingests_state_completed_and_not_planned() -> None:

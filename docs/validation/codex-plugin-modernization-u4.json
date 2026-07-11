@@ -1,0 +1,159 @@
+{
+  "schema_version": 1,
+  "unit": "U4",
+  "recorded_at": "2026-07-11T06:55:32Z",
+  "repo_head": "bde4d4350758212c7cad0cfa4ef61e7492f9218b",
+  "claim": "root-owned-workflow-named-profile-ready",
+  "capability_outcome": "attested",
+  "module_lines": {
+    "dispatch_receipt.py": 1219,
+    "named_child_attestation.py": 230,
+    "protected_store.py": 503,
+    "workflow_records.py": 3232,
+    "workspace_evidence.py": 1513
+  },
+  "checks": [
+    {
+      "name": "u4-focused-tests",
+      "argv": [
+        "PYTHONPATH=.",
+        "uv",
+        "run",
+        "pytest",
+        "-q",
+        "plugins/verified-workflows/tests",
+        "tests/test_prove_verified_workflows_runtime.py",
+        "tests/test_verified_workflows_orchestration_regressions.py",
+        "tests/test_verified_workflows_agents.py",
+        "tests/test_verified_workflows_migration.py",
+        "tests/test_validate_codex_plugins.py",
+        "tests/test_port_runbook.py",
+        "tests/test_port_contract.py"
+      ],
+      "exit_code": 0,
+      "summary": "299 tests passed in the integrated U4/U4F partition"
+    },
+    {
+      "name": "full-suite",
+      "argv": [
+        "PYTHONPATH=.",
+        "uv",
+        "run",
+        "pytest"
+      ],
+      "exit_code": 0,
+      "summary": "1708 tests passed in 125.67 seconds"
+    },
+    {
+      "name": "current-repository-validator",
+      "argv": [
+        "PYTHONPATH=.",
+        "uv",
+        "run",
+        "python",
+        "scripts/validate_codex_plugins.py"
+      ],
+      "exit_code": 0,
+      "summary": "current active inventory and U4 runtime surfaces valid"
+    },
+    {
+      "name": "classification-gate",
+      "argv": [
+        "python3",
+        "scripts/port_contract.py",
+        "validate",
+        "--stage",
+        "classification"
+      ],
+      "exit_code": 0,
+      "summary": "classification stage valid"
+    },
+    {
+      "name": "generated-classification",
+      "argv": [
+        "python3",
+        "scripts/port_contract.py",
+        "render",
+        "--check"
+      ],
+      "exit_code": 0,
+      "summary": "generated classification is byte-current"
+    },
+    {
+      "name": "scoped-ruff",
+      "argv": [
+        "uv",
+        "run",
+        "ruff",
+        "check",
+        "plugins/verified-workflows",
+        "scripts/port_contract.py",
+        "scripts/prove_verified_workflows_runtime.py",
+        "scripts/validate_codex_plugins.py"
+      ],
+      "exit_code": 0,
+      "summary": "no findings on U4 Python surfaces"
+    },
+    {
+      "name": "plugin-manifest-validation",
+      "argv": [
+        "python3",
+        "$CODEX_HOME/skills/.system/plugin-creator/scripts/validate_plugin.py",
+        "plugins/verified-workflows"
+      ],
+      "exit_code": 0,
+      "summary": "Verified Workflows plugin manifest and package layout valid"
+    }
+  ],
+  "runtime_proof": {
+    "artifact": "docs/validation/verified-workflows-runtime-proof.json",
+    "spawn_surface": "named",
+    "spawn_request_fields": [
+      "agent_type",
+      "fork_turns",
+      "message",
+      "model",
+      "reasoning_effort",
+      "service_tier",
+      "task_name"
+    ],
+    "tool_namespace": "agents",
+    "named_profile_selector": true,
+    "live_invocation_performed": false,
+    "runtime_receipt_ref": null
+  },
+  "project_discovery": {
+    "path": ".codex/agents",
+    "runtime_agents": [
+      "monitor_low",
+      "review_high",
+      "review_max",
+      "scan_low",
+      "test_medium"
+    ],
+    "regular_files_only": true,
+    "source_bytes_match": true
+  },
+  "fresh_cli_probe": {
+    "parent_thread_id": "019f4ff4-69ac-71a0-826e-04eef2836295",
+    "child_thread_id": "019f4ff4-83a8-7a40-bb15-8f4deda12c86",
+    "tool_namespace": "agents",
+    "requested_runtime_agent_name": "scan_low",
+    "requested_fork_turns": "none",
+    "observed_agent_role": "scan_low",
+    "expected_model": "gpt-5.6-luna",
+    "observed_model": "gpt-5.6-luna",
+    "expected_effort": "low",
+    "observed_effort": "low",
+    "expected_sandbox": "read-only",
+    "observed_sandbox": "read-only",
+    "outcome": "attested",
+    "reason": "saved V2 config exposed agent_type in the non-reserved agents namespace; child role/model/effort/sandbox matched scan_low"
+  },
+  "limitations": [
+    "The tracked sanitized proof remains non-live; the separate fresh CLI probe establishes only the runtime selection boundary.",
+    "The earlier task-name-only probe remains negative regression evidence and must not be reinterpreted as profile selection.",
+    "Full Verified Workflows hook/profile/result receipt authority remains an isolated-install and U8 cutover gate.",
+    "Raw abandonment, pruning, and verified deletion remain U8 cutover responsibilities."
+  ]
+}

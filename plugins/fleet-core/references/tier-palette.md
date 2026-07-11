@@ -1,49 +1,69 @@
-# Tier palette — adding a model or effort (Codex adapter)
+# Codex execution classes and model catalog
 
-The fleet's model/effort vocabulary is **single-source**: it lives in
-[`scripts/fleet_commons/models.json`](../scripts/fleet_commons/models.json) and is derived into
-the ordered `MODELS` / `EFFORTS` tuples by
-[`tier_palette.py`](../scripts/fleet_commons/tier_palette.py) at import. Every other surface —
-`execution_spec.py`, the `/plan` tier table, the team-execution worker table, the ladder ops —
-reads from there. Grow the vocabulary **here**, never with a second bare literal elsewhere.
+[`models.json`](../scripts/fleet_commons/models.json) is Fleet Core's single static policy
+registry. [`codex_model_catalog.py`](../scripts/fleet_commons/codex_model_catalog.py) supplies
+immutable runtime capability truth. [`tier_resolver.py`](../scripts/fleet_commons/tier_resolver.py)
+joins the two; neither roles nor machine defaults choose an active leaf model.
 
-## Codex dual palette (KTD3)
+```text
+models.json                         codex debug models
+  static class policy                  runtime capability
+          |                                    |
+          +-------------+----------------------+
+                        |
+                immutable CatalogSnapshot
+                        |
+             resolve_execution_class()
+                        |
+       expected model + effort + boundary + provenance
+                        |
+          managed profile and U4 execution receipt
+```
 
-Unlike the upstream Claude registry, this Codex copy keeps the Claude tier names
-(`fable`/`opus`/`sonnet`/`haiku`) as the **lineage vocabulary** — so `tier_palette.py`,
-`tier_policy.json`, and the upstream ladder ops stay byte-identical and diff cleanly against
-upstream — while each `models.json` row also carries the **active Codex mapping** it dispatches:
+The resolver output is expected configuration. It becomes execution proof only after the exact
+managed-profile digest and hook-observed active model are joined by Verified Workflows. Current
+hooks do not observe reasoning effort.
 
-| Lineage tier | `codex_model` | `codex_effort` |
-|---|---|---|
-| `fable` | `gpt-5.5` | `xhigh` |
-| `opus` | `gpt-5.5` | `high` |
-| `sonnet` | `gpt-5.4` | `medium` |
-| `haiku` | `gpt-5.4-mini` | `low` |
+## Leaf execution classes
 
-`tier_palette.codex_model()` / `codex_effort()` / `codex_tier()` read these fields.
-`TEAM_EXECUTION_MODEL_HINTS` in `scripts/validate_codex_plugins.py` is derived from these pairs,
-not hand-maintained — a single registry drives both the lineage tier and the Codex model.
+<!-- BEGIN GENERATED EXECUTION CLASS TABLE (rendered from models.json via render_tier_table.py; do not hand-edit) -->
+| Execution class | Purpose | Boundary | Preferred | Ordered fallback |
+|---|---|---|---|---|
+| `review-max` | Explicit escalation for unusually ambiguous or high-risk review. | workspace=read-only; external=none | `gpt-5.6-sol` / `max` | `gpt-5.6-terra` / `max` -> `gpt-5.5` / `strongest supported scalar` |
+| `review-high` | Architecture, security, adversarial, API, privacy, and quality review. | workspace=read-only; external=none | `gpt-5.6-sol` / `high` | `gpt-5.6-terra` / `high` -> `gpt-5.5` / `high` |
+| `test-medium` | General workers, testers, and interpretation of ambiguous validator output. | workspace=declared-write; external=none | `gpt-5.6-terra` / `medium` | `gpt-5.6-sol` / `medium` -> `gpt-5.5` / `medium` |
+| `scan-low` | Bounded extraction and scanner-result reduction. | workspace=read-only; external=none | `gpt-5.6-luna` / `low` | `gpt-5.6-terra` / `low` -> `gpt-5.4-mini` / `low` |
+| `monitor-low` | Network-aware CI, deploy, and runtime observation. | workspace=read-only; external=allowlisted-read | `gpt-5.6-luna` / `low` | `gpt-5.6-terra` / `low` -> `gpt-5.4-mini` / `low` |
+<!-- END GENERATED EXECUTION CLASS TABLE -->
 
-## The load-bearing rule (`{#tier-vocab-ordering}`)
+Resolution first searches the ordered candidates for the requested effort. Only when no candidate
+can preserve it may resolution clamp downward to the strongest supported scalar effort. Upward
+clamping, a hidden or API-ineligible model, an absent compatible fallback, and Ultra on a leaf all
+fail loud.
 
-Tuple **membership** and **ordering** are two contracts. `MODELS` is **strongest-first** (rank 0
-strongest); `EFFORTS` is **weakest-first** (rung 0 weakest) — the two run in opposite directions.
-Callers must use `model_rank()` / `effort_rank()` and the `escalate` / `downgrade` / `clamp` /
-`stronger` ladder ops, and reason in **strength**, never hand-roll `.index(...)` arithmetic.
+`scan-low` and `monitor-low` intentionally share model policy but remain distinct because their
+external-read boundaries differ.
 
-## Add a model
+## Effort and Ultra
 
-1. Add a row to `models.json` under `"models"` with an explicit integer `rank`, an
-   `effort_ceiling` (the strongest effort the model actually runs), and its `codex_model` +
-   `codex_effort` mapping. **Ranks must stay contiguous `0..n-1`** — inserting a new strongest
-   model means renumbering, not squeezing in a duplicate or a gap. Import-time validation
-   (`_derive_ordered`, `_derive_codex_mapping`) rejects a duplicate/gapped/non-int rank or a
-   missing/out-of-vocabulary Codex mapping loudly.
-2. Run the fleet-core tests: registry-order, ladder-monotonicity, effort-ceiling, and
-   Codex-mapping coverage.
+`SCALAR_EFFORTS` is ordered `low`, `medium`, `high`, `xhigh`, `max`. It drives leaf profiles,
+riders, resolution, and cost policy. Ultra is separate root orchestration behavior because it adds
+automatic delegation. `resolve_root_orchestration(..., effort="ultra")` requires both explicit
+selection and independently executable fan-out; no leaf API can return it.
 
-## Add an effort
+Prompt riders are advisory only. Presence of rider text never proves that Codex used the requested
+effort.
 
-Add a row under `"efforts"` with a contiguous integer `rung`, then extend
-`effort_rider.EFFORT_RIDER` with a matching directive (an import-time assertion guards parity).
+## Temporary lineage compatibility
+
+`MODELS`, `EFFORTS`, `codex_tier()`, and the legacy work-shape resolver remain available until the
+U3/U6 consumers migrate. Their `fable`/`opus`/`sonnet`/`haiku` values describe source lineage and
+must not be used for new Codex profile selection. The active policy is `EXECUTION_CLASSES` plus the
+runtime catalog snapshot.
+
+## Changing policy
+
+Edit only `models.json`. Keep ranks contiguous, class keys closed, model candidates unique, and
+Ultra out of `scalar_efforts` and every leaf row. Then run the catalog, resolver, renderer, effort,
+and cost tests. Role defaults and allowed class transitions belong in Verified Workflows; adding
+them to Fleet Core is a schema error.

@@ -1,28 +1,17 @@
 #!/usr/bin/env python3
-"""Fleet effort-honoring seam — the one place that decides *how* a resolved effort is honored.
+"""Fleet effort-rider compatibility seam.
 
-`effort` is a first-class value across the fleet (authored in agent frontmatter and the
-team-execution A7 worker table, validated against the canonical `tier_palette.EFFORTS`
-vocabulary, resolved through the three-layer cascade). Two of the three dispatch paths honor
-it with a **real per-call knob** already:
+Codex leaf effort is configured by a managed custom-agent profile and later proven by the exact
+profile digest; current subagent hooks do not observe reasoning effort. A prompt rider is only an
+advisory instruction and never proves effective effort.
 
-* ``workflow`` (Workflow/ultracode) emits ``agent(prompt, {effort})`` — the knob rides in the
-  opts dict (``execution_spec.py:982``); injecting a rider here would double-count it.
-* ``external-engine`` passes ``effort=resolution.effort`` straight to the engine
-  (``external-engine-workers.md:155``).
+The historical ``workflow`` and ``external-engine`` pass-through names remain temporarily for
+source-lineage consumers. The ``agent`` branch prepends the advisory rider for generic native
+subagents that have no per-spawn effort selector. Verified Workflows must not use rider presence
+as role/profile evidence.
 
-The native **Agent-tool teammate** path (``spawn_kind = "agent"``) has no harness knob for
-subagent reasoning effort, so the only lever is a **labeled proxy**: a short prompt-preamble
-directive (``EFFORT_RIDER``) prepended to the teammate's prompt. This mirrors the
-``BUDGET_RIDER`` prepend pattern (``execution_spec.py:132``, injected at ``:1000`` / ``:1247``).
-
-Routing all three kinds through one ``inject_effort()`` seam means "how effort is honored" lives
-in exactly one function: when the harness ships a native subagent-effort parameter, the
-``agent`` branch flips from "prepend rider" to "pass real knob" and nothing upstream (authoring,
-lint, cascade, provenance, reconcile) changes. That single-swap property is the whole point of
-KTD1.
-
-Vocabulary is sourced from ``tier_palette.EFFORTS`` (KTD3) — never re-declared here.
+Vocabulary is sourced from ``tier_palette.SCALAR_EFFORTS`` and therefore includes ``max`` but
+never Ultra.
 """
 
 from __future__ import annotations
@@ -36,7 +25,7 @@ if str(_SCRIPTS_DIR) not in sys.path:
 
 import fleet_commons_shim  # noqa: E402
 
-EFFORTS: tuple[str, ...] = fleet_commons_shim.load("tier_palette").EFFORTS
+EFFORTS: tuple[str, ...] = fleet_commons_shim.load("tier_palette").SCALAR_EFFORTS
 
 # The set of spawn kinds the seam understands. Only ``agent`` gets a rider; the other two are
 # real-knob pass-throughs. An unknown kind is a programming error and raises.
@@ -65,11 +54,16 @@ EFFORT_RIDER: dict[str, str] = {
         "adversarially stress-test your reasoning, enumerate and check edge cases, and verify "
         "every load-bearing claim before concluding."
     ),
+    "max": (
+        "EFFORT (max): focus maximum depth on this bounded task. Exhaustively test the "
+        "load-bearing reasoning and evidence, but do not create or delegate undeclared work."
+    ),
 }
 
 # Fail loudly at import time if the rider ever drifts out of sync with the canonical vocabulary.
 assert set(EFFORT_RIDER) == set(EFFORTS), (
-    f"EFFORT_RIDER keys {sorted(EFFORT_RIDER)} must exactly match tier_palette.EFFORTS "
+    f"EFFORT_RIDER keys {sorted(EFFORT_RIDER)} must exactly match "
+    f"tier_palette.SCALAR_EFFORTS "
     f"{sorted(EFFORTS)}"
 )
 

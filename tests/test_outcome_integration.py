@@ -13,6 +13,7 @@ unit-level requirement pins (those live in the per-unit `test_outcome_*` suites)
 
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 import subprocess
@@ -61,6 +62,48 @@ def _repo(tmp_path: Path) -> Path:
     subprocess.run(["git", "config", "user.name", "t"], cwd=repo, check=True)
     subprocess.run(["git", "commit", "-q", "--allow-empty", "-m", "init"], cwd=repo, check=True)
     return repo
+
+
+def _runtime_ack(req: Any) -> dict[str, str]:
+    leaf_saga_id = f"leaf-{req.outcome_id}-{req.subplot_id}"
+    state_root = Path.home() / ".codex/verified-workflows/state" / req.repo_root.name
+    receipt_path = state_root / "dispatch-receipts" / f"{req.outcome_id}-{req.subplot_id}.json"
+    receipt_path.parent.mkdir(parents=True, exist_ok=True)
+    marker = {
+        "schema": "saga.workflow-repo-identity.v1",
+        "repo_root_sha256": hashlib.sha256(req.repo_root.resolve().as_posix().encode()).hexdigest(),
+    }
+    marker_path = state_root / ".repo-identity.json"
+    marker_path.write_text(json.dumps(marker, sort_keys=True) + "\n", encoding="utf-8")
+    marker_path.chmod(0o600)
+    payload = {
+        "schema": "saga.outcome-dispatch-launch.v1",
+        "producer_kind": "verified-workflow",
+        "run_identity": req.run_identity,
+        "issued_at": max(req.intent_created_at, ENG.time.time()),
+        "outcome_id": req.outcome_id,
+        "subplot_id": req.subplot_id,
+        "backend": req.backend,
+        "dispatch_intent_id": req.dispatch_intent_id,
+        "leaf_saga_id": leaf_saga_id,
+    }
+    content = (json.dumps(payload, sort_keys=True) + "\n").encode()
+    receipt_path.write_bytes(content)
+    receipt_path.chmod(0o600)
+    return {
+        "ack_kind": "launched",
+        "dispatch_ack_ref": (
+            f"~/{receipt_path.relative_to(Path.home()).as_posix()}"
+            f"#sha256={hashlib.sha256(content).hexdigest()}"
+        ),
+        "leaf_saga_id": leaf_saga_id,
+        "producer_kind": "verified-workflow",
+        "run_identity": req.run_identity,
+        "dispatch_intent_id": req.dispatch_intent_id,
+        "outcome_id": req.outcome_id,
+        "subplot_id": req.subplot_id,
+        "backend": req.backend,
+    }
 
 
 class _FakeGitHub:
@@ -128,7 +171,8 @@ class _FakeGitHub:
         return SimpleNamespace(returncode=1, stdout="", stderr="unhandled")
 
 
-def test_full_outcome_composes_end_to_end(tmp_path: Path) -> None:
+def test_full_outcome_composes_end_to_end(tmp_path: Path, monkeypatch: Any) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
     repo = _repo(tmp_path)
     ENG.start(
         repo,
@@ -179,7 +223,7 @@ def test_full_outcome_composes_end_to_end(tmp_path: Path) -> None:
         result = ENG.advance(
             repo,
             "ship-auth",
-            dispatcher=D.make_dispatcher(available=SPEC.NODE_BACKENDS),
+            dispatcher=_runtime_ack,
             harvester=ENG.production_harvester(repo, github_runner=gh),
             merge_processor=ENG.production_merge_processor(github_runner=gh),
             worktree_processor=ENG.production_worktree_processor(repo),

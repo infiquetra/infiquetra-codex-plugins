@@ -9,8 +9,8 @@ reaches the **defined ``stalled`` terminal** (a negative terminal, like the U6 `
 worktree-removed) that **cascades** to its downstream subtree (R22) — so dependents do not hang on a dead
 leaf — and it **pages once** (the terminal is idempotent, not re-recorded every tick).
 
-Liveness is derived-on-read from the durable store (R17/R29): the dispatch time is the leaf's ``commit``
-ledger record's ``at``, and a leaf optionally records ``heartbeat`` ledger records as it runs. A leaf
+Liveness is derived-on-read from the durable store (R17/R29): the dispatch time is the typed v2
+``launched`` acknowledgement's ``at``, and a leaf optionally records ``heartbeat`` ledger records as it runs. A leaf
 with **neither** budget set is never liveness-killed (the operator opted out of a timeout). ``now`` is
 injected so the check is unit-testable with no wall clock.
 
@@ -43,14 +43,15 @@ def record_heartbeat(store: Any, subplot_id: str, *, at: float) -> None:
 
 
 def _dispatch_at(store: Any) -> dict[str, float]:
-    """subplot_id -> the ``at`` of its settled (``commit``) dispatch record (when the leaf was launched)."""
+    """Return launch times only for typed v2 launched acknowledgements."""
+
     out: dict[str, float] = {}
-    for rec in outcome_store.read_ledger(store):
-        if rec.get("kind") == "dispatch" and rec.get("phase") == "commit":
-            sid = str(rec.get("subplot_id", ""))
-            at = rec.get("at")
-            if sid and isinstance(at, (int, float)) and not isinstance(at, bool):
-                out[sid] = float(at)
+    for sid, reduced in outcome_store.reduce_dispatch_ledger(store).items():
+        if reduced["state"] != "dispatched":
+            continue
+        at = reduced["record"].get("at")
+        if isinstance(at, (int, float)) and not isinstance(at, bool):
+            out[sid] = float(at)
     return out
 
 

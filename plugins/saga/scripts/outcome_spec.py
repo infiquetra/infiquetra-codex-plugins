@@ -78,16 +78,13 @@ TERMINAL_STATES = frozenset({"done", "failed", "rejected", "stalled"})
 SUCCESS_STATES = frozenset({"done"})
 
 # The full executor menu (R6). ``cc-workflows-ultracode`` and ``goal``/``fork`` are
-# host-dependent (degrade may drop them, KTD9); ``team-execution`` and ``inline`` always run.
+# host-dependent (degrade may drop them, KTD9); Verified Workflows and inline always run.
 NODE_BACKENDS = (
     "inline",
-    "fork",
-    "subagent",
-    "team-execution",
-    "cc-workflows-ultracode",
-    "goal",
+    "verified-workflow",
     "manual",
 )
+LEGACY_NODE_BACKENDS = ("team-execution", "fork", "subagent", "cc-workflows-ultracode", "goal")
 
 # Degrade policy per node (KTD9), enforced in the degrade path (U9), NOT in
 # ``recompile_for_tier`` (the verified correction: that function is a by-mode dispatcher).
@@ -169,7 +166,7 @@ class Node:
             raise OutcomeSpecError(f"node {sid}: kind {self.kind!r} not in {NODE_KINDS}")
         if self.state not in NODE_STATES:
             raise OutcomeSpecError(f"node {sid}: state {self.state!r} not in {NODE_STATES}")
-        if self.backend not in NODE_BACKENDS:
+        if self.backend not in (*NODE_BACKENDS, *LEGACY_NODE_BACKENDS):
             raise OutcomeSpecError(f"node {sid}: backend {self.backend!r} not in {NODE_BACKENDS}")
         if self.degrade_policy not in DEGRADE_POLICIES:
             raise OutcomeSpecError(
@@ -209,7 +206,7 @@ class Node:
             title=str(data.get("title", subplot_id)),
             kind=str(data.get("kind", "code")),
             state=str(data.get("state", "pending")),
-            backend=str(data.get("backend", "inline")),
+            backend="verified-workflow" if str(data.get("backend", "inline")) == "team-execution" else str(data.get("backend", "inline")),
             gated=bool(data.get("gated", False)),
             risky=bool(data.get("risky", False)),
             destructive=bool(data.get("destructive", False)),
@@ -237,7 +234,7 @@ class Node:
             "title": self.title,
             "kind": self.kind,
             "state": self.state,
-            "backend": self.backend,
+            "backend": "verified-workflow" if self.backend == "team-execution" else self.backend,
             "gated": self.gated,
             "risky": self.risky,
             "destructive": self.destructive,

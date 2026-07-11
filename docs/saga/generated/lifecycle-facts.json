@@ -44,9 +44,9 @@
       "does_not_own": "issue mutation, deployment mutation, reviewer/validator execution, or another owner's state",
       "owns": "lifecycle choice, local Saga state, routing, durable lifecycle artifacts, and handoff envelopes"
     },
-    "team-execution": {
-      "does_not_own": "final mutation approval, scope decisions, or deployment ownership",
-      "owns": "reviewer consensus, selected validators, delegated or serial evidence, and guarded nonprod automation evidence"
+    "verified-workflows": {
+      "does_not_own": "final mutation approval, lifecycle authority, scope expansion, or deployment ownership",
+      "owns": "root-owned workflow DAGs, logical role execution, selected validators, barriers, and receipt-backed gate evidence"
     }
   },
   "plugins": {
@@ -267,24 +267,24 @@
           "skill_path": "plugins/saga/skills/loop/SKILL.md"
         }
       ],
-      "version": "0.65.1"
+      "version": "0.75.17+codex.20260711160644"
     },
-    "team-execution": {
+    "verified-workflows": {
       "skills": [
         {
-          "description": "Two-phase Codex protocol for Infiquetra work: plan reviewer and validator coverage, then execute approved work with reviewer consensus, selected validator gates, evidence capture, and guarded nonprod automation.",
-          "name": "team-execution",
-          "namespace": "team-execution:team-execution",
-          "skill_path": "plugins/team-execution/skills/team-execution/SKILL.md"
+          "description": "Run an approved Infiquetra plan as a root-owned Codex workflow DAG with explicit dependencies, logical role lenses, risk-selected execution classes, fresh per-attempt contexts, truthful inline execution, diagnostic child receipts, deterministic validator evidence, and severity-first completion gates. Use when a plan contains `## Workflow Structure` or explicitly requests Verified Workflows.",
+          "name": "run",
+          "namespace": "verified-workflows:run",
+          "skill_path": "plugins/verified-workflows/skills/run/SKILL.md"
         },
         {
-          "description": "Application security audit focused on URL and input trust boundaries, SSRF-style risks, redirects, metadata endpoints, allowlists, and evidence-backed findings.",
+          "description": "Application security audit focused on URL and input trust boundaries, SSRF-style risks, redirects, metadata endpoints, allowlists, and evidence-backed findings. Use when reviewing code that accepts URLs, fetches remote resources, follows redirects, proxies requests, imports external data, parses user-controlled input, or touches network egress controls.",
           "name": "appsec-audit",
-          "namespace": "team-execution:appsec-audit",
-          "skill_path": "plugins/team-execution/skills/appsec-audit/SKILL.md"
+          "namespace": "verified-workflows:appsec-audit",
+          "skill_path": "plugins/verified-workflows/skills/appsec-audit/SKILL.md"
         }
       ],
-      "version": "2.3.0"
+      "version": "1.0.0+codex.20260711160140"
     }
   },
   "saga_routing": {

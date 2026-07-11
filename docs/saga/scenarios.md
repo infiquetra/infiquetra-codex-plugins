@@ -69,11 +69,11 @@ Outcome: the receiving issue is self-contained enough for the next operator with
 | Step | Command | Artifact or state |
 |---|---|---|
 | Plan or work detects risk | `saga:plan`, `saga:doc-review`, or `saga:work` | security, infra, API, or deployment-sensitive signal |
-| Escalate | `team-execution:team-execution` | reviewer and validator evidence |
-| Specialized audit | `team-execution:appsec-audit` when URL/input boundaries matter | appsec findings |
+| Escalate | `verified-workflows:run` | reviewer and validator evidence |
+| Specialized audit | `verified-workflows:appsec-audit` when URL/input boundaries matter | appsec findings |
 | Resume | `saga:work` | implements or fixes only after gate decisions |
 
-Outcome: Team Execution collects independent evidence, while Saga and the operator retain mutation decisions.
+Outcome: Verified Workflows collects independent evidence, while Saga and the operator retain mutation decisions.
 
 ## Deployment after QA
 

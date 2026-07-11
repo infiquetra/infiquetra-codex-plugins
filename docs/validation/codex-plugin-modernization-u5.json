@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "unit": "U5",
+  "recorded_at": "2026-07-11T16:31:13Z",
+  "repo_head": "a5685bee222470bbdb0d04b65c30ff43b0f2b6da",
+  "target_tree_sha256": "f270745443dc720ee044f9f72de94449ca3146f2ab5751992760b7c724d351c6",
+  "claim": "saga-canonical-workflow-dispatch-and-continuation-boundary",
+  "checks": [
+    {
+      "name": "u5-focused-suite",
+      "argv": ["PYTHONPATH=.", "uv", "run", "pytest", "-q", "plugins/saga/tests", "tests/test_outcome_dispatcher.py", "tests/test_outcome_backends.py", "tests/test_outcome_dispatch_migration.py", "tests/test_outcome_command.py", "tests/test_outcome_integration.py", "tests/test_outcome_liveness.py", "tests/test_outcome_completion.py", "tests/test_outcome_replay.py", "tests/test_capability_degrade.py", "tests/test_verified_workflow_readiness.py", "tests/test_saga_session_context.py"],
+      "exit_code": 0,
+      "summary": "543 passed after retiring obsolete emitter coverage"
+    },
+    {
+      "name": "legacy-token-inventory",
+      "argv": ["python3", "scripts/build_legacy_workflow_inventory.py", "--check"],
+      "exit_code": 0,
+      "summary": "canonical inventory regenerated and byte-current"
+    },
+    {
+      "name": "port-contract-tests",
+      "argv": ["PYTHONPATH=.", "uv", "run", "pytest", "-q", "tests/test_port_contract.py"],
+      "exit_code": 0,
+      "summary": "24 passed"
+    }
+  ],
+  "coverage": [
+    "legacy read and canonical new writes",
+    "typed launch and handoff acknowledgements",
+    "append-only dispatch reconciliation",
+    "Goal stable-id continuation binding",
+    "SessionStart contained context hook",
+    "existing outcome hierarchy and board synchronization",
+    "atomic acknowledgement and expired-lease concurrency",
+    "digest-bound launch receipt and canonical readiness containment",
+    "v1/v2 replay, liveness, report, and export/import reduction",
+    "bounded instruction-inert SessionStart context",
+    "production prepared intent without synthetic v1 commit",
+    "lost-acknowledgement replay blocks duplicate launch",
+    "portable imported launch chains require exact receipt payloads",
+    "generic Saga save cannot self-assert Goal or logical-role identity",
+    "canonical active-skill vocabulary and complete compatibility coverage",
+    "owner-state unpredictable run identity and receipt freshness",
+    "operator-only handoff authorization and nonportable copied authority",
+    "explicit Goal request binding and canonical no-ref readiness fallback",
+    "non-finite receipt and imported-intent timestamp rejection",
+    "owner-only user-state readiness and identity-marker permissions",
+    "append-only authority reconciliation for historical v2 acknowledgements",
+    "audit-only portable acknowledgements with local authority reconciliation",
+    "cross-location canonical and legacy root conflict detection",
+    "inert audit preservation across export, import, and re-export"
+  ]
+}

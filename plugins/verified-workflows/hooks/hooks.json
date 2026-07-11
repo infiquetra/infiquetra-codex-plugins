@@ -1,0 +1,30 @@
+{
+  "hooks": {
+    "SubagentStart": [
+      {
+        "matcher": "^(review_max|review_high|test_medium|scan_low|monitor_low)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$PLUGIN_ROOT/hooks/agent_receipt.py\"",
+            "timeout": 10,
+            "statusMessage": "Recording Verified Workflows agent start"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "^(review_max|review_high|test_medium|scan_low|monitor_low)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$PLUGIN_ROOT/hooks/agent_receipt.py\"",
+            "timeout": 10,
+            "statusMessage": "Recording Verified Workflows agent stop"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -13,9 +13,14 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from scripts.validate_codex_plugins import TARGET_EXPECTED_PLUGINS
+from scripts.validate_codex_plugins import (  # noqa: E402
+    CURRENT_EXPECTED_PLUGINS,
+    TARGET_EXPECTED_PLUGINS,
+)
 
-SAGA_FAMILY_PLUGINS = ("saga", "mission-control", "team-execution", "deploy")
+CURRENT_SAGA_FAMILY_PLUGINS = ("saga", "mission-control", "verified-workflows", "deploy")
+TARGET_SAGA_FAMILY_PLUGINS = ("saga", "mission-control", "verified-workflows", "deploy")
+SAGA_FAMILY_PLUGINS = CURRENT_SAGA_FAMILY_PLUGINS
 
 SAGA_ROUTABLE_COMMANDS = (
     "office-hours",
@@ -105,15 +110,17 @@ OWNER_BOUNDARIES = {
         "owns": "GitHub issues, prepared issue drafts, comments, labels, milestones, project boards, project fields, rollout, and flow metrics",
         "does_not_own": "Saga lifecycle phase authority or deployment tags",
     },
-    "team-execution": {
-        "owns": "reviewer consensus, selected validators, delegated or serial evidence, and guarded nonprod automation evidence",
-        "does_not_own": "final mutation approval, scope decisions, or deployment ownership",
+    "verified-workflows": {
+        "owns": "root-owned workflow DAGs, logical role execution, selected validators, barriers, and receipt-backed gate evidence",
+        "does_not_own": "final mutation approval, lifecycle authority, scope expansion, or deployment ownership",
     },
     "deploy": {
         "owns": "tag promotion, rollback, hotfix, deployment status, release-note previews, and deployment guardrails",
         "does_not_own": "readiness review, issue lifecycle, or code implementation",
     },
 }
+
+TARGET_OWNER_BOUNDARIES = dict(OWNER_BOUNDARIES)
 
 REQUIRED_DOCS = (
     "docs/saga/README.md",
@@ -181,9 +188,14 @@ def read_frontmatter(path: Path) -> dict[str, str]:
     return data
 
 
-def skill_facts(repo_root: Path, plugin: str) -> list[dict[str, str]]:
+def skill_facts(
+    repo_root: Path,
+    plugin: str,
+    inventory: dict[str, dict[str, Any]] | None = None,
+) -> list[dict[str, str]]:
+    inventory = inventory or CURRENT_EXPECTED_PLUGINS
     facts: list[dict[str, str]] = []
-    for skill in TARGET_EXPECTED_PLUGINS[plugin]["skills"]:
+    for skill in inventory[plugin]["skills"]:
         path = repo_root / "plugins" / plugin / "skills" / skill / "SKILL.md"
         meta = read_frontmatter(path)
         declared_name = meta.get("name")
@@ -200,13 +212,24 @@ def skill_facts(repo_root: Path, plugin: str) -> list[dict[str, str]]:
     return facts
 
 
-def build_facts(repo_root: Path) -> dict[str, Any]:
+def build_facts(repo_root: Path, inventory_mode: str = "current") -> dict[str, Any]:
+    if inventory_mode == "current":
+        inventory = CURRENT_EXPECTED_PLUGINS
+        saga_family_plugins = CURRENT_SAGA_FAMILY_PLUGINS
+        owner_boundaries = OWNER_BOUNDARIES
+    elif inventory_mode == "target-fixture":
+        inventory = TARGET_EXPECTED_PLUGINS
+        saga_family_plugins = TARGET_SAGA_FAMILY_PLUGINS
+        owner_boundaries = TARGET_OWNER_BOUNDARIES
+    else:
+        raise ValueError(f"unknown Saga facts inventory mode: {inventory_mode!r}")
+
     plugins: dict[str, Any] = {}
-    for plugin in SAGA_FAMILY_PLUGINS:
-        expected = TARGET_EXPECTED_PLUGINS[plugin]
+    for plugin in saga_family_plugins:
+        expected = inventory[plugin]
         plugins[plugin] = {
             "version": expected["version"],
-            "skills": skill_facts(repo_root, plugin),
+            "skills": skill_facts(repo_root, plugin, inventory),
         }
 
     return {
@@ -249,7 +272,7 @@ def build_facts(repo_root: Path) -> dict[str, Any]:
             "readiness_maturities": list(READINESS_MATURITIES),
             "maturity_storage": "derived-never-stored",
         },
-        "owner_boundaries": OWNER_BOUNDARIES,
+        "owner_boundaries": owner_boundaries,
         "docs_package": {
             "required_docs": list(REQUIRED_DOCS),
             "required_visual_assets": list(REQUIRED_VISUAL_ASSETS),
@@ -264,7 +287,7 @@ def dumps(payload: dict[str, Any]) -> str:
 
 def write_or_check(repo_root: Path, check: bool) -> int:
     path = repo_root / "docs" / "saga" / "generated" / "lifecycle-facts.json"
-    payload = dumps(build_facts(repo_root))
+    payload = dumps(build_facts(repo_root, inventory_mode="current"))
     if check:
         if not path.is_file():
             print(f"missing generated facts: {path}", file=sys.stderr)

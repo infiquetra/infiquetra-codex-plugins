@@ -23,6 +23,7 @@ import contextlib
 import hashlib
 import json
 import os
+import re
 import sys
 import time
 from collections.abc import Callable
@@ -74,6 +75,28 @@ def _write_once(path: Path, content: str) -> bool:
     finally:
         with contextlib.suppress(FileNotFoundError):
             tmp.unlink()
+
+
+_COMMENT_IDEMPOTENCY_PREFIX = "saga-board-sync-idempotency"
+_COMMENT_IDEMPOTENCY_RE = re.compile(
+    rf"<!--\s*{re.escape(_COMMENT_IDEMPOTENCY_PREFIX)}:[0-9a-f]{{64}}\s*-->"
+)
+
+
+def _comment_idempotency_marker(key: str) -> str:
+    digest = hashlib.sha256(key.encode("utf-8")).hexdigest()
+    return f"<!-- {_COMMENT_IDEMPOTENCY_PREFIX}:{digest} -->"
+
+
+def _comment_marker_in(body: str) -> str:
+    matches = list(_COMMENT_IDEMPOTENCY_RE.finditer(body))
+    return matches[0].group(0) if len(matches) == 1 else ""
+
+
+def _append_comment_marker(body: str, key: str) -> str:
+    marker = _comment_idempotency_marker(key)
+    visible = _COMMENT_IDEMPOTENCY_RE.sub("", body).strip()
+    return f"{visible}\n\n{marker}" if visible else marker
 
 
 # ---------------------------------------------------------------------------
@@ -130,6 +153,8 @@ def authorize_and_write(
     pay: dict[str, Any] = dict(payload or {})
     if target_state and "target_state" not in pay:
         pay["target_state"] = target_state
+    if op_kind == str(cert.OpKind.ISSUE_PROGRESS_COMMENT):
+        pay["body"] = _append_comment_marker(str(pay.get("body", "")), key)
 
     # (ii) Bounded retry with exponential backoff between attempts — `gh` failures here are
     #      dominated by transient 429/5xx, and back-to-back re-invocations just re-trip the limit.
@@ -206,9 +231,86 @@ def default_board_writer(
 
     run = runner if runner is not None else subprocess.run
     resolved_sdlc: Path | None = None
+    authenticated_login: str | None = None
+
+    def _current_login() -> str:
+        nonlocal authenticated_login
+        if authenticated_login is not None:
+            return authenticated_login
+        result = run(
+            ["gh", "api", "user", "--jq", ".login"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        login = str(getattr(result, "stdout", "") or "").strip()
+        if getattr(result, "returncode", 0) != 0 or not login:
+            raise RuntimeError(
+                "board write issue-progress-comment author preflight failed: "
+                f"{getattr(result, 'stderr', '')!r}"
+            )
+        authenticated_login = login
+        return login
+
+    def _comment_exists(*, owner_repo: str, marker: str, issue_number: int) -> bool:
+        expected_author = _current_login()
+        result = run(
+            [
+                "gh",
+                "api",
+                "--method",
+                "GET",
+                f"repos/{owner_repo}/issues/{issue_number}/comments",
+                "--paginate",
+                "--slurp",
+                "-F",
+                "per_page=100",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        if getattr(result, "returncode", 0) != 0:
+            raise RuntimeError(
+                "board write issue-progress-comment preflight failed: "
+                f"{getattr(result, 'stderr', '')!r}"
+            )
+        try:
+            pages = json.loads(getattr(result, "stdout", "") or "[]")
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(
+                "board write issue-progress-comment preflight returned invalid JSON"
+            ) from exc
+        if not isinstance(pages, list):
+            raise RuntimeError(
+                "board write issue-progress-comment preflight returned non-list JSON"
+            )
+        comments = (
+            pages
+            if all(isinstance(comment, dict) for comment in pages)
+            else [
+                comment
+                for page in pages
+                for comment in (page if isinstance(page, list) else [])
+            ]
+        )
+        return any(
+            isinstance(comment, dict)
+            and marker in str(comment.get("body", ""))
+            and isinstance(comment.get("user"), dict)
+            and str(comment["user"].get("login", "")) == expected_author
+            for comment in comments
+        )
 
     def _writer(*, op_kind: str, repo: str, number: int, payload: dict[str, Any]) -> None:
         nonlocal resolved_sdlc
+        owner_repo = repo if "/" in repo else f"infiquetra/{repo}"
+        owner, bare_repo = owner_repo.split("/", 1)
+        if owner != "infiquetra":
+            raise RuntimeError(
+                "board writer refuses cross-owner mutation through mission-control: "
+                f"{owner_repo!r}"
+            )
         if resolved_sdlc is None:
             resolved_sdlc = _resolver.resolve_plugin_file(
                 "mission-control", "scripts/sdlc_manager.py", from_file=__file__
@@ -218,7 +320,7 @@ def default_board_writer(
         # The mission-control verbs prepend ORG to build ``repos/{ORG}/{repo}/...``, so they need the
         # BARE repo name. The caller passes an owner-qualified repo ("infiquetra/saga") for the
         # idempotency-key namespace; strip the owner here so the REST path is not doubled.
-        repo = repo.rsplit("/", 1)[-1]
+        repo = bare_repo
         if op_kind == "set-field-status":
             cmd = base + [
                 "flow",
@@ -239,6 +341,13 @@ def default_board_writer(
         elif op_kind == "sub-issue-reopen":
             cmd = base + ["issue", "reopen", "--repo", repo, "--number", n]
         elif op_kind == "issue-progress-comment":
+            marker = _comment_marker_in(str(payload.get("body", "")))
+            if marker and _comment_exists(
+                owner_repo=owner_repo,
+                marker=marker,
+                issue_number=number,
+            ):
+                return
             cmd = base + [
                 "issue",
                 "comment",

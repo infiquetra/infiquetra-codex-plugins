@@ -36,6 +36,7 @@ real git repo and no wall clock, and no I/O at import.
 from __future__ import annotations
 
 import contextlib
+import fcntl
 import json
 import os
 import subprocess  # nosec B404 — git rev-parse only, no shell, fixed argv
@@ -405,16 +406,23 @@ def _heal_torn_tail(path: Path) -> None:
     os.truncate(path, idx + 1)  # keep through the last newline; idx == -1 -> truncate to empty
 
 
-def append_ledger(store: Store, record: dict[str, Any]) -> None:
-    """Append one JSON record as a single line under ``O_APPEND`` (concurrent-writer safe).
+@contextlib.contextmanager
+def _exclusive_file_lock(path: Path):
+    """Serialize local writers with an advisory lock on a stable sidecar file."""
 
-    Heals a torn trailing fragment first (so a post-crash append never merges into a broken line),
-    then writes, looping on the ``os.write`` return so a short write never itself leaves a torn line.
-    A single ``os.write`` of a line under ``PIPE_BUF`` is atomic with ``O_APPEND``. Records carry at
-    least a ``phase`` (``intent``/``commit``) and an idempotency ``key`` so ``replay_pending`` pairs
-    them.
-    """
-    store.root.mkdir(parents=True, exist_ok=True)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd = os.open(path, os.O_RDWR | os.O_CREAT, 0o600)
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX)
+        yield
+    finally:
+        fcntl.flock(fd, fcntl.LOCK_UN)
+        os.close(fd)
+
+
+def _append_ledger_unlocked(store: Store, record: dict[str, Any]) -> None:
+    """Append one record while the caller holds the ledger writer lock."""
+
     _heal_torn_tail(store.ledger_path)
     payload = memoryview((json.dumps(record, sort_keys=False) + "\n").encode("utf-8"))
     fd = os.open(store.ledger_path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o644)
@@ -424,6 +432,38 @@ def append_ledger(store: Store, record: dict[str, Any]) -> None:
             payload = payload[written:]
     finally:
         os.close(fd)
+
+
+def append_ledger(store: Store, record: dict[str, Any]) -> None:
+    """Append one JSON record under a local cross-process writer lock.
+
+    Heals a torn trailing fragment first (so a post-crash append never merges into a broken line),
+    then writes, looping on the ``os.write`` return so a short write never itself leaves a torn line.
+    A single ``os.write`` of a line under ``PIPE_BUF`` is atomic with ``O_APPEND``. Records carry at
+    least a ``phase`` (``intent``/``commit``) and an idempotency ``key`` so ``replay_pending`` pairs
+    them.
+    """
+    store.root.mkdir(parents=True, exist_ok=True)
+    with _exclusive_file_lock(store.root / ".ledger.lock"):
+        _append_ledger_unlocked(store, record)
+
+
+def append_ledger_once(store: Store, record: dict[str, Any]) -> bool:
+    """Atomically append one unique ``(phase, key)`` record."""
+
+    phase = str(record.get("phase", ""))
+    key = str(record.get("key", ""))
+    if not phase or not key:
+        raise OutcomeStoreError("append_ledger_once requires non-empty phase and key")
+    store.root.mkdir(parents=True, exist_ok=True)
+    with _exclusive_file_lock(store.root / ".ledger.lock"):
+        if any(
+            str(existing.get("phase", "")) == phase and str(existing.get("key", "")) == key
+            for existing in read_ledger(store)
+        ):
+            return False
+        _append_ledger_unlocked(store, record)
+        return True
 
 
 def read_ledger(store: Store) -> list[dict[str, Any]]:
@@ -458,6 +498,75 @@ def read_ledger(store: Store) -> list[dict[str, Any]]:
     return records
 
 
+def reduce_dispatch_ledger(store: Store) -> dict[str, dict[str, Any]]:
+    """Reduce legacy v1 commits and v2 intent/ack records through one version-aware path."""
+
+    reduced: dict[str, dict[str, Any]] = {}
+    for record in read_ledger(store):
+        subplot_id = str(record.get("subplot_id", ""))
+        if not subplot_id:
+            continue
+        kind = record.get("kind")
+        phase = record.get("phase")
+        if kind == "dispatch" and phase == "halt":
+            current = reduced.get(subplot_id)
+            if current is None or current.get("state") not in {"dispatched", "handed-off"}:
+                reduced[subplot_id] = {
+                    "state": current.get("state", "ready") if current else "ready",
+                    "record": current.get("record", record) if current else record,
+                    "settled": bool(current and current.get("settled")),
+                    "halted": True,
+                }
+        elif kind == "dispatch" and phase == "commit":
+            current = reduced.get(subplot_id)
+            if current is None or current.get("state") not in {"dispatched", "handed-off"}:
+                reduced[subplot_id] = {
+                    "state": "legacy-unverified",
+                    "record": record,
+                    "settled": True,
+                    "halted": False,
+                }
+        elif kind == "outcome.dispatch.v2" and phase == "intent":
+            current = reduced.get(subplot_id)
+            if current is None or current.get("state") == "legacy-unverified":
+                reduced[subplot_id] = {
+                    "state": "intent-created",
+                    "record": record,
+                    # A legacy commit still prevents automatic relaunch while append-only
+                    # reconciliation is awaiting its typed acknowledgement.
+                    "settled": bool(current and current.get("settled")),
+                    "halted": False,
+                }
+        elif (
+            kind == "outcome.dispatch.v2"
+            and phase in {"ack", "authority-ack"}
+            and (
+                (
+                    record.get("ack_kind") == "launched"
+                    and record.get("receipt_authority") == "owner-user-state-v1"
+                )
+                or (
+                    record.get("ack_kind") == "handed-off"
+                    and record.get("receipt_authority") == "operator-confirmed-v1"
+                )
+            )
+        ):
+            reduced[subplot_id] = {
+                "state": ("dispatched" if record.get("ack_kind") == "launched" else "handed-off"),
+                "record": record,
+                "settled": True,
+                "halted": False,
+            }
+        elif kind == "outcome.dispatch.v2" and phase in {"ack", "authority-ack"}:
+            reduced[subplot_id] = {
+                "state": "legacy-unverified",
+                "record": record,
+                "settled": True,
+                "halted": False,
+            }
+    return reduced
+
+
 def replay_pending(store: Store) -> list[dict[str, Any]]:
     """Intent records with no matching commit — the ops to re-drive on crash recovery (R30).
 
@@ -466,6 +575,7 @@ def replay_pending(store: Store) -> list[dict[str, Any]]:
     safe because the effect itself dedups on the same key (completion-event idempotency / GitHub
     state), so replay never double-applies.
     """
+    reduced_dispatch = reduce_dispatch_ledger(store)
     committed: set[str] = set()
     intents: dict[str, dict[str, Any]] = {}
     for rec in read_ledger(store):
@@ -475,6 +585,14 @@ def replay_pending(store: Store) -> list[dict[str, Any]]:
         phase = rec.get("phase")
         if phase == "commit":
             committed.add(key)
+        elif phase in {"ack", "authority-ack"} and rec.get("kind") == "outcome.dispatch.v2":
+            reduced = reduced_dispatch.get(str(rec.get("subplot_id", "")), {})
+            if reduced.get("settled"):
+                committed.add(key)
+        elif phase == "intent" and rec.get("kind") == "outcome.dispatch.v2":
+            reduced = reduced_dispatch.get(str(rec.get("subplot_id", "")), {})
+            if reduced.get("state") == "intent-created" and not reduced.get("settled"):
+                intents.setdefault(key, rec)
         elif phase == "intent":
             intents.setdefault(key, rec)
     return [rec for key, rec in intents.items() if key not in committed]
@@ -513,15 +631,9 @@ def acquire_lease(
     - held by another, **unexpired** -> return False (the second ``advance`` no-ops, R13);
     - held by another, **expired**   -> reclaimed (atomically replaced), return True.
 
-    The free-slot create and held-fresh reject are race-safe. The stale **reclaim** is best-effort:
-    two callers that both observe the same expired lease can both return True for an instant (a
-    read-then-replace TOCTOU). This is acceptable here by **defense in depth**, not by luck — a brief
-    double-coordinator window cannot cause a duplicate *effect* because the per-subplot dispatch lock
-    (also a lease) plus completion-event idempotency are the real anti-duplication guarantees, and
-    the cache is non-authoritative (GitHub wins). A true fencing token for strict single-writer
-    exclusivity lands with the coordinator runtime that consumes it (U6) — adding the field here with
-    no consumer would be dead wiring. Single-machine occasional-overlap is the target; cross-host
-    coordination is out of core scope.
+    Every transition, including stale reclaim, is serialized through a stable sidecar lock. This
+    removes the prior local read/replace race. The store remains machine-local; cross-host
+    coordination is outside this cache contract.
     """
     if ttl_seconds <= 0:
         raise OutcomeStoreError("lease ttl_seconds must be > 0")
@@ -531,22 +643,23 @@ def acquire_lease(
     lease = Lease(holder=holder, expires_at=current + ttl_seconds)
     payload = json.dumps(lease.to_dict(), sort_keys=False) + "\n"
 
-    if _write_once(path, payload):
-        return True  # free slot, atomically created
-    existing = _read_json_or_quarantine(path, quarantine_dir=store.quarantine_dir)
-    if existing is None:
-        # malformed/quarantined -> treat as free, take it
-        _atomic_write(path, payload)
-        return True
-    held_by = str(existing.get("holder", ""))
-    expires_at = float(existing.get("expires_at", 0))
-    if held_by == holder:
-        _atomic_write(path, payload)  # refresh our own lease
-        return True
-    if current >= expires_at:
-        _atomic_write(path, payload)  # stale -> reclaim
-        return True
-    return False  # held and fresh
+    with _exclusive_file_lock(path.with_name(f".{path.name}.guard")):
+        if _write_once(path, payload):
+            return True  # free slot, atomically created
+        existing = _read_json_or_quarantine(path, quarantine_dir=store.quarantine_dir)
+        if existing is None:
+            # malformed/quarantined -> treat as free, take it
+            _atomic_write(path, payload)
+            return True
+        held_by = str(existing.get("holder", ""))
+        expires_at = float(existing.get("expires_at", 0))
+        if held_by == holder:
+            _atomic_write(path, payload)  # refresh our own lease
+            return True
+        if current >= expires_at:
+            _atomic_write(path, payload)  # stale -> reclaim
+            return True
+        return False  # held and fresh
 
 
 def read_lease(store: Store, name: str) -> Lease | None:
@@ -558,14 +671,16 @@ def read_lease(store: Store, name: str) -> Lease | None:
 
 def release_lease(store: Store, name: str, holder: str) -> bool:
     """Release a lease iff held by ``holder``. Returns True if released, False otherwise."""
-    lease = read_lease(store, name)
-    if lease is None or lease.holder != holder:
-        return False
-    try:
-        _lock_path(store, name).unlink()
-        return True
-    except FileNotFoundError:
-        return False
+    path = _lock_path(store, name)
+    with _exclusive_file_lock(path.with_name(f".{path.name}.guard")):
+        lease = read_lease(store, name)
+        if lease is None or lease.holder != holder:
+            return False
+        try:
+            path.unlink()
+            return True
+        except FileNotFoundError:
+            return False
 
 
 # Convenience wrappers for the two named lock kinds (R13).

@@ -13,6 +13,7 @@ always a fake recording callable — no real ``gh`` ever fires.
 
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 import os
@@ -84,6 +85,7 @@ def _operations_schema(tmp_path_factory: Any, monkeypatch: Any) -> None:
         json.dumps({"saga_lifecycle": {"phase_board_map": _FIXTURE_PHASE_BOARD_MAP}})
     )
     monkeypatch.setattr(SYNC_MOD, "_default_schema_path", lambda: schema_file)
+    monkeypatch.setenv("HOME", str(schema_dir / "home"))
 
 
 # ---------------------------------------------------------------------------
@@ -129,7 +131,9 @@ def test_default_schema_path_resolves_installed_cache_sibling(tmp_path: Path) ->
 
     for name in ("outcome_board_sync.py", "plugin_dependency_resolver.py"):
         (scripts / name).write_bytes((SCRIPTS / name).read_bytes())
-    spec = importlib.util.spec_from_file_location("sync_installed_cache", scripts / "outcome_board_sync.py")
+    spec = importlib.util.spec_from_file_location(
+        "sync_installed_cache", scripts / "outcome_board_sync.py"
+    )
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     sys.path.insert(0, str(scripts))
@@ -206,10 +210,14 @@ def test_schema_resolved_status_per_project(
         STORE_MOD.append_ledger(
             store,
             {
-                "phase": "commit",
-                "kind": "dispatch",
-                "key": "d:leaf1",
+                "phase": "ack",
+                "kind": "outcome.dispatch.v2",
+                "key": "dispatch-intent:o:leaf1",
+                "dispatch_intent_id": "dispatch-intent:o:leaf1",
                 "subplot_id": "leaf1",
+                "ack_kind": "launched",
+                "receipt_authority": "owner-user-state-v1",
+                "dispatch_ack_ref": "test:leaf1",
                 "leaf_saga_id": "l-leaf1",
             },
         )
@@ -342,7 +350,9 @@ def test_ae8_retry_on_transient_failure_succeeds(tmp_path: Path) -> None:
         if call_count["n"] == 1 and op_kind == "set-field-status":
             raise RuntimeError("transient network error")
 
-    result = SYNC_MOD.reconcile_board(spec, store, board_writer=flaky_writer, max_attempts=3, sleep=lambda _s: None)
+    result = SYNC_MOD.reconcile_board(
+        spec, store, board_writer=flaky_writer, max_attempts=3, sleep=lambda _s: None
+    )
 
     sf_records = [r for r in result if r.get("op_kind") == "set-field-status"]
     assert sf_records and sf_records[0]["status"] == "written", (
@@ -369,7 +379,9 @@ def test_ae8_always_fails_surfaced_and_retryable(tmp_path: Path) -> None:
     def always_fail(*, op_kind: str, repo: str, number: int, payload: dict) -> None:
         raise RuntimeError("always fails")
 
-    result1 = SYNC_MOD.reconcile_board(spec, store, board_writer=always_fail, max_attempts=3, sleep=lambda _s: None)
+    result1 = SYNC_MOD.reconcile_board(
+        spec, store, board_writer=always_fail, max_attempts=3, sleep=lambda _s: None
+    )
 
     failed = [
         r for r in result1 if r.get("op_kind") == "set-field-status" and r["status"] == "failed"
@@ -504,6 +516,48 @@ def _git_repo(tmp_path: Path) -> Path:
     return repo
 
 
+def _runtime_ack(req: Any) -> dict[str, str]:
+    leaf_saga_id = f"l-{req.subplot_id}"
+    state_root = Path.home() / ".codex/verified-workflows/state" / req.repo_root.name
+    receipt_path = state_root / "dispatch-receipts" / f"{req.outcome_id}-{req.subplot_id}.json"
+    receipt_path.parent.mkdir(parents=True, exist_ok=True)
+    marker = {
+        "schema": "saga.workflow-repo-identity.v1",
+        "repo_root_sha256": hashlib.sha256(req.repo_root.resolve().as_posix().encode()).hexdigest(),
+    }
+    marker_path = state_root / ".repo-identity.json"
+    marker_path.write_text(json.dumps(marker, sort_keys=True) + "\n", encoding="utf-8")
+    marker_path.chmod(0o600)
+    payload = {
+        "schema": "saga.outcome-dispatch-launch.v1",
+        "producer_kind": "verified-workflow",
+        "run_identity": req.run_identity,
+        "issued_at": max(req.intent_created_at, ENG_MOD.time.time()),
+        "outcome_id": req.outcome_id,
+        "subplot_id": req.subplot_id,
+        "backend": req.backend,
+        "dispatch_intent_id": req.dispatch_intent_id,
+        "leaf_saga_id": leaf_saga_id,
+    }
+    content = (json.dumps(payload, sort_keys=True) + "\n").encode()
+    receipt_path.write_bytes(content)
+    receipt_path.chmod(0o600)
+    return {
+        "ack_kind": "launched",
+        "dispatch_ack_ref": (
+            f"~/{receipt_path.relative_to(Path.home()).as_posix()}"
+            f"#sha256={hashlib.sha256(content).hexdigest()}"
+        ),
+        "leaf_saga_id": leaf_saga_id,
+        "producer_kind": "verified-workflow",
+        "run_identity": req.run_identity,
+        "dispatch_intent_id": req.dispatch_intent_id,
+        "outcome_id": req.outcome_id,
+        "subplot_id": req.subplot_id,
+        "backend": req.backend,
+    }
+
+
 def test_advance_autonomous_drives_board_sync(tmp_path: Path) -> None:
     """KTD8: the REAL advance(autonomous=True) entrypoint drives reconcile_board → the
     certificate → the injected board_writer, surfacing records in AdvanceResult.board_synced.
@@ -545,7 +599,13 @@ def test_advance_threads_project_to_reconcile_board_for_nondefault_project(tmp_p
 
         writer = RecordingWriter()
         result = ENG_MOD.advance(
-            repo, "o", autonomous=True, board_writer=writer, project=project, attending=False
+            repo,
+            "o",
+            autonomous=True,
+            board_writer=writer,
+            project=project,
+            attending=False,
+            dispatcher=_runtime_ack,
         )
 
         sf_records = [r for r in result.board_synced if r.get("op_kind") == "set-field-status"]

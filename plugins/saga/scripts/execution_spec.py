@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
-"""Structured execution-spec + Claude Code workflow-script emitter (R9 keystone).
+"""Structured execution-spec + source-workflow and inline emitters (R9 keystone).
 
-`/plan` authors ONE structured execution-spec and emits from it **either** a runnable
-Claude Code workflow script (this module) **or** the team-execution markdown protocol
-(``team_emitter.py``, U11). Saga stores only an ``orchestration_ref`` pointer; it never
-vendors backend machinery (R9, KTD6). The governance difference is *which emitter runs*,
-not the authoring.
+Codex retains this source-compatible execution-spec reader for legacy workflow artifacts and
+inline recompilation. Canonical Verified Workflows plans are authored as ``## Workflow Structure``
+tables and consumed by the separate plugin; Saga does not synthesize those role/profile bindings.
 
 The spec is the single source of truth: units carry a per-unit ``{model, effort}`` tier
 (R2(b)), a return contract, dependency barriers, escalations, and -- for fan-out units --
@@ -36,9 +34,11 @@ round-trips deterministically and offline.
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
+import re
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
 
@@ -53,6 +53,7 @@ if str(_SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS_DIR))
 
 import fleet_commons_shim  # noqa: E402
+import workflow_emitter as _workflow_emitter  # noqa: E402
 
 _tier_palette = fleet_commons_shim.load("tier_palette")
 MODELS: tuple[str, ...] = _tier_palette.MODELS
@@ -68,6 +69,58 @@ _CHEAP_MODELS = _tier_palette.CHEAP_MODELS
 # refute-N pass rules (KTD3 / KTD5). A finding survives unless refuted per this rule:
 # majority => >= ceil(N/2) verifiers refute; unanimous => all N refute.
 PASS_RULES = ("majority", "unanimous")
+ENGINE_INTENTS = _tier_palette.ENGINE_INTENTS
+_JS_IDENTIFIER = re.compile(r"^[A-Za-z_$][A-Za-z0-9_$.-]*$")
+_JS_RESERVED = frozenset(
+    {
+        "await",
+        "break",
+        "case",
+        "catch",
+        "class",
+        "const",
+        "continue",
+        "debugger",
+        "default",
+        "delete",
+        "do",
+        "else",
+        "enum",
+        "export",
+        "extends",
+        "false",
+        "finally",
+        "for",
+        "function",
+        "if",
+        "implements",
+        "import",
+        "in",
+        "instanceof",
+        "interface",
+        "let",
+        "new",
+        "null",
+        "package",
+        "private",
+        "protected",
+        "public",
+        "return",
+        "static",
+        "super",
+        "switch",
+        "this",
+        "throw",
+        "true",
+        "try",
+        "typeof",
+        "var",
+        "void",
+        "while",
+        "with",
+        "yield",
+    }
+)
 
 # Hard upper bound on a verify panel's verifier count. N above this FAILS validate/emit --
 # the bound directly guards the rate-limit overcorrection (R3: the 22/23-judges panel that
@@ -221,6 +274,46 @@ class SpecError(ValueError):
     """
 
 
+def _engine_registry_module() -> Any:
+    module = sys.modules.get("engine_registry")
+    if module is not None:
+        return module
+    path = Path(__file__).resolve().with_name("engine_registry.py")
+    spec = importlib.util.spec_from_file_location("engine_registry", path)
+    if spec is None or spec.loader is None:
+        raise SpecError("engine registry module is unavailable")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules["engine_registry"] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def _validate_external_engine_selector(
+    where: str,
+    engine: str | None,
+    capability: str | None,
+    engine_intent: str | None,
+) -> None:
+    if engine is not None and capability is not None:
+        raise SpecError(f"{where}: engine and capability are mutually exclusive")
+    if engine is None and capability is None:
+        if engine_intent is not None:
+            raise SpecError(f"{where}: engine_intent requires engine or capability")
+        return
+    if engine_intent not in ENGINE_INTENTS:
+        raise SpecError(f"{where}: engine_intent {engine_intent!r} not in {ENGINE_INTENTS}")
+    registry_module = _engine_registry_module()
+    registry_path = Path(__file__).resolve().parent.parent / "references" / "engine-registry.yaml"
+    try:
+        registry = registry_module.Registry.load(registry_path)
+        if engine is not None:
+            registry.by_key(engine)
+        elif capability not in registry.capabilities:
+            raise registry_module.RegistryError(f"unknown capability {capability!r}")
+    except registry_module.RegistryError as exc:
+        raise SpecError(f"{where}: external-engine selector is invalid: {exc}") from exc
+
+
 @dataclass(frozen=True)
 class Tier:
     """A per-unit ``{model, effort}`` tier (R2(b))."""
@@ -326,6 +419,36 @@ class Verify:
         }
 
 
+@dataclass(frozen=True)
+class AdvisoryPanelRequest:
+    """A named, bounded external-engine advisory jury, distinct from a Verify panel."""
+
+    role: str
+
+    def validate(self, where: str) -> None:
+        registry_module = _engine_registry_module()
+        registry_path = Path(__file__).resolve().parent.parent / "references" / "engine-registry.yaml"
+        try:
+            registry = registry_module.Registry.load(registry_path)
+            registry_module.validate_panel_role(self.role, registry=registry)
+        except registry_module.RegistryError as exc:
+            raise SpecError(f"{where}: invalid advisory panel role: {exc}") from exc
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any], where: str) -> AdvisoryPanelRequest:
+        if set(data) != {"role"}:
+            raise SpecError(f"{where}: advisory_panel needs exactly one 'role' field")
+        role = data.get("role")
+        if not isinstance(role, str):
+            raise SpecError(f"{where}: advisory panel role must be a string")
+        request = cls(role=role)
+        request.validate(where)
+        return request
+
+    def to_dict(self) -> dict[str, str]:
+        return {"role": self.role}
+
+
 @dataclass
 class Unit:
     """One execution unit -- one ``agent()`` call in the emitted script.
@@ -355,15 +478,26 @@ class Unit:
     # A pilot unit_id that gates this fan-out (run one first). Same-tier required (R3).
     pilot: str = ""
     # An optional refute-N judge-panel over this unit's output (KTD5). Absent => no panel;
-    # an absent field round-trips unchanged so team_emitter / existing specs are untouched.
+    # an absent field round-trips unchanged so existing specs are untouched.
     verify: Verify | None = None
+    # External-engine selection is an advisory dispatch intent, never a native-child selector.
+    engine: str | None = None
+    capability: str | None = None
+    engine_intent: str | None = None
 
     def validate(self, where: str) -> None:
         if not self.unit_id:
             raise SpecError(f"{where}: a unit needs a non-empty unit_id")
+        if not _JS_IDENTIFIER.fullmatch(self.unit_id) or _js_var(self.unit_id) in _JS_RESERVED:
+            raise SpecError(
+                f"{where}: unit_id must map to a non-reserved JavaScript identifier"
+            )
         self.tier.validate(f"unit {self.unit_id}")
         if self.verify is not None:
             self.verify.validate(f"unit {self.unit_id}")
+        _validate_external_engine_selector(
+            f"unit {self.unit_id}", self.engine, self.capability, self.engine_intent
+        )
         if self.fanout and not self.targets:
             # R10: a fan-out unit MUST enumerate its targets -- never a silent filter.
             raise SpecError(
@@ -382,6 +516,14 @@ class Unit:
         where = f"unit {unit_id or '<missing id>'}"
         if "tier" not in data:
             raise SpecError(f"{where}: missing 'tier'")
+        engine_raw = data.get("engine")
+        capability_raw = data.get("capability")
+        engine = str(engine_raw) if engine_raw is not None else None
+        capability = str(capability_raw) if capability_raw is not None else None
+        intent_raw = data.get("engine_intent")
+        engine_intent = str(intent_raw) if intent_raw is not None else None
+        if engine_intent is None and (engine is not None or capability is not None):
+            engine_intent = "offload"
         return cls(
             unit_id=unit_id,
             label=str(data.get("label", unit_id)),
@@ -395,6 +537,9 @@ class Unit:
             targets=[str(t) for t in data.get("targets", [])],
             pilot=str(data.get("pilot", "")),
             verify=(Verify.from_dict(data["verify"], where) if data.get("verify") else None),
+            engine=engine,
+            capability=capability,
+            engine_intent=engine_intent,
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -412,9 +557,15 @@ class Unit:
             "pilot": self.pilot,
         }
         # Only emit verify when present so an absent panel round-trips unchanged --
-        # team_emitter and existing specs never gain a new key (R5).
+        # Existing specs never gain a new key (R5).
         if self.verify is not None:
             out["verify"] = self.verify.to_dict()
+        if self.engine is not None:
+            out["engine"] = self.engine
+        if self.capability is not None:
+            out["capability"] = self.capability
+        if self.engine_intent is not None:
+            out["engine_intent"] = self.engine_intent
         return out
 
 
@@ -423,7 +574,7 @@ class ExecutionSpec:
     """The structured execution-spec `/plan` authors and the emitters consume.
 
     One spec, two emitters (R9 / KTD6): ``emit_workflow_script`` (this module) and the
-    team-execution markdown emitter (U11). Saga stores only an ``orchestration_ref``
+    legacy orchestration emitters. Saga stores only an ``orchestration_ref``
     pointer to the emitted artifact.
     """
 
@@ -432,6 +583,10 @@ class ExecutionSpec:
     units: list[Unit]
     # The repo the emitted workflow operates on (the harness `REPO` constant).
     repo: str = ""
+    # Root-authored tracked subject for refute-N verification. Never derive it from agent output.
+    subject_sha: str = ""
+    revision: int = 1
+    revision_note: str = ""
 
     def unit_by_id(self, unit_id: str) -> Unit | None:
         for unit in self.units:
@@ -451,6 +606,8 @@ class ExecutionSpec:
             raise SpecError("spec needs a non-empty name")
         if not self.units:
             raise SpecError("spec needs at least one unit")
+        if isinstance(self.revision, bool) or not isinstance(self.revision, int) or self.revision < 1:
+            raise SpecError("spec revision must be a positive integer")
 
         seen: set[str] = set()
         var_owner: dict[str, str] = {}
@@ -506,11 +663,17 @@ class ExecutionSpec:
     def from_dict(cls, data: dict[str, Any]) -> ExecutionSpec:
         if "units" not in data or not isinstance(data["units"], list):
             raise SpecError("spec needs a 'units' list")
+        revision = data.get("revision", 1)
+        if isinstance(revision, bool) or not isinstance(revision, int):
+            raise SpecError("spec revision must be a positive integer")
         return cls(
             name=str(data.get("name", "")),
             description=str(data.get("description", "")),
             units=[Unit.from_dict(u) for u in data["units"]],
             repo=str(data.get("repo", "")),
+            subject_sha=str(data.get("subject_sha", "")),
+            revision=revision,
+            revision_note=str(data.get("revision_note", "")),
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -518,8 +681,46 @@ class ExecutionSpec:
             "name": self.name,
             "description": self.description,
             "repo": self.repo,
+            "subject_sha": self.subject_sha,
+            "revision": self.revision,
+            "revision_note": self.revision_note,
             "units": [u.to_dict() for u in self.units],
         }
+
+
+def revise_spec_tiers(
+    spec: ExecutionSpec,
+    overrides: dict[str, Tier],
+    *,
+    already_run_ids: list[str] | tuple[str, ...] = (),
+    reason: str,
+) -> ExecutionSpec:
+    """Return an explicit next execution-spec revision for not-yet-run tier changes."""
+
+    if not reason.strip():
+        raise SpecError("execution-spec revision requires a non-empty reason")
+    known = {unit.unit_id for unit in spec.units}
+    unknown = sorted(set(overrides).difference(known))
+    if unknown:
+        raise SpecError(f"execution-spec revision names unknown units: {unknown}")
+    already_run = set(already_run_ids)
+    units = [
+        replace(unit, tier=overrides[unit.unit_id])
+        if unit.unit_id in overrides and unit.unit_id not in already_run
+        else replace(unit)
+        for unit in spec.units
+    ]
+    revised = ExecutionSpec(
+        name=spec.name,
+        description=spec.description,
+        units=units,
+        repo=spec.repo,
+        subject_sha=spec.subject_sha,
+        revision=spec.revision + 1,
+        revision_note=reason.strip(),
+    )
+    revised.validate()
+    return revised
 
 
 # ---------------------------------------------------------------------------
@@ -587,6 +788,12 @@ def _js_string(value: str) -> str:
     return json.dumps(value)
 
 
+def _js_comment(value: str) -> str:
+    """Collapse dynamic text to one inert JavaScript line-comment payload."""
+
+    return " ".join(str(value).replace("\u2028", " ").replace("\u2029", " ").splitlines())
+
+
 def _js_var(unit_id: str) -> str:
     """Sanitize a unit_id into a JS identifier used as the emitted result var.
 
@@ -624,7 +831,9 @@ def _verifier_prompt(unit: Unit) -> str:
         f"REFUTE-N VERIFIER over unit {unit.unit_id} ({unit.label}). You are an adversarial "
         f"skeptic: attempt to REFUTE the unit's result, do NOT re-do its work. Read the unit's "
         f"output and the evidence it cites; for each claimed finding decide REFUTED (with a "
-        f"concrete reason) or UPHELD. Emit a structured verdict {{refuted: [...], upheld: [...]}}."
+        f"concrete reason) or UPHELD. Emit refuted, upheld, verifier_identity, fallback_depth, "
+        f"and examined_sha. Preserve the supplied identity/depth values exactly and bind "
+        f"examined_sha to the tracked subject you actually inspected."
     ]
     if unit.tier.is_cheap:
         parts.append(BUDGET_RIDER)
@@ -638,6 +847,7 @@ def _emit_panel_reconciliation(
     name_prefix: str,
     indent: str,
     *,
+    subject_sha: str,
     direct_throw: bool,
 ) -> None:
     """Emit a refute-N panel's verdict-collection + consensus-recompute block (R5).
@@ -654,7 +864,7 @@ def _emit_panel_reconciliation(
     a null verdict, or one lacking a usable ``.refuted`` array, is a runtime-missing verifier,
     NOT an N/A vote. Excluding it (rather than fabricating a non-refuting vote) keeps a degraded
     panel from silently passing a unit its reporting verifiers would refute, and matches
-    team-execution's dimension-exclusion semantics.
+    the legacy review protocol's dimension-exclusion semantics.
     """
     panel = unit.verify
     assert panel is not None
@@ -665,6 +875,7 @@ def _emit_panel_reconciliation(
         f"label: {_js_string(unit.label + ' verifier')}",
         f"model: {_js_string(unit.tier.model)}",
         f"effort: {_js_string(unit.tier.effort)}",
+        f"schema: {json.dumps(_workflow_emitter.verifier_schema(), sort_keys=True)}",
     ]
 
     verdicts_var = f"{name_prefix}verdicts"
@@ -673,21 +884,58 @@ def _emit_panel_reconciliation(
     refute_count_var = f"{name_prefix}refute_count"
     threshold_var = f"{name_prefix}threshold"
     refuted_var = f"{name_prefix}refuted"
+    expected_sha_var = f"{name_prefix}expected_examined_sha"
+    identities_var = f"{name_prefix}verifier_identities"
+    fallback_depth_var = f"{name_prefix}expected_fallback_depth"
+
+    lines.append(f"{indent}const {expected_sha_var} = {_js_string(subject_sha)}")
+    lines.append(
+        f"{indent}if ({result_var} == null || typeof {result_var} !== \"object\" || "
+        f"{result_var}.examined_sha !== {expected_sha_var} || "
+        f"{result_var}.workspace_clean !== true) {{"
+    )
+    lines.append(
+        f'{indent}  throw new Error("verifier-subject-unbound: Unit {unit.unit_id} '
+        'did not bind its result to the root-authored subject_sha")'
+    )
+    lines.append(f"{indent}}}")
+    identities = [f"{unit.unit_id}-verifier-{seat}" for seat in range(1, n + 1)]
+    lines.append(f"{indent}const {identities_var} = {json.dumps(identities)}")
+    lines.append(f"{indent}const {fallback_depth_var} = 0")
 
     lines.append(f"{indent}const {verdicts_var} = await parallel([")
-    for _ in range(n):
+    for index in range(n):
         lines.append(f"{indent}  () => agent(")
-        lines.append(f"{indent}    {_js_string(verifier_prompt)},")
-        lines.append(f"{indent}    {{ " + ", ".join(verifier_opts) + f", input: {result_var} }},")
+        lines.append(
+            f"{indent}    __verifierPrompt({_js_string(verifier_prompt)}, "
+            f"{identities_var}[{index}], {fallback_depth_var}, {expected_sha_var}),"
+        )
+        verifier_input = (
+            "input: { "
+            f"verifier_identity: {identities_var}[{index}], "
+            f"fallback_depth: {fallback_depth_var}, expected_examined_sha: {expected_sha_var} "
+            "}"
+        )
+        lines.append(
+            f"{indent}    {{ " + ", ".join([*verifier_opts, verifier_input]) + " },"
+        )
         lines.append(f"{indent}  ),")
     lines.append(f"{indent}])")
+    valid_verdict_var = f"{name_prefix}valid_verifier_verdict"
     lines.append(
-        f"{indent}const {reported_var} = {verdicts_var}.filter((v) => "
-        f"v != null && Array.isArray(v.refuted))"
+        f'{indent}const {valid_verdict_var} = (v, i) => v != null && typeof v === "object" && '
+        f"Array.isArray(v.refuted) && Array.isArray(v.upheld) && "
+        f"v.verifier_identity === {identities_var}[i] && "
+        f"v.fallback_depth === {fallback_depth_var} && "
+        f"v.examined_sha === {expected_sha_var} && v.workspace_clean === true"
+    )
+    lines.append(
+        f"{indent}const {reported_var} = {verdicts_var}.filter((v, i) => "
+        f"{valid_verdict_var}(v, i))"
     )
     lines.append(
         f"{indent}const {missing_idx_var} = {verdicts_var}.map((v, i) => "
-        f"(v == null || !Array.isArray(v.refuted) ? i + 1 : null)).filter((i) => i != null)"
+        f"(!{valid_verdict_var}(v, i) ? i + 1 : null)).filter((i) => i != null)"
     )
     lines.append(
         f"{indent}const {refute_count_var} = {reported_var}.filter((v) => "
@@ -716,6 +964,13 @@ def _emit_panel_reconciliation(
         f'" — UNDER-STRENGTH (quorum floor {floor})" : ""))'
     )
     lines.append(f"{indent}}}")
+    lines.append(f"{indent}if ({reported_var}.length < {floor}) {{")
+    lines.append(
+        f"{indent}  throw new Error(`verifier-under-strength: Unit {unit.unit_id} reported "
+        f"${{{reported_var}.length}}/{n} verifiers (quorum floor {floor}; "
+        f"missing #${{{missing_idx_var}.join(', #')}})`)"
+    )
+    lines.append(f"{indent}}}")
 
     throw_line = (
         f"throw new Error(`verifier-disagreement: Unit {unit.unit_id} refuted by "
@@ -726,10 +981,17 @@ def _emit_panel_reconciliation(
         lines.append(f"{indent}if ({refuted_var}) {{")
         lines.append(f"{indent}  {throw_line}")
         lines.append(f"{indent}}}")
+        lines.append(
+            f'{indent}throw new Error("verifier-root-attestation-required: Unit '
+            f'{_js_comment(unit.unit_id)} advisory panel cannot auto-satisfy a gate")'
+        )
         lines.append("")
     else:
         lines.append(f"{indent}if (!{refuted_var}) {{")
-        lines.append(f"{indent}  break")
+        lines.append(
+            f'{indent}  throw new Error("verifier-root-attestation-required: Unit '
+            f'{_js_comment(unit.unit_id)} advisory panel cannot auto-satisfy a gate")'
+        )
         lines.append(f"{indent}}}")
         lines.append(f"{indent}if (iter === {panel.max_iterations}) {{")
         lines.append(f"{indent}  {throw_line}")
@@ -745,12 +1007,24 @@ def _agent_schema_js(unit: Unit) -> str | None:
     emitted ``__gate`` never has to parse a structured dict out of prose — the failure
     mode that aborted the first 0.64 port run twice. ``__gate`` stays as a backstop.
     """
-    if not unit.returns:
+    if not unit.returns and unit.verify is None:
         return None
+    required = list(unit.returns)
+    if unit.verify is not None and "examined_sha" not in required:
+        required.append("examined_sha")
+    if unit.verify is not None and "workspace_clean" not in required:
+        required.append("workspace_clean")
     schema: dict[str, Any] = {
         "type": "object",
-        "properties": {key: {} for key in unit.returns},
-        "required": list(unit.returns),
+        "properties": {
+            key: (
+                {"type": "string", "pattern": "^[0-9a-f]{40}$"}
+                if key == "examined_sha"
+                else ({"type": "boolean"} if key == "workspace_clean" else {})
+            )
+            for key in required
+        },
+        "required": required,
         "additionalProperties": True,
     }
     return json.dumps(schema)
@@ -788,7 +1062,15 @@ def _emit_thunk(lines: list[str], spec: ExecutionSpec, unit: Unit) -> None:
         lines.append("        { " + ", ".join(opts) + " },")
         lines.append("      )")
         lines.append(f"      {_emit_gate_call(unit, 'result')}")
-        _emit_panel_reconciliation(lines, unit, "result", "", "      ", direct_throw=False)
+        _emit_panel_reconciliation(
+            lines,
+            unit,
+            "result",
+            "",
+            "      ",
+            subject_sha=spec.subject_sha,
+            direct_throw=False,
+        )
         lines.append("    }")
         lines.append("    return result")
         lines.append("  },")
@@ -823,12 +1105,20 @@ def _emit_verify_loop_singleton(
     lines.append("    { " + ", ".join(opts) + " },")
     lines.append("  )")
     lines.append(f"  {_emit_gate_call(unit, var)}")
-    _emit_panel_reconciliation(lines, unit, var, "", "  ", direct_throw=False)
+    _emit_panel_reconciliation(
+        lines,
+        unit,
+        var,
+        "",
+        "  ",
+        subject_sha=spec.subject_sha,
+        direct_throw=False,
+    )
     lines.append("}")
     lines.append("")
 
 
-def _emit_verify_panel(lines: list[str], unit: Unit, var: str) -> None:
+def _emit_verify_panel(lines: list[str], spec: ExecutionSpec, unit: Unit, var: str) -> None:
     """Append a refute-N judge-panel + pass-rule reconciliation for ``unit`` to ``lines``.
 
     Renders a ``parallel([...])`` of ``unit.verify.n`` verifier ``agent()`` calls over the
@@ -851,7 +1141,15 @@ def _emit_verify_panel(lines: list[str], unit: Unit, var: str) -> None:
     lines.append(
         f"// panel-level: refuted when >= threshold of the REPORTING verifiers refute (of {n}))"
     )
-    _emit_panel_reconciliation(lines, unit, var, f"{var}_", "", direct_throw=True)
+    _emit_panel_reconciliation(
+        lines,
+        unit,
+        var,
+        f"{var}_",
+        "",
+        subject_sha=spec.subject_sha,
+        direct_throw=True,
+    )
 
 
 def _agent_prompt(spec: ExecutionSpec, unit: Unit) -> str:
@@ -873,6 +1171,12 @@ def _agent_prompt(spec: ExecutionSpec, unit: Unit) -> str:
         )
     if unit.returns:
         parts.append("Return a structured result with keys: " + ", ".join(unit.returns) + ".")
+    if unit.verify is not None:
+        parts.append(
+            f"Return examined_sha exactly as the root-authored tracked subject {spec.subject_sha}; "
+            "also return workspace_clean=true only after git status --porcelain is empty. This "
+            "legacy emitter fails closed on dirty or untracked content."
+        )
     return "\n\n".join(p for p in parts if p)
 
 
@@ -888,10 +1192,26 @@ def emit_workflow_script(spec: ExecutionSpec) -> str:
     records the path as the saga ``orchestration_ref``).
     """
     spec.validate()
+    if any(unit.verify is not None for unit in spec.units):
+        if len(spec.subject_sha) != 40 or any(
+            char not in "0123456789abcdef" for char in spec.subject_sha
+        ):
+            raise SpecError(
+                "workflow specs with verifier panels require a root-authored 40-character "
+                "lowercase subject_sha"
+            )
+        if (
+            not spec.repo
+            or any(ord(character) < 32 for character in spec.repo)
+            or ".." in Path(spec.repo).parts
+        ):
+            raise SpecError(
+                "workflow specs with verifier panels require a control-free contained repo path"
+            )
 
     lines: list[str] = []
     lines.append("// ===========================================================================")
-    lines.append(f"// {spec.name} -- emitted Claude Code workflow harness.")
+    lines.append(f"// {_js_comment(spec.name)} -- emitted Claude Code workflow harness.")
     lines.append("// AUTO-EMITTED from a structured execution-spec by execution_spec.py.")
     lines.append("// CONTROL FLOW ONLY -- every agent reads the plan as its authoritative spec.")
     lines.append("// Per-unit {model, effort} tiers (R2(b)); R3 pilot/fan-out same-tier +")
@@ -901,6 +1221,22 @@ def emit_workflow_script(spec: ExecutionSpec) -> str:
     lines.append("export const meta = {")
     lines.append(f"  name: {_js_string(spec.name)},")
     lines.append(f"  description: {_js_string(spec.description)},")
+    external_intents = [
+        record
+        for unit in spec.units
+        if (
+            record := _workflow_emitter.external_engine_record(
+                unit_id=unit.unit_id,
+                engine=unit.engine,
+                capability=unit.capability,
+                intent=unit.engine_intent,
+            )
+        )
+        is not None
+    ]
+    lines.append(
+        "  externalEngineIntents: " + json.dumps(external_intents, sort_keys=True) + ","
+    )
     lines.append("}")
     lines.append("")
     if spec.repo:
@@ -908,6 +1244,8 @@ def emit_workflow_script(spec: ExecutionSpec) -> str:
         lines.append("")
 
     lines.append(_JS_GATE_HELPER)
+    lines.append("")
+    lines.append(_workflow_emitter.JS_VERIFIER_PROMPT_HELPER)
     lines.append("")
 
     # Topological waves (KTD4): each layer's units are mutually independent and run in a
@@ -918,13 +1256,24 @@ def emit_workflow_script(spec: ExecutionSpec) -> str:
     _var = _js_var
 
     def _emit_unit_header(unit: Unit) -> None:
-        lines.append(f"// ---- {unit.unit_id}: {unit.label} ----")
+        lines.append(
+            f"// ---- {_js_comment(unit.unit_id)}: {_js_comment(unit.label)} ----"
+        )
+        marker = _workflow_emitter.external_engine_marker(
+            engine=unit.engine,
+            capability=unit.capability,
+            intent=unit.engine_intent,
+        )
+        if marker is not None:
+            lines.append(f"// external-engine intent: {_js_comment(marker)}")
         if unit.depends_on:
-            lines.append(f"// depends_on: {', '.join(unit.depends_on)} (barrier)")
+            lines.append(
+                f"// depends_on: {_js_comment(', '.join(unit.depends_on))} (barrier)"
+            )
         if unit.pilot:
-            lines.append(f"// pilot: {unit.pilot} (R3 same-tier gate)")
+            lines.append(f"// pilot: {_js_comment(unit.pilot)} (R3 same-tier gate)")
         if unit.escalation:
-            lines.append(f"// escalation: {unit.escalation}")
+            lines.append(f"// escalation: {_js_comment(unit.escalation)}")
 
     for layer in dependency_layers(spec):
         layer_units = [spec.unit_by_id(uid) for uid in layer]
@@ -945,7 +1294,7 @@ def emit_workflow_script(spec: ExecutionSpec) -> str:
                 lines.append(_emit_gate_call(unit, var))
                 lines.append("")
                 if unit.verify is not None:
-                    _emit_verify_panel(lines, unit, var)
+                    _emit_verify_panel(lines, spec, unit, var)
             continue
 
         # A layer of >1 ready unit -> one parallel() wave of thunks. The wave's results
@@ -966,7 +1315,7 @@ def emit_workflow_script(spec: ExecutionSpec) -> str:
         for unit in layer_units:
             assert unit is not None
             if unit.verify is not None and not unit.verify.iterate_to_consensus:
-                _emit_verify_panel(lines, unit, _var(unit.unit_id))
+                _emit_verify_panel(lines, spec, unit, _var(unit.unit_id))
 
     return "\n".join(lines)
 
@@ -1025,6 +1374,13 @@ def emit_inline_baseline(spec: ExecutionSpec) -> str:
             lines.append(f"- depends_on (run after): {', '.join(unit.depends_on)}")
         if unit.pilot:
             lines.append(f"- pilot (run first, same tier): {unit.pilot}")
+        marker = _workflow_emitter.external_engine_marker(
+            engine=unit.engine,
+            capability=unit.capability,
+            intent=unit.engine_intent,
+        )
+        if marker is not None:
+            lines.append(f"- external_engine_intent: {marker} dispatch_owner=codex-root")
         if unit.escalation:
             lines.append(f"- escalation: {unit.escalation}")
         if unit.fanout:
@@ -1046,44 +1402,27 @@ def emit_inline_baseline(spec: ExecutionSpec) -> str:
 # emitter can render the correct floor for a given (possibly downgraded) tier without a
 # cross-module import at module scope (the scripts load standalone in tests).
 _WORKFLOW_TIER = "cc-workflows-ultracode"
-_TEAM_TIER = "team-execution"
 _INLINE_TIER = "inline"
-
-
-def _emit_team_structure(spec: ExecutionSpec) -> str:
-    """Lazily load ``team_emitter`` and emit the team-execution ``## Team Structure`` markdown.
-
-    Imported by path (not at module scope) so ``execution_spec`` stays importable standalone in
-    tests and there is no import cycle with ``team_emitter`` (which lazily loads this module).
-    """
-    import importlib.util
-
-    path = Path(__file__).parent / "team_emitter.py"
-    loaded = importlib.util.spec_from_file_location("team_emitter", path)
-    assert loaded is not None and loaded.loader is not None
-    module = importlib.util.module_from_spec(loaded)
-    loaded.loader.exec_module(module)
-    return module.emit_team_structure(spec)  # type: ignore[no-any-return]
 
 
 def recompile_for_tier(spec: ExecutionSpec, orchestration_mode: str) -> str:
     """Re-emit the spec for a (possibly downgraded) orchestration tier (R11 recompile).
 
-    ONLY the orchestration tier changes -- every unit survives in every emitter. The inline and
-    workflow emitters additionally render each unit's ``{model, effort}`` tier verbatim;
-    ``team-execution`` re-emits the ``team_emitter`` ``## Team Structure`` markdown protocol (the R5
-    third leg of the by-mode dispatcher seam), which renders the team roles/units but not the
-    per-unit ``{model, effort}`` (the team-execution protocol selects models per its own roster).
-    ``cc-workflows-ultracode`` re-emits the dynamic ``.workflow.js`` harness; ``inline`` or any
+    ONLY the orchestration tier changes -- every unit survives in every supported emitter. The
+    inline and source-workflow emitters render each unit's ``{model, effort}`` tier verbatim.
+    ``cc-workflows-ultracode`` re-emits the legacy dynamic ``.workflow.js`` harness; ``inline`` or any
     unknown floor re-emits the inline/serial baseline, the always-runnable floor. This is the
     function an off-host resume calls after ``recheck_orchestration_capability`` decides the new
     tier: it never errors and always returns a runnable artifact (AE3).
     """
     spec.validate()
+    if orchestration_mode == "verified-workflow":
+        raise SpecError(
+            "verified-workflow requires an approved ## Workflow Structure; "
+            "Saga cannot synthesize role/profile bindings from a legacy execution spec"
+        )
     if orchestration_mode == _WORKFLOW_TIER:
         return emit_workflow_script(spec)
-    if orchestration_mode == _TEAM_TIER:
-        return _emit_team_structure(spec)
     # The inline floor and any other/unknown tier emit the host-independent serial baseline --
     # never an empty or un-runnable artifact.
     return emit_inline_baseline(spec)
@@ -1106,6 +1445,9 @@ class Segment:
     unit_ids: list[str]
     tier: Tier
     depends_on: list[str]
+    engine: str | None = None
+    capability: str | None = None
+    engine_intent: str | None = None
 
 
 def segment_units(spec: ExecutionSpec) -> list[Segment]:
@@ -1124,7 +1466,11 @@ def segment_units(spec: ExecutionSpec) -> list[Segment]:
     current_units: list[Unit] = []
 
     for unit in spec.units:
-        if not unit.files:
+        if unit.engine is not None:
+            key = f"engine:{unit.engine}"
+        elif unit.capability is not None:
+            key = f"capability:{unit.capability}"
+        elif not unit.files:
             key = ""
         else:
             first_file = unit.files[0]
@@ -1156,8 +1502,14 @@ def segment_units(spec: ExecutionSpec) -> list[Segment]:
     temp_segments: list[dict[str, Any]] = []
 
     for key, units in segments_data:
-        base_dir = key[len("plugins/") :] if key.startswith("plugins/") else key
-        base_id = f"worker-{base_dir}" if base_dir else "worker"
+        if key.startswith("engine:"):
+            base_dir = key[len("engine:") :].replace("/", "-")
+            base_id = f"worker-engine-{base_dir}"
+        elif key.startswith("capability:"):
+            base_id = f"worker-capability-{key[len('capability:') :]}"
+        else:
+            base_dir = key[len("plugins/") :] if key.startswith("plugins/") else key
+            base_id = f"worker-{base_dir}" if base_dir else "worker"
 
         count = counts.get(base_id, 0) + 1
         counts[base_id] = count
@@ -1209,6 +1561,11 @@ def segment_units(spec: ExecutionSpec) -> list[Segment]:
                 unit_ids=unit_ids,
                 tier=seg_tier,
                 depends_on=seg_deps,
+                engine=units[0].engine,
+                capability=units[0].capability,
+                engine_intent=_workflow_emitter.merge_engine_intents(
+                    unit.engine_intent for unit in units
+                ),
             )
         )
 

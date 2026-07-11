@@ -19,7 +19,7 @@ testpaths = [
   "plugins/fleet-core/tests",
   "plugins/mission-control/tests",
   "plugins/deploy/tests",
-  "plugins/team-execution/tests",
+  "plugins/verified-workflows/tests",
   "plugins/saga/tests",
   "plugins/discord-identity-assets/tests",
   "plugins/unifi/tests",

@@ -146,7 +146,7 @@
 <text x="1036" y="588" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="400" fill="#172033"><tspan x="1036" dy="0">quality gate</tspan></text>
 <line x1="1036" y1="628" x2="1180" y2="628" stroke="#e2e8f0"/>
 <text x="1036" y="638" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="800" fill="#5b6472">OWNER</text>
-<text x="1036" y="664" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="400" fill="#172033"><tspan x="1036" dy="0">saga + team-</tspan><tspan x="1036" dy="19">execution</tspan></text>
+<text x="1036" y="664" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="400" fill="#172033"><tspan x="1036" dy="0">saga + verified-</tspan><tspan x="1036" dy="19">workflows</tspan></text>
 <line x1="1036" y1="704" x2="1180" y2="704" stroke="#e2e8f0"/>
 <line x1="1200" y1="460" x2="1214" y2="460" stroke="#475569" stroke-width="3" marker-end="url(#arrowhead)"/>
 <g filter="url(#softShadow)">
@@ -199,6 +199,6 @@
 <text x="95" y="871" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="400" fill="#172033"><tspan x="95" dy="0">idea-ready/experiment-ready/requirements-ready -&gt; saga:plan -&gt; saga:doc-</tspan><tspan x="95" dy="22">review -&gt; saga:work -&gt; saga:code-review -&gt; saga:qa -&gt; saga:handoff or</tspan><tspan x="95" dy="22">saga:retro</tspan></text>
 <rect x="690" y="800" width="840" height="112" rx="10" fill="#ffffff" stroke="#dbe3ef" stroke-width="1"/>
 <text x="715" y="837" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="800" fill="#172033">Mutation Boundary</text>
-<text x="715" y="871" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="400" fill="#172033"><tspan x="715" dy="0">Saga routes and records context. Mission Control mutates SDLC state, Team Execution owns review</tspan><tspan x="715" dy="22">evidence, and Deploy owns tags.</tspan></text>
+<text x="715" y="871" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="400" fill="#172033"><tspan x="715" dy="0">Saga routes and records context. Mission Control mutates SDLC state, Verified Workflows owns</tspan><tspan x="715" dy="22">review evidence, and Deploy owns tags.</tspan></text>
 <text x="70" y="970" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="400" fill="#5b6472">Read left to right. A hard gate blocks the next step; an advisory step improves context without owning mutation.</text>
 </svg>

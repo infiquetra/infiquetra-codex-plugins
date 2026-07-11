@@ -73,10 +73,10 @@ consumers (`/work`, `/doc-review`, the saga) depend on.
 - **Implementation Units** (stable **U-IDs**) — the discrete units of work, each independently
   landable. `/work` consumes these. Each unit carries per-unit test scenarios and repo-relative
   test-file paths.
-- **Team Structure** — required only when the selected execution backend is `team-execution`. Use a
-  `## Team Structure` section in the plan, or link a separate Team Execution artifact from the plan.
+- **Workflow Structure** — required only when the selected workflow mode is `verified-workflow`. Use a
+  `## Workflow Structure` section in the plan, or link a separate Verified Workflows artifact from the plan.
   This is the Phase A receipt that `/work`, `/resume`, and outcome dispatch validate before executable
-  Team Execution can proceed.
+  Verified Workflows can proceed.
 - **Scope Boundaries** — what is explicitly out of scope. Keep `Deferred to Follow-Up Work` (planned
   work for a later PR/issue) distinct from true non-goals.
 
@@ -203,8 +203,8 @@ the plan to write the code for them and without re-asking the operator. Concrete
 - Decisions with rationale (KTDs), not just tasks.
 - Per-unit test scenarios specific enough that the implementer knows exactly what to test.
 - Clear dependencies and sequencing (U-ID dependency cites).
-- For `team-execution`, a concrete `## Team Structure` receipt or linked Team Execution artifact with
-  a saga `orchestration_ref` such as `docs/plans/YYYY-MM-DD-<topic>-plan.md#team-structure`.
+- For `verified-workflow`, a concrete `## Workflow Structure` receipt or linked Verified Workflows artifact with
+  a saga `orchestration_ref` such as `docs/plans/YYYY-MM-DD-<topic>-plan.md#workflow-structure`.
 
 ---
 

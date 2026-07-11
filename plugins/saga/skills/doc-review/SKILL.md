@@ -87,7 +87,7 @@ to drive a build. Normal readiness review is still the right gate for single doc
 issues, and strategy.
 
 The probe is a fresh-context cold-builder simulation. Do not run it inline in the same context that
-authored or remediated the spec. Prefer `team-execution` delegated mode when it can provide a clean
+authored or remediated the spec. Prefer `verified-workflow` delegated mode when it can provide a clean
 review context; otherwise tell the operator that a new session is required for the probe to be valid.
 
 Probe inputs are profile-owned. For the service-implementation profile, pass only:
@@ -151,7 +151,8 @@ For a high-stakes artifact you may add cross-family adversarial depth by dispatc
 the operator asks for a cross-engine pass or the artifact clearly warrants one.
 
 - Expand the role with `engine_resolver.resolve_role("cross-family-review-panel", registry=...)`;
-  each member (Codex, Gemini Pro/Flash via agy) is dispatched with its **own** prompting protocol.
+  each external member (Gemini Pro/Flash via agy) is dispatched with its **own** prompting protocol.
+  The native Codex reviewer remains the root verifier and never enters the external registry.
 - If `engine_resolver.panel_halt(...)` returns a reason, a member is unavailable — **halt the panel
   and surface it** rather than substituting the host agent for the missing reviewer (R17): the host
   reviewing its own family defeats the purpose.
@@ -160,6 +161,14 @@ the operator asks for a cross-engine pass or the artifact clearly warrants one.
   (R13). Nothing an external engine returns blocks or persists a gate on its own say-so. On the
   Codex host, Claude-only autonomous panel surfaces (Workflow/TeamCreate) are negative-gated —
   dispatch runs inline/serially.
+
+## Engine Offer
+
+Before offering an external-engine second opinion for document review, run
+`python3 plugins/saga/scripts/engine_offer.py offer --stage doc-review --repo-root . --attended`.
+If the helper reports `prompt_required`, `/doc-review` owns the operator prompt and persists the
+preference with `engine_preference.py`. The offer is advisory only; Codex still verifies every
+finding and owns the readiness verdict.
 
 ## Safe In-Place Fixes
 

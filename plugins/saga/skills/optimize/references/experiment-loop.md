@@ -54,7 +54,7 @@ stopping:
   target_reached: true
 ```
 
-**SHED from the source** (do **not** include in the default spec; re-add only via team-execution
+**SHED from the source** (do **not** include in the default spec; re-add only via Verified Workflows
 operator-choice if the operator escalates to parallel fan-out): the `execution` block
 (`mode: parallel`, `backend: worktree`, `max_concurrent`), the `parallel` block (port parameterization,
 shared files, worktree budget), and `max_runner_up_merges_per_batch`. The default engine is **serial,
@@ -240,6 +240,6 @@ the run:
 
 The default loop is **serial**. For **independent experiment fan-out** — many hypotheses that do not share
 output — **OFFER** a backend per `../../../references/operator-choice.md` (§3.2: broad, independent,
-low-risk fan-out leans `team-execution`; unsafe automation leans `manual`). `/optimize` writes **no
+low-risk fan-out leans `verified-workflow`; unsafe automation leans `manual`). `/optimize` writes **no
 saga**, so the chosen backend is recorded **NARRATIVELY** in the strategy digest (operator-choice §6 —
 a non-saga-writer records the choice in prose, never via `saga.save`). Never auto-spawn a backend.

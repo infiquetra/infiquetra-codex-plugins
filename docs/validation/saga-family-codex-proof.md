@@ -1,7 +1,7 @@
 # Saga Family Codex Proof
 
-Generated: 2026-06-06T14:54:38.060783+00:00
-Run id: `20260606T145438Z`
+Generated: 2026-07-11T14:16:16.267355+00:00
+Run id: `20260711-u8-clean`
 
 ## Scope
 
@@ -13,7 +13,7 @@ This tracked summary redacts local paths. Raw proof JSON is written under the ig
 - Profile class: isolated repo-local CODEX_HOME under ignored .codex/proofs
 - Default profile mutated: `false`
 - Marketplace: `infiquetra-saga-family-proof`
-- Installed inventory: `saga, deploy, mission-control, team-execution, home-lab-ops, python-toolkit, unifi, test-suite`
+- Installed inventory: `saga, deploy, mission-control, verified-workflows, home-lab-ops, python-toolkit, unifi, test-suite, fleet-core, discord-identity-assets`
 - Codex CLI install mode: `codex-cli`
 - Codex CLI commands executed: `true`
 
@@ -27,7 +27,7 @@ Required Saga namespace skills resolved to the Saga plugin:
 
 ## Representative Flows
 
-- Saga backend recommendation: `team-execution`, source workflow excluded:
+- Saga backend recommendation: `verified-workflow`, source workflow excluded:
   `true`
 - Deploy dry-run: mutation occurred `false`,
   confirmation required `true`
@@ -35,12 +35,14 @@ Required Saga namespace skills resolved to the Saga plugin:
   `true`, mutation plan present
   `true`, confirmation refused
   `true`
-- Team-execution degraded mode: mode `serial`, final verification
-  `true`
+- Verified Workflows static degradation probe: outcome
+  `inline-only`, runtime proof
+  `false`; root acceptance remains required.
 
 ## State And Redaction
 
-- State roots checked: `.codex/saga/`, `.codex/team-execution/`, `.codex/proofs/`
+- State roots checked: `.codex/saga/`, `.codex/verified-workflows/`, `.codex/proofs/`
+- Legacy read-only root retained: `.codex/team-execution/`
 - Redaction policy: `docs/portability/saga-family-state-policy.md`
 - Tracked summary contains no credentials, raw transcripts, or default-profile paths.
 

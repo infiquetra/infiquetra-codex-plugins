@@ -1,5 +1,69 @@
 # Learnings
 
+## 2026-07-11: Sol And Terra V2 Can Select Named Profiles After Namespace Bootstrap
+
+**Evidence:** `codex-cli 0.144.1`; OpenAI Codex source tag `rust-v0.144.1`
+(`44918ea10c0f99151c6710411b4322c2f5c96bea`); current OpenAI Codex `main`
+`5c19155cbd93bfa099016e7487259f61669823ff`; fresh local parent/child rollout
+receipts. The relevant source behavior was unchanged between the installed tag and that `main`.
+
+**Mechanism:** The Sol and Terra model catalog rows select MultiAgent V2. V2 defaults
+`hide_spawn_agent_metadata = true`, which removes the functional `agent_type`, `model`,
+`reasoning_effort`, and `service_tier` inputs from the model-visible spawn schema. The default
+`collaboration` namespace is also reserved by the model backend: setting only
+`hide_spawn_agent_metadata = false` expands that reserved schema and fails before inference with
+`Function 'collaboration.spawn_agent' is reserved for use by this model and must match the
+configured schema.` This restricted default is not proof that custom-agent model and effort fields
+are unsupported.
+
+The working V2 bootstrap is:
+
+```toml
+[features.multi_agent_v2]
+hide_spawn_agent_metadata = false
+tool_namespace = "agents"
+```
+
+After a fresh task loads that configuration, dispatch selects the TOML profile with `agent_type`;
+`task_name` only names the workflow task/path and does not resolve a profile. Because V2 defaults
+omitted `fork_turns` to `all` and rejects agent-type/model/effort overrides for a full-history fork,
+profile-selected work must pass `fork_turns = "none"` or a positive bounded turn count. Verified
+Workflows should normally use `none` and send a self-contained role/lens evidence packet.
+
+The differential runtime proof used a Sol/high root and dispatched `agent_type = "scan_low"` with
+`fork_turns = "none"` through the `agents` namespace. The child receipt recorded
+`agent_role = "scan_low"`, model `gpt-5.6-luna`, effort `low`, and read-only sandbox. A separate
+Luna/V1 control selected `review_high` and produced Sol/high/read-only. This proves that named TOML
+profiles apply model, effort, and instructions; it does not remove the separate requirement
+to bind the planned role, installed-profile digest, child identity, observed turn context, and
+structured result before granting workflow evidence authority.
+
+The read-only result did **not** prove that the profile narrowed the sandbox because that parent was
+also read-only. A later workspace-powerful parent spawned `review_max`; its host-issued child
+`turn_context` correctly recorded Sol/max but inherited the parent's permission profile instead of
+the TOML's `sandbox_mode = "read-only"`. Installed-tag and current-main source explain the result:
+V2 applies the role and then calls `apply_spawn_agent_runtime_overrides`, which copies the live
+parent permission profile onto the child. Until that ordering changes, permissions must be enforced
+by a permission-homogeneous parent task. Read-only scanner/reviewer/monitor profiles run beneath a
+read-only parent; `test_medium` runs beneath workspace-write. A profile sandbox field remains the
+declared policy and future-compatible configuration, not present runtime enforcement.
+
+**Generalizable rule:** Do not infer a Codex capability is absent from one model-visible tool
+schema. Check model-selected tool versions, schema-hiding configuration, reserved namespaces, fork
+semantics, and a differential child `turn_context`. For current Sol/Terra V2 named-profile dispatch,
+require the two-setting namespace bootstrap, `agent_type`, a non-full-history fork, and host-issued
+runtime readback. Verify model and effort from the child rollout, never child self-report. Verify the
+effective permission profile separately and use a permission-homogeneous parent because current V2
+overwrites the role's sandbox with the parent turn permission. Fail closed instead of substituting a
+generic child when any part is missing.
+
+Sources: [custom-agent documentation](https://learn.chatgpt.com/docs/agent-configuration/subagents#custom-agents),
+[V2 defaults](https://github.com/openai/codex/blob/44918ea10c0f99151c6710411b4322c2f5c96bea/codex-rs/core/src/config/mod.rs#L1144-L1179),
+[spawn schema hiding](https://github.com/openai/codex/blob/44918ea10c0f99151c6710411b4322c2f5c96bea/codex-rs/core/src/tools/handlers/multi_agents_spec.rs#L595-L642),
+[namespace wiring](https://github.com/openai/codex/blob/44918ea10c0f99151c6710411b4322c2f5c96bea/codex-rs/core/src/tools/spec_plan.rs#L786-L815),
+and [V2 role/fork application](https://github.com/openai/codex/blob/44918ea10c0f99151c6710411b4322c2f5c96bea/codex-rs/core/src/tools/handlers/multi_agents_v2/spawn.rs#L40-L85),
+including [parent permission reapplication](https://github.com/openai/codex/blob/44918ea10c0f99151c6710411b4322c2f5c96bea/codex-rs/core/src/tools/handlers/multi_agents_common.rs#L150-L167).
+
 ## 2026-07-06: Force Structured Agent Output With A Schema; Never Gate-Parse Prose
 
 **Evidence:** `plugins/saga/scripts/execution_spec.py` `_agent_schema_js`/`_agent_opts`,

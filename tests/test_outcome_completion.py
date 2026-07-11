@@ -90,49 +90,6 @@ def test_issue_state() -> None:
     assert GH.issue_state("9", runner=_gh(fail=True)) == "unknown"
 
 
-def test_qualified_refs_are_translated_for_read_commands() -> None:
-    calls: list[list[str]] = []
-
-    def runner(args: list[str], **_kw: Any) -> SimpleNamespace:
-        calls.append(args)
-        body = {
-            "state": "OPEN",
-            "mergedAt": None,
-            "projectItems": [],
-            "stateReason": "REOPENED",
-        }
-        return SimpleNamespace(returncode=0, stdout=json.dumps(body), stderr="")
-
-    ref = "infiquetra/team-mimir#91"
-    assert GH.pr_state(ref, runner=runner) == "open"
-    assert GH.issue_state(ref, runner=runner) == "open"
-    assert GH.board_status(ref, project="Operations", runner=runner) == ""
-    assert GH.issue_close_info(ref, runner=runner) == {
-        "state": "open",
-        "state_reason": "reopened",
-        "closed_by": "",
-    }
-    target = ["91", "--repo", "infiquetra/team-mimir"]
-    assert calls == [
-        ["gh", "pr", "view", *target, "--json", "state,mergedAt"],
-        ["gh", "issue", "view", *target, "--json", "state"],
-        ["gh", "issue", "view", *target, "--json", "projectItems"],
-        ["gh", "issue", "view", *target, "--json", "state,stateReason"],
-    ]
-
-
-@pytest.mark.parametrize("ref", ["91", "https://github.com/infiquetra/team-mimir/issues/91"])
-def test_unqualified_and_url_refs_preserve_existing_gh_target(ref: str) -> None:
-    calls: list[list[str]] = []
-
-    def runner(args: list[str], **_kw: Any) -> SimpleNamespace:
-        calls.append(args)
-        return SimpleNamespace(returncode=0, stdout=json.dumps({"state": "CLOSED"}), stderr="")
-
-    assert GH.issue_state(ref, runner=runner) == "closed"
-    assert calls == [["gh", "issue", "view", ref, "--json", "state"]]
-
-
 # --------------------------------------------------------------------------- code-leaf barrier (R11)
 
 
@@ -307,7 +264,7 @@ def repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 def test_advance_harvester_unlocks_dependents_in_one_tick(repo: Path) -> None:
     # End-to-end: advance(harvester=production_harvester) harvests a merged PR BEFORE the frontier read,
-    # so design's completion unlocks build and build dispatches in the SAME advance.
+    # so design's completion unlocks build and creates its dispatch intent in the SAME advance.
     OUTCOME.start(
         repo,
         "ship-x",
@@ -331,7 +288,8 @@ def test_advance_harvester_unlocks_dependents_in_one_tick(repo: Path) -> None:
         harvester=OUTCOME.production_harvester(repo, github_runner=gh),
     )
     assert result.harvested == ["design"]  # merged PR materialized
-    assert result.dispatched == ["build"]  # unlocked + dispatched the same tick
+    assert result.dispatched == []
+    assert result.status["states"]["build"] == "intent-created"
 
 
 def test_production_harvester_child_outcome_recurses(repo: Path) -> None:
@@ -358,3 +316,27 @@ def test_production_harvester_child_outcome_recurses(repo: Path) -> None:
     )
     # the child outcome's leaf reads done -> child terminal-successful -> parent's child node unlocks
     assert result.harvested == ["sub"]
+
+
+def test_github_refs_normalize_owner_repo_numbers_to_urls() -> None:
+    seen: list[list[str]] = []
+
+    def runner(args: list[str], **_kwargs: Any) -> SimpleNamespace:
+        seen.append(args)
+        payload = (
+            {"state": "MERGED", "mergedAt": "2026-07-11T00:00:00Z"}
+            if args[1] == "pr"
+            else {"state": "CLOSED"}
+        )
+        return SimpleNamespace(returncode=0, stdout=json.dumps(payload), stderr="")
+
+    assert GH.pr_state("o/r#493", runner=runner) == "merged"
+    assert GH.issue_state("o/r#7", runner=runner) == "closed"
+    assert seen[0][3] == "https://github.com/o/r/pull/493"
+    assert seen[1][3] == "https://github.com/o/r/issues/7"
+
+
+def test_parse_github_ref_accepts_urls_and_rejects_bare_number() -> None:
+    assert GH._parse_ref("infiquetra/plugins#362") == ("infiquetra", "plugins", "362")
+    assert GH._parse_ref("https://github.com/o/r/issues/7") == ("o", "r", "7")
+    assert GH._parse_ref("42") is None

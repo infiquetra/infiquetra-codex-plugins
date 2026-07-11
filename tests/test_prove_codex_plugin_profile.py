@@ -32,7 +32,11 @@ def test_generate_static_proof_contains_required_evidence(tmp_path: Path) -> Non
     )
 
     assert proof["default_profile_mutated"] is False
-    assert proof["installed_plugins"] == list(proof_script.TARGET_PLUGINS)
+    assert proof["installed_plugins"] == list(proof_script.CURRENT_INSTALL_PLUGINS)
+    upgrade = next(profile for profile in proof["profiles"] if profile["name"] == "upgrade-from-old")
+    assert set(upgrade["seeded_inventory"]).isdisjoint(upgrade["replacement_inventory"])
+    assert "team-execution" in upgrade["seeded_inventory"]
+    assert upgrade["old_inventory_absent"] is True
     assert {item["skill"] for item in proof["namespace_proof"]} == {
         "saga:plan",
         "saga:work",
@@ -45,10 +49,12 @@ def test_generate_static_proof_contains_required_evidence(tmp_path: Path) -> Non
     assert proof["flows"]["mission_control"]["mutation_plan_present"] is True
     assert proof["flows"]["mission_control"]["confirmation_refused"] is True
     assert proof["flows"]["mission_control"]["mutation_occurred"] is False
-    assert proof["flows"]["team_execution"]["mode"] == "serial"
-    assert proof["flows"]["team_execution"]["serial_consensus_limits"]
+    assert proof["flows"]["verified_workflows"]["outcome"] == "inline-only"
+    assert proof["flows"]["verified_workflows"]["runtime_proof"] is False
+    assert proof["flows"]["verified_workflows"]["root_acceptance_required"] is True
     assert proof["state_proof"]["ignored"][".codex/saga/"] is True
-    assert proof["state_proof"]["ignored"][".codex/team-execution/"] is True
+    assert proof["state_proof"]["ignored"][".codex/verified-workflows/"] is True
+    assert proof["state_proof"]["legacy_readable_roots"] == [".codex/team-execution/"]
     assert proof["state_proof"]["ignored"][".codex/proofs/"] is True
 
 
@@ -59,17 +65,17 @@ def test_rendered_markdown_redacts_local_profile_paths() -> None:
         "profile_class": "isolated repo-local CODEX_HOME under ignored .codex/proofs",
         "default_profile_mutated": False,
         "marketplace": {"name": "infiquetra-saga-family-proof"},
-        "installed_plugins": list(proof_script.TARGET_PLUGINS),
+        "installed_plugins": list(proof_script.CURRENT_INSTALL_PLUGINS),
         "codex_cli_install": {"mode": "static", "executed": False},
         "flows": {
-            "saga": {"recommended": "team-execution", "source_workflow_excluded": True},
+            "saga": {"recommended": "verified-workflow", "source_workflow_excluded": True},
             "deploy": {"mutation_occurred": False, "confirmation_required": True},
             "mission_control": {
                 "readiness_passed": True,
                 "mutation_plan_present": True,
                 "confirmation_refused": True,
             },
-            "team_execution": {"mode": "serial", "main_thread_final_verification": True},
+            "verified_workflows": {"outcome": "inline-only", "runtime_proof": False},
         },
     }
     text = proof_script.render_markdown(proof)
@@ -78,3 +84,22 @@ def test_rendered_markdown_redacts_local_profile_paths() -> None:
     assert ".codex/proofs/saga-family/<run-id>/" in text
     assert "saga:plan" in text
     assert "Default profile mutated: `false`" in text
+
+
+def test_target_fixture_identity_is_read_only_and_released() -> None:
+    before = (ROOT / ".agents" / "plugins" / "marketplace.json").read_bytes()
+
+    proof = proof_script.target_fixture_identity(ROOT)
+
+    assert proof["mode"] == "target-fixture"
+    assert proof["workflow_plugin"] == "verified-workflows"
+    assert proof["workflow_version"] == "1.0.0+codex.20260711160140"
+    assert proof["workflow_skills"] == ["appsec-audit", "run"]
+    assert proof["publication_status"] == "released"
+    assert proof["legacy_workflow_marketplace_listed"] is False
+    assert proof["target_workflow_marketplace_listed"] is True
+    assert proof["installed_plugin_state"] == "unobserved-by-static-proof"
+    assert proof["profile_state"] == "unobserved"
+    assert proof["cache_state"] == "unobserved"
+    assert "default_profile_mutated" not in proof
+    assert (ROOT / ".agents" / "plugins" / "marketplace.json").read_bytes() == before

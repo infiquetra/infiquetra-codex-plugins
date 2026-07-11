@@ -7,16 +7,14 @@ This repo replaces cache-managed usage only after the gates below pass.
 
 1. Trusted source: the checkout remote must be `https://github.com/infiquetra/infiquetra-codex-plugins` or the approved SSH equivalent.
 2. Allowlisted inventory: `.agents/plugins/marketplace.json` must list exactly
-   `saga`, `deploy`, `mission-control`, `team-execution`, `home-lab-ops`,
-   `python-toolkit`, `unifi`, and `test-suite`.
+   `saga`, `deploy`, `mission-control`, `verified-workflows`, `home-lab-ops`,
+   `python-toolkit`, `unifi`, `test-suite`, `fleet-core`, and `discord-identity-assets`.
 3. Version or integrity pins: each `.codex-plugin/plugin.json` version must match the provenance table, or the change must be documented before cutover.
 4. Manifest validation: the Codex plugin validator must pass for each plugin.
 5. Repo validation: `python3 scripts/validate_codex_plugins.py` must pass.
 6. Runtime smoke: `python3 plugins/test-suite/skills/run-quality-checks/scripts/test_runner.py --dry-run --checks pytest,ruff` must pass.
-7. Saga-family proof: `python3 scripts/prove_codex_plugin_profile.py --write-docs`
-   must produce `docs/validation/saga-family-codex-proof.md` and
-   `docs/validation/saga-family-codex-proof.schema.json` with no default-profile
-   mutation.
+7. Saga-family proof: the isolated clean-install and seeded migration/rollback lanes must pass;
+   the committed proof records only relative inventories and hashes.
 8. Rollback and split criteria:
    `docs/cutover/saga-family-rollback-and-split.md` must state that partial
    replacement activation is not a successful merge state.
@@ -27,9 +25,11 @@ The exact Codex install command may vary with local Codex plugin tooling. The ma
 procedure is:
 
 1. Validate this repo at the intended commit.
-2. Install the eight target plugins from this repo-managed marketplace or local paths.
-3. Start a fresh Codex session and confirm the expected skills are visible.
-4. Keep the previous cache directories intact until the new source is confirmed.
+2. Capture and validate the protected local rollback bundle under ignored `.codex/cutover/` state.
+3. Install the ten target plugins from this repo-managed marketplace using the Codex plugin CLI.
+4. Sync exactly five marker-owned profiles with the expected pre-state digest.
+5. Start a fresh Codex session and confirm the expected skills, hooks, model, and effort receipts.
+6. Keep the previous cache bytes in the rollback bundle until all readback gates pass.
 
 Do not edit files under `/Users/jefcox/.codex/plugins/cache/infiquetra-plugins` as source.
 
@@ -42,8 +42,8 @@ Exact old-invocation replacement rows live in
   `mission-control`.
 - Lifecycle routing, planning, handoff, document classification, and review
   entrypoints: `saga`.
-- Reviewer consensus, validator protocol, and degraded serial evidence:
-  `team-execution`.
+- Reviewer consensus, validator protocol, and truthful inline evidence:
+  `verified-workflows`.
 - Tag promotion, deployment status, hotfix, rollback, and release-note preview:
   `deploy`.
 
@@ -51,8 +51,9 @@ Exact old-invocation replacement rows live in
 
 If repo-managed install validation fails:
 
-1. Remove the repo-managed plugin install entries.
-2. Restart Codex.
-3. Confirm the previous local cache-backed skills are visible again where they
-   still exist in the user's installed state.
+1. Restore the exact pre-cutover marketplace, config, hooks, managed-agent files, legacy state,
+   and installed package bytes from the validated local rollback bundle.
+2. Reinstall the retired workflow package from the restored local marketplace and remove the
+   failed Verified Workflows install.
+3. Restart Codex and verify the pre-state hashes exactly.
 4. Record the failed gate and fix this repo before retrying.

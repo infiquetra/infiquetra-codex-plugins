@@ -31,21 +31,25 @@ Codex Saga offers only:
 
 - `inline`
 - `manual`
-- `team-execution`
+- `verified-workflow`
 
-Use `team-execution` for reviewer consensus, validators, broad fan-out, cross-repo work, security/infra risk, deployment-sensitive gates, or adversarial confidence. Source Workflow, fork, goal, and hook backends are inactive unless a Codex capability proof and tests land.
+Use `verified-workflow` for reviewer consensus, validators, broad fan-out, cross-repo work,
+security/infra risk, deployment-sensitive gates, or adversarial confidence. Historical backend
+values remain readable but are never emitted for new work.
 
 ## Plugin Boundaries
 
 - `mission-control` owns issue artifacts, issue comments, labels, milestones, boards, and project movement.
 - `deploy` owns deployment mutation, tag promotion, rollback, hotfixes, deployment status, and release-note previews.
-- `team-execution` owns reviewer consensus, selected validators, subagent delegation, serial fallback, and evidence state.
+- `verified-workflows` owns reviewer consensus, selected validators, subagent delegation, truthful
+  inline fallback, and protected evidence state.
 - `saga` emits handoff envelopes, outcome receipts, status cards, and promotion proposals. Receiving plugins must re-read and re-verify handoff payloads before mutation.
 
 ## Scripts
 
 - `scripts/saga.py` stores and restores `.codex/saga/` state.
-- `scripts/lifecycle_state.py` normalizes destination labels and recommends `inline`, `manual`, or `team-execution`.
+- `scripts/lifecycle_state.py` normalizes destination labels and recommends `inline`, `manual`, or
+  `verified-workflow`.
 - `scripts/outcome.py` coordinates durable outcome DAGs and routes leaves back to native Saga skills.
 - `scripts/promote_scan.py` scans engineering journals for gated context-library promotion candidates.
 - `scripts/status_card.py` renders shared derived-on-read status cards.

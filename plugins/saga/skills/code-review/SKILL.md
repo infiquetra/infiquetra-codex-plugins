@@ -69,6 +69,14 @@ in your reply text instead. Follow the canonical channel-inline convention in
 Use repo-relative paths in every generated document. Absolute paths break portability across machines
 and worktrees. (The one exception is the saga `--review-paths` value — see Phase 5.)
 
+## Engine Offer
+
+Before offering an external-engine second opinion for code review, run
+`python3 plugins/saga/scripts/engine_offer.py offer --stage code-review --repo-root . --attended`.
+If the helper reports `prompt_required`, `/code-review` owns the operator prompt and persists the
+preference with `engine_preference.py`. The offer is advisory only; `/code-review` still
+verifies every finding and owns the merge-readiness verdict.
+
 ---
 
 ## Phase 0 — Enter and scope
@@ -178,11 +186,11 @@ Spawn the selected lenses as **generic agents** (`Explore`/`Task` — this plugi
 do **not** reference named `ce-*` agents). Each lens returns findings in the schema defined by
 `references/findings-schema.md`.
 
-**Operator-choice backend.** Offer the execution backend per `../../references/operator-choice.md` (the
-plugin-root decision contract). There are exactly three active Codex backends — `inline | manual |
-team-execution`.
+**Operator-choice workflow mode.** Offer the workflow mode per `../../references/operator-choice.md` (the
+plugin-root decision contract). There are exactly three active Codex modes — `inline | manual |
+verified-workflow`.
 Read the work shape, recommend the cheapest-correct backend and pre-select it,
-but surface the alternatives so escalation is one step. Escalate to `team-execution` for risky/consensus
+but surface the alternatives so escalation is one step. Escalate to `verified-workflow` for risky/consensus
 review (large diff, security, infra, cross-repo, deployment-sensitive) or broad independent fan-out.
 Use `manual` when automation is unsafe or unavailable. Never offer source-only workflow backends in
 Codex. `inline` suits small diffs.
@@ -278,7 +286,7 @@ python3 plugins/saga/scripts/saga.py save \
   --kind <issue|task> \
   --id <the-existing-saga-id> \
   --review-paths docs/code-reviews/YYYY-MM-DD-<branch-or-pr>-code-review.md \
-  --orchestration-mode <inline|manual|team-execution>
+  --orchestration-mode <inline|manual|verified-workflow>
 ```
 
 **If no saga was found in 5.1, SKIP this command entirely and say so** ("No work-thread saga found —
@@ -289,7 +297,7 @@ the CLI.
 ### 5.5 Offer fixer dispatch (never auto-run)
 
 For actionable findings (`safe_auto`/`gated_auto`/`manual`), **OFFER** a fixer route — a review-fixer
-agent, `/work`, or `team-execution` (operator-choice). `/code-review` never applies the fix itself.
+agent, `/work`, or `verified-workflow` (operator-choice). `/code-review` never applies the fix itself.
 `advisory` findings are report-only.
 
 ### 5.6 Route

@@ -106,6 +106,86 @@ def test_manifest_envelope_round_trip() -> None:
         pm.Manifest.from_dict(bad_sub)
 
 
+def test_rejected_offload_manifest_requires_normalized_note() -> None:
+    rejected = _manifest(
+        disposition=pm.Disposition.REJECTED_OFFLOAD,
+        disposition_note="Codex rejected an unsupported patch.",
+    )
+    assert pm.Manifest.from_dict(rejected.to_dict()) == rejected
+
+    for invalid_note in ("", "   ", " not normalized ", "two\nlines", "bad\x00note"):
+        payload = rejected.to_dict()
+        payload["disposition_note"] = invalid_note
+        with pytest.raises(pm.ManifestError, match="disposition_note"):
+            pm.Manifest.from_dict(payload)
+
+
+def test_manifest_round_trips_bounded_tripwire_and_economics() -> None:
+    economics = pm.EconomicsRecord(
+        engine_tokens_avoided=1000,
+        chaperone_tokens_spent=200,
+        net_savings_tokens=800,
+        net_savings_status="positive",
+        external_cost_usd=0.004,
+    )
+    manifest = _manifest(
+        tripwire_note="tripwire_unarmed: observer unavailable",
+        economics=economics,
+    )
+
+    assert pm.Manifest.from_dict(manifest.to_dict()) == manifest
+    assert pm.tier_of(manifest) is pm.Tier.FULL
+
+    bad = manifest.to_dict()
+    bad["economics"] = {**bad["economics"], "provider_budget": 25.0}
+    with pytest.raises(pm.ManifestError, match="unknown keys"):
+        pm.Manifest.from_dict(bad)
+
+    mismatch = manifest.to_dict()
+    mismatch["economics"] = {
+        **mismatch["economics"],
+        "net_savings_tokens": -800,
+        "net_savings_status": "positive",
+    }
+    with pytest.raises(pm.ManifestError, match="net_savings_status"):
+        pm.Manifest.from_dict(mismatch)
+
+    with pytest.raises(pm.ManifestError, match="exceeds"):
+        _manifest(tripwire_note="x" * (pm.MAX_OPERATIONAL_NOTE_BYTES + 1))
+
+
+def test_legacy_v1_values_remain_exact() -> None:
+    assert pm.ProducerKind.TEAM_EXECUTION.value == "team-execution"
+    assert pm.Disposition.FELL_BACK_TO_CLAUDE.value == "fell-back-to-claude"
+
+
+def test_historical_v1_manifest_fixture_loads_exact_legacy_names() -> None:
+    historical = {
+        "schema": "saga.manifest.v1",
+        "execution_id": "legacy-exec-1",
+        "saga_ref": "legacy-saga-1",
+        "attribution": {
+            "kind": "team-execution",
+            "identity": "legacy/reviewer",
+            "effort": "high",
+            "protocol": "legacy",
+        },
+        "disposition": "fell-back-to-claude",
+        "disposition_note": "",
+        "created_at": "2026-06-01T00:00:00Z",
+        "output_completeness": None,
+        "claim_provenance": None,
+    }
+
+    loaded = pm.Manifest.from_dict(historical)
+
+    assert loaded.schema == "saga.manifest.v1"
+    assert loaded.attribution.kind is pm.ProducerKind.TEAM_EXECUTION
+    assert loaded.attribution.kind.value == "team-execution"
+    assert loaded.disposition is pm.Disposition.FELL_BACK_TO_CLAUDE
+    assert loaded.disposition.value == "fell-back-to-claude"
+
+
 def test_manifest_envelope_requires_attribution_and_disposition() -> None:
     """Envelope invalid without R2 attribution and R18 disposition fields."""
     good = _manifest().to_dict()

@@ -27,24 +27,6 @@ from typing import Any
 # Canonical PR completion states. ``unknown`` is the safe degraded value (gh down / ref missing).
 PR_STATES = ("merged", "closed", "open", "unknown")
 ISSUE_STATES = ("closed", "open", "unknown")
-_QUALIFIED_REF = re.compile(r"(?P<owner>[^/]+)/(?P<repo>[^#/]+)#(?P<number>\d+)")
-
-
-def _qualified_ref_parts(ref: str) -> tuple[str, str, str] | None:
-    """Return ``(owner, repo, number)`` for the canonical ``owner/repo#N`` shape."""
-    match = _QUALIFIED_REF.fullmatch(str(ref).strip())
-    if not match:
-        return None
-    return match["owner"], match["repo"], match["number"]
-
-
-def _gh_target(ref: str) -> list[str]:
-    """Translate a canonical ref into the target arguments accepted by ``gh``."""
-    parts = _qualified_ref_parts(ref)
-    if parts is None:
-        return [str(ref)]
-    owner, repo, number = parts
-    return [number, "--repo", f"{owner}/{repo}"]
 
 
 def _run_gh(args: list[str], *, runner: Callable[..., Any] | None = None) -> tuple[int, str, str]:
@@ -68,6 +50,45 @@ def _run_gh(args: list[str], *, runner: Callable[..., Any] | None = None) -> tup
     return 0, (result.stdout or "").strip(), stderr
 
 
+# Ref normalization (#495 U1) — make every stored ref format gh-consumable.
+# Decompose/ingestion stores refs as ``owner/repo#N``, but ``gh issue view "owner/repo#N"`` errors
+# (invalid issue format) and ``gh pr view "owner/repo#N"`` misreads it as a branch. A full URL and a
+# bare number both work, so normalize ``owner/repo#N`` -> a full URL and pass the other two through.
+_OWNER_REPO_NUM = re.compile(r"^(?P<owner>[^/\s#]+)/(?P<repo>[^/\s#]+)#(?P<number>\d+)$")
+_GITHUB_URL = re.compile(
+    r"^https?://github\.com/(?P<owner>[^/\s]+)/(?P<repo>[^/\s]+)/(?:pull|issues)/(?P<number>\d+)"
+    r"(?:[/?#].*)?$"
+)
+
+
+def _parse_ref(ref: str) -> tuple[str, str, str] | None:
+    """``(owner, repo, number)`` from an ``owner/repo#N`` ref or a full github ``pull``/``issues`` URL.
+
+    Returns ``None`` for a bare number or anything unparseable, so a caller that needs owner/repo (the
+    REST events path in ``_closed_by``) degrades safely rather than fabricating one.
+    """
+    s = str(ref).strip()
+    for rx in (_OWNER_REPO_NUM, _GITHUB_URL):
+        m = rx.match(s)
+        if m:
+            return m["owner"], m["repo"], m["number"]
+    return None
+
+
+def _gh_ref(ref: str, kind: str) -> str:
+    """A gh-consumable token for ``ref``. ``owner/repo#N`` -> a full URL (cwd-independent); a full URL or
+    a bare number passes through unchanged. ``kind`` is the URL path segment: ``pull`` (PRs), ``issues``.
+    """
+    s = str(ref).strip()
+    if s.lower().startswith(("http://", "https://")):
+        return s  # already a full URL — pass through byte-for-byte
+    parsed = _parse_ref(s)
+    if parsed is None:
+        return s  # bare number or unparseable — hand to gh as-is (resolved in the repo cwd)
+    owner, repo, number = parsed
+    return f"https://github.com/{owner}/{repo}/{kind}/{number}"
+
+
 def pr_state(pr_ref: str, *, runner: Callable[..., Any] | None = None) -> str:
     """Canonical state of a PR: ``merged`` / ``closed`` / ``open`` / ``unknown``.
 
@@ -75,7 +96,7 @@ def pr_state(pr_ref: str, *, runner: Callable[..., Any] | None = None) -> str:
     ``closed`` (a NEGATIVE terminal, R32), never ``merged``. Any read failure -> ``unknown``.
     """
     rc, out, _err = _run_gh(
-        ["pr", "view", *_gh_target(pr_ref), "--json", "state,mergedAt"], runner=runner
+        ["pr", "view", _gh_ref(pr_ref, "pull"), "--json", "state,mergedAt"], runner=runner
     )
     if rc != 0 or not out:
         return "unknown"
@@ -100,7 +121,7 @@ def pr_state(pr_ref: str, *, runner: Callable[..., Any] | None = None) -> str:
 def issue_state(issue_ref: str, *, runner: Callable[..., Any] | None = None) -> str:
     """Canonical state of an issue: ``closed`` / ``open`` / ``unknown`` (any read failure -> unknown)."""
     rc, out, _err = _run_gh(
-        ["issue", "view", *_gh_target(issue_ref), "--json", "state"], runner=runner
+        ["issue", "view", _gh_ref(issue_ref, "issues"), "--json", "state"], runner=runner
     )
     if rc != 0 or not out:
         return "unknown"
@@ -126,7 +147,7 @@ def board_status(issue_ref: str, *, project: str, runner: Callable[..., Any] | N
     class (#295 U1); it adds no GraphQL and no mission-control surface.
     """
     rc, out, _err = _run_gh(
-        ["issue", "view", *_gh_target(issue_ref), "--json", "projectItems"], runner=runner
+        ["issue", "view", _gh_ref(issue_ref, "issues"), "--json", "projectItems"], runner=runner
     )
     if rc != 0 or not out:
         return ""
@@ -167,10 +188,10 @@ def _closed_by(issue_ref: str, *, runner: Callable[..., Any] | None = None) -> s
     events would otherwise drop the close), and the LAST ``closed`` event is selected AFTER the
     concatenation (never per-page). Any failure → "".
     """
-    parts = _qualified_ref_parts(issue_ref)
-    if parts is None:
-        return ""
-    owner, repo, number = parts
+    parsed = _parse_ref(issue_ref)
+    if parsed is None:
+        return ""  # a bare/unqualified ref yields no owner/repo — the REST events path needs one
+    owner, repo, number = parsed
     path = f"repos/{owner}/{repo}/issues/{number}/events"
     rc, out, _err = _run_gh(["api", path, "--paginate"], runner=runner)
     if rc != 0 or not out:
@@ -201,7 +222,8 @@ def issue_close_info(issue_ref: str, *, runner: Callable[..., Any] | None = None
     open/closed semantics.
     """
     rc, out, _err = _run_gh(
-        ["issue", "view", *_gh_target(issue_ref), "--json", "state,stateReason"], runner=runner
+        ["issue", "view", _gh_ref(issue_ref, "issues"), "--json", "state,stateReason"],
+        runner=runner,
     )
     state = "unknown"
     reason = "unknown"
@@ -238,7 +260,7 @@ def base_ref_oid(pr_ref: str, *, runner: Callable[..., Any] | None = None) -> st
     ``--match-head-commit`` CAS on ``gh pr merge`` — not a local compare of this value.
     """
     rc, out, _err = _run_gh(
-        ["pr", "view", *_gh_target(pr_ref), "--json", "baseRefOid"], runner=runner
+        ["pr", "view", _gh_ref(pr_ref, "pull"), "--json", "baseRefOid"], runner=runner
     )
     if rc != 0 or not out:
         return ""
@@ -253,7 +275,7 @@ def head_ref_oid(pr_ref: str, *, runner: Callable[..., Any] | None = None) -> st
     """The PR head commit SHA (``headRefOid``); "" on any failure. Used for the ``--match-head-commit``
     CAS so GitHub rejects a squash if the head moved since (a stale tree cannot be merged)."""
     rc, out, _err = _run_gh(
-        ["pr", "view", *_gh_target(pr_ref), "--json", "headRefOid"], runner=runner
+        ["pr", "view", _gh_ref(pr_ref, "pull"), "--json", "headRefOid"], runner=runner
     )
     if rc != 0 or not out:
         return ""
@@ -267,7 +289,7 @@ def head_ref_oid(pr_ref: str, *, runner: Callable[..., Any] | None = None) -> st
 def merge_state(pr_ref: str, *, runner: Callable[..., Any] | None = None) -> str:
     """GitHub's mergeStateStatus, lowercased to MERGE_STATES; "unknown" on any failure (R34)."""
     rc, out, _err = _run_gh(
-        ["pr", "view", *_gh_target(pr_ref), "--json", "mergeStateStatus"], runner=runner
+        ["pr", "view", _gh_ref(pr_ref, "pull"), "--json", "mergeStateStatus"], runner=runner
     )
     if rc != 0 or not out:
         return "unknown"
@@ -300,7 +322,7 @@ def branch_exists(branch: str, *, runner: Callable[..., Any] | None = None) -> b
 
 def update_branch(pr_ref: str, *, runner: Callable[..., Any] | None = None) -> bool:
     """Update the PR branch with its base (the R12 rebase-then-reverify step). True iff it succeeded."""
-    rc, _out, _err = _run_gh(["pr", "update-branch", *_gh_target(pr_ref)], runner=runner)
+    rc, _out, _err = _run_gh(["pr", "update-branch", _gh_ref(pr_ref, "pull")], runner=runner)
     return rc == 0
 
 
@@ -317,7 +339,7 @@ def squash_merge(
     given, ``--match-head-commit`` makes GitHub reject the merge if the PR head moved since (a CAS on
     the head), so a stale tree cannot be squashed.
     """
-    args = ["pr", "merge", *_gh_target(pr_ref), "--squash"]
+    args = ["pr", "merge", _gh_ref(pr_ref, "pull"), "--squash"]
     if expected_head:
         args += ["--match-head-commit", expected_head]
     rc, _out, _err = _run_gh(args, runner=runner)

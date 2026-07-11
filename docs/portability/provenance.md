@@ -13,9 +13,14 @@ This file records where MVP plugin content came from and what changed for Codex.
 | `unifi` | 1.0.0 | Claude plugin at `8f5baebb35bb865e3680a457ef02aba5cb418ac4`; cache path `/Users/jefcox/.codex/plugins/cache/infiquetra-plugins/unifi/1.0.0` | `skills`, skill references, skill scripts, README, changelog | Added Codex manifest; rewrote README host name; omitted command and top-level agent files. |
 | `test-suite` | 2.0.0 | Claude plugin at `8f5baebb35bb865e3680a457ef02aba5cb418ac4` | `skills/run-quality-checks`, runner script, README, changelog | Added Codex manifest; added runner `--dry-run`; made `--checks` select the requested checks; rewrote skill docs to match implemented flags. |
 
-## Proof-Port Recipe
+## Historical Proof-Port Recipe (Superseded)
 
-The `test-suite` proof port establishes this recipe for future skill-plus-script plugins:
+This recipe is retained as origin evidence. It is superseded for active and future imports by the
+mandatory [Claude-to-Codex plugin port runbook](claude-to-codex-plugin-port-runbook.md) and its
+per-cycle closed JSON manifest. The runbook covers the orchestration, capability, state, trust,
+installation, and rollback boundaries that this early recipe did not establish.
+
+The `test-suite` proof port originally established this recipe for skill-plus-script plugins:
 
 1. Copy only portable assets: `skills`, local references, local scripts, README, and changelog.
 2. Do not copy host-specific command files, top-level agent files, or host manifests as active Codex surface.
@@ -66,5 +71,27 @@ mission-control, and unifi).
 
 The prior SDLC and document-review plugin roots are now lineage and migration
 context only, not active plugin source. The active replacement inventory is
-`saga`, `deploy`, `mission-control`, `team-execution`, `home-lab-ops`,
+`saga`, `deploy`, `mission-control`, `team-execution`, `fleet-core`, `home-lab-ops`,
 `python-toolkit`, `unifi`, `test-suite`, and `discord-identity-assets`.
+
+## 2026-07-10 Contract-Gated Import
+
+The current Saga/fleet/workflow modernization is governed by the canonical
+[Claude-to-Codex plugin port runbook](claude-to-codex-plugin-port-runbook.md) and
+`ports/2026-07-10-saga-07517.json`. It freezes Claude
+`9470edca65b1db06d2f7562eeb2d5a9e48c34dec..38742ece89880a6b140be237edad6d3f13c97b54`
+under four exact pathspecs, binds the approved Codex execution base, and classifies every source and
+preservation row before later units may import behavior. `verified-workflows` is a target identity,
+not an active package at this stage.
+
+### Unpublished Verified Workflows Target
+
+U9 materializes `verified-workflows` `1.0.0` as maintained Codex source with the skills
+`verified-workflows:run` and `verified-workflows:appsec-audit`. Its behavior lineage is the frozen
+upstream `team-execution` package; the path-by-path adaptations are the target paths on those source
+rows in `ports/2026-07-10-saga-07517.json`. This is not an upstream byte-parity claim.
+
+The active marketplace remains byte-stable on `team-execution` `2.3.0`. The target fixture marks
+Verified Workflows unpublished, the shared fleet-core compatibility registry reads exact old aliases
+and emits canonical new values, and U8 alone may replace the source, marketplace, cache, managed
+profiles, hook trust, and state-writing identity.

@@ -1,0 +1,252 @@
+{
+  "schema_version": 1,
+  "unit": "U3",
+  "recorded_at": "2026-07-10T22:50:34Z",
+  "repo_head": "5d984680efd5df19843fd5eafaa556b995a5907e",
+  "claim": "expected-profile-configuration-only",
+  "roles": {
+    "role_count": 25,
+    "role_kind_counts": {
+      "agent-lens": 25,
+      "deterministic-validator": 0
+    },
+    "category_counts": {
+      "monitor": 3,
+      "reviewer": 10,
+      "scanner": 4,
+      "tester": 8
+    },
+    "registry_sha256": "3140ab1146b393c8f3d4f9e2f6e9ceddc6b8130152323f06528c2acd36d3d7fa",
+    "lens_bundle_sha256": "003877e9a9ab9d4bb18861a26609f76e5695fb840b08ce1f14fb890565ac9df8"
+  },
+  "profiles": [
+    {
+      "execution_class": "review-max",
+      "effective_model": "gpt-5.6-sol",
+      "expected_effort": "max",
+      "sha256": "3bbb9138326734015b6e093ead6f79b1ce1451c41c65e02a36d001a775f5e388"
+    },
+    {
+      "execution_class": "review-high",
+      "effective_model": "gpt-5.6-sol",
+      "expected_effort": "high",
+      "sha256": "2f5535492bf67975a48aab691d9734bc0fb74f24efaff39906aa2fc7ae987ed9"
+    },
+    {
+      "execution_class": "test-medium",
+      "effective_model": "gpt-5.6-terra",
+      "expected_effort": "medium",
+      "sha256": "471955bdad22cd28fc59a51c795c46ec8589640ac2895e6c7d07dd7d432a9535"
+    },
+    {
+      "execution_class": "scan-low",
+      "effective_model": "gpt-5.6-luna",
+      "expected_effort": "low",
+      "sha256": "482c1cf839b44252287e51e1cfbb34eb8bb0b6b1499ce6618bfe6944df1c191d"
+    },
+    {
+      "execution_class": "monitor-low",
+      "effective_model": "gpt-5.6-luna",
+      "expected_effort": "low",
+      "sha256": "8cbb757e39353923f15ba9567dc4be210ac6469c726338cd711d542acaf438b6"
+    }
+  ],
+  "frozen_source": {
+    "reviewer_registry_sha256": "6452b315f087617689023d430398d007ed59483c950b0f26297a73ff65a6b88c",
+    "validator_criteria_sha256": "def8e4c8ef02ab16289b769df9655f32eee73fd95627adc17bd5c72f2090a279",
+    "validator_registry_sha256": "76ee0c42002b8c4ab6c80b0a222cc9e83b9068da0ca4a03b06c598e71ca0e5e5"
+  },
+  "checks": [
+    {
+      "name": "u3-focused-tests",
+      "argv": [
+        "PYTHONPATH=.",
+        "uv",
+        "run",
+        "pytest",
+        "-q",
+        "plugins/verified-workflows/tests",
+        "tests/test_verified_workflows_agents.py",
+        "tests/test_verified_workflows_migration.py",
+        "tests/test_validate_codex_plugins.py"
+      ],
+      "exit_code": 0,
+      "summary": "114 passed"
+    },
+    {
+      "name": "full-suite",
+      "argv": [
+        "PYTHONPATH=.",
+        "uv",
+        "run",
+        "pytest",
+        "-q"
+      ],
+      "exit_code": 0,
+      "summary": "1554 passed"
+    },
+    {
+      "name": "current-repository-validator",
+      "argv": [
+        "python3",
+        "scripts/validate_codex_plugins.py"
+      ],
+      "exit_code": 0,
+      "summary": "current active inventory valid"
+    },
+    {
+      "name": "target-fixture-validator",
+      "argv": [
+        "python3",
+        "scripts/validate_codex_plugins.py",
+        "--mode",
+        "target-fixture"
+      ],
+      "exit_code": 0,
+      "summary": "unpublished target source and inventory valid"
+    },
+    {
+      "name": "profile-renderer",
+      "argv": [
+        "python3",
+        "plugins/verified-workflows/scripts/render_codex_agents.py",
+        "--check"
+      ],
+      "exit_code": 0,
+      "summary": "five generated profiles match the closed renderer output"
+    },
+    {
+      "name": "run-skill-authoring-validator",
+      "argv": [
+        "python3",
+        "SKILL_CREATOR_ROOT/scripts/quick_validate.py",
+        "plugins/verified-workflows/skills/run"
+      ],
+      "exit_code": 0,
+      "summary": "skill valid"
+    },
+    {
+      "name": "scoped-ruff",
+      "argv": [
+        "ruff",
+        "check",
+        "plugins/verified-workflows/scripts",
+        "plugins/verified-workflows/tests",
+        "scripts/validate_codex_plugins.py",
+        "tests/test_verified_workflows_agents.py",
+        "tests/test_verified_workflows_migration.py",
+        "tests/test_validate_codex_plugins.py"
+      ],
+      "exit_code": 0,
+      "summary": "no findings"
+    },
+    {
+      "name": "legacy-token-inventory",
+      "argv": [
+        "python3",
+        "scripts/build_legacy_workflow_inventory.py",
+        "--check"
+      ],
+      "exit_code": 0,
+      "summary": "154 exact entries, 45 historical-evidence entries, and three history sentinels verified"
+    },
+    {
+      "name": "source-verification",
+      "argv": [
+        "python3",
+        "scripts/port_contract.py",
+        "verify-source",
+        "--source-repo",
+        "SOURCE_CHECKOUT"
+      ],
+      "exit_code": 0,
+      "source_repository_id": "infiquetra/infiquetra-claude-plugins",
+      "summary": "156 frozen rows and inventory digest reproduced; newer source head is drift-only"
+    },
+    {
+      "name": "classification-gate",
+      "argv": [
+        "python3",
+        "scripts/port_contract.py",
+        "validate",
+        "--stage",
+        "classification"
+      ],
+      "exit_code": 0,
+      "summary": "classification stage valid"
+    }
+  ],
+  "isolated_profile_proof": {
+    "target": "explicit isolated target",
+    "first_apply_verified_profile_count": 5,
+    "second_apply_actions": [
+      "unchanged"
+    ],
+    "readback_idempotent": true,
+    "unmanaged_profile_byte_identical": true,
+    "cleanup_pending": false,
+    "real_profile_mutated": false
+  },
+  "live_profile_dry_run": {
+    "before_sha256": "1bbcde157bd952f8ec3a8fac54515d543e72ca720611a72ca1e5bcff80e78fdf",
+    "after_sha256": "1bbcde157bd952f8ec3a8fac54515d543e72ca720611a72ca1e5bcff80e78fdf",
+    "unchanged": true,
+    "catalog_source": "refreshed",
+    "catalog_input_sha256": "1695d009d5879f66bd00cf76dbb805e1e258e0660e5d097ea704d54c2c3211a0",
+    "catalog_normalized_sha256": "00093c0417ee2004ee695823180203cdd1db12b533e3a26a70bffd842c3a29c8",
+    "managed_profile_counts": {
+      "canonical": 0,
+      "legacy": 0,
+      "unmanaged": 4
+    },
+    "planned_actions": [
+      "install"
+    ],
+    "control_residue": false,
+    "real_profile_mutated": false
+  },
+  "review": {
+    "initial_security_findings": {
+      "p0": 0,
+      "p1": 4,
+      "p2": 2,
+      "p3": 2
+    },
+    "initial_contract_findings": {
+      "p0": 0,
+      "p1": 6,
+      "p2": 3,
+      "p3": 1
+    },
+    "security_follow_up_findings": {
+      "p0": 0,
+      "p1": 2,
+      "p2": 3,
+      "p3": 0
+    },
+    "special_node_follow_up_findings": {
+      "p0": 0,
+      "p1": 0,
+      "p2": 1,
+      "p3": 0
+    },
+    "fixed": [
+      "closed registry, profile, catalog, and receipt schemas",
+      "explicit isolated-target and real-profile mutation boundaries",
+      "persistent lock inode and no-follow directory operations",
+      "transactional render, apply, recovery, and exact readback",
+      "inode and digest validation for update, removal, and rollback",
+      "manual-conflict preservation for regular and special-node substitution",
+      "exact frozen-source behavior and evidence coverage",
+      "truthful dry-run, apply, no-op, and recovery mutation receipts"
+    ],
+    "final_security_review": "no actionable P0-P3 findings",
+    "final_contract_review": "no actionable P0-P3 findings"
+  },
+  "limitations": [
+    "Installed profile configuration is not proof that a child used the selected profile, model, permission mode, or logical role.",
+    "U4 owns child, role, lens, profile, model, permission, and result attestation.",
+    "Expected effort is bound to the exact profile digest because the planned hook surface does not observe effort directly.",
+    "U8 owns real-profile apply, installed-plugin cutover, fresh-session proof, and rollback."
+  ]
+}

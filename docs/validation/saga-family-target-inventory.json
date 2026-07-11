@@ -1,11 +1,11 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "2.0",
   "mode": "target-fixture",
-  "description": "Saga-family target inventory used before active marketplace cutover.",
+  "description": "Saga-family active inventory after the Verified Workflows cutover.",
   "plugins": [
     {
       "name": "saga",
-      "version": "0.65.1",
+      "version": "0.75.17+codex.20260711160644",
       "skills": [
         "office-hours",
         "ideate",
@@ -71,18 +71,16 @@
       ]
     },
     {
-      "name": "team-execution",
-      "version": "2.3.0",
+      "name": "verified-workflows",
+      "version": "1.0.0+codex.20260711160140",
+      "publication_status": "released",
       "skills": [
-        "team-execution",
+        "run",
         "appsec-audit"
       ],
       "forbidden_active_dirs": [
         ".claude-plugin",
         "commands"
-      ],
-      "managed_active_dirs": [
-        "agents/*.toml"
       ]
     },
     {
@@ -154,7 +152,7 @@
     },
     {
       "name": "fleet-core",
-      "version": "0.5.0",
+      "version": "0.8.4+codex.20260711134422",
       "skills": [],
       "library": true,
       "forbidden_active_dirs": [
@@ -166,17 +164,33 @@
   ],
   "removed_plugins": [
     "blueprint-reviewer",
-    "sdlc-manager"
+    "sdlc-manager",
+    "team-execution"
+  ],
+  "unpublished_plugins": [],
+  "legacy_readable_plugins": [
+    "team-execution"
   ],
   "required_namespace_proof": [
     "saga:plan",
     "saga:work",
-    "saga:brainstorm"
+    "saga:brainstorm",
+    "verified-workflows:run",
+    "verified-workflows:appsec-audit"
   ],
   "required_state_roots": [
     ".codex/saga/",
+    ".codex/verified-workflows/"
+  ],
+  "legacy_readable_state_roots": [
     ".codex/team-execution/"
   ],
+  "cutover_lock": {
+    "active_workflow_plugin": "verified-workflows",
+    "retired_workflow_plugin": "team-execution",
+    "legacy_source_file_count": 52,
+    "legacy_source_tree_sha256": "ee3486b96fc07308d089d0cabf09a218ecd3008369c5adb2444e70719c1e8c0e"
+  },
   "mutation_gate_plugins": [
     "deploy",
     "mission-control",

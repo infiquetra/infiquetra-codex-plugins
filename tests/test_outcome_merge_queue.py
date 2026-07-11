@@ -108,7 +108,7 @@ def test_squash_merge_returns_error_not_conflict_on_failure() -> None:
     assert GH.squash_merge("1", runner=_gh_runner(rc=1)) == "error"
 
 
-def test_qualified_refs_are_translated_for_pr_reads_and_mutations() -> None:
+def test_qualified_refs_are_normalized_for_pr_reads_and_mutations() -> None:
     calls: list[list[str]] = []
 
     def runner(args: list[str], **_kw: Any) -> SimpleNamespace:
@@ -122,13 +122,14 @@ def test_qualified_refs_are_translated_for_pr_reads_and_mutations() -> None:
     assert GH.merge_state(ref, runner=runner) == "clean"
     assert GH.update_branch(ref, runner=runner) is True
     assert GH.squash_merge(ref, expected_head="head", runner=runner) == "merged"
-    target = ["110", "--repo", "infiquetra/team-mimir"]
+
+    target = "https://github.com/infiquetra/team-mimir/pull/110"
     assert calls == [
-        ["gh", "pr", "view", *target, "--json", "baseRefOid"],
-        ["gh", "pr", "view", *target, "--json", "headRefOid"],
-        ["gh", "pr", "view", *target, "--json", "mergeStateStatus"],
-        ["gh", "pr", "update-branch", *target],
-        ["gh", "pr", "merge", *target, "--squash", "--match-head-commit", "head"],
+        ["gh", "pr", "view", target, "--json", "baseRefOid"],
+        ["gh", "pr", "view", target, "--json", "headRefOid"],
+        ["gh", "pr", "view", target, "--json", "mergeStateStatus"],
+        ["gh", "pr", "update-branch", target],
+        ["gh", "pr", "merge", target, "--squash", "--match-head-commit", "head"],
     ]
 
 

@@ -1,0 +1,217 @@
+{
+  "schema_version": 1,
+  "unit": "U9",
+  "repo_head": "18b057892981cd002a31e142db400f7caab339f2",
+  "recorded_at": "2026-07-10T21:02:03Z",
+  "checks": [
+    {
+      "name": "full-suite",
+      "argv": [
+        "PYTHONPATH=.",
+        "uv",
+        "run",
+        "pytest",
+        "-q"
+      ],
+      "exit_code": 0,
+      "summary": "1489 passed"
+    },
+    {
+      "name": "u9-focused-tests",
+      "argv": [
+        "PYTHONPATH=.",
+        "uv",
+        "run",
+        "pytest",
+        "-q",
+        "plugins/fleet-core/tests/test_shim_drift.py",
+        "plugins/fleet-core/tests/test_tier_resolver.py",
+        "plugins/fleet-core/tests/test_workflow_compat.py",
+        "tests/test_prove_codex_plugin_profile.py",
+        "tests/test_saga_docs_package.py",
+        "tests/test_validate_codex_plugins.py",
+        "tests/test_verified_workflows_migration.py"
+      ],
+      "exit_code": 0,
+      "summary": "125 passed"
+    },
+    {
+      "name": "scoped-ruff",
+      "argv": [
+        "git",
+        "diff",
+        "--name-only",
+        "HEAD^",
+        "HEAD",
+        "--",
+        "*.py",
+        "|",
+        "xargs",
+        "uv",
+        "run",
+        "ruff",
+        "check"
+      ],
+      "exit_code": 0,
+      "summary": "no findings"
+    },
+    {
+      "name": "current-repository-validator",
+      "argv": [
+        "python3",
+        "scripts/validate_codex_plugins.py"
+      ],
+      "exit_code": 0,
+      "summary": "current active inventory valid"
+    },
+    {
+      "name": "target-fixture-validator",
+      "argv": [
+        "python3",
+        "scripts/validate_codex_plugins.py",
+        "--mode",
+        "target-fixture"
+      ],
+      "exit_code": 0,
+      "summary": "unpublished target source and inventory valid"
+    },
+    {
+      "name": "legacy-token-inventory",
+      "argv": [
+        "python3",
+        "scripts/build_legacy_workflow_inventory.py",
+        "--check"
+      ],
+      "exit_code": 0,
+      "summary": "150 exact entries, 45 historical entries, and three history sentinels verified"
+    },
+    {
+      "name": "saga-facts",
+      "argv": [
+        "python3",
+        "scripts/build_saga_docs_facts.py",
+        "--check"
+      ],
+      "exit_code": 0,
+      "summary": "generated facts current"
+    },
+    {
+      "name": "saga-assets",
+      "argv": [
+        "python3",
+        "scripts/render_saga_docs_assets.py",
+        "--check"
+      ],
+      "exit_code": 0,
+      "summary": "generated visual assets current"
+    },
+    {
+      "name": "source-verification",
+      "argv": [
+        "python3",
+        "scripts/port_contract.py",
+        "verify-source",
+        "--manifest",
+        "docs/portability/ports/2026-07-10-saga-07517.json",
+        "--source-repo",
+        "SOURCE_CHECKOUT"
+      ],
+      "exit_code": 0,
+      "source_repository_id": "infiquetra/infiquetra-claude-plugins",
+      "summary": "156 rows and frozen inventory digest reproduced"
+    },
+    {
+      "name": "plugin-authoring-validator",
+      "argv": [
+        "python3",
+        "PLUGIN_CREATOR_ROOT/scripts/validate_plugin.py",
+        "plugins/verified-workflows"
+      ],
+      "exit_code": 0,
+      "summary": "plugin valid"
+    },
+    {
+      "name": "skill-authoring-validators",
+      "argv": [
+        "python3",
+        "SKILL_CREATOR_ROOT/scripts/quick_validate.py",
+        "plugins/verified-workflows/skills/run",
+        "&&",
+        "python3",
+        "SKILL_CREATOR_ROOT/scripts/quick_validate.py",
+        "plugins/verified-workflows/skills/appsec-audit"
+      ],
+      "exit_code": 0,
+      "summary": "both skills valid"
+    }
+  ],
+  "identity_split": {
+    "active_marketplace": {
+      "status": "legacy-only",
+      "sha256": "42803919b39b720599b9692bfdcd95bcfe8c31b06ebb2c976aacaa890fdfea8a"
+    },
+    "legacy_source": {
+      "file_count": 52,
+      "tree_sha256": "ee3486b96fc07308d089d0cabf09a218ecd3008369c5adb2444e70719c1e8c0e",
+      "git_tree": "66b23ca83b6ce3b29871954c63a6554c39bfd72e"
+    },
+    "target_source": {
+      "plugin_id": "verified-workflows",
+      "version": "1.0.0",
+      "publication_status": "unpublished",
+      "marketplace_present": false
+    }
+  },
+  "legacy_token_inventory": {
+    "entry_count": 150,
+    "historical_entry_count": 45,
+    "historical_inventory_sha256": "7d70ccc8f723913013c28b189b95ae93b75b666fc922c869f2de6bd867db3a5d",
+    "workflow_registry_sha256": "1f1fddb6b2d247278d0c38c03e1149232bc03b43ab5db46844dce4593594a8da",
+    "history_sentinel_count": 3
+  },
+  "appsec_preservation": {
+    "source": {
+      "plugin_root_git_tree": "66b23ca83b6ce3b29871954c63a6554c39bfd72e",
+      "relative_path": "skills/appsec-audit/SKILL.md",
+      "file_sha256": "6fa38cba21a921eb6c12520bc0fe2a071e40e8c03b50532740ec1da8910f11cc",
+      "body_sha256": "2d01bbc150fc6b87f94efd68f79ebac7c5658b34e54abb4f2d9d2cdf5bdebe5e"
+    },
+    "target": {
+      "path": "plugins/verified-workflows/skills/appsec-audit/SKILL.md",
+      "file_sha256": "009cdce20019131510d9fc79989966dedd3c9fb024c93ca4a3367bdd3e515649",
+      "body_sha256": "2d01bbc150fc6b87f94efd68f79ebac7c5658b34e54abb4f2d9d2cdf5bdebe5e"
+    },
+    "body_equal": true,
+    "frontmatter_adaptation": "when_to_use folded into the Codex description field",
+    "trigger_marker_count": 5,
+    "semantic_marker_count": 11
+  },
+  "materialization": {
+    "entry_point": "scripts/materialize_verified_workflows.py",
+    "repeat_noop": "verified",
+    "drift_refusal": "verified",
+    "special_node_refusal": "verified",
+    "destination_symlink_refusal": "verified",
+    "maintained_repo_refusal": "verified",
+    "codex_home_refusal": "verified",
+    "installed_or_profile_mutated": false
+  },
+  "external_state": {
+    "installed_plugins": "unobserved",
+    "profile": "unobserved",
+    "cache": "unobserved"
+  },
+  "review": {
+    "coverage_rereview": "no remaining P0-P3 findings",
+    "correctness_rereview": "no remaining P0-P3 findings",
+    "review_scope": [
+      "identity and inventory separation",
+      "compatibility vocabulary",
+      "AppSec preservation",
+      "isolated plugin layouts",
+      "materialization safety",
+      "dynamic and bidirectional import boundaries",
+      "legacy history binding"
+    ]
+  }
+}

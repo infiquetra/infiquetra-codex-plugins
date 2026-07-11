@@ -1,15 +1,92 @@
 {
-  "_comment": "Canonical model/effort registry (#370), Codex dual-palette adaptation (KTD3). tier_palette.py derives the ordered MODELS/EFFORTS tuples from these explicit rank/rung indices at import — this file is the single source of vocabulary ordering. ORDERING IS LOAD-BEARING: rank 0 is the strongest model, rung 0 is the weakest effort. effort_ceiling is the strongest effort a model actually runs (haiku clamps below xhigh). The Claude tier names (fable/opus/sonnet/haiku) remain the lineage vocabulary so upstream code diffs cleanly; each row also carries its active Codex mapping (codex_model + codex_effort) so a single registry drives both the lineage tier and the Codex model actually dispatched. TEAM_EXECUTION_MODEL_HINTS in scripts/validate_codex_plugins.py is derived from these codex_model/codex_effort pairs, not hand-maintained. Grow the vocabulary here, never with a second bare literal elsewhere — see plugins/fleet-core/references/tier-palette.md.",
-  "models": {
+  "schema_version": 2,
+  "_comment": "Canonical Fleet Core policy. lineage_models/lineage_efforts preserve the pre-cutover Claude-derived vocabulary for existing consumers only. scalar_efforts, execution_classes, and root_orchestration_profiles are the authoritative Codex policy. Logical-role defaults and allowed class transitions belong to Verified Workflows, not this registry.",
+  "lineage_models": {
     "fable": { "rank": 0, "effort_ceiling": "xhigh", "codex_model": "gpt-5.5", "codex_effort": "xhigh" },
     "opus": { "rank": 1, "effort_ceiling": "xhigh", "codex_model": "gpt-5.5", "codex_effort": "high" },
     "sonnet": { "rank": 2, "effort_ceiling": "xhigh", "codex_model": "gpt-5.4", "codex_effort": "medium" },
     "haiku": { "rank": 3, "effort_ceiling": "high", "codex_model": "gpt-5.4-mini", "codex_effort": "low" }
   },
-  "efforts": {
+  "lineage_efforts": {
     "low": { "rung": 0 },
     "medium": { "rung": 1 },
     "high": { "rung": 2 },
     "xhigh": { "rung": 3 }
+  },
+  "scalar_efforts": {
+    "low": { "rung": 0 },
+    "medium": { "rung": 1 },
+    "high": { "rung": 2 },
+    "xhigh": { "rung": 3 },
+    "max": { "rung": 4 }
+  },
+  "execution_classes": {
+    "review-max": {
+      "order": 0,
+      "description": "Explicit escalation for unusually ambiguous or high-risk review.",
+      "workspace_boundary": "read-only",
+      "external_boundary": "none",
+      "preferred": { "model": "gpt-5.6-sol", "effort": "max" },
+      "fallbacks": [
+        { "model": "gpt-5.6-terra", "effort": "max" },
+        { "model": "gpt-5.5", "effort": "strongest-supported" }
+      ]
+    },
+    "review-high": {
+      "order": 1,
+      "description": "Architecture, security, adversarial, API, privacy, and quality review.",
+      "workspace_boundary": "read-only",
+      "external_boundary": "none",
+      "preferred": { "model": "gpt-5.6-sol", "effort": "high" },
+      "fallbacks": [
+        { "model": "gpt-5.6-terra", "effort": "high" },
+        { "model": "gpt-5.5", "effort": "high" }
+      ]
+    },
+    "test-medium": {
+      "order": 2,
+      "description": "General workers, testers, and interpretation of ambiguous validator output.",
+      "workspace_boundary": "declared-write",
+      "external_boundary": "none",
+      "preferred": { "model": "gpt-5.6-terra", "effort": "medium" },
+      "fallbacks": [
+        { "model": "gpt-5.6-sol", "effort": "medium" },
+        { "model": "gpt-5.5", "effort": "medium" }
+      ]
+    },
+    "scan-low": {
+      "order": 3,
+      "description": "Bounded extraction and scanner-result reduction.",
+      "workspace_boundary": "read-only",
+      "external_boundary": "none",
+      "preferred": { "model": "gpt-5.6-luna", "effort": "low" },
+      "fallbacks": [
+        { "model": "gpt-5.6-terra", "effort": "low" },
+        { "model": "gpt-5.4-mini", "effort": "low" }
+      ]
+    },
+    "monitor-low": {
+      "order": 4,
+      "description": "Network-aware CI, deploy, and runtime observation.",
+      "workspace_boundary": "read-only",
+      "external_boundary": "allowlisted-read",
+      "preferred": { "model": "gpt-5.6-luna", "effort": "low" },
+      "fallbacks": [
+        { "model": "gpt-5.6-terra", "effort": "low" },
+        { "model": "gpt-5.4-mini", "effort": "low" }
+      ]
+    }
+  },
+  "root_orchestration_profiles": {
+    "root": {
+      "preferred_model": "gpt-5.6-sol",
+      "fallback_models": ["gpt-5.6-terra"],
+      "default_effort": "max",
+      "ultra": {
+        "requires_explicit_selection": true,
+        "requires_independent_fanout": true,
+        "leaf_allowed": false
+      }
+    }
   }
 }

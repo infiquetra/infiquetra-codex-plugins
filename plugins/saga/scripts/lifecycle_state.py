@@ -8,7 +8,8 @@ import json
 import sys
 from collections.abc import Sequence
 
-ORCHESTRATION_TIERS = ("inline", "manual", "team-execution")
+ORCHESTRATION_TIERS = ("inline", "manual", "verified-workflow")
+LEGACY_ORCHESTRATION_TIERS = ("team-execution",)
 SOURCE_ONLY_ORCHESTRATION_TIERS = (
     "cc-workflows-ultracode",
     "workflow",
@@ -51,7 +52,7 @@ def destination_includes_deploy(destination: str) -> bool:
     return normalize_destination(destination) == "nonprod-deploy"
 
 
-def should_offer_team_execution(
+def should_offer_verified_workflow(
     *,
     file_count: int,
     phase_count: int,
@@ -61,7 +62,7 @@ def should_offer_team_execution(
     deployment_sensitive: bool,
     has_code_surface: bool = True,
 ) -> bool:
-    """Decide whether the loop should offer team-execution."""
+    """Decide whether the loop should offer Verified Workflows."""
 
     code_shaped = any(
         (
@@ -73,6 +74,10 @@ def should_offer_team_execution(
         )
     )
     return (code_shaped and has_code_surface) or cross_repo
+
+
+# Source-compatible Python alias; canonical serialized values remain verified-workflow.
+should_offer_team_execution = should_offer_verified_workflow
 
 
 def should_prompt_for_issue(*, has_issue: bool, is_trivial: bool, user_declined: bool) -> bool:
@@ -106,13 +111,13 @@ def recommend_execution_backend(
     """Recommend a Codex execution backend, mirroring operator-choice.md section 3.
 
     Codex exposes three Saga backends: ``inline``, ``manual``, and
-    ``team-execution``. The source-only workflow backend is deliberately not
+    ``verified-workflow``. The source-only workflow backend is deliberately not
     reachable in this port.
 
     DELIBERATE DIVERGENCE from operator-choice section 3.1: that section frames
     the consensus signal as a **PLUS** on top of a size/risk trigger. Here a
     ``needs_consensus`` signal is **sufficient on its own** (``or
-    needs_consensus``) — a small-but-contested job is a team-execution job even
+    needs_consensus``) — a small-but-contested job is a verified-workflow job even
     without a size/risk trigger, which is the more useful behavior for a real
     caller. This is intentional, not a transcription error.
 
@@ -121,7 +126,7 @@ def recommend_execution_backend(
     """
 
     team = (
-        should_offer_team_execution(
+        should_offer_verified_workflow(
             file_count=file_count,
             phase_count=phase_count,
             has_security=has_security,
@@ -139,7 +144,7 @@ def recommend_execution_backend(
         recommended = "manual"
         rationale = "automation is unsafe or unavailable -> operator handoff"
     elif team:
-        recommended = "team-execution"
+        recommended = "verified-workflow"
         rationale = (
             "size, risk, consensus, fan-out, or adversarial-confidence signal -> "
             "team protocol fits"
@@ -148,7 +153,7 @@ def recommend_execution_backend(
         recommended = "inline"
         rationale = "no escalation signal -> the agent does the work itself"
 
-    reachable = ["inline", "manual", "team-execution"]
+    reachable = ["inline", "manual", "verified-workflow"]
     alternatives = [backend for backend in reachable if backend != recommended]
 
     return {
@@ -161,6 +166,8 @@ def recommend_execution_backend(
 
 
 def _portable_fallback(fallback_mode: str) -> str:
+    if fallback_mode == "team-execution":
+        return "verified-workflow"
     if fallback_mode in ORCHESTRATION_TIERS:
         return fallback_mode
     return "inline"
@@ -170,11 +177,17 @@ def recheck_orchestration_capability(
     *,
     orchestration_mode: str,
     workflow_available: bool = False,
-    fallback_mode: str = "team-execution",
+    fallback_mode: str = "verified-workflow",
 ) -> dict[str, object]:
     """Recheck a stored orchestration tier against Codex capabilities."""
 
     resumed = orchestration_mode or "inline"
+    if resumed == "team-execution":
+        return {
+            "downgraded": False, "from": resumed, "to": "verified-workflow",
+            "note": "legacy team-execution state normalized to verified-workflow for new work.",
+            "workflow_available": workflow_available, "source_backend_excluded": False,
+        }
     if resumed in ORCHESTRATION_TIERS:
         return {
             "downgraded": False,
@@ -239,8 +252,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     recheck.add_argument("--orchestration-mode", default="inline")
     recheck.add_argument("--no-workflow", action="store_true")
-    recheck.add_argument("--fallback-mode", default="team-execution")
-
+    recheck.add_argument("--fallback-mode", default="verified-workflow")
     return parser
 
 

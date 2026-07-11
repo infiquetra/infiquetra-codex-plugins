@@ -8,7 +8,7 @@ description: Coordinate a whole outcome as a durable Codex Saga DAG. Use for sta
 `saga:outcome` is the Codex-native OutcomeOrchestrator surface. It sits above
 single work-thread sagas and coordinates a durable DAG of subplots. Leaf work
 still routes through native Saga surfaces such as `saga:plan`, `saga:work`,
-`saga:qa`, `saga:code-review`, `saga:resume`, or `team-execution`.
+`saga:qa`, `saga:code-review`, `saga:resume`, or `verified-workflows:run`.
 
 The coordinator has two invariants:
 
@@ -30,11 +30,27 @@ python3 plugins/saga/scripts/outcome.py project <id>
 python3 plugins/saga/scripts/outcome.py graph <id>
 python3 plugins/saga/scripts/outcome.py advance <id>
 python3 plugins/saga/scripts/outcome.py advance <id> --autonomous [--project <slug>]
+python3 plugins/saga/scripts/outcome.py reconcile-dispatch <id> <subplot-id> --ack-kind launched --dispatch-ack-ref <receipt-ref> --leaf-saga-id <saga-id>
+python3 plugins/saga/scripts/outcome.py reconcile-dispatch <id> <subplot-id> --ack-kind handed-off --dispatch-ack-ref operator:<reference>
 python3 plugins/saga/scripts/outcome.py attend <id> <subplot-id>
 python3 plugins/saga/scripts/outcome.py reconcile <id> [--resolve <drift-id> --action <accept-board|re-assert|hold>]
 python3 plugins/saga/scripts/outcome.py export <id>
 python3 plugins/saga/scripts/outcome.py import <bundle>
 ```
+
+`advance` creates a durable v2 dispatch intent and may return `intent-created`; it never treats the
+prepared leaf reservation as a launch. The root must launch through the selected skill/runtime,
+then use `reconcile-dispatch` with its digest-bound launch receipt. If an intent already exists
+without an acknowledgement, do not launch it again automatically: reconcile the existing receipt
+or record an operator-confirmed handoff. This fail-closed recovery prevents crash replay from
+duplicating leaf side effects.
+
+Launch receipts live only under the owner-controlled canonical user-state root and bind the
+unpredictable run identity plus issuance time from the current intent. Repository-local receipts,
+stale receipts, and receipts from a prior run cannot authorize dispatch. A dispatcher cannot claim
+`handed-off`; only the explicit operator `reconcile-dispatch` path may record that state. Portable
+bundles carry acknowledgements for audit, but imports must reconcile launch or handoff authority
+locally rather than treating copied evidence as authorization.
 
 `start --from-parent-issue <owner>/<repo>#<N>` seeds the DAG directly from a GitHub issue's
 direct sub-issues instead of the two-node design/build starter: one node per sub-issue (`kind` from a
@@ -68,7 +84,7 @@ Active Codex backend floor:
 
 - `inline`
 - `manual`
-- `team-execution`
+- `verified-workflow`
 
 Conditional backend:
 
@@ -79,7 +95,7 @@ Inactive source backends:
 
 - Workflow
 - fork
-- goal
+- explicit Goal continuation (never a leaf backend)
 - hooks
 
 If an inactive or unavailable backend is requested, emit a visible halt/degrade

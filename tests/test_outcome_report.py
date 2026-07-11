@@ -62,10 +62,12 @@ def _dispatched(store: Any, sid: str) -> None:
     STORE.append_ledger(
         store,
         {
-            "phase": "commit",
-            "kind": "dispatch",
-            "key": f"d:{sid}",
+            "phase": "ack",
+            "kind": "outcome.dispatch.v2",
+            "key": f"dispatch-intent:o:{sid}",
             "subplot_id": sid,
+            "ack_kind": "launched",
+            "receipt_authority": "owner-user-state-v1",
             "leaf_saga_id": f"l-{sid}",
         },
     )

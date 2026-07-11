@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "unit": "U6",
+  "recorded_at": "2026-07-11T16:44:01Z",
+  "repo_head": "823bb6c5a9352db76bc561772d7a1de51d910cbc",
+  "target_tree_sha256": "103230422c43dc2e725730872ff8d8aff86310cc1ac4a3cb15098e518f9f7072",
+  "claim": "codex-safe-host-neutral-correctness-and-external-engine-substrate",
+  "checks": [
+    {
+      "name": "u6-focused-suite",
+      "argv": ["PYTHONPATH=.", "uv", "run", "pytest", "-q", "plugins/fleet-core/tests/test_bridge_receipt.py", "plugins/fleet-core/tests/test_tier_resolver.py", "plugins/saga/tests/test_board_progression.py", "plugins/saga/tests/test_outcome_from_objective.py", "plugins/saga/tests/test_execution_spec_tiers.py", "plugins/saga/tests/test_verify_panel_robustness.py", "plugins/saga/tests/test_engine_routing.py", "plugins/saga/tests/test_outcome_board_sync.py", "plugins/verified-workflows/tests/test_workflow_dispatch.py", "tests/test_workflow_emitter.py", "tests/test_outcome_completion.py", "tests/test_outcome_command.py", "tests/test_outcome_integration.py", "tests/test_outcome_merge_queue.py", "tests/test_engine_bridge_http.py", "tests/test_engine_registry_conformance.py", "tests/test_engine_registry_cli.py", "tests/test_engine_registry_lint.py", "tests/test_bridge_receipt_drift.py", "tests/test_u6_branch_coverage.py", "tests/test_port_contract.py"],
+      "exit_code": 0,
+      "summary": "514 passed"
+    },
+    {
+      "name": "u5-overlap-regression",
+      "argv": ["PYTHONPATH=.", "uv", "run", "pytest", "-q", "plugins/saga/tests", "tests/test_outcome_dispatcher.py", "tests/test_outcome_backends.py", "tests/test_outcome_dispatch_migration.py", "tests/test_outcome_command.py", "tests/test_outcome_integration.py", "tests/test_outcome_liveness.py", "tests/test_outcome_completion.py", "tests/test_outcome_replay.py", "tests/test_capability_degrade.py", "tests/test_verified_workflow_readiness.py", "tests/test_saga_session_context.py"],
+      "exit_code": 0,
+      "summary": "543 passed after retiring obsolete emitter coverage"
+    },
+    {
+      "name": "u6-branch-coverage",
+      "argv": ["PYTHONPATH=.", "uv", "run", "--group", "dev", "--with", "coverage", "coverage", "run", "--branch", "--include=<ten U6 modules>", "-m", "pytest", "-q", "<U6 behavior tests excluding circular port-evidence assertions>"],
+      "exit_code": 0,
+      "summary": "488 passed; 88% aggregate branch-aware coverage across 10 U6 modules; workflow_emitter.py 100%, outcome_github.py 98%, outcome_edges.py 96%, board_progression.py and bridge_receipt.py 91%"
+    },
+    {
+      "name": "generated-workflow-javascript-syntax",
+      "argv": ["node", "--input-type=module", "--check"],
+      "exit_code": 0,
+      "summary": "root-authored subject, verifier panel, and external advisory intent fixture parsed"
+    },
+    {
+      "name": "changed-python-ruff",
+      "argv": ["uv", "run", "ruff", "check", "<U6 changed Python paths>"],
+      "exit_code": 0,
+      "summary": "all checks passed"
+    },
+    {
+      "name": "u6-port-contract",
+      "argv": ["python3", "scripts/port_contract.py", "validate", "--stage", "unit", "--unit", "U6"],
+      "exit_code": 0,
+      "summary": "port contract valid at unit stage"
+    },
+    {
+      "name": "plugin-validator",
+      "argv": ["python3", "scripts/validate_codex_plugins.py"],
+      "exit_code": 0,
+      "summary": "Codex plugin validation passed"
+    },
+    {
+      "name": "generated-inventory",
+      "argv": ["python3", "scripts/build_legacy_workflow_inventory.py", "--check"],
+      "exit_code": 0,
+      "summary": "legacy workflow token inventory is current"
+    }
+  ],
+  "coverage": [
+    "cross-repository objective ingestion with collision-resistant subplot identifiers",
+    "certificate-preserving board writes with authenticated crash-replay comment dedupe",
+    "cross-owner board mutation fail-closed behavior",
+    "external registry and resolver model plus effort propagation",
+    "native Codex exclusion from the external-engine registry",
+    "secret-free generic HTTP invocation and bounded response handling",
+    "complete invocation digest binding for CLI and HTTP bridge receipts",
+    "finite non-negative external telemetry",
+    "oversized registry costs, HTTP timeouts, token estimates, and bridge usage fail closed without numeric overflow",
+    "root-authored clean-subject verifier binding with fixed seat identity and fallback depth",
+    "instruction-inert verifier evidence input and under-strength quorum failure",
+    "structured external-engine intent preservation across workflow, team, and inline emitters",
+    "overlay containment, authentication preflight, signature policy, and emitter drift proof",
+    "GitHub owner/repository reference normalization",
+    "U5 canonical workflow and outcome-boundary regression coverage",
+    "measured branch-aware U6 module coverage at 88% across the unchanged ten-module denominator after the U7 HTTP trust-boundary additions"
+  ]
+}

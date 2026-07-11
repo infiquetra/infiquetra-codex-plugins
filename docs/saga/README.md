@@ -27,7 +27,7 @@ Saga is not a one-plugin monolith. It is the lifecycle wrapper around four coope
 |---|---|---|
 | `saga` | lifecycle choice, local Saga state, durable lifecycle docs, outcome orchestration, handoff envelopes, promotion proposals | choose and record the next lifecycle move |
 | `mission-control` | issues, comments, labels, milestones, project boards, project fields, rollout, metrics | create or mutate SDLC issue/project state |
-| `team-execution` | reviewer consensus, selected validators, delegated or serial evidence | add independent review and validation protocol |
+| `verified-workflows` | root-owned workflow DAGs, reviewer consensus, selected validators, and protected evidence | add independent review and validation protocol |
 | `deploy` | tag promotion, rollback, hotfixes, deployment status, release-note previews | promote or inspect release state |
 
 The short rule: Saga routes and records context; receiving plugins re-read, re-verify, and mutate only their own domains.

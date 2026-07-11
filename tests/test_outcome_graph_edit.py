@@ -61,10 +61,12 @@ def _dispatched(store: Any, sid: str) -> None:
     STORE.append_ledger(
         store,
         {
-            "phase": "commit",
-            "kind": "dispatch",
-            "key": f"dispatch:{sid}",
+            "phase": "ack",
+            "kind": "outcome.dispatch.v2",
+            "key": f"dispatch-intent:o:{sid}",
             "subplot_id": sid,
+            "ack_kind": "launched",
+            "receipt_authority": "owner-user-state-v1",
             "leaf_saga_id": f"leaf-{sid}",
         },
     )
@@ -452,7 +454,16 @@ def test_advance_holds_back_the_frontier_until_approved(tmp_path: Path) -> None:
     store = ENG._store(repo, "demo")
     DEC.approve_frontier(store, spec)
     r2 = ENG.advance(repo, "demo", gate_factory=gate_factory)
-    assert r2.dispatched == ["design"] and r2.gated == []  # approved -> dispatches
+    ENG.reconcile_dispatch_ack(
+        store,
+        repo_root=repo,
+        outcome_id="demo",
+        subplot_id="design",
+        ack_kind="handed-off",
+        dispatch_ack_ref="operator:test-approved-frontier",
+    )
+    assert r2.dispatched == [] and r2.gated == []
+    assert ENG.status(repo, "demo")["states"]["design"] == "handed-off"
 
 
 def test_cli_describes_policy(capsys: Any) -> None:
