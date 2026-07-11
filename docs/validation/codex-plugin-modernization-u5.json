@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "unit": "U5",
-  "recorded_at": "2026-07-11T09:43:27Z",
-  "repo_head": "16a3a27cf7eb5408243366a03275411c862d8df6",
-  "target_tree_sha256": "e6dd68e6fd25a76a86c1b000794dabd24d2d91351ce8c0a3b9563d9fb710a0a9",
+  "recorded_at": "2026-07-11T09:52:50Z",
+  "repo_head": "7e7f5dde0dd1c6ce5cdb9513cf4adf765b27d606",
+  "target_tree_sha256": "5ee52712b9d39a11ab50e33242386339a4bb35cf79b3bdbcb76c132beb879061",
   "claim": "saga-canonical-workflow-dispatch-and-continuation-boundary",
   "checks": [
     {
@@ -48,6 +48,7 @@
     "owner-only user-state readiness and identity-marker permissions",
     "append-only authority reconciliation for historical v2 acknowledgements",
     "audit-only portable acknowledgements with local authority reconciliation",
-    "cross-location canonical and legacy root conflict detection"
+    "cross-location canonical and legacy root conflict detection",
+    "inert audit preservation across export, import, and re-export"
   ]
 }

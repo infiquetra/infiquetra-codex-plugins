@@ -364,7 +364,7 @@
     {
       "classification": "lineage-documentation",
       "path": "docs/portability/ports/2026-07-10-saga-07517.json",
-      "sha256": "3d083bd8cc1e2ed785fc9024e9a853152a57fd0cb4b0c225e6d4f4367c6e22c8",
+      "sha256": "e7956d7e9c3fec2579d8fe6882daaf21d5a0e4731ba46dbcfdd8747c6cc35c08",
       "tokens": [
         "Team Execution",
         "team-execution"
@@ -866,7 +866,7 @@
     {
       "classification": "temporary-saga-writer",
       "path": "plugins/saga/scripts/outcome.py",
-      "sha256": "1acb525977dd1e60ad878fd53ffbfddba07bd7a9c3caf2ba71de53e7cfc1f93e",
+      "sha256": "55ac99df2209eae131af456d6e9f2036018c8115707879a9e94cdb368aed2d1d",
       "tokens": [
         "team-execution"
       ]
