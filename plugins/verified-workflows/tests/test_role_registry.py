@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import importlib.util
+import json
 import os
 import shutil
 import sys
@@ -89,7 +90,10 @@ def _synthetic_registry(tmp_path: Path) -> tuple[Path, Path, dict]:
     schemas_dir.mkdir()
     scripts_dir.mkdir()
     evidence = schemas_dir / "proof.json"
-    evidence.write_text('{"type":"object"}\n', encoding="utf-8")
+    evidence.write_text(
+        json.dumps(R.DETERMINISTIC_TESTER_OUTPUT_SCHEMA, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
     implementation = scripts_dir / "check.py"
     implementation.write_text("raise SystemExit(0)\n", encoding="utf-8")
     payload = yaml.safe_load(R.DEFAULT_REGISTRY.read_text(encoding="utf-8"))
@@ -97,7 +101,7 @@ def _synthetic_registry(tmp_path: Path) -> tuple[Path, Path, dict]:
         {
             "id": "bounded-validator",
             "kind": "deterministic-validator",
-            "category": "scanner",
+            "category": "tester",
             "spec_version": 1,
             "description": "Run one contained validator and emit its closed evidence.",
             "selection": {"mode": "conditional", "signals": ["bounded proof"]},
@@ -117,7 +121,7 @@ def _synthetic_registry(tmp_path: Path) -> tuple[Path, Path, dict]:
                 "path": "schemas/proof.json",
                 "sha256": hashlib.sha256(evidence.read_bytes()).hexdigest(),
             },
-            "output_schema": "scanner-evidence.v1",
+            "output_schema": "tester-evidence.v1",
             "source_behavior_sha256": "0" * 64,
         }
     ]
@@ -235,7 +239,7 @@ def test_registry_rejects_nonstring_keys_and_closed_policy_drift(tmp_path: Path)
 
 def test_role_output_schema_is_category_specific(tmp_path: Path) -> None:
     registry_path, roles_dir, payload = _synthetic_registry(tmp_path)
-    payload["roles"][0]["output_schema"] = "tester-evidence.v1"
+    payload["roles"][0]["output_schema"] = "review-evidence.v1"
     registry_path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
 
     with pytest.raises(R.RoleRegistryError, match="invalid for category"):

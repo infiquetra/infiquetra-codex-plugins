@@ -42,6 +42,7 @@ SOURCE_TRANSACTION_DIR = PLUGIN_ROOT / ".agents-render-transaction"
 MAX_REGISTRY_BYTES = 1024 * 1024
 MAX_ROLE_BYTES = 256 * 1024
 MAX_CATALOG_BYTES = 4 * 1024 * 1024
+MAX_DETERMINISTIC_OUTPUT_BYTES = 512 * 1024
 HEX64 = re.compile(r"^[0-9a-f]{64}$")
 ROLE_ID = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
@@ -309,6 +310,8 @@ EVIDENCE_SCHEMA_CONTRACTS = {
             "workflow",
             "run_ref",
             "commit_sha",
+            "branch",
+            "default_branch",
             "environment",
             "eligibility",
             "prerequisite_gate_refs",
@@ -324,9 +327,11 @@ EVIDENCE_SCHEMA_CONTRACTS = {
             "workflow": "string",
             "run_ref": "string",
             "commit_sha": "git-sha",
+            "branch": "string",
+            "default_branch": "string",
             "environment": "string",
             "eligibility": "boolean",
-            "prerequisite_gate_refs": "list[evidence-ref]",
+            "prerequisite_gate_refs": "list[prerequisite-ref]",
             "evidence_refs": "list[evidence-ref]",
             "rollback_notes": "string",
             "run_status": "enum",
@@ -342,6 +347,134 @@ EVIDENCE_SCHEMA_CONTRACTS = {
                 "unknown",
             ],
             "gate_status": list(GATE_STATUSES),
+        },
+    },
+}
+NESTED_TYPE_CONTRACTS = {
+    "format-contracts": {
+        "evidence-id": "^[a-z0-9][a-z0-9._:/-]{0,127}$ with no empty, dot, or dot-dot path segment",
+        "lens-mandate-slug": (
+            "casefold the exact numbered mandate title, replace each non-[a-z0-9] run with one hyphen, then trim hyphens"
+        ),
+        "protected-evidence-ref": (
+            "record:{subject|workspace-snapshot|mutation-audit|command-output}:{64 lowercase hex}"
+        ),
+        "prerequisite-ref": "record:role-result:{64 lowercase hex}",
+        "rfc3339": "UTC timestamp ending in Z; offsets other than Z are rejected",
+    },
+    "typed-finding": {
+        "required_fields": [
+            "finding_id",
+            "severity",
+            "category",
+            "location",
+            "impact",
+            "fix",
+            "validation",
+            "resolved",
+            "hard_stop",
+        ],
+        "field_types": {
+            "finding_id": "evidence-id",
+            "severity": "enum",
+            "category": "enum",
+            "location": "string",
+            "impact": "string",
+            "fix": "string",
+            "validation": "string",
+            "resolved": "boolean(false-only)",
+            "hard_stop": "boolean",
+        },
+        "enum_fields": {
+            "severity": ["P0", "P1", "P2", "P3"],
+            "category": [
+                "security",
+                "correctness",
+                "reliability",
+                "operations",
+                "maintainability",
+                "documentation",
+                "test-coverage",
+                "performance",
+                "compatibility",
+            ],
+        },
+        "security_rule": (
+            "All security findings use category=security; do not substitute a subtype."
+        ),
+    },
+    "scored-dimension": {
+        "required_fields": ["dimension_id", "score", "notes"],
+        "field_types": {
+            "dimension_id": "lens-mandate-slug",
+            "score": "number[0,10]",
+            "notes": "string",
+        },
+        "enum_fields": {},
+    },
+    "typed-exclusion": {
+        "required_fields": ["dimension_id", "reason"],
+        "field_types": {
+            "dimension_id": "lens-mandate-slug",
+            "reason": "enum",
+        },
+        "enum_fields": {"reason": ["static-non-applicable"]},
+    },
+    "test-case": {
+        "required_fields": ["case_id", "status", "evidence_ref"],
+        "field_types": {
+            "case_id": "evidence-id",
+            "status": "enum",
+            "evidence_ref": "protected-evidence-ref",
+        },
+        "enum_fields": {"status": list(GATE_STATUSES)},
+    },
+    "observation": {
+        "required_fields": ["observation_id", "health_state", "evidence_ref"],
+        "field_types": {
+            "observation_id": "evidence-id",
+            "health_state": "enum",
+            "evidence_ref": "protected-evidence-ref",
+        },
+        "enum_fields": {
+            "health_state": [
+                "healthy",
+                "degraded",
+                "missing-signal",
+                "not-applicable",
+            ]
+        },
+    },
+    "time-window": {
+        "required_fields": ["started_at", "ended_at"],
+        "field_types": {"started_at": "rfc3339", "ended_at": "rfc3339"},
+        "enum_fields": {},
+        "ordering": "started_at <= ended_at <= result.recorded_at; the observed run may predate monitor dispatch",
+        "freshness": "duration<=24h and result.recorded_at-ended_at<=1h",
+    },
+}
+DETERMINISTIC_TESTER_OUTPUT_SCHEMA = {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "additionalProperties": False,
+    "type": "object",
+    "required": ["target", "expected", "actual", "cases", "gate_status"],
+    "properties": {
+        "target": {"type": "string", "minLength": 1},
+        "expected": {"type": "string", "minLength": 1},
+        "actual": {"type": "string", "minLength": 1},
+        "gate_status": {"enum": list(GATE_STATUSES)},
+        "cases": {
+            "type": "array",
+            "maxItems": 1024,
+            "items": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["case_id", "status"],
+                "properties": {
+                    "case_id": {"type": "string", "minLength": 1},
+                    "status": {"enum": list(GATE_STATUSES)},
+                },
+            },
         },
     },
 }
@@ -417,6 +550,7 @@ class RoleRegistry:
     source_behavior_policy: dict[str, Any]
     review_policy: dict[str, Any]
     evidence_schemas: dict[str, dict[str, Any]]
+    nested_type_contracts: dict[str, dict[str, Any]]
     roles: tuple[RoleSpec, ...]
 
     def role(self, role_id: str) -> RoleSpec:
@@ -748,8 +882,13 @@ def _parse_deterministic(
         {"path", "sha256"},
         f"role {role_id}.command.implementation",
     )
+    command_root = (
+        REPO_ROOT
+        if roles_dir.resolve() == DEFAULT_ROLES_DIR.resolve()
+        else roles_dir.parent
+    )
     implementation_path = _contained_relative(
-        roles_dir.parent,
+        command_root,
         implementation.get("path"),
         f"role {role_id}.command.implementation.path",
     )
@@ -771,7 +910,11 @@ def _parse_deterministic(
     output_limit = command.get("output_limit_bytes")
     if not isinstance(timeout, int) or isinstance(timeout, bool) or not 1 <= timeout <= 3600:
         raise RoleRegistryError(f"role {role_id}.command.timeout_seconds is invalid")
-    if not isinstance(output_limit, int) or isinstance(output_limit, bool) or not 1 <= output_limit <= 16 * 1024 * 1024:
+    if (
+        not isinstance(output_limit, int)
+        or isinstance(output_limit, bool)
+        or not 1 <= output_limit <= MAX_DETERMINISTIC_OUTPUT_BYTES
+    ):
         raise RoleRegistryError(f"role {role_id}.command.output_limit_bytes is invalid")
     if command.get("network") not in {"none", "allowlisted-read"}:
         raise RoleRegistryError(f"role {role_id}.command.network is invalid")
@@ -782,7 +925,7 @@ def _parse_deterministic(
         raw.get("evidence_schema"), {"path", "sha256"}, f"role {role_id}.evidence_schema"
     )
     evidence_path = _contained_relative(
-        roles_dir.parent, evidence.get("path"), f"role {role_id}.evidence_schema.path"
+        command_root, evidence.get("path"), f"role {role_id}.evidence_schema.path"
     )
     evidence_bytes = _regular_single_link(
         evidence_path, f"role {role_id} evidence schema", MAX_ROLE_BYTES
@@ -790,6 +933,16 @@ def _parse_deterministic(
     evidence_hash = evidence.get("sha256")
     if evidence_hash != _sha256(evidence_bytes):
         raise RoleRegistryError(f"role {role_id}.evidence_schema digest drifted")
+    try:
+        evidence_contract = json.loads(evidence_bytes)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RoleRegistryError(
+            f"role {role_id}.evidence_schema must be UTF-8 JSON"
+        ) from exc
+    if category != "tester" or evidence_contract != DETERMINISTIC_TESTER_OUTPUT_SCHEMA:
+        raise RoleRegistryError(
+            f"role {role_id} must use the closed deterministic tester output schema"
+        )
     output_schema = _validate_output_schema(
         role_id, category, raw.get("output_schema"), evidence_schemas
     )
@@ -893,6 +1046,7 @@ def load_role_registry(
             "gate_statuses",
             "review_policy",
             "evidence_schemas",
+            "nested_type_contracts",
             "roles",
         },
         "role registry",
@@ -980,6 +1134,9 @@ def load_role_registry(
         evidence_schemas[schema_id] = normalized_schema
     if evidence_schemas != EVIDENCE_SCHEMA_CONTRACTS:
         raise RoleRegistryError("role registry evidence schema contract drifted")
+    nested_type_contracts = payload.get("nested_type_contracts")
+    if nested_type_contracts != NESTED_TYPE_CONTRACTS:
+        raise RoleRegistryError("role registry nested type contract drifted")
     roles_raw = payload.get("roles")
     if not isinstance(roles_raw, list) or not roles_raw:
         raise RoleRegistryError("role registry.roles must be a non-empty list")
@@ -1015,6 +1172,7 @@ def load_role_registry(
         source_behavior_policy=dict(source_behavior_policy),
         review_policy=dict(review_policy),
         evidence_schemas=evidence_schemas,
+        nested_type_contracts=dict(nested_type_contracts),
         roles=roles,
     )
 
@@ -1119,6 +1277,11 @@ def _profile_instructions(resolution: Any, registry: RoleRegistry) -> str:
         sort_keys=True,
         separators=(",", ":"),
     )
+    nested_contract = json.dumps(
+        registry.nested_type_contracts,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
     return f"""You are the managed Verified Workflows `{resolution.execution_class}` execution profile.
 
 This profile supplies compute and permission defaults only. It is not logical-role identity.
@@ -1134,8 +1297,8 @@ Boundaries:
 - the role registry may narrow these boundaries; an execution-class escalation never widens them.
 
 Evidence contract:
-- Return the logical role ID and lens digest, exact evidence inspected, typed findings with severity,
-  location, impact, fix, and validation, explicit exclusions, and unresolved risks.
+- Return the logical role ID and lens digest plus every field required by the selected schema.
+  Represent unresolved risks only as closed typed findings; reviewer exclusions use typed-exclusion.
 - The role registry selects one output_schema. Return every required field with the declared type;
   enum values are closed. Never derive gate status from prose or untrusted finding text.
 - Gate status is one of: {', '.join(GATE_STATUSES)}. hard-fail and blocked prevent completion;
@@ -1143,6 +1306,7 @@ Evidence contract:
 - Reviewer scores remain supporting evidence, but the preserved review arithmetic is mandatory:
   {review_contract}
 - Closed output schemas: {schema_contract}
+- Closed nested types: {nested_contract}
 
 Do not claim that a model, reasoning effort, sandbox, or separate child was observed; U4 joins
 profile, hook, and result receipts before making those claims.

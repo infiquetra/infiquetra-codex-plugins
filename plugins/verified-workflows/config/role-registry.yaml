@@ -219,6 +219,8 @@ evidence_schemas:
     - workflow
     - run_ref
     - commit_sha
+    - branch
+    - default_branch
     - environment
     - eligibility
     - prerequisite_gate_refs
@@ -233,9 +235,11 @@ evidence_schemas:
       workflow: string
       run_ref: string
       commit_sha: git-sha
+      branch: string
+      default_branch: string
       environment: string
       eligibility: boolean
-      prerequisite_gate_refs: list[evidence-ref]
+      prerequisite_gate_refs: list[prerequisite-ref]
       evidence_refs: list[evidence-ref]
       rollback_notes: string
       run_status: enum
@@ -254,6 +258,112 @@ evidence_schemas:
       - hard-fail
       - skipped-by-config
       - blocked
+nested_type_contracts:
+  format-contracts:
+    evidence-id: "^[a-z0-9][a-z0-9._:/-]{0,127}$ with no empty, dot, or dot-dot path segment"
+    lens-mandate-slug: "casefold the exact numbered mandate title, replace each non-[a-z0-9] run with one hyphen, then trim hyphens"
+    protected-evidence-ref: "record:{subject|workspace-snapshot|mutation-audit|command-output}:{64 lowercase hex}"
+    prerequisite-ref: "record:role-result:{64 lowercase hex}"
+    rfc3339: "UTC timestamp ending in Z; offsets other than Z are rejected"
+  typed-finding:
+    required_fields:
+    - finding_id
+    - severity
+    - category
+    - location
+    - impact
+    - fix
+    - validation
+    - resolved
+    - hard_stop
+    field_types:
+      finding_id: evidence-id
+      severity: enum
+      category: enum
+      location: string
+      impact: string
+      fix: string
+      validation: string
+      resolved: boolean(false-only)
+      hard_stop: boolean
+    enum_fields:
+      severity:
+      - P0
+      - P1
+      - P2
+      - P3
+      category:
+      - security
+      - correctness
+      - reliability
+      - operations
+      - maintainability
+      - documentation
+      - test-coverage
+      - performance
+      - compatibility
+    security_rule: All security findings use category=security; do not substitute a subtype.
+  scored-dimension:
+    required_fields:
+    - dimension_id
+    - score
+    - notes
+    field_types:
+      dimension_id: lens-mandate-slug
+      score: number[0,10]
+      notes: string
+    enum_fields: {}
+  typed-exclusion:
+    required_fields:
+    - dimension_id
+    - reason
+    field_types:
+      dimension_id: lens-mandate-slug
+      reason: enum
+    enum_fields:
+      reason:
+      - static-non-applicable
+  test-case:
+    required_fields:
+    - case_id
+    - status
+    - evidence_ref
+    field_types:
+      case_id: evidence-id
+      status: enum
+      evidence_ref: protected-evidence-ref
+    enum_fields:
+      status:
+      - pass
+      - warn
+      - hard-fail
+      - skipped-by-config
+      - blocked
+  observation:
+    required_fields:
+    - observation_id
+    - health_state
+    - evidence_ref
+    field_types:
+      observation_id: evidence-id
+      health_state: enum
+      evidence_ref: protected-evidence-ref
+    enum_fields:
+      health_state:
+      - healthy
+      - degraded
+      - missing-signal
+      - not-applicable
+  time-window:
+    required_fields:
+    - started_at
+    - ended_at
+    field_types:
+      started_at: rfc3339
+      ended_at: rfc3339
+    enum_fields: {}
+    ordering: "started_at <= ended_at <= result.recorded_at; the observed run may predate monitor dispatch"
+    freshness: duration<=24h and result.recorded_at-ended_at<=1h
 roles:
 - id: ai-usefulness-reviewer
   kind: agent-lens

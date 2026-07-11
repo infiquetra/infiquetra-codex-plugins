@@ -31,9 +31,10 @@ def _role_text(role_id: str) -> str:
 
 def test_every_lens_is_versioned_digest_bound_and_has_an_output_contract() -> None:
     registry = R.load_role_registry()
+    roles = tuple(role for role in registry.roles if role.kind == "agent-lens")
 
-    assert len({role.source_behavior_sha256 for role in registry.roles}) == 25
-    for role in registry.roles:
+    assert len({role.source_behavior_sha256 for role in roles}) == 25
+    for role in roles:
         text = _role_text(role.role_id)
         assert f"role_id: {role.role_id}" in text
         assert "role_kind: agent-lens" in text
