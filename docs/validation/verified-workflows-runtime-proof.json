@@ -9,7 +9,7 @@
       "SubagentStart",
       "SubagentStop"
     ],
-    "handler_sha256": "a42add8ad614e2f3f8c4a44cb7f34b7fdde689eb8150934894d9dfc205a4eaa3",
+    "handler_sha256": "06161231953398dfdd207090b31f9b665d327c92b501475aaa64e37897629e11",
     "installed_bytes_readback": false,
     "observes_active_model": true,
     "observes_agent_type": true,

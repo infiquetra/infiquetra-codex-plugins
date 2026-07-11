@@ -277,7 +277,7 @@
     {
       "classification": "historical-evidence",
       "path": "docs/plans/2026-07-10-codex-plugin-model-execution-modernization-plan.md",
-      "sha256": "e6e555fd2872b7a2442ebdc6af05b5542cc6ac85ca3a73454edfc910794b0c9d",
+      "sha256": "768e35cde26587671b745f694017a2df46e5ad92ffd9e578246a9837319ac331",
       "tokens": [
         "#team-structure",
         "Team Execution",
@@ -462,7 +462,7 @@
     {
       "classification": "migration-documentation",
       "path": "docs/validation/codex-plugin-modernization-cutover.json",
-      "sha256": "4e7df8eb2190c8fcc76e004a4aeaa95306b4d9ae798db6f41ae9610a877e0ad4",
+      "sha256": "428a4ad20229be27074190f048ff0d5cb3f2cd199fb36034d89c302ba75bc26d",
       "tokens": [
         "team-execution"
       ]
@@ -470,7 +470,7 @@
     {
       "classification": "migration-documentation",
       "path": "docs/validation/codex-plugin-modernization-u7.json",
-      "sha256": "cb54dfb074b0ba01ae53291d43681d2cf02b78bae39ae1da121e6a2269506df6",
+      "sha256": "6f15e15727ba6cc7ef51e8f9bc4af187bbef6a527c78e16f54b05ef9bcd09141",
       "tokens": [
         "team-execution"
       ]
@@ -495,7 +495,7 @@
     {
       "classification": "legacy-read-metadata",
       "path": "docs/validation/saga-family-target-inventory.json",
-      "sha256": "e226db187403ab410bce06bbcbdd5541429bdc23b6d554122f785e4bd9b5ed3b",
+      "sha256": "42676629ba4af8a8b4f1f3dd15e2cc6867d3cc6a0e7429eaa827b73caefed7f6",
       "tokens": [
         ".codex/team-execution/",
         "team-execution"
@@ -583,6 +583,14 @@
       "sha256": "3a30f6eb2f14a8bf700a9a659d4cb47b81e7d203d99ad3fbec1a1497a2b46509",
       "tokens": [
         "team-execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
+      "path": "docs/work-sessions/2026-07-11-u8-modernization-resume.md",
+      "sha256": "08d742a7d1cc2a7bab2a94bd23495eeb21f6b80e2cc710e940f749f5bf0fcd71",
+      "tokens": [
+        "Team Execution"
       ]
     },
     {
@@ -986,7 +994,7 @@
     {
       "classification": "migration-fixture",
       "path": "tests/test_prove_codex_plugin_profile.py",
-      "sha256": "1f28d50cb713cce1cc4556fca8df9759770a82616abf5818717de22924276576",
+      "sha256": "82ed84be6505e03000e4680acbc5582f84832c6d5a62ab57970476e3be294385",
       "tokens": [
         ".codex/team-execution/",
         "team-execution"
@@ -995,7 +1003,7 @@
     {
       "classification": "migration-fixture",
       "path": "tests/test_saga_docs_package.py",
-      "sha256": "0133b2b2b1c8416fc91bd1680cc02a58eed03ef680c15b75d815521cabeb0df0",
+      "sha256": "82807664a3d5d79e18542e09c25765fb4b4b041ca3d198b812f44d79d5f08d2b",
       "tokens": [
         "team-execution"
       ]
@@ -1015,7 +1023,7 @@
     {
       "classification": "migration-fixture",
       "path": "tests/test_validate_codex_plugins.py",
-      "sha256": "993822f40b435a0421753a45f6e33602659fdd397dfc93b70c12c9ffe3d38291",
+      "sha256": "afa4de54865654fdfb843773a7683b355e5742b670b4e5c11672daa620987fed",
       "tokens": [
         ".codex/team-execution/",
         "team-execution",
@@ -1054,7 +1062,7 @@
     {
       "classification": "migration-fixture",
       "path": "tests/test_verified_workflows_migration.py",
-      "sha256": "5fb9e34925a09df6d28aa4e597de8ac7bf8413a2fac522a2d30ef9eed17a12b4",
+      "sha256": "05c38a1b7a2608808588cecc724fcb8325bf00d1079c9249f58101016e666231",
       "tokens": [
         "Team Execution",
         "team-execution"
@@ -1062,7 +1070,7 @@
     }
   ],
   "generated_by": "scripts/build_legacy_workflow_inventory.py",
-  "historical_inventory_sha256": "102ce32245e76a041affb0f72e0eb8a2c70647d4fa0f9aad0f9670ee6147b4b8",
+  "historical_inventory_sha256": "28629cd87365344459eaa028cb494372f704a8a5244ec3b19b7accc63511be75",
   "history_sentinels": {
     "docs/investigations/2026-06-30-team-execution-saga-orchestration-debug-report.md": {
       "sha256": "ecc08eceda3a67dc81d15b1930753fe236ca7c1ae9b3ad9dd506cdecfb0ac4fa",
