@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "recorded_at": "2026-07-11T16:17:12Z",
-  "source_head": "8077ac8d6b36e1eac7dc9d350fbe087342dcd9d0",
+  "recorded_at": "2026-07-11T17:30:18Z",
+  "source_head": "e27c6f93b7e440e9e2722ade04a42cfc58844403",
   "status": "cutover-complete",
   "versions": {
     "fleet-core": "0.8.4+codex.20260711134422",

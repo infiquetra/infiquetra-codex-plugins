@@ -44,6 +44,7 @@ def test_frozen_source_and_codex_inventories_are_exhaustive() -> None:
 
     assert codex["historical_plan_base"] == contract.DEFAULT_CODEX_PLAN_BASE
     assert codex["execution_base"] == "3f639109b06ed2634d5333a58fb200b06e36dbbe"
+    assert codex["evidence_ref"] == contract.CODEX_EVIDENCE_REF
     assert len(codex["rows"]) == codex["expected_count"] == 35
     assert contract.inventory_digest(codex["rows"]) == codex["inventory_sha256"]
     assert all(row["treatment"] in {"preserve", "reconcile", "superseded-by-plan"} for row in codex["rows"])
@@ -56,6 +57,7 @@ def test_active_contract_rejects_shifted_identity_or_frozen_refs() -> None:
     manifest["source"]["target_ref"] = "2" * 40
     manifest["codex"]["historical_plan_base"] = "3" * 40
     manifest["codex"]["execution_base"] = "4" * 40
+    manifest["codex"]["evidence_ref"] = "refs/tags/untrusted"
 
     errors = contract.validate_manifest(ROOT, manifest, stage="classification")
 
@@ -64,6 +66,7 @@ def test_active_contract_rejects_shifted_identity_or_frozen_refs() -> None:
     assert any("source.target_ref changed" in error for error in errors)
     assert any("historical plan base changed" in error for error in errors)
     assert any("execution base changed" in error for error in errors)
+    assert any("codex.evidence_ref must remain" in error for error in errors)
 
 
 def test_self_consistent_removed_codex_row_still_fails_frozen_inventory() -> None:
@@ -244,7 +247,7 @@ def test_failed_misattributed_and_malformed_evidence_is_rejected() -> None:
 def test_evidence_can_bind_the_exact_current_target_tree() -> None:
     manifest = load_manifest()
     artifact = ROOT / "tests/test_port_contract.py"
-    head = contract.resolve_ref(ROOT, "HEAD")
+    head = contract.resolve_ref(ROOT, contract.CODEX_EVIDENCE_REF)
     target_paths = ["AGENTS.md"]
     digest = contract.git_tree_digest(ROOT, head, target_paths)
     manifest["evidence"].append(
@@ -268,6 +271,15 @@ def test_evidence_can_bind_the_exact_current_target_tree() -> None:
     manifest["evidence"][-1]["target_tree_sha256"] = "0" * 64
     errors = contract.validate_manifest(ROOT, manifest, stage="classification")
     assert any("target_tree_sha256 is stale" in error for error in errors)
+
+
+def test_evidence_commit_must_be_retained_by_durable_ref() -> None:
+    manifest = load_manifest()
+    manifest["evidence"][0]["repo_head"] = contract.resolve_ref(ROOT, "HEAD")
+
+    errors = contract.validate_manifest(ROOT, manifest, stage="classification")
+
+    assert any("repo_head is not retained by codex.evidence_ref" in error for error in errors)
 
 
 def test_unit_gate_rejects_zero_claims() -> None:

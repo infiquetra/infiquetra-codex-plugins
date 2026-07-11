@@ -33,6 +33,7 @@ DEFAULT_SOURCE_TARGET = "38742ece89880a6b140be237edad6d3f13c97b54"
 DEFAULT_CODEX_PLAN_BASE = "788902513e48ea95fd0504ac3c850c8c02e5d920"
 ACTIVE_PORT_ID = "2026-07-10-saga-07517"
 APPROVED_CODEX_EXECUTION_BASE = "3f639109b06ed2634d5333a58fb200b06e36dbbe"
+CODEX_EVIDENCE_REF = "refs/tags/evidence/verified-workflows-modernization-20260711"
 EXPECTED_SOURCE_INVENTORY_SHA256 = "a481fa9cee40ed9bd3a70800475d0511fbbe0d92926334e847e0dae4756a723d"
 EXPECTED_CODEX_INVENTORY_SHA256 = "845d04095184fe2612a05dbf8c17d482a5cbdcb9d467d4b4eeb2b6ba446195a8"
 DEFAULT_SOURCE_PATHS = (
@@ -429,6 +430,7 @@ def build_manifest(
             "repository_id": codex_repository_id,
             "historical_plan_base": codex_plan_base,
             "execution_base": codex_execution_base,
+            "evidence_ref": CODEX_EVIDENCE_REF,
             "observed_origin_main": optional_ref(root, "origin/main"),
             "expected_count": len(codex_rows),
             "inventory_sha256": inventory_digest(codex_rows),
@@ -969,11 +971,12 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
         _validate_source_rows(source_rows, stage, errors)
 
     codex = manifest.get("codex")
+    codex_evidence_head: str | None = None
     codex_rows: list[dict[str, Any]] = []
     if not isinstance(codex, dict):
         errors.append("codex must be an object")
     else:
-        _exact_keys(codex, {"repository_id", "historical_plan_base", "execution_base", "observed_origin_main", "expected_count", "inventory_sha256", "rows"}, "codex", errors)
+        _exact_keys(codex, {"repository_id", "historical_plan_base", "execution_base", "evidence_ref", "observed_origin_main", "expected_count", "inventory_sha256", "rows"}, "codex", errors)
         _check_commit(codex.get("historical_plan_base"), "codex.historical_plan_base", errors)
         _check_commit(codex.get("execution_base"), "codex.execution_base", errors)
         _check_commit(codex.get("observed_origin_main"), "codex.observed_origin_main", errors)
@@ -981,6 +984,17 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
             errors.append("Codex historical plan base changed from the approved value")
         if codex.get("execution_base") != APPROVED_CODEX_EXECUTION_BASE:
             errors.append("Codex execution base changed from the approved value")
+        evidence_ref = codex.get("evidence_ref")
+        if evidence_ref != CODEX_EVIDENCE_REF:
+            errors.append(f"codex.evidence_ref must remain `{CODEX_EVIDENCE_REF}`")
+        else:
+            try:
+                codex_evidence_head = resolve_ref(root, evidence_ref)
+            except ContractError as exc:
+                errors.append(f"codex.evidence_ref is unavailable: {exc}")
+            else:
+                if not is_ancestor(root, APPROVED_CODEX_EXECUTION_BASE, codex_evidence_head):
+                    errors.append("codex.evidence_ref does not retain the approved execution base")
         codex_rows = codex.get("rows") if isinstance(codex.get("rows"), list) else []
         inventory = _validate_inventory_rows(codex_rows, "codex.rows", errors)
         if codex.get("expected_count") != len(codex_rows):
@@ -1100,6 +1114,10 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
                     root, APPROVED_CODEX_EXECUTION_BASE, repo_head
                 ):
                     errors.append(f"{label}.repo_head is outside the approved execution history")
+                if codex_evidence_head is not None and not is_ancestor(
+                    root, repo_head, codex_evidence_head
+                ):
+                    errors.append(f"{label}.repo_head is not retained by codex.evidence_ref")
                 target_paths = entry.get("target_paths")
                 target_tree_sha256 = entry.get("target_tree_sha256")
                 if (target_paths is None) != (target_tree_sha256 is None):
@@ -1287,6 +1305,7 @@ def render_manifest(manifest: Mapping[str, Any]) -> str:
         f"- Claude range: `{source['base_ref']}..{source['target_ref']}`",
         f"- Claude focused rows: **{len(source['rows'])}** (`{source['inventory_sha256']}`)",
         f"- Codex execution preservation: `{codex['historical_plan_base']}..{codex['execution_base']}`",
+        f"- Codex evidence retention: `{codex['evidence_ref']}`",
         f"- Codex drift rows: **{len(codex['rows'])}** (`{codex['inventory_sha256']}`)",
         f"- Runbook: `{manifest['authority']['runbook']['path']}` v{manifest['authority']['runbook']['version']} (`{manifest['authority']['runbook']['sha256']}`)",
         f"- Capability snapshot: `{manifest['authority']['capability_snapshot']['path']}` (`{manifest['authority']['capability_snapshot']['sha256']}`)",

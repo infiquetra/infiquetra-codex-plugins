@@ -26,6 +26,7 @@
   },
   "codex": {
     "execution_base": "3f639109b06ed2634d5333a58fb200b06e36dbbe",
+    "evidence_ref": "refs/tags/evidence/verified-workflows-modernization-20260711",
     "expected_count": 35,
     "historical_plan_base": "788902513e48ea95fd0504ac3c850c8c02e5d920",
     "inventory_sha256": "845d04095184fe2612a05dbf8c17d482a5cbdcb9d467d4b4eeb2b6ba446195a8",
@@ -1207,7 +1208,7 @@
       "unit": "U8",
       "kind": "review",
       "artifact_path": "docs/validation/codex-plugin-modernization-cutover.json",
-      "artifact_sha256": "428a4ad20229be27074190f048ff0d5cb3f2cd199fb36034d89c302ba75bc26d",
+      "artifact_sha256": "7112c7336bfa9cd442c99f56e2a02548d557cfa4d692cb99c9568076061cbeab",
       "argv": [
         "u8-review-panel",
         "architecture",
@@ -1224,7 +1225,7 @@
       "unit": "U8",
       "kind": "isolated-install",
       "artifact_path": "docs/validation/codex-plugin-modernization-cutover.json",
-      "artifact_sha256": "428a4ad20229be27074190f048ff0d5cb3f2cd199fb36034d89c302ba75bc26d",
+      "artifact_sha256": "7112c7336bfa9cd442c99f56e2a02548d557cfa4d692cb99c9568076061cbeab",
       "argv": [
         "python3",
         "scripts/validate_codex_plugins.py",
@@ -1241,7 +1242,7 @@
       "unit": "U8",
       "kind": "fresh-session",
       "artifact_path": "docs/validation/codex-plugin-modernization-cutover.json",
-      "artifact_sha256": "428a4ad20229be27074190f048ff0d5cb3f2cd199fb36034d89c302ba75bc26d",
+      "artifact_sha256": "7112c7336bfa9cd442c99f56e2a02548d557cfa4d692cb99c9568076061cbeab",
       "argv": [
         "codex",
         "-a",
@@ -1260,7 +1261,7 @@
       "unit": "U8",
       "kind": "rollback",
       "artifact_path": "docs/validation/codex-plugin-modernization-cutover.json",
-      "artifact_sha256": "428a4ad20229be27074190f048ff0d5cb3f2cd199fb36034d89c302ba75bc26d",
+      "artifact_sha256": "7112c7336bfa9cd442c99f56e2a02548d557cfa4d692cb99c9568076061cbeab",
       "argv": [
         "seeded-migration-lane",
         "rollback",
@@ -1276,7 +1277,7 @@
       "unit": "U8",
       "kind": "cutover",
       "artifact_path": "docs/validation/codex-plugin-modernization-cutover.json",
-      "artifact_sha256": "428a4ad20229be27074190f048ff0d5cb3f2cd199fb36034d89c302ba75bc26d",
+      "artifact_sha256": "7112c7336bfa9cd442c99f56e2a02548d557cfa4d692cb99c9568076061cbeab",
       "argv": [
         "codex",
         "plugin",
