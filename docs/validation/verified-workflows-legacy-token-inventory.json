@@ -1062,7 +1062,7 @@
     {
       "classification": "migration-fixture",
       "path": "tests/test_verified_workflows_migration.py",
-      "sha256": "05c38a1b7a2608808588cecc724fcb8325bf00d1079c9249f58101016e666231",
+      "sha256": "99a5c979d2a2ffcd60d71e3ca64be970f86758068eed8c583a3aac81d93f8775",
       "tokens": [
         "Team Execution",
         "team-execution"
