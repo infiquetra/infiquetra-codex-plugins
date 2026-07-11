@@ -4,7 +4,7 @@
 
 ```text
 step_id | depends_on | barrier | role_id | role_kind | independence | execution_class |
-vehicle | mutation | required_evidence | role_lens_sha256 | profile_sha256 |
+runtime_agent_name | vehicle | mutation | required_evidence | role_lens_sha256 | profile_sha256 |
 expected_model | expected_effort | validator_required | validator_disabled |
 deterministic_contract_sha256
 ```
@@ -12,9 +12,10 @@ deterministic_contract_sha256
 Use `-` for an empty cell and comma-separated identifiers for dependencies and evidence. The
 separator row must use at least three hyphens per column.
 
-Agent-lens rows bind `role_kind=agent-lens`, the current role lens, and generated profile digests.
+Agent-lens rows bind `role_kind=agent-lens`, the current role lens, the exact underscore-form Codex
+runtime agent name, and generated profile digests.
 Root rows use `role_id` and `role_kind` `root`, vehicle `root`, independence `n/a`, `n/a` for both
-validator-policy cells, and `-` for class, lens, profile, model, effort, and deterministic contract.
+validator-policy cells, and `-` for class, runtime agent, lens, profile, model, effort, and deterministic contract.
 Deterministic-validator rows bind `role_kind=deterministic-validator`, vehicle
 `deterministic-tool`, independence `n/a`, mutation `none`, no model fields, and the digest of the
 complete pinned command/schema contract. Validator rows set exactly one explicit required policy
@@ -52,9 +53,10 @@ cannot create another attempt, alter its bindings, or supply gate evidence. A na
 is enforceable only when the native surface selects and reports it; otherwise preferred work falls
 back inline and required independence blocks.
 
-Model and effort are requested by the approved execution-class row and exact installed profile
-digest. They are not observed runtime facts unless Codex reports the named selection. The current
-generic spawn surface cannot select or read back a per-child class, model, or effort, so agent-lens
+Model and effort are requested by the approved execution-class row, mapped runtime agent name, and
+exact installed profile digest. They are not observed runtime facts unless Codex reports the named
+selection. The current generic spawn surface cannot select or read back a per-child agent type,
+class, model, or effort, so agent-lens
 work is inline-only for gate purposes. An ambient Claude-style session tier file cannot change an
 emitted Codex intent or an in-flight remediation chain. To change class, close or abandon the
 current chain and approve a new workflow run; receipts and findings from different workflow digests

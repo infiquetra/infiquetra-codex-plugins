@@ -1,7 +1,7 @@
 # Worker and Result Manifest
 
 Workers produce evidence, never authority. Before work, the root persists a content-addressed intent
-that binds workflow, step, attempt, task, logical role, lens, execution class, expected profile
+that binds workflow, step, attempt, task, logical role, lens, execution class, runtime agent name, expected profile
 digest, mutation boundary, required evidence, nonce, and creation time. Retrying the same explicit
 nonce/time inputs returns the same intent reference. Every remediation/revalidation attempt gets a
 new intent and fresh execution context; follow-up messages cannot alter the bound attempt.
@@ -24,7 +24,7 @@ planned intent + native launch acknowledgement + hook start/stop pair
               + schema-valid result + root verification
 ```
 
-The join records hook-reported agent type, active model, safe permission mode, profile digest, child
+The join records the mapped runtime agent name, hook-reported agent type, active model, safe permission mode, profile digest, child
 and task identity, and timestamps. A launch acknowledgement may follow the hook start because the
 native spawn call returns after launch. It labels expected effort as `installed-profile-digest` and
 expected sandbox as configured, not observed. Absolute paths, transcripts, prompts, tool arguments,

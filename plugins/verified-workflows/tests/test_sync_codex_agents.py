@@ -125,7 +125,9 @@ def test_isolated_apply_installs_five_profiles_and_is_idempotent(tmp_path: Path)
 
     assert first["result"] == "verified"
     assert first["target"]["real_profile_mutated"] is False
-    assert {path.stem for path in target_path.glob("*.toml")} == set(S.renderer.EXPECTED_CLASSES)
+    assert {path.stem for path in target_path.glob("*.toml")} == set(
+        S.renderer.RUNTIME_AGENT_NAMES.values()
+    )
     assert first["readback"]["verified"] is True
     lock_inode = S._lock_path(first_plan.target).stat().st_ino
 
@@ -152,8 +154,8 @@ def test_unmanaged_profiles_are_preserved_and_name_collisions_block(tmp_path: Pa
 
     collision_target = tmp_path / "collision"
     collision_target.mkdir()
-    (collision_target / "review-high.toml").write_text(
-        _agent_text("local-review-high"), encoding="utf-8"
+    (collision_target / "review_high.toml").write_text(
+        _agent_text("local_review_high"), encoding="utf-8"
     )
     collision = _plan(collision_target)
     assert S.dry_run(collision)["result"] == "blocked"
@@ -310,7 +312,7 @@ def test_readback_mismatch_triggers_verified_rollback(tmp_path: Path) -> None:
 
     def corrupt_before_readback(stage: str) -> None:
         if stage == "before-readback":
-            with (target / "review-high.toml").open("ab") as handle:
+            with (target / "review_high.toml").open("ab") as handle:
                 handle.write(b"# injected drift\n")
 
     with pytest.raises(S.SyncError, match="exact pre-state restored"):
@@ -436,7 +438,7 @@ def test_unsafe_lock_mode_is_rejected_and_lock_inode_is_persistent(tmp_path: Pat
 def test_rollback_never_uses_or_deletes_unmanaged_scratch_names(tmp_path: Path) -> None:
     target = tmp_path / "agents"
     target.mkdir()
-    scratch = target / ".review-high.toml.rollback"
+    scratch = target / ".review_high.toml.rollback"
     scratch.write_text("user-owned scratch\n", encoding="utf-8")
     before = scratch.read_bytes()
 
@@ -587,14 +589,14 @@ def test_update_boundary_retains_concurrently_substituted_unmanaged_bytes(
 ) -> None:
     target = tmp_path / "agents"
     target.mkdir()
-    managed = target / "review-high.toml"
+    managed = target / "review_high.toml"
     managed.write_text(
         _agent_text("review-high", S.renderer.MANAGED_MARKER),
         encoding="utf-8",
     )
     plan = _plan(target)
     assert any(
-        action.name == "review-high.toml" and action.action == "update"
+        action.name == "review_high.toml" and action.action == "update"
         for action in plan.actions
     )
     substitute = _agent_text("user-review-high").encode()
@@ -602,7 +604,7 @@ def test_update_boundary_retains_concurrently_substituted_unmanaged_bytes(
 
     def swap_after_recheck(plan_arg, target_fd, action):
         recheck(plan_arg, target_fd, action)
-        if action.name == "review-high.toml":
+        if action.name == "review_high.toml":
             temporary = target / ".user-substitute"
             temporary.write_bytes(substitute)
             os.replace(temporary, managed)
@@ -621,7 +623,7 @@ def test_update_boundary_retains_special_node_substitution_as_manual_conflict(
 ) -> None:
     target = tmp_path / "agents"
     target.mkdir()
-    managed = target / "review-high.toml"
+    managed = target / "review_high.toml"
     managed.write_text(
         _agent_text("review-high", S.renderer.MANAGED_MARKER),
         encoding="utf-8",
@@ -631,7 +633,7 @@ def test_update_boundary_retains_special_node_substitution_as_manual_conflict(
 
     def swap_fifo_after_recheck(plan_arg, target_fd, action):
         recheck(plan_arg, target_fd, action)
-        if action.name == "review-high.toml":
+        if action.name == "review_high.toml":
             fifo = target / ".fifo-substitute"
             os.mkfifo(fifo)
             os.replace(fifo, managed)

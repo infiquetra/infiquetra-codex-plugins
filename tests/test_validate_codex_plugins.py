@@ -28,6 +28,7 @@ from scripts.validate_codex_plugins import (
     validate_saga_workflow_independence,
     validate_verified_workflows_agents,
     validate_verified_workflows_canonical_surface,
+    validate_verified_workflows_project_agents,
     validate_verified_workflows_runtime,
     workflow_registry_sha256,
     validate_relative_file,
@@ -93,11 +94,16 @@ def copy_verified_workflows_runtime_target(tmp_path: Path) -> Path:
         REPO_ROOT / "plugins" / "verified-workflows",
         root / "plugins" / "verified-workflows",
     )
+    shutil.copytree(
+        REPO_ROOT / "plugins" / "fleet-core",
+        root / "plugins" / "fleet-core",
+    )
     (root / "scripts").mkdir(parents=True)
     shutil.copy2(
         REPO_ROOT / "scripts" / "prove_verified_workflows_runtime.py",
         root / "scripts" / "prove_verified_workflows_runtime.py",
     )
+    shutil.copytree(REPO_ROOT / ".codex" / "agents", root / ".codex" / "agents")
     (root / "docs" / "validation").mkdir(parents=True)
     for name in (
         "codex-runtime-capability-snapshot.json",
@@ -354,6 +360,58 @@ def test_verified_workflows_role_profiles_are_part_of_repo_validation() -> None:
     validate_verified_workflows_agents(REPO_ROOT, errors)
 
     assert errors == []
+
+
+def test_verified_workflows_project_agents_bind_generated_runtime_names() -> None:
+    errors: list[str] = []
+    profiles = [
+        {"execution_class": execution_class, "runtime_agent_name": runtime_name}
+        for execution_class, runtime_name in {
+            "review-max": "review_max",
+            "review-high": "review_high",
+            "test-medium": "test_medium",
+            "scan-low": "scan_low",
+            "monitor-low": "monitor_low",
+        }.items()
+    ]
+
+    validate_verified_workflows_project_agents(
+        REPO_ROOT,
+        {"profiles": profiles},
+        errors,
+    )
+
+    assert errors == []
+
+
+def test_verified_workflows_project_agents_reject_stale_profile_bytes(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "repo"
+    shutil.copytree(REPO_ROOT / ".codex", root / ".codex")
+    (root / "plugins" / "verified-workflows").mkdir(parents=True)
+    shutil.copytree(
+        REPO_ROOT / "plugins" / "verified-workflows" / "agents",
+        root / "plugins" / "verified-workflows" / "agents",
+    )
+    project_profile = root / ".codex" / "agents" / "review_high.toml"
+    project_profile.write_bytes(project_profile.read_bytes() + b"\n# stale\n")
+    errors: list[str] = []
+
+    validate_verified_workflows_project_agents(
+        root,
+        {
+            "profiles": [
+                {
+                    "execution_class": "review-high",
+                    "runtime_agent_name": "review_high",
+                }
+            ]
+        },
+        errors,
+    )
+
+    assert any("project runtime agent bytes drifted" in error for error in errors)
 
 
 def test_verified_workflows_runtime_surfaces_are_part_of_repo_validation() -> None:

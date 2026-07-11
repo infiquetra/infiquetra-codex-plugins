@@ -19,7 +19,8 @@ RUN_SHA256 = "f" * 64
 
 
 def profile_facts(execution_class: str) -> tuple[str, str, str]:
-    content = (PLUGIN_ROOT / "agents" / f"{execution_class}.toml").read_bytes()
+    runtime_agent_name = renderer.RUNTIME_AGENT_NAMES[execution_class]
+    content = (PLUGIN_ROOT / "agents" / f"{runtime_agent_name}.toml").read_bytes()
     payload = tomllib.loads(content.decode())
     return (
         hashlib.sha256(content).hexdigest(),
@@ -51,6 +52,7 @@ def row(
             "root",
             "n/a",
             "-",
+            "-",
             "root",
             mutation,
             required_evidence,
@@ -79,6 +81,7 @@ def row(
         role.kind,
         independence,
         execution_class,
+        renderer.RUNTIME_AGENT_NAMES[execution_class],
         vehicle,
         mutation,
         required_evidence,
@@ -321,7 +324,7 @@ def test_required_independence_rejects_inline() -> None:
 
 def test_stale_role_or_profile_digest_fails_closed() -> None:
     values = row("security")
-    values[10] = "0" * 64
+    values[11] = "0" * 64
     with pytest.raises(W.WorkflowDispatchError, match="role lens"):
         W.parse_workflow_structure(plan(values))
 
@@ -393,7 +396,7 @@ def test_cycle_booleans_and_zero_attempt_completed_state_are_rejected() -> None:
         W.load_dispatch_state(value, workflow, workflow_run_sha256=RUN_SHA256)
 
     values = row("security")
-    values[11] = "0" * 64
+    values[12] = "0" * 64
     with pytest.raises(W.WorkflowDispatchError, match="profile"):
         W.parse_workflow_structure(plan(values))
 
@@ -473,6 +476,7 @@ def test_synthetic_deterministic_role_emits_pinned_model_free_contract() -> None
         "deterministic-validator",
         "n/a",
         "-",
+        "-",
         "deterministic-tool",
         "none",
         "tester-evidence",
@@ -494,16 +498,16 @@ def test_synthetic_deterministic_role_emits_pinned_model_free_contract() -> None
     assert step.execution_class is None
     assert step.expected_model is None
 
-    values[8] = "root-only"
+    values[9] = "root-only"
     with pytest.raises(W.WorkflowDispatchError, match="mutation `none`"):
         W.parse_workflow_structure(plan(values), registry=registry)
 
-    values[8] = "none"
-    values[16] = "0" * 64
+    values[9] = "none"
+    values[17] = "0" * 64
     with pytest.raises(W.WorkflowDispatchError, match="deterministic contract"):
         W.parse_workflow_structure(plan(values), registry=registry)
 
-    values[16] = W._deterministic_contract_sha256(role)
+    values[17] = W._deterministic_contract_sha256(role)
     values[4] = "agent-lens"
     with pytest.raises(W.WorkflowDispatchError, match="role_kind is stale"):
         W.parse_workflow_structure(plan(values), registry=registry)

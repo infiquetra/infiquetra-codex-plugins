@@ -60,7 +60,9 @@ def test_full_catalog_renders_exact_five_model_pinned_profiles() -> None:
     for profile in bundle.profiles:
         payload = tomllib.loads(profile.content.decode("utf-8"))
         model, effort, sandbox = expected[profile.execution_class]
-        assert payload["name"] == profile.execution_class
+        assert payload["name"] == R.RUNTIME_AGENT_NAMES[profile.execution_class]
+        assert profile.runtime_agent_name == payload["name"]
+        assert profile.filename == f"{payload['name']}.toml"
         assert payload["model"] == model
         assert payload["model_reasoning_effort"] == effort
         assert payload["sandbox_mode"] == sandbox
@@ -144,14 +146,14 @@ def test_source_writer_recovers_owned_residue_and_committed_cleanup(
     agents = tmp_path / "agents"
     transaction = tmp_path / ".agents-render-transaction"
     agents.mkdir()
-    (agents / ".review-high.toml.deadbeef").write_bytes(b"")
+    (agents / ".review_high.toml.deadbeef").write_bytes(b"")
     monkeypatch.setattr(R, "DEFAULT_AGENTS_DIR", agents)
     monkeypatch.setattr(R, "SOURCE_TRANSACTION_DIR", transaction)
     bundle = _bundle()
 
     R.write_generated(bundle, agents)
     R.check_generated(bundle, agents)
-    assert not (agents / ".review-high.toml.deadbeef").exists()
+    assert not (agents / ".review_high.toml.deadbeef").exists()
 
     cleanup = R._cleanup_source_transaction
     failed = False

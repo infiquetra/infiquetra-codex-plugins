@@ -85,6 +85,18 @@ EXPECTED_CLASSES = (
     "scan-low",
     "monitor-low",
 )
+RUNTIME_AGENT_NAMES = {
+    "review-max": "review_max",
+    "review-high": "review_high",
+    "test-medium": "test_medium",
+    "scan-low": "scan_low",
+    "monitor-low": "monitor_low",
+}
+EXECUTION_CLASS_BY_AGENT_NAME = {
+    agent_name: execution_class
+    for execution_class, agent_name in RUNTIME_AGENT_NAMES.items()
+}
+RUNTIME_AGENT_NAME = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
 CLASS_POLICY = {
     "reviewer": {
         "default": "review-high",
@@ -570,13 +582,14 @@ class RoleResolution:
 @dataclass(frozen=True, slots=True)
 class RenderedProfile:
     execution_class: str
+    runtime_agent_name: str
     content: bytes
     sha256: str
     resolution: Any
 
     @property
     def filename(self) -> str:
-        return f"{self.execution_class}.toml"
+        return f"{self.runtime_agent_name}.toml"
 
 
 @dataclass(frozen=True, slots=True)
@@ -1321,14 +1334,18 @@ def render_profile(resolution: Any, registry: RoleRegistry) -> RenderedProfile:
     """Render and parse-check one class-bound custom-agent TOML."""
 
     policy = PALETTE.execution_class_policy(resolution.execution_class)
+    runtime_agent_name = RUNTIME_AGENT_NAMES[resolution.execution_class]
+    if RUNTIME_AGENT_NAME.fullmatch(runtime_agent_name) is None:
+        raise RoleRegistryError("runtime agent name is not accepted by Codex")
     sandbox_mode = "workspace-write" if resolution.workspace_boundary == "declared-write" else "read-only"
     lines = [
         MANAGED_MARKER,
         '# generated_by = "plugins/verified-workflows/scripts/render_codex_agents.py"',
         f'# execution_class = "{resolution.execution_class}"',
+        f'# runtime_agent_name = "{runtime_agent_name}"',
         f'# registry_sha256 = "{registry.sha256}"',
         f'# catalog_sha256 = "{resolution.catalog_sha256}"',
-        f'name = {_toml_string(resolution.execution_class)}',
+        f'name = {_toml_string(runtime_agent_name)}',
         f'description = {_toml_string(policy.description)}',
         f'model = {_toml_string(resolution.effective_model)}',
         f'model_reasoning_effort = {_toml_string(resolution.effective_effort)}',
@@ -1354,7 +1371,7 @@ def render_profile(resolution: Any, registry: RoleRegistry) -> RenderedProfile:
     if set(payload) != expected_keys:
         raise RoleRegistryError("generated profile fields drifted")
     if (
-        payload["name"] != resolution.execution_class
+        payload["name"] != runtime_agent_name
         or payload["model"] != resolution.effective_model
         or payload["model_reasoning_effort"] != resolution.effective_effort
         or payload["sandbox_mode"] != sandbox_mode
@@ -1363,6 +1380,7 @@ def render_profile(resolution: Any, registry: RoleRegistry) -> RenderedProfile:
         raise RoleRegistryError("generated profile does not match its class resolution")
     return RenderedProfile(
         execution_class=resolution.execution_class,
+        runtime_agent_name=runtime_agent_name,
         content=content,
         sha256=_sha256(content),
         resolution=resolution,
@@ -1411,6 +1429,7 @@ def bundle_receipt(
         profiles.append(
             {
                 "execution_class": profile.execution_class,
+                "runtime_agent_name": profile.runtime_agent_name,
                 "preferred_model": resolution.preferred_model,
                 "effective_model": resolution.effective_model,
                 "fallback_models": [candidate.model for candidate in policy.fallbacks],
@@ -1444,6 +1463,7 @@ def bundle_receipt(
                     "default_class": role.default_class,
                     "allowed_classes": list(role.allowed_classes),
                     "selected_class": resolved.selected_class,
+                    "selected_runtime_agent_name": profile.runtime_agent_name,
                     "selection_basis": "registry-default",
                     "preferred_model": class_resolution.preferred_model,
                     "effective_model": class_resolution.effective_model,
@@ -1621,12 +1641,12 @@ def _cleanup_source_transaction(transaction: Path) -> None:
 def _restore_source_transaction(transaction: Path, agents_dir: Path) -> None:
     payload = _load_source_manifest(transaction)
     profiles = payload["profiles"]
-    expected_names = {f"{name}.toml" for name in EXPECTED_CLASSES}
+    expected_names = {f"{name}.toml" for name in RUNTIME_AGENT_NAMES.values()}
     if set(profiles) != expected_names:
         raise RoleRegistryError("renderer transaction profile roster is invalid")
     for name, raw_state in tuple(profiles.items()):
         if not isinstance(name, str) or not re.fullmatch(
-            r"[a-z0-9]+(?:-[a-z0-9]+)*\.toml", name
+            r"[a-z0-9]+(?:[-_][a-z0-9]+)*\.toml", name
         ):
             raise RoleRegistryError("renderer transaction contains an unsafe profile name")
         state = _closed_keys(

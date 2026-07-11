@@ -278,7 +278,7 @@ STAGED_MARKETPLACE_SHA256 = (
     "42803919b39b720599b9692bfdcd95bcfe8c31b06ebb2c976aacaa890fdfea8a"
 )
 LEGACY_WORKFLOW_HISTORICAL_INVENTORY_SHA256 = (
-    "1fdbc1b55815c3de62e56d74d30438417436328c59ade23ca4d11801b2d3ca41"
+    "c20a27c32a0f0a8b3b809b02308ec47fdfde8f6fa95f602ed38a53420ec1e11e"
 )
 LEGACY_WORKFLOW_INVENTORY = Path(
     "docs/validation/verified-workflows-legacy-token-inventory.json"
@@ -1091,8 +1091,69 @@ def validate_verified_workflows_agents(root: Path, errors: list[str]) -> None:
             raise RuntimeError("renderer did not preserve exactly 25 logical roles")
         if len(receipt.get("profiles", [])) != 5:
             raise RuntimeError("renderer did not produce exactly five profiles")
+        validate_verified_workflows_project_agents(root, receipt, errors)
     except (OSError, RuntimeError, json.JSONDecodeError, subprocess.TimeoutExpired) as exc:
         errors.append(f"verified-workflows: U3 role/profile validation failed: {exc}")
+
+
+def validate_verified_workflows_project_agents(
+    root: Path,
+    render_receipt: dict[str, Any],
+    errors: list[str],
+) -> None:
+    """Bind project-local Codex discovery files to the generated runtime profiles."""
+
+    project_agents = root / ".codex" / "agents"
+    try:
+        children = list(project_agents.iterdir())
+    except OSError as exc:
+        errors.append(f".codex/agents: unreadable project agent directory: {exc}")
+        return
+    rendered = render_receipt.get("profiles")
+    if not isinstance(rendered, list):
+        errors.append("verified-workflows: renderer profile receipt is invalid")
+        return
+    expected_names = {
+        f"{profile.get('runtime_agent_name')}.toml"
+        for profile in rendered
+        if isinstance(profile, dict)
+        and isinstance(profile.get("runtime_agent_name"), str)
+    }
+    actual_names = {child.name for child in children}
+    if actual_names != expected_names:
+        errors.append(
+            ".codex/agents: project runtime agent inventory drifted; "
+            f"missing={sorted(expected_names - actual_names)} "
+            f"unexpected={sorted(actual_names - expected_names)}"
+        )
+    for profile in rendered:
+        if not isinstance(profile, dict):
+            errors.append("verified-workflows: renderer profile entry is invalid")
+            continue
+        runtime_name = profile.get("runtime_agent_name")
+        execution_class = profile.get("execution_class")
+        if not isinstance(runtime_name, str) or not isinstance(execution_class, str):
+            errors.append("verified-workflows: renderer profile identity is invalid")
+            continue
+        project_path = project_agents / f"{runtime_name}.toml"
+        source_path = (
+            root / "plugins" / "verified-workflows" / "agents" / f"{runtime_name}.toml"
+        )
+        if project_path.is_symlink() or not project_path.is_file():
+            errors.append(
+                f".codex/agents/{runtime_name}.toml: project runtime agent must be a regular file"
+            )
+            continue
+        try:
+            if project_path.read_bytes() != source_path.read_bytes():
+                errors.append(
+                    f".codex/agents/{runtime_name}.toml: project runtime agent bytes "
+                    f"drifted from execution class `{execution_class}`"
+                )
+        except OSError as exc:
+            errors.append(
+                f".codex/agents/{runtime_name}.toml: runtime agent readback failed: {exc}"
+            )
 
 
 def validate_verified_workflows_runtime(root: Path, errors: list[str]) -> None:
@@ -1132,7 +1193,7 @@ def validate_verified_workflows_runtime(root: Path, errors: list[str]) -> None:
         return
     hooks_path = plugin_root / "hooks" / "hooks.json"
     hooks = load_json(hooks_path, errors)
-    expected_matcher = "^(review-max|review-high|test-medium|scan-low|monitor-low)$"
+    expected_matcher = "^(review_max|review_high|test_medium|scan_low|monitor_low)$"
     expected_command = 'python3 "$PLUGIN_ROOT/hooks/agent_receipt.py"'
     if not isinstance(hooks, dict) or set(hooks) != {"hooks"}:
         errors.append("verified-workflows hooks: top-level fields must be exactly `hooks`")
@@ -1175,6 +1236,13 @@ def validate_verified_workflows_runtime(root: Path, errors: list[str]) -> None:
         result = subprocess.run(  # noqa: S603 - fixed repository proof script
             [sys.executable, str(root / "scripts" / "prove_verified_workflows_runtime.py")],
             cwd=root,
+            env={
+                **os.environ,
+                "FLEET_COMMONS_ROOT": str(
+                    (root / "plugins" / "fleet-core").resolve()
+                ),
+                "PYTHONDONTWRITEBYTECODE": "1",
+            },
             capture_output=True,
             text=True,
             timeout=30,

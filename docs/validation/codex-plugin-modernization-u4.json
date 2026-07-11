@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
   "unit": "U4",
-  "recorded_at": "2026-07-11T05:00:24Z",
-  "repo_head": "fec2dce66fb8972d867adf2e57eb5fcb332c0d7f",
+  "recorded_at": "2026-07-11T06:06:44Z",
+  "repo_head": "bde4d4350758212c7cad0cfa4ef61e7492f9218b",
   "claim": "root-owned-workflow-inline-only",
   "capability_outcome": "inline-only",
   "module_lines": {
     "dispatch_receipt.py": 1219,
-    "named_child_attestation.py": 229,
+    "named_child_attestation.py": 230,
     "protected_store.py": 503,
-    "workflow_records.py": 3231,
+    "workflow_records.py": 3232,
     "workspace_evidence.py": 1513
   },
   "checks": [
@@ -31,7 +31,7 @@
         "tests/test_port_contract.py"
       ],
       "exit_code": 0,
-      "summary": "297 tests passed in bounded partitioned invocations"
+      "summary": "299 tests passed in the integrated U4/U4F partition"
     },
     {
       "name": "full-suite",
@@ -42,7 +42,7 @@
         "pytest"
       ],
       "exit_code": 0,
-      "summary": "1706 tests passed in testpath partitions"
+      "summary": "1708 tests passed in 125.67 seconds"
     },
     {
       "name": "current-repository-validator",
@@ -93,6 +93,16 @@
       ],
       "exit_code": 0,
       "summary": "no findings on U4 Python surfaces"
+    },
+    {
+      "name": "plugin-manifest-validation",
+      "argv": [
+        "python3",
+        "$CODEX_HOME/skills/.system/plugin-creator/scripts/validate_plugin.py",
+        "plugins/verified-workflows"
+      ],
+      "exit_code": 0,
+      "summary": "Verified Workflows plugin manifest and package layout valid"
     }
   ],
   "runtime_proof": {
@@ -107,8 +117,34 @@
     "live_invocation_performed": false,
     "runtime_receipt_ref": null
   },
+  "project_discovery": {
+    "path": ".codex/agents",
+    "runtime_agents": [
+      "monitor_low",
+      "review_high",
+      "review_max",
+      "scan_low",
+      "test_medium"
+    ],
+    "regular_files_only": true,
+    "source_bytes_match": true
+  },
+  "fresh_cli_probe": {
+    "parent_thread_id": "019f4fb8-8f7e-76c1-accf-6d238c41e5e1",
+    "child_thread_id": "019f4fb8-addd-7d82-abfc-b3d9fccbb245",
+    "requested_runtime_agent_name": "review_high",
+    "observed_agent_role": null,
+    "expected_model": "gpt-5.6-sol",
+    "observed_model": "gpt-5.6-sol",
+    "expected_effort": "high",
+    "observed_effort": "xhigh",
+    "expected_sandbox": "read-only",
+    "observed_sandbox": "read-only",
+    "outcome": "inline-only",
+    "reason": "spawn_agent exposed task_name but no agent_type; the task path did not select the custom profile"
+  },
   "limitations": [
-    "The active spawn schema cannot request or read back a named profile.",
+    "The active spawn schema cannot request or read back a named agent profile; a fresh CLI task confirmed task naming is not selection.",
     "Profile files and hook schemas are configured evidence, not proof that a child ran with the selected model or effort.",
     "The U5-U8 model-pinned Workflow Structure must remain paused unless a future runtime exposes named-profile selection and U4 attestation succeeds.",
     "Raw abandonment, pruning, and verified deletion remain U8 cutover responsibilities."

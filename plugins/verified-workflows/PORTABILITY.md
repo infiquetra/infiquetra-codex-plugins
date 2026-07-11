@@ -6,7 +6,7 @@
   `38742ece89880a6b140be237edad6d3f13c97b54`
 - Prior Codex adapter: `team-execution` `2.3.0`
 - Canonical Codex target: `verified-workflows` `1.0.0`
-- U9/U3/U4 status: unpublished source with 25 role lenses, five generated profiles, a root-owned DAG
+- U9/U3/U4/U4F status: unpublished source with 25 role lenses, five generated profiles, a root-owned DAG
   interpreter, closed hook receipts, and severity-first gates; no marketplace, cache, hook-trust,
   live-child, or real-profile mutation
 
@@ -33,6 +33,13 @@ installation, live-then-bundled catalog resolution, collision safety, explicit s
 partitioned readback, exact rollback, and preparing/prepared/applying/committed recovery without
 claiming runtime selection. Implicit `$CODEX_HOME` targets are real; isolated fixtures require an
 explicit target plus sentinel.
+
+U4F separates durable kebab-case execution classes from Codex-safe underscore runtime agent names
+and publishes byte-identical project discovery copies under `.codex/agents/`. Official Codex custom
+agent discovery can now load the five profile definitions, while workflow rows and receipts retain
+both identities. A fresh CLI task still exposed only `task_name`, `message`, and fork-context fields;
+its `review_high` child had `agent_role=null` and inherited the parent effort. That negative receipt
+keeps the capability `inline-only` instead of confusing task-path naming with profile selection.
 
 U4 adapts the peer-team source behavior into a root-owned Codex workflow. The deterministic
 dispatcher parses one closed Workflow Structure and emits intents only. The root persists the intent

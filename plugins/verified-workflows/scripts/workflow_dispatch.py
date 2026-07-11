@@ -29,6 +29,7 @@ HEADERS = (
     "role_kind",
     "independence",
     "execution_class",
+    "runtime_agent_name",
     "vehicle",
     "mutation",
     "required_evidence",
@@ -74,6 +75,7 @@ class WorkflowStep:
     role_kind: str
     independence: str | None
     execution_class: str | None
+    runtime_agent_name: str | None
     vehicle: str
     mutation: str
     required_evidence: tuple[str, ...]
@@ -221,7 +223,8 @@ def _list_cell(value: str, where: str, pattern: re.Pattern[str]) -> tuple[str, .
 
 
 def _load_profile(execution_class: str, agents_dir: Path) -> dict[str, str]:
-    path = agents_dir / f"{execution_class}.toml"
+    runtime_agent_name = renderer.RUNTIME_AGENT_NAMES[execution_class]
+    path = agents_dir / f"{runtime_agent_name}.toml"
     try:
         content = renderer._regular_single_link(
             path, f"profile {execution_class}", 1024 * 1024
@@ -245,15 +248,17 @@ def _load_profile(execution_class: str, agents_dir: Path) -> dict[str, str]:
         raise WorkflowDispatchError(f"profile {execution_class} fields are not closed")
     values = {
         "sha256": _sha256(content),
-        "name": payload.get("name"),
         "model": payload.get("model"),
         "effort": payload.get("model_reasoning_effort"),
         "sandbox": payload.get("sandbox_mode"),
+        "runtime_agent_name": payload.get("name"),
     }
     if not all(isinstance(value, str) and value for value in values.values()):
         raise WorkflowDispatchError(f"profile {execution_class} identity fields are invalid")
-    if values["name"] != execution_class:
-        raise WorkflowDispatchError(f"profile {execution_class} name does not match its class")
+    if values["runtime_agent_name"] != runtime_agent_name:
+        raise WorkflowDispatchError(
+            f"profile {execution_class} name does not match its runtime agent"
+        )
     if renderer.MANAGED_MARKER not in content.decode("utf-8").splitlines()[:8]:
         raise WorkflowDispatchError(f"profile {execution_class} lacks the managed marker")
     return values
@@ -303,6 +308,7 @@ def _parse_root_step(row: Mapping[str, str]) -> WorkflowStep:
     )
     for field in (
         "execution_class",
+        "runtime_agent_name",
         "role_lens_sha256",
         "profile_sha256",
         "expected_model",
@@ -321,6 +327,7 @@ def _parse_root_step(row: Mapping[str, str]) -> WorkflowStep:
         role_kind="root",
         independence=None,
         execution_class=None,
+        runtime_agent_name=None,
         vehicle="root",
         mutation=row["mutation"],
         required_evidence=(),
@@ -379,6 +386,7 @@ def parse_workflow_structure(
                     role_kind=base.role_kind,
                     independence=base.independence,
                     execution_class=base.execution_class,
+                    runtime_agent_name=base.runtime_agent_name,
                     vehicle=base.vehicle,
                     mutation=base.mutation,
                     required_evidence=evidence,
@@ -425,6 +433,7 @@ def parse_workflow_structure(
                 raise WorkflowDispatchError("deterministic validators use independence `n/a`")
             for field in (
                 "execution_class",
+                "runtime_agent_name",
                 "role_lens_sha256",
                 "profile_sha256",
                 "expected_model",
@@ -447,6 +456,7 @@ def parse_workflow_structure(
                     role_kind=role.kind,
                     independence=None,
                     execution_class=None,
+                    runtime_agent_name=None,
                     vehicle=vehicle,
                     mutation=mutation,
                     required_evidence=evidence,
@@ -495,6 +505,7 @@ def parse_workflow_structure(
                 "agent-lens steps are evidence-only; workspace mutation remains root-owned"
             )
         profile = _load_profile(str(resolution.selected_class), agents_dir)
+        runtime_agent_name = renderer.RUNTIME_AGENT_NAMES[str(resolution.selected_class)]
         validator_required, validator_disabled = _validator_policy(
             row, role.output_schema
         )
@@ -502,6 +513,11 @@ def parse_workflow_structure(
         _require_cell(profile["sha256"], row["profile_sha256"], f"step {step_id}.profile")
         _require_cell(profile["model"], row["expected_model"], f"step {step_id}.model")
         _require_cell(profile["effort"], row["expected_effort"], f"step {step_id}.effort")
+        _require_cell(
+            runtime_agent_name,
+            row["runtime_agent_name"],
+            f"step {step_id}.runtime agent",
+        )
         parsed.append(
             WorkflowStep(
                 step_id=step_id,
@@ -511,6 +527,7 @@ def parse_workflow_structure(
                 role_kind=role.kind,
                 independence=resolution.effective_independence,
                 execution_class=resolution.selected_class,
+                runtime_agent_name=runtime_agent_name,
                 vehicle=vehicle,
                 mutation=mutation,
                 required_evidence=evidence,

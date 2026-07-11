@@ -35,6 +35,9 @@ def test_dry_run_is_inline_only_and_sanitized() -> None:
     assert proof["live_invocation_performed"] is False
     assert proof["runtime_receipt_ref"] is None
     assert len(proof["profiles"]) == 5
+    assert proof["project_discovery"]["location"] == ".codex/agents"
+    assert proof["project_discovery"]["source_bytes_match"] is True
+    assert len(proof["project_discovery"]["files"]) == 5
     P.validate_sanitized_proof(proof)
 
 
@@ -128,7 +131,7 @@ def test_isolated_install_readback_proves_only_installed_bytes(
             (ROOT / "plugins" / "verified-workflows" / "hooks" / name).read_bytes()
         )
     for fact in P._profile_facts():
-        name = f"{fact['execution_class']}.toml"
+        name = f"{fact['runtime_agent_name']}.toml"
         installed_agents.joinpath(name).write_bytes(
             (ROOT / "plugins" / "verified-workflows" / "agents" / name).read_bytes()
         )

@@ -2944,7 +2944,7 @@ def validate_normalized_receipt(
             parent_session_id=parent_session_id,
             turn_id=turn_id,
             child_id=child_id,
-            agent_type=str(step.execution_class),
+            agent_type=str(step.runtime_agent_name),
             hook_trust_ref=hook_trust["record_ref"],
             codex_home_sha256=hook_trust["codex_home_sha256"],
         )
@@ -2986,7 +2986,7 @@ def validate_normalized_receipt(
             child["start_sha256"] != _sha256(retained_start_bytes)
             or child["stop_sha256"] != _sha256(retained_stop_bytes)
             or child["raw_pair_sha256"] != retained_pair_sha256
-            or retained_start["agent_type"] != step.execution_class
+            or retained_start["agent_type"] != step.runtime_agent_name
             or retained_start["active_model"] != step.expected_model
             or retained_start["profile_sha256"] != step.profile_sha256
             or retained_start["codex_home_sha256"]
@@ -3068,6 +3068,7 @@ def validate_normalized_receipt(
         )
         expected_execution = {
             "execution_class": step.execution_class,
+            "runtime_agent_name": step.runtime_agent_name,
             "active_model": step.expected_model,
             "effort_evidence": "installed-profile-digest",
             "expected_effort": step.expected_effort,

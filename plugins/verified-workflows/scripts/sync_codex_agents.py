@@ -25,7 +25,7 @@ import render_codex_agents as renderer  # noqa: E402
 
 MAX_PROFILE_BYTES = 1024 * 1024
 MAX_PROFILE_SET_BYTES = 16 * 1024 * 1024
-SAFE_NAME = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*\.toml$")
+SAFE_NAME = re.compile(r"^[a-z0-9]+(?:[-_][a-z0-9]+)*\.toml$")
 HEX64 = re.compile(r"^[0-9a-f]{64}$")
 TRANSACTION_SCHEMA_VERSION = 1
 CHANGED_ACTIONS = frozenset(
@@ -516,7 +516,9 @@ def plan_sync(
     """Plan five-profile reconciliation without mutating the target."""
 
     profiles = {profile.filename: profile for profile in bundle.profiles}
-    if set(profiles) != {f"{name}.toml" for name in renderer.EXPECTED_CLASSES}:
+    if set(profiles) != {
+        f"{name}.toml" for name in renderer.RUNTIME_AGENT_NAMES.values()
+    }:
         raise SyncError("render bundle does not contain the exact five execution profiles")
     actions: list[SyncAction] = []
     for name, profile in profiles.items():
@@ -607,9 +609,9 @@ def plan_sync(
 
 def _profile_actions(plan: SyncPlan) -> dict[str, str]:
     return {
-        Path(action.name).stem: action.action
+        renderer.EXECUTION_CLASS_BY_AGENT_NAME[Path(action.name).stem]: action.action
         for action in plan.actions
-        if Path(action.name).stem in renderer.EXPECTED_CLASSES
+        if Path(action.name).stem in renderer.EXECUTION_CLASS_BY_AGENT_NAME
     }
 
 

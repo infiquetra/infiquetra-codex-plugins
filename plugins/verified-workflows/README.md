@@ -28,6 +28,19 @@ snapshot. The exact installed profile digest proves requested configuration only
 Workflow result can claim an observed model only after host/runtime attestation, and current Codex
 hooks do not report effort.
 
+Execution-class IDs use kebab case because they are durable workflow vocabulary. Codex runtime
+agent names use underscores because the native agent selector accepts only lowercase letters,
+digits, and underscores:
+
+```text
+execution class    runtime agent
+review-high    --> review_high
+review-max     --> review_max
+test-medium    --> test_medium
+scan-low       --> scan_low
+monitor-low    --> monitor_low
+```
+
 ## U3 Role And Profile Contract
 
 All 25 preserved jobs are versioned agent lenses. None is currently a deterministic validator:
@@ -46,16 +59,27 @@ each scanner, tester, monitor, and reviewer still requires judgment or result in
                        exactly five managed Codex profiles
 ```
 
-The committed profiles are expected configuration, not evidence that Codex selected a profile or
-used its model, effort, sandbox, or independent child. U4 now provides the receipt boundary for a
-runtime that can select named profiles; the current generic spawn surface cannot, so the committed
-runtime characterization remains `inline-only`.
+The plugin profiles are the maintained source. Exact regular-file copies under `.codex/agents/`
+provide project-scoped Codex discovery during development; repository validation rejects missing,
+extra, symlinked, or byte-drifted copies. U8 later installs the same five profiles globally. Profile
+presence is expected configuration, not evidence that Codex selected one or used its model, effort,
+sandbox, or independent child. U4 provides the receipt boundary for a runtime that can select named
+profiles. The active collaboration tool still exposes task naming but no agent-type selector, so a
+fresh-task probe records `agent_role=null` and the committed capability remains `inline-only`.
 
 Validate the deterministic source bundle:
 
 ```bash
 python3 plugins/verified-workflows/scripts/render_codex_agents.py --check --pretty
 python3 plugins/verified-workflows/scripts/sync_codex_agents.py --dry-run --pretty
+```
+
+After an intentional `render_codex_agents.py --write`, refresh the development discovery copies
+before validation:
+
+```bash
+cp plugins/verified-workflows/agents/*.toml .codex/agents/
+python3 scripts/validate_codex_plugins.py
 ```
 
 The synchronizer defaults to dry-run and reads `codex debug models` once, with the bounded bundled
@@ -97,8 +121,8 @@ approved DAG -> typed intent -> root dispatch or truthful inline work
 required evidence + severity + validator status + root verification -> pass|block|escalate
 ```
 
-The exact Workflow Structure has 17 columns, including `role_kind`, the deterministic contract
-digest, and explicit `validator_required` and `validator_disabled` policy. Production requires all
+The exact Workflow Structure has 18 columns, including `role_kind`, `runtime_agent_name`, the
+deterministic contract digest, and explicit `validator_required` and `validator_disabled` policy. Production requires all
 base reviewers plus at least one required validator until a protected skip-review selector exists.
 Each emitted `run`, `follow-up`, or `revalidate` intent binds its complete row, protected subject,
 attempt, predecessor, and finding IDs. The approved execution class and installed profile digest
@@ -111,7 +135,8 @@ inherit that baseline and exact Git/content/mode bindings. Agent and determinist
 use repository-wide before/after snapshots covering ignored files, empty directories, modes,
 symlinks, and hashed Git control state. These audit intervals require a quiescent workspace.
 
-The plugin hook accepts only `SubagentStart` and `SubagentStop` for the five managed profile slugs.
+The plugin hook accepts only `SubagentStart` and `SubagentStop` for the five underscore-form runtime
+agent names.
 It discards prompts, transcript paths, results, tool arguments, environment, and credentials; raw
 receipt paths use hashed runtime identifiers and private local permissions. A normalized subagent
 receipt requires content-addressed pre-launch intent, root-observed installed-hook readback from a
@@ -178,9 +203,12 @@ mutates profile state.
 ## Delivery Sequence
 
 - U9: package identity and compatibility vocabulary
-- U3: logical roles and the five managed execution profiles (complete in source; not installed)
+- U3: logical roles and the five managed execution profiles (complete in source; project-discoverable,
+  not globally installed)
 - U4: dispatch, hook receipts, gates, and sanitized runtime characterization (complete in source;
   current outcome `inline-only`)
+- U4F: separate durable execution classes from Codex runtime agent names, bind `.codex/agents/`
+  discovery copies, and preserve the truthful `inline-only` result when the active selector is absent
 - U8: atomic marketplace/install cutover and rollback proof
 
 See [PORTABILITY.md](PORTABILITY.md) for the source mapping and

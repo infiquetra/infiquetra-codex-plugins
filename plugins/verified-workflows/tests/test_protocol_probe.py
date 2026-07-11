@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 import json
 import sys
 from pathlib import Path
@@ -7,10 +8,14 @@ from pathlib import Path
 import pytest
 
 SCRIPTS = Path(__file__).parents[1] / "scripts"
-if str(SCRIPTS) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS))
-
-import protocol_probe as P  # noqa: E402
+SPEC = importlib.util.spec_from_file_location(
+    "verified_workflows_protocol_probe",
+    SCRIPTS / "protocol_probe.py",
+)
+assert SPEC and SPEC.loader
+P = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = P
+SPEC.loader.exec_module(P)
 
 SNAPSHOT = Path(__file__).parents[3] / "docs" / "validation" / "codex-runtime-capability-snapshot.json"
 

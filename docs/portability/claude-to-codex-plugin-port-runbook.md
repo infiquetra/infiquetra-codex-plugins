@@ -65,7 +65,7 @@ Saga lifecycle/state
                         |
                         +-- identity: configured | host-attested
                                 |
-                                +-- execution class -> profile model/effort policy
+                                +-- execution class -> runtime agent -> profile model/effort policy
 
 Hooks observe or persist event evidence; they are not workflow modes or leaf executors.
 ```
@@ -128,9 +128,14 @@ they do not inherit the receiving plugin's authority.
 
 Keep a logical job separate from compute configuration. A role/lens contains criteria, exclusions,
 output shape, and independence needs. An execution class selects a reusable profile and its allowed
-model, effort, sandbox, and tool boundary. A deterministic validator has no model class.
+model, effort, sandbox, and tool boundary. Keep the durable execution-class ID separate from the
+Codex runtime agent name: workflow vocabulary may use kebab case, while current native agent names
+must use lowercase letters, digits, and underscores. A deterministic validator has no model class.
 
-Planning selects the logical role and risk-adjusted class. The root Codex thread owns the DAG,
+Planning selects the logical role and risk-adjusted class. Render standalone custom-agent TOML files
+under `.codex/agents/` for project discovery or `$CODEX_HOME/agents/` for personal installation;
+validate their bytes against the plugin source. A config declaration or task name alone is not
+selection proof. The root Codex thread owns the DAG,
 spawning, status/clarification messages, waiting, integration, and adjudication. Every execution
 attempt uses a fresh context. A class/profile digest proves requested configuration only. A generic
 or root-accountability subagent result is diagnostic and cannot satisfy a gate without host-issued

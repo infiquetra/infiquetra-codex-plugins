@@ -181,11 +181,11 @@ def test_target_manifest_skills_and_u4_runtime_surfaces_are_complete() -> None:
         "workspace_evidence.py",
     } <= {path.name for path in (TARGET_ROOT / "scripts").glob("*.py")}
     assert {path.name for path in (TARGET_ROOT / "agents").glob("*.toml")} == {
-        "review-max.toml",
-        "review-high.toml",
-        "test-medium.toml",
-        "scan-low.toml",
-        "monitor-low.toml",
+        "review_max.toml",
+        "review_high.toml",
+        "test_medium.toml",
+        "scan_low.toml",
+        "monitor_low.toml",
     }
     assert (TARGET_ROOT / "config" / "role-registry.yaml").is_file()
     assert len(list((TARGET_ROOT / "roles").glob("*.md"))) == 25

@@ -37,8 +37,8 @@ bounded evidence only. Peer messaging is optional and never required.
 
 1. Parse the approved plan with `workflow_dispatch.py --plan <plan> --agents-dir <agents-dir>`.
    Production uses the explicit installed agents directory; committed profiles are fixture input.
-   Reject stale role kind, lens, profile, model, effort, deterministic contract, validator policy,
-   or workflow bindings. Enforce all base reviewers plus at least one required validator until a
+   Reject stale role kind, lens, runtime agent name, profile, model, effort, deterministic contract,
+   validator policy, or workflow bindings. Enforce all base reviewers plus at least one required validator until a
    protected skip-review selector exists. A Claude-style ambient tier override cannot alter an
    emitted intent or follow-up. A class change requires closing that chain and approving a new
    workflow run.
@@ -58,9 +58,10 @@ bounded evidence only. Peer messaging is optional and never required.
 5. For each `agent-lens`, load the exact role file and provide only the bounded step, protected
    subject, declared evidence, role criteria, and output schema. Use fresh context for independent
    review when available. Agent-lens rows are evidence-only; workspace mutation remains root-owned.
-6. Treat the execution class as requested configuration until the runtime both selects and reports
-   the exact named profile. Task names and prompt text are not selection. The current generic Codex
-   spawn surface exposes neither per-child profile/model/effort selection nor selection readback,
+6. Map the durable kebab-case execution class to its exact underscore-form `runtime_agent_name`, then
+   treat both as requested configuration until the runtime selects and reports that agent type.
+   Task names and prompt text are not selection. The current generic Codex spawn surface exposes
+   neither per-child agent-type/profile/model/effort selection nor selection readback,
    so preferred independence runs inline as `verified-workflow-inline`; required independence
    blocks.
 7. Give every `run`, `follow-up`, or `revalidate` attempt a fresh execution context. Use follow-up

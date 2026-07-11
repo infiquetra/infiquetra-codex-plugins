@@ -16,7 +16,7 @@ if str(HOOKS) not in sys.path:
 import agent_receipt as A  # noqa: E402
 
 
-def setup_home(tmp_path: Path, profile: str = "review-high") -> tuple[Path, Path]:
+def setup_home(tmp_path: Path, profile: str = "review_high") -> tuple[Path, Path]:
     home = tmp_path / "codex-home"
     agents = home / "agents"
     agents.mkdir(parents=True, mode=0o700)
@@ -38,7 +38,7 @@ def payload(event: str = "SubagentStart", **overrides: object) -> dict[str, obje
         "permission_mode": "default",
         "turn_id": "turn-456",
         "agent_id": "child-789",
-        "agent_type": "review-high",
+        "agent_type": "review_high",
     }
     if event == "SubagentStop":
         value.update(
@@ -115,7 +115,7 @@ def test_duplicate_delivery_is_idempotent_even_with_new_capture_time(tmp_path: P
     "overrides,match",
     [
         ({"agent_type": "worker"}, "managed execution profile"),
-        ({"agent_type": "../review-high"}, "safe identifier"),
+        ({"agent_type": "../review_high"}, "safe identifier"),
         ({"model": "gpt-5.6-terra"}, "does not match"),
         ({"permission_mode": "read-only"}, "permission_mode"),
         ({"permission_mode": "acceptEdits"}, "permission_mode"),
@@ -134,7 +134,7 @@ def test_untrusted_hook_identity_fails(
 
 def test_profile_symlink_is_rejected(tmp_path: Path) -> None:
     home, _data = setup_home(tmp_path)
-    profile = home / "agents" / "review-high.toml"
+    profile = home / "agents" / "review_high.toml"
     source = tmp_path / "source.toml"
     profile.rename(source)
     profile.symlink_to(source)
@@ -176,7 +176,7 @@ def test_unsafe_plugin_data_mode_is_rejected(tmp_path: Path) -> None:
 
 def test_profile_hardlink_and_extra_fields_are_rejected(tmp_path: Path) -> None:
     home, _data = setup_home(tmp_path)
-    profile = home / "agents" / "review-high.toml"
+    profile = home / "agents" / "review_high.toml"
     hardlink = tmp_path / "profile-copy.toml"
     hardlink.hardlink_to(profile)
     with pytest.raises(A.AgentReceiptError, match="single-link"):

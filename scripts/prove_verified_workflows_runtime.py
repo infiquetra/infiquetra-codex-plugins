@@ -16,7 +16,14 @@ from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PLUGIN_ROOT = REPO_ROOT / "plugins" / "verified-workflows"
+PLUGIN_SCRIPTS = PLUGIN_ROOT / "scripts"
+if str(PLUGIN_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(PLUGIN_SCRIPTS))
+
+import render_codex_agents as renderer  # noqa: E402
+
 DEFAULT_SNAPSHOT = REPO_ROOT / "docs" / "validation" / "codex-runtime-capability-snapshot.json"
+PROJECT_AGENTS = REPO_ROOT / ".codex" / "agents"
 MAX_BYTES = 4 * 1024 * 1024
 SECRET_KEY = re.compile(r"(?i)(token|secret|password|credential|authorization|api[_-]?key|auth_json)")
 SECRET_VALUE = re.compile(
@@ -253,7 +260,7 @@ def _validate_installed_readback(
         ) != _read_regular(PLUGIN_ROOT / relative, "source hook readback"):
             raise RuntimeProofError("installed hook bytes do not match the source package")
     for fact in _profile_facts():
-        filename = f"{fact['execution_class']}.toml"
+        filename = f"{fact['runtime_agent_name']}.toml"
         if _read_regular(
             installed_agents / filename, "installed profile readback"
         ) != _read_regular(
@@ -319,12 +326,56 @@ def _load_live_envelope(path: Path, codex_home: Path) -> tuple[dict[str, Any], s
 
 def _profile_facts() -> list[dict[str, str]]:
     facts: list[dict[str, str]] = []
-    for path in sorted((PLUGIN_ROOT / "agents").glob("*.toml")):
+    for execution_class, runtime_agent_name in renderer.RUNTIME_AGENT_NAMES.items():
+        path = PLUGIN_ROOT / "agents" / f"{runtime_agent_name}.toml"
         content = _read_regular(path, "managed profile", 1024 * 1024)
-        facts.append({"execution_class": path.stem, "sha256": _sha256(content)})
+        facts.append(
+            {
+                "execution_class": execution_class,
+                "runtime_agent_name": runtime_agent_name,
+                "sha256": _sha256(content),
+            }
+        )
     if len(facts) != 5:
         raise RuntimeProofError("managed profile source must contain exactly five profiles")
     return facts
+
+
+def _project_agent_facts() -> dict[str, Any]:
+    """Prove project discovery files are regular and byte-identical to plugin source."""
+
+    expected = {
+        f"{runtime_name}.toml"
+        for runtime_name in renderer.RUNTIME_AGENT_NAMES.values()
+    }
+    try:
+        children = list(PROJECT_AGENTS.iterdir())
+    except OSError as exc:
+        raise RuntimeProofError("project agent discovery directory is unreadable") from exc
+    actual = {child.name for child in children}
+    if actual != expected:
+        raise RuntimeProofError("project agent discovery inventory drifted")
+    files: list[dict[str, str]] = []
+    for filename in sorted(expected):
+        project_content = _read_regular(
+            PROJECT_AGENTS / filename,
+            "project agent discovery profile",
+            1024 * 1024,
+        )
+        source_content = _read_regular(
+            PLUGIN_ROOT / "agents" / filename,
+            "source agent profile",
+            1024 * 1024,
+        )
+        if project_content != source_content:
+            raise RuntimeProofError("project agent discovery bytes drifted")
+        files.append({"filename": filename, "sha256": _sha256(project_content)})
+    return {
+        "location": ".codex/agents",
+        "regular_files_only": True,
+        "source_bytes_match": True,
+        "files": files,
+    }
 
 
 def build_proof(
@@ -373,7 +424,9 @@ def build_proof(
         )
     elif spawn_surface != "named":
         outcome = "inline-only"
-        reason = "active spawn surface cannot request or read back a named profile"
+        reason = (
+            "active collaboration spawn schema lacks agent_type and selection readback"
+        )
     else:
         outcome = "inline-only"
         reason = "named-profile capability requires a fresh normalized hook receipt"
@@ -415,6 +468,7 @@ def build_proof(
         },
         "role_registry_sha256": _sha256(registry_content),
         "profiles": _profile_facts(),
+        "project_discovery": _project_agent_facts(),
         "live_invocation_performed": False,
         "root_mediated_task_reported": False,
         "isolated_login_metadata_present": login_metadata_present,
@@ -422,7 +476,7 @@ def build_proof(
         "runtime_receipt_ref": None,
         "runtime_receipt_sha256": None,
         "limitations": [
-            "profile presence is expected configuration, not runtime selection",
+            "project profile discovery is expected configuration, not runtime selection",
             "hook permission_mode is not effective sandbox_mode",
             "reasoning effort is expected from the exact profile digest, not observed by hooks",
             "host-attested subagent capability is unavailable on the active spawn surface",

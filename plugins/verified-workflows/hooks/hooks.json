@@ -2,7 +2,7 @@
   "hooks": {
     "SubagentStart": [
       {
-        "matcher": "^(review-max|review-high|test-medium|scan-low|monitor-low)$",
+        "matcher": "^(review_max|review_high|test_medium|scan_low|monitor_low)$",
         "hooks": [
           {
             "type": "command",
@@ -15,7 +15,7 @@
     ],
     "SubagentStop": [
       {
-        "matcher": "^(review-max|review-high|test-medium|scan-low|monitor-low)$",
+        "matcher": "^(review_max|review_high|test_medium|scan_low|monitor_low)$",
         "hooks": [
           {
             "type": "command",
