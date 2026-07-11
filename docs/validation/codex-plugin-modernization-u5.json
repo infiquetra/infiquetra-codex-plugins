@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "unit": "U5",
-  "recorded_at": "2026-07-11T16:31:13Z",
-  "repo_head": "a5685bee222470bbdb0d04b65c30ff43b0f2b6da",
-  "target_tree_sha256": "f270745443dc720ee044f9f72de94449ca3146f2ab5751992760b7c724d351c6",
+  "recorded_at": "2026-07-11T17:34:38Z",
+  "repo_head": "28b9fe7e9579b39c320f7de8894ad95ba2b2458f",
+  "target_tree_sha256": "0aa2a6193920a4840fbbad03816c30fc4cc325d07be69c6e180bf4157301fa69",
   "claim": "saga-canonical-workflow-dispatch-and-continuation-boundary",
   "checks": [
     {
@@ -22,7 +22,7 @@
       "name": "port-contract-tests",
       "argv": ["PYTHONPATH=.", "uv", "run", "pytest", "-q", "tests/test_port_contract.py"],
       "exit_code": 0,
-      "summary": "24 passed"
+      "summary": "25 passed"
     }
   ],
   "coverage": [
