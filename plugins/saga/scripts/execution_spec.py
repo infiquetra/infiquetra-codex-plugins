@@ -788,30 +788,60 @@ def _emit_panel_reconciliation(
     refute_count_var = f"{name_prefix}refute_count"
     threshold_var = f"{name_prefix}threshold"
     refuted_var = f"{name_prefix}refuted"
+    expected_sha_var = f"{name_prefix}expected_examined_sha"
+    identities_var = f"{name_prefix}verifier_identities"
+    fallback_depth_var = f"{name_prefix}expected_fallback_depth"
+
+    lines.append(
+        f'{indent}const {expected_sha_var} = {result_var} != null && '
+        f'typeof {result_var} === "object" && '
+        f'typeof {result_var}.examined_sha === "string" && '
+        f'/^[0-9a-f]{{40}}$/.test({result_var}.examined_sha) '
+        f"? {result_var}.examined_sha : null"
+    )
+    lines.append(f"{indent}if ({expected_sha_var} == null) {{")
+    lines.append(
+        f'{indent}  throw new Error("verifier-subject-unbound: Unit {unit.unit_id} '
+        'did not return a valid examined_sha")'
+    )
+    lines.append(f"{indent}}}")
+    identities = [f"{unit.unit_id}-verifier-{seat}" for seat in range(1, n + 1)]
+    lines.append(f"{indent}const {identities_var} = {json.dumps(identities)}")
+    lines.append(f"{indent}const {fallback_depth_var} = 0")
 
     lines.append(f"{indent}const {verdicts_var} = await parallel([")
-    for _ in range(n):
+    for index in range(n):
         lines.append(f"{indent}  () => agent(")
         lines.append(
-            f"{indent}    __verifierPrompt({_js_string(verifier_prompt)}, {result_var}),"
+            f"{indent}    __verifierPrompt({_js_string(verifier_prompt)}, "
+            f"{identities_var}[{index}], {fallback_depth_var}, {expected_sha_var}),"
         )
-        lines.append(f"{indent}    {{ " + ", ".join(verifier_opts) + f", input: {result_var} }},")
+        verifier_input = (
+            "input: { "
+            f"unit_result: {result_var}, verifier_identity: {identities_var}[{index}], "
+            f"fallback_depth: {fallback_depth_var}, expected_examined_sha: {expected_sha_var} "
+            "}"
+        )
+        lines.append(
+            f"{indent}    {{ " + ", ".join([*verifier_opts, verifier_input]) + " },"
+        )
         lines.append(f"{indent}  ),")
     lines.append(f"{indent}])")
     valid_verdict_var = f"{name_prefix}valid_verifier_verdict"
     lines.append(
-        f'{indent}const {valid_verdict_var} = (v) => v != null && typeof v === "object" && '
+        f'{indent}const {valid_verdict_var} = (v, i) => v != null && typeof v === "object" && '
         f"Array.isArray(v.refuted) && Array.isArray(v.upheld) && "
-        f'typeof v.verifier_identity === "string" && v.verifier_identity.length > 0 && '
-        f'Number.isInteger(v.fallback_depth) && v.fallback_depth >= 0 && '
-        f'typeof v.examined_sha === "string" && /^[0-9a-f]{{40}}$/.test(v.examined_sha)'
+        f"v.verifier_identity === {identities_var}[i] && "
+        f"v.fallback_depth === {fallback_depth_var} && "
+        f"v.examined_sha === {expected_sha_var}"
     )
     lines.append(
-        f"{indent}const {reported_var} = {verdicts_var}.filter((v) => {valid_verdict_var}(v))"
+        f"{indent}const {reported_var} = {verdicts_var}.filter((v, i) => "
+        f"{valid_verdict_var}(v, i))"
     )
     lines.append(
         f"{indent}const {missing_idx_var} = {verdicts_var}.map((v, i) => "
-        f"(!{valid_verdict_var}(v) ? i + 1 : null)).filter((i) => i != null)"
+        f"(!{valid_verdict_var}(v, i) ? i + 1 : null)).filter((i) => i != null)"
     )
     lines.append(
         f"{indent}const {refute_count_var} = {reported_var}.filter((v) => "
@@ -876,12 +906,18 @@ def _agent_schema_js(unit: Unit) -> str | None:
     emitted ``__gate`` never has to parse a structured dict out of prose — the failure
     mode that aborted the first 0.64 port run twice. ``__gate`` stays as a backstop.
     """
-    if not unit.returns:
+    if not unit.returns and unit.verify is None:
         return None
+    required = list(unit.returns)
+    if unit.verify is not None and "examined_sha" not in required:
+        required.append("examined_sha")
     schema: dict[str, Any] = {
         "type": "object",
-        "properties": {key: {} for key in unit.returns},
-        "required": list(unit.returns),
+        "properties": {
+            key: ({"type": "string", "pattern": "^[0-9a-f]{40}$"} if key == "examined_sha" else {})
+            for key in required
+        },
+        "required": required,
         "additionalProperties": True,
     }
     return json.dumps(schema)
@@ -1004,6 +1040,11 @@ def _agent_prompt(spec: ExecutionSpec, unit: Unit) -> str:
         )
     if unit.returns:
         parts.append("Return a structured result with keys: " + ", ".join(unit.returns) + ".")
+    if unit.verify is not None:
+        parts.append(
+            "Return examined_sha as the 40-character lowercase SHA for the tracked subject "
+            "this result describes; verifier seats will fail closed unless they inspect that same SHA."
+        )
     return "\n\n".join(p for p in parts if p)
 
 
@@ -1032,6 +1073,22 @@ def emit_workflow_script(spec: ExecutionSpec) -> str:
     lines.append("export const meta = {")
     lines.append(f"  name: {_js_string(spec.name)},")
     lines.append(f"  description: {_js_string(spec.description)},")
+    external_intents = [
+        record
+        for unit in spec.units
+        if (
+            record := _workflow_emitter.external_engine_record(
+                unit_id=unit.unit_id,
+                engine=unit.engine,
+                capability=unit.capability,
+                intent=unit.engine_intent,
+            )
+        )
+        is not None
+    ]
+    lines.append(
+        "  externalEngineIntents: " + json.dumps(external_intents, sort_keys=True) + ","
+    )
     lines.append("}")
     lines.append("")
     if spec.repo:
@@ -1165,6 +1222,13 @@ def emit_inline_baseline(spec: ExecutionSpec) -> str:
             lines.append(f"- depends_on (run after): {', '.join(unit.depends_on)}")
         if unit.pilot:
             lines.append(f"- pilot (run first, same tier): {unit.pilot}")
+        marker = _workflow_emitter.external_engine_marker(
+            engine=unit.engine,
+            capability=unit.capability,
+            intent=unit.engine_intent,
+        )
+        if marker is not None:
+            lines.append(f"- external_engine_intent: {marker} dispatch_owner=codex-root")
         if unit.escalation:
             lines.append(f"- escalation: {unit.escalation}")
         if unit.fanout:
@@ -1203,7 +1267,30 @@ def _emit_team_structure(spec: ExecutionSpec) -> str:
     assert loaded is not None and loaded.loader is not None
     module = importlib.util.module_from_spec(loaded)
     loaded.loader.exec_module(module)
-    return module.emit_team_structure(spec)  # type: ignore[no-any-return]
+    rendered = module.emit_team_structure(spec)  # type: ignore[no-any-return]
+    records = [
+        record
+        for unit in spec.units
+        if (
+            record := _workflow_emitter.external_engine_record(
+                unit_id=unit.unit_id,
+                engine=unit.engine,
+                capability=unit.capability,
+                intent=unit.engine_intent,
+            )
+        )
+        is not None
+    ]
+    if not records:
+        return rendered
+    lines = [rendered.rstrip(), "", "## External Engine Intents", ""]
+    lines.append(
+        "These structured handoffs require Codex-root advisory dispatch; native workers remain "
+        "the completion authority."
+    )
+    for record in records:
+        lines.append(f"- `{json.dumps(record, sort_keys=True)}`")
+    return "\n".join(lines) + "\n"
 
 
 def recompile_for_tier(spec: ExecutionSpec, orchestration_mode: str) -> str:

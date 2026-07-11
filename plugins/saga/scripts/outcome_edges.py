@@ -13,6 +13,7 @@ Pure function of its input; no I/O, no GitHub calls — fully fixture-testable.
 
 from __future__ import annotations
 
+import hashlib
 import re
 from collections import Counter
 from typing import Any
@@ -34,7 +35,8 @@ def _repo_slug(repo: str) -> str:
 def _sid(number: int, repo: str = "", *, qualified: bool = False) -> str:
     """Return the slug subplot_id for a normalized sub-issue."""
     if qualified:
-        return f"sub-{_repo_slug(repo)}-{number}"
+        repo_digest = hashlib.sha256(repo.encode("utf-8")).hexdigest()[:10]
+        return f"sub-{_repo_slug(repo)}-{repo_digest}-{number}"
     return f"sub-{number}"
 
 

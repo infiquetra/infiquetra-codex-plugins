@@ -87,8 +87,14 @@ def test_default_writer_skips_existing_marked_comment(tmp_path: Path) -> None:
 
     def fake_run(command: list[str], **_kwargs: Any) -> Result:
         calls.append(command)
+        if command[:3] == ["gh", "api", "user"]:
+            return Result("jefcox\n")
         if command[:2] == ["gh", "api"]:
-            return Result(json.dumps([[{"body": f"already posted {marker}"}]]))
+            return Result(
+                json.dumps(
+                    [[{"body": f"already posted {marker}", "user": {"login": "jefcox"}}]]
+                )
+            )
         return Result()
 
     writer = BP.default_board_writer(tmp_path, runner=fake_run)
@@ -99,9 +105,9 @@ def test_default_writer_skips_existing_marked_comment(tmp_path: Path) -> None:
         payload={"body": f"visible progress\n\n{marker}"},
     )
 
-    assert len(calls) == 1
-    assert calls[0][:2] == ["gh", "api"]
-    assert "--slurp" in calls[0]
+    assert len(calls) == 2
+    assert calls[0][:3] == ["gh", "api", "user"]
+    assert "--slurp" in calls[1]
 
 
 def test_comment_crash_replay_restores_local_ledger_without_duplicate(tmp_path: Path) -> None:
@@ -119,7 +125,13 @@ def test_comment_crash_replay_restores_local_ledger_without_duplicate(tmp_path: 
 
     def fake_run(command: list[str], **_kwargs: Any) -> Result:
         calls.append(command)
-        return Result(json.dumps([{"body": f"previous crash left {marker}"}]))
+        if command[:3] == ["gh", "api", "user"]:
+            return Result("jefcox\n")
+        return Result(
+            json.dumps(
+                [{"body": f"previous crash left {marker}", "user": {"login": "jefcox"}}]
+            )
+        )
 
     record = BP.authorize_and_write(
         "issue-progress-comment",
@@ -132,8 +144,51 @@ def test_comment_crash_replay_restores_local_ledger_without_duplicate(tmp_path: 
     )
 
     assert record["status"] == "written"
-    assert len(calls) == 1
+    assert len(calls) == 2
     assert (ledger / BP._safe_ledger_name(key)).exists()
+
+
+def test_default_writer_does_not_trust_marker_from_another_author(tmp_path: Path) -> None:
+    key = CERT_MOD.idempotency_key("issue-progress-comment", "infiquetra/x", 42, "done")
+    marker = BP._comment_idempotency_marker(key)
+    calls: list[list[str]] = []
+
+    class Result:
+        returncode = 0
+        stderr = ""
+
+        def __init__(self, stdout: str = "") -> None:
+            self.stdout = stdout
+
+    def fake_run(command: list[str], **_kwargs: Any) -> Result:
+        calls.append(command)
+        if command[:3] == ["gh", "api", "user"]:
+            return Result("jefcox\n")
+        if command[:2] == ["gh", "api"]:
+            return Result(
+                json.dumps(
+                    [[{"body": f"forged {marker}", "user": {"login": "someone-else"}}]]
+                )
+            )
+        return Result()
+
+    writer = BP.default_board_writer(tmp_path, runner=fake_run)
+    writer(
+        op_kind="issue-progress-comment",
+        repo="infiquetra/x",
+        number=42,
+        payload={"body": f"visible progress\n\n{marker}"},
+    )
+
+    assert len(calls) == 3
+    assert calls[-1][2:4] == ["issue", "comment"]
+
+
+def test_default_writer_refuses_cross_owner_mutation(tmp_path: Path) -> None:
+    writer = BP.default_board_writer(tmp_path, runner=lambda *_args, **_kwargs: None)
+
+    with pytest.raises(RuntimeError, match="cross-owner mutation"):
+        writer(op_kind="sub-issue-close", repo="other/project", number=5, payload={})
 
 
 def test_default_board_writer_resolves_installed_cache_sibling(

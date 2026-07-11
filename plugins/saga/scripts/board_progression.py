@@ -232,8 +232,29 @@ def default_board_writer(
 
     run = runner if runner is not None else subprocess.run
     resolved_sdlc: Path | None = None
+    authenticated_login: str | None = None
+
+    def _current_login() -> str:
+        nonlocal authenticated_login
+        if authenticated_login is not None:
+            return authenticated_login
+        result = run(
+            ["gh", "api", "user", "--jq", ".login"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        login = str(getattr(result, "stdout", "") or "").strip()
+        if getattr(result, "returncode", 0) != 0 or not login:
+            raise RuntimeError(
+                "board write issue-progress-comment author preflight failed: "
+                f"{getattr(result, 'stderr', '')!r}"
+            )
+        authenticated_login = login
+        return login
 
     def _comment_exists(*, owner_repo: str, marker: str, issue_number: int) -> bool:
+        expected_author = _current_login()
         result = run(
             [
                 "gh",
@@ -275,12 +296,22 @@ def default_board_writer(
             ]
         )
         return any(
-            isinstance(comment, dict) and marker in str(comment.get("body", ""))
+            isinstance(comment, dict)
+            and marker in str(comment.get("body", ""))
+            and isinstance(comment.get("user"), dict)
+            and str(comment["user"].get("login", "")) == expected_author
             for comment in comments
         )
 
     def _writer(*, op_kind: str, repo: str, number: int, payload: dict[str, Any]) -> None:
         nonlocal resolved_sdlc
+        owner_repo = repo if "/" in repo else f"infiquetra/{repo}"
+        owner, bare_repo = owner_repo.split("/", 1)
+        if owner != "infiquetra":
+            raise RuntimeError(
+                "board writer refuses cross-owner mutation through mission-control: "
+                f"{owner_repo!r}"
+            )
         if resolved_sdlc is None:
             resolved_sdlc = _resolver.resolve_plugin_file(
                 "mission-control", "scripts/sdlc_manager.py", from_file=__file__
@@ -290,8 +321,7 @@ def default_board_writer(
         # The mission-control verbs prepend ORG to build ``repos/{ORG}/{repo}/...``, so they need the
         # BARE repo name. The caller passes an owner-qualified repo ("infiquetra/saga") for the
         # idempotency-key namespace; strip the owner here so the REST path is not doubled.
-        owner_repo = repo if "/" in repo else f"infiquetra/{repo}"
-        repo = repo.rsplit("/", 1)[-1]
+        repo = bare_repo
         if op_kind == "set-field-status":
             cmd = base + [
                 "flow",

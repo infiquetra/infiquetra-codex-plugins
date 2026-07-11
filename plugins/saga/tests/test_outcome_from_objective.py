@@ -151,11 +151,10 @@ def test_edges_resolve_cross_repo_duplicate_numbers() -> None:
 
     depends_on, dropped = EDGES.edges_from_relationships(subissues)
 
-    assert depends_on == {
-        "sub-infiquetra-campps-tenant-setup-95": [
-            "sub-infiquetra-campps-identity-access-95"
-        ]
-    }
+    ids = EDGES.subplot_ids_for_subissues(subissues)
+    tenant_id = ids[("infiquetra/campps-tenant-setup", 95)]
+    identity_id = ids[("infiquetra/campps-identity-access", 95)]
+    assert depends_on == {tenant_id: [identity_id]}
     assert dropped == []
 
 
@@ -205,16 +204,27 @@ def test_cross_repo_duplicate_numbers_get_unique_ids_and_true_stamps() -> None:
     )
 
     by_sid = {node["subplot_id"]: node for node in nodes}
-    assert set(by_sid) == {
-        "sub-infiquetra-campps-tenant-setup-95",
-        "sub-infiquetra-campps-identity-access-95",
-    }
-    assert by_sid["sub-infiquetra-campps-tenant-setup-95"]["github"]["repo"] == tenant
-    assert by_sid["sub-infiquetra-campps-identity-access-95"]["github"]["repo"] == identity
-    assert by_sid["sub-infiquetra-campps-tenant-setup-95"]["depends_on"] == [
-        "sub-infiquetra-campps-identity-access-95"
-    ]
+    ids = EDGES.subplot_ids_for_subissues(
+        [{"repo": tenant, "number": 95}, {"repo": identity, "number": 95}]
+    )
+    tenant_id = ids[(tenant, 95)]
+    identity_id = ids[(identity, 95)]
+    assert set(by_sid) == {tenant_id, identity_id}
+    assert by_sid[tenant_id]["github"]["repo"] == tenant
+    assert by_sid[identity_id]["github"]["repo"] == identity
+    assert by_sid[tenant_id]["depends_on"] == [identity_id]
     assert dropped == []
+
+
+def test_repo_qualified_ids_do_not_collide_when_slug_text_matches() -> None:
+    subissues = [
+        {"repo": "a-b/c", "number": 7},
+        {"repo": "a/b-c", "number": 7},
+    ]
+
+    ids = EDGES.subplot_ids_for_subissues(subissues)
+
+    assert len(set(ids.values())) == 2
 
 
 def test_nodes_from_parent_issue_ingests_state_completed_and_not_planned() -> None:
