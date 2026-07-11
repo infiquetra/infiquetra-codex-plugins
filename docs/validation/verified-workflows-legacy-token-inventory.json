@@ -805,14 +805,6 @@
     },
     {
       "classification": "temporary-saga-instructions",
-      "path": "plugins/saga/references/engine-dispatch.md",
-      "sha256": "d8e6b9db40f3b54b494b6f9c6b01fb78766b521d1c0dcb79e96e45279b2644e5",
-      "tokens": [
-        "team-execution"
-      ]
-    },
-    {
-      "classification": "temporary-saga-instructions",
       "path": "plugins/saga/references/execution-spec.md",
       "sha256": "d0f1a4d125671b1d41303ac2b41901fd1a3901b003bdc08bbad98b31aae3ad6c",
       "tokens": [
@@ -841,7 +833,7 @@
     {
       "classification": "temporary-saga-writer",
       "path": "plugins/saga/scripts/execution_spec.py",
-      "sha256": "db9f15ac9e6042b0023e732ec8af058cb38c91f398d33e9878a8284fcc016913",
+      "sha256": "109d4d89214cb469eb27c71be6791e605ab13713585d64a4a20acfe3a0c74a92",
       "tokens": [
         "## Team Structure",
         "team-execution"
@@ -866,7 +858,7 @@
     {
       "classification": "temporary-saga-writer",
       "path": "plugins/saga/scripts/outcome.py",
-      "sha256": "55ac99df2209eae131af456d6e9f2036018c8115707879a9e94cdb368aed2d1d",
+      "sha256": "857523d6c326d534851204f883e7ed01bb871bd8536c561df343321eeb2290a6",
       "tokens": [
         "team-execution"
       ]
@@ -970,7 +962,7 @@
     {
       "classification": "migration-fixture",
       "path": "plugins/saga/tests/test_verify_panel_robustness.py",
-      "sha256": "ea5021fe85ac2b0f99c87c90c86a01a2dcb654d5de2657160369ec159dded6c3",
+      "sha256": "300a4dca55cfeec7701c11c460faeaeb55c873ebf6be982d17081aad4dc63450",
       "tokens": [
         "team-execution"
       ]
@@ -1261,6 +1253,14 @@
       "sha256": "ffd57665fe3cd428583005fec7fafeffdbfa1d414cc4681984c7fa2770dd212e",
       "tokens": [
         "Team Execution",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-fixture",
+      "path": "tests/test_workflow_emitter.py",
+      "sha256": "ba540d4c3345c3fe8a093d48a3935f40dd29852adb3eecc7882281d2531076c2",
+      "tokens": [
         "team-execution"
       ]
     }
