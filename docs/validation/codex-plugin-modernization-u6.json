@@ -1,22 +1,22 @@
 {
   "schema_version": 1,
   "unit": "U6",
-  "recorded_at": "2026-07-11T13:26:39Z",
-  "repo_head": "35f6f4b6aa4aa9f06dff2811541975e8fe5675b2",
-  "target_tree_sha256": "d95e043613cae6f5d3576323986fa2af88e760a3a3742c0ad2c0c38d50d8b441",
+  "recorded_at": "2026-07-11T14:13:00Z",
+  "repo_head": "8d1e5c8379024dc43ad9408fcefb2b2ecf972a72",
+  "target_tree_sha256": "6d2c7dddec327989f16263be8a5b3cf7dfd9a7a879ddc560662bc79b8ae9f6b1",
   "claim": "codex-safe-host-neutral-correctness-and-external-engine-substrate",
   "checks": [
     {
       "name": "u6-focused-suite",
       "argv": ["PYTHONPATH=.", "uv", "run", "pytest", "-q", "plugins/fleet-core/tests/test_bridge_receipt.py", "plugins/fleet-core/tests/test_tier_resolver.py", "plugins/saga/tests/test_board_progression.py", "plugins/saga/tests/test_outcome_from_objective.py", "plugins/saga/tests/test_execution_spec_tiers.py", "plugins/saga/tests/test_verify_panel_robustness.py", "plugins/saga/tests/test_engine_routing.py", "plugins/saga/tests/test_outcome_board_sync.py", "plugins/verified-workflows/tests/test_workflow_dispatch.py", "tests/test_workflow_emitter.py", "tests/test_outcome_completion.py", "tests/test_outcome_command.py", "tests/test_outcome_integration.py", "tests/test_outcome_merge_queue.py", "tests/test_engine_bridge_http.py", "tests/test_engine_registry_conformance.py", "tests/test_engine_registry_cli.py", "tests/test_engine_registry_lint.py", "tests/test_bridge_receipt_drift.py", "tests/test_u6_branch_coverage.py", "tests/test_port_contract.py"],
       "exit_code": 0,
-      "summary": "488 passed before the 15 circular port-contract assertions; 503 passed after evidence refresh"
+      "summary": "488 passed before circular port-contract assertions"
     },
     {
       "name": "u5-overlap-regression",
       "argv": ["PYTHONPATH=.", "uv", "run", "pytest", "-q", "plugins/saga/tests", "tests/test_outcome_dispatcher.py", "tests/test_outcome_backends.py", "tests/test_outcome_dispatch_migration.py", "tests/test_outcome_command.py", "tests/test_outcome_integration.py", "tests/test_outcome_liveness.py", "tests/test_outcome_completion.py", "tests/test_outcome_replay.py", "tests/test_capability_degrade.py", "tests/test_verified_workflow_readiness.py", "tests/test_saga_session_context.py"],
       "exit_code": 0,
-      "summary": "547 passed"
+      "summary": "543 passed after retiring obsolete emitter coverage"
     },
     {
       "name": "u6-branch-coverage",

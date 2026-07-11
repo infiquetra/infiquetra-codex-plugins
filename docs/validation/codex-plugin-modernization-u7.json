@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "unit": "U7",
-  "recorded_at": "2026-07-11T13:26:39Z",
-  "repo_head": "35f6f4b6aa4aa9f06dff2811541975e8fe5675b2",
-  "target_tree_sha256": "6c81e67604c865b80c1c79b8257f29b5440b3d2cdaae0c6ae023b08ccd808436",
+  "recorded_at": "2026-07-11T14:13:00Z",
+  "repo_head": "8d1e5c8379024dc43ad9408fcefb2b2ecf972a72",
+  "target_tree_sha256": "a54f9f1b34fd995e4d23f5cc6a61cd5687321a0259807152b4d515cde8a2c09b",
   "claim": "codex-safe-external-engine-trust-economics-attestation-and-advisory-reconciliation",
   "checks": [
     {
@@ -22,7 +22,7 @@
       "name": "u5-overlap-regression",
       "argv": ["python3", "-m", "pytest", "-q", "plugins/saga/tests", "<U5 outcome and Verified Workflows readiness tests>"],
       "exit_code": 0,
-      "summary": "547 passed"
+      "summary": "543 passed after retiring obsolete emitter coverage"
     },
     {
       "name": "changed-python-ruff",

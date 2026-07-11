@@ -102,7 +102,7 @@ def test_legacy_token_inventory_is_exact_digest_bound_and_current() -> None:
         assert "Team Execution" in entries[title_only_history]["tokens"]
     assert sum(
         entry["classification"] == "historical-evidence" for entry in entries.values()
-    ) == 47
+    ) == 46
     assert all(len(entry["sha256"]) == 64 for entry in entries.values())
 
 

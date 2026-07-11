@@ -948,7 +948,7 @@
       "unit": "U5",
       "kind": "check",
       "artifact_path": "docs/validation/codex-plugin-modernization-u5.json",
-      "artifact_sha256": "d00232b8f0ee63370c2c7a9a8d44e9a85bffe13e973f897dbbd53b66d22efc89",
+      "artifact_sha256": "40d2a6077c7e4f03612d462962745c092dc96fd3a7d0efb510307ca72bfd64fb",
       "argv": [
         "PYTHONPATH=.",
         "uv",
@@ -970,8 +970,8 @@
       ],
       "cwd": ".",
       "exit_code": 0,
-      "recorded_at": "2026-07-11T13:26:39Z",
-      "repo_head": "35f6f4b6aa4aa9f06dff2811541975e8fe5675b2",
+      "recorded_at": "2026-07-11T14:13:00Z",
+      "repo_head": "8d1e5c8379024dc43ad9408fcefb2b2ecf972a72",
       "target_paths": [
         "plugins/saga/hooks/hooks.json",
         "plugins/saga/hooks/session_context.py",
@@ -1026,14 +1026,14 @@
         "tests/test_saga_session_context.py",
         "tests/test_verified_workflow_readiness.py"
       ],
-      "target_tree_sha256": "b3bcdd2f940fa22ece28d8126a9e8105a15da13fc46864b0add7cee6c0a2edef"
+      "target_tree_sha256": "1a25a8bfef8e7aefc3ceb9052ccbcbb16e04fba6ffbbeccfd602967c124c1f88"
     },
     {
       "evidence_id": "u6-validation",
       "unit": "U6",
       "kind": "check",
       "artifact_path": "docs/validation/codex-plugin-modernization-u6.json",
-      "artifact_sha256": "fb114e10417ed0d70fd158d162f00cd961b002a22377f7dd513e3e493d5ea459",
+      "artifact_sha256": "f390c5148350e2b673e3f6687d67f67cf76678dea652fcf595cfc18aa84f9868",
       "argv": [
         "PYTHONPATH=.",
         "uv",
@@ -1064,8 +1064,8 @@
       ],
       "cwd": ".",
       "exit_code": 0,
-      "recorded_at": "2026-07-11T13:26:39Z",
-      "repo_head": "35f6f4b6aa4aa9f06dff2811541975e8fe5675b2",
+      "recorded_at": "2026-07-11T14:13:00Z",
+      "repo_head": "8d1e5c8379024dc43ad9408fcefb2b2ecf972a72",
       "target_paths": [
         "plugins/fleet-core/scripts/fleet_commons/bridge_receipt.py",
         "plugins/fleet-core/scripts/fleet_commons/tier_resolver.py",
@@ -1107,14 +1107,14 @@
         "tests/test_u6_branch_coverage.py",
         "tests/test_workflow_emitter.py"
       ],
-      "target_tree_sha256": "d95e043613cae6f5d3576323986fa2af88e760a3a3742c0ad2c0c38d50d8b441"
+      "target_tree_sha256": "6d2c7dddec327989f16263be8a5b3cf7dfd9a7a879ddc560662bc79b8ae9f6b1"
     },
     {
       "evidence_id": "u7-validation",
       "unit": "U7",
       "kind": "check",
       "artifact_path": "docs/validation/codex-plugin-modernization-u7.json",
-      "artifact_sha256": "59808562d0aa4f157ec983fcb6883974ca73100c08b88ebfe9d50425df94366f",
+      "artifact_sha256": "b6fb1d2d1cd2d20c505939defa67ba350f12fc55195448a431705d4f447d3ef8",
       "argv": [
         "python3",
         "-m",
@@ -1140,8 +1140,8 @@
       ],
       "cwd": ".",
       "exit_code": 0,
-      "recorded_at": "2026-07-11T13:26:39Z",
-      "repo_head": "35f6f4b6aa4aa9f06dff2811541975e8fe5675b2",
+      "recorded_at": "2026-07-11T14:13:00Z",
+      "repo_head": "8d1e5c8379024dc43ad9408fcefb2b2ecf972a72",
       "target_paths": [
         "plugins/fleet-core/scripts/fleet_commons/tier_palette.py",
         "plugins/saga/references/effort-policy.yaml",
@@ -1200,7 +1200,7 @@
         "tests/test_spend_authority.py",
         "tests/test_verified_workflow_advisory.py"
       ],
-      "target_tree_sha256": "6c81e67604c865b80c1c79b8257f29b5440b3d2cdaae0c6ae023b08ccd808436"
+      "target_tree_sha256": "a54f9f1b34fd995e4d23f5cc6a61cd5687321a0259807152b4d515cde8a2c09b"
     }
   ],
   "port_id": "2026-07-10-saga-07517",

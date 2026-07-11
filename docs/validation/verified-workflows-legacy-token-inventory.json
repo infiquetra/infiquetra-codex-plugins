@@ -329,7 +329,7 @@
     {
       "classification": "lineage-documentation",
       "path": "docs/portability/ports/2026-07-10-saga-07517.json",
-      "sha256": "f57ae2273d7a7338280feed56b59a42036fa2fb58a9fe2a2aa5061cdf702a1f3",
+      "sha256": "572b8e2f09f5dbbb33d35d6b7653081efaaab5bb2016a032ed82261ddd6f476c",
       "tokens": [
         "Team Execution",
         "team-execution"
@@ -451,9 +451,9 @@
       ]
     },
     {
-      "classification": "historical-evidence",
+      "classification": "migration-documentation",
       "path": "docs/validation/codex-plugin-modernization-u7.json",
-      "sha256": "59808562d0aa4f157ec983fcb6883974ca73100c08b88ebfe9d50425df94366f",
+      "sha256": "b6fb1d2d1cd2d20c505939defa67ba350f12fc55195448a431705d4f447d3ef8",
       "tokens": [
         "team-execution"
       ]
@@ -1037,7 +1037,7 @@
     {
       "classification": "migration-fixture",
       "path": "tests/test_verified_workflows_migration.py",
-      "sha256": "7db972481d52bc157fe300755d2272de53a470dec2c240a074ed75a99a3432cc",
+      "sha256": "5fb9e34925a09df6d28aa4e597de8ac7bf8413a2fac522a2d30ef9eed17a12b4",
       "tokens": [
         "Team Execution",
         "team-execution"
@@ -1045,7 +1045,7 @@
     }
   ],
   "generated_by": "scripts/build_legacy_workflow_inventory.py",
-  "historical_inventory_sha256": "a741e6f3ac8b4243b1b2cdf34dd3166fb91a7be5edb048285f4d896c1d16dc58",
+  "historical_inventory_sha256": "102ce32245e76a041affb0f72e0eb8a2c70647d4fa0f9aad0f9670ee6147b4b8",
   "history_sentinels": {
     "docs/investigations/2026-06-30-team-execution-saga-orchestration-debug-report.md": {
       "sha256": "ecc08eceda3a67dc81d15b1930753fe236ca7c1ae9b3ad9dd506cdecfb0ac4fa",

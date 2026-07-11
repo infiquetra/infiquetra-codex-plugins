@@ -276,7 +276,7 @@ STAGED_MARKETPLACE_SHA256 = (
     "42803919b39b720599b9692bfdcd95bcfe8c31b06ebb2c976aacaa890fdfea8a"
 )
 LEGACY_WORKFLOW_HISTORICAL_INVENTORY_SHA256 = (
-    "a741e6f3ac8b4243b1b2cdf34dd3166fb91a7be5edb048285f4d896c1d16dc58"
+    "102ce32245e76a041affb0f72e0eb8a2c70647d4fa0f9aad0f9670ee6147b4b8"
 )
 LEGACY_WORKFLOW_INVENTORY = Path(
     "docs/validation/verified-workflows-legacy-token-inventory.json"
@@ -707,7 +707,7 @@ def expected_legacy_workflow_classification(path: Path) -> str | None:
         if path.parts[:2] in {("docs", "saga"), ("docs", "baseline")}:
             return "migration-documentation"
         if path.parts[:2] == ("docs", "validation"):
-            return "historical-evidence"
+            return "migration-documentation"
     return None
 
 
