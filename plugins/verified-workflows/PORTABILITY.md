@@ -21,9 +21,10 @@ paths, and is idempotent on a second call. It is not an installer or profile syn
 ## Codex-Native Shape
 
 The Claude team runtime becomes a root-owned Codex workflow DAG. The root thread owns state,
-barriers, mutation, integration, and final adjudication. The current generic spawn surface cannot
-select or attest the five named execution profiles, so gate-authoritative role work runs inline.
-Candidate native-child chains are diagnostic only; peer communication is not required.
+barriers, mutation, integration, and final adjudication. Sol/Terra MultiAgent V2 can select the five
+named execution profiles after the effective Codex config exposes spawn metadata in a non-reserved
+`agents` namespace. Profile-selected work uses `agent_type` plus `fork_turns=none` or a positive
+bounded value; task naming alone is never selection. Peer communication is not required.
 
 Logical roles are independent of compute profiles. U3 preserves all 25 role behaviors as agent
 lenses, records closed class transitions and role-level boundary caps, and renders exactly five
@@ -37,9 +38,12 @@ explicit target plus sentinel.
 U4F separates durable kebab-case execution classes from Codex-safe underscore runtime agent names
 and publishes byte-identical project discovery copies under `.codex/agents/`. Official Codex custom
 agent discovery can now load the five profile definitions, while workflow rows and receipts retain
-both identities. A fresh CLI task still exposed only `task_name`, `message`, and fork-context fields;
-its `review_high` child had `agent_role=null` and inherited the parent effort. That negative receipt
-keeps the capability `inline-only` instead of confusing task-path naming with profile selection.
+both identities. The first fresh CLI task used the default restricted V2 schema and proved that
+`task_name=review_high` produced `agent_role=null` and inherited parent effort. Source inspection then
+identified the required V2 bootstrap; a later fresh task with the saved configuration selected
+`scan_low` and recorded `agent_role=scan_low`, Luna/low, and read-only. The original negative receipt
+remains useful evidence that task naming is not profile selection, but no longer classifies the
+configured runtime as inline-only.
 
 U4 adapts the peer-team source behavior into a root-owned Codex workflow. The deterministic
 dispatcher parses one closed Workflow Structure and emits intents only. The root persists the intent
@@ -69,12 +73,13 @@ evidence-ID-to-protected-record map; digest-shaped text is never accepted as evi
 requires an unchanged dry-run plan, explicit abandonment for an incomplete start, and entry/byte
 ceilings inside each leaf.
 
-The tracked U4 proof is a sanitized non-mutating characterization. On the current Codex spawn
-surface it records `inline-only`, because the request cannot select or read back a named profile.
-It does not read or copy default authentication, install or trust the unpublished plugin, or claim a
-live receipt. A separate isolated envelope proves installed-byte equality only; it does not claim
-hook trust, a fresh task, or a child. U8 alone publishes, installs into the real profile, and performs
-real-profile cutover proof.
+The tracked U4 proof is a sanitized non-mutating characterization. It records `diagnostic` because
+the configured snapshot exposes named selection but the committed artifact intentionally carries no
+live child transcript or receipt. Root-owned fresh-task evidence separately proves the selector and
+child model/effort/sandbox boundary needed to start U5. It does not install or trust the unpublished
+plugin or grant its candidate receipt chain gate authority. A separate isolated envelope proves
+installed-byte equality only; U8 alone publishes, installs into the real profile, trusts hooks, and
+performs the complete cutover receipt and rollback proof.
 
 The three frozen upstream selection/gate registries are exact test fixtures, not active legacy
 instructions. Their hashes bind the closed Codex-native selection policy, typed evidence schemas,

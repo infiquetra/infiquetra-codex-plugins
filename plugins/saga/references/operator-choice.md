@@ -12,9 +12,9 @@ file, requested model, or caller boolean is not proof that a workflow or child e
 | Lifecycle and state | `saga` | Saga owns durable lifecycle, outcome state, routing, and handoff receipts. |
 | Continuation | `turn`; explicit `goal` | The current task is the default. Goal is opt-in long-running continuation and requires a stable tool result before binding. |
 | Workflow mode | `inline`; `manual`; legacy-current `team-execution`; planned-unproved `verified-workflow` | A root-owned method for steps, roles, gates, and receipts. Claude Workflow is unsupported. |
-| Step vehicle | `inline`; `deterministic-tool`; `generic-subagent`; planned-unproved `named-profile-subagent` | How one workflow step actually runs. A subagent is a vehicle, not a Saga backend. |
-| Role identity | `generic`; planned-unproved `logical-role-attested` | Whether evidence proves a selected logical role/lens rather than only a child task. |
-| Execution-class control | prompt steering is advisory; custom-agent TOML is configurable; per-spawn override is unavailable | Model, effort, sandbox, and tool policy belong to a reusable profile, but effectiveness still needs readback. |
+| Step vehicle | `inline`; `deterministic-tool`; `generic-subagent`; runtime-selected `named-profile-subagent` | How one workflow step actually runs. A subagent is a vehicle, not a Saga backend. |
+| Role identity | `generic`; `named-profile-selected`; planned-unproved `logical-role-attested` | Whether evidence proves only a child, a selected profile, or the complete logical role/lens binding. |
+| Execution-class control | prompt steering is advisory; V2 `agent_type` selects custom-agent TOML; direct model/effort overrides are not workflow policy | Model, effort, sandbox, instructions, and tool policy belong to a reusable profile; effectiveness still needs child readback. |
 | Hooks | observe is configurable; persistence is planned; guarding is deferred | Hooks extend events. They are not workflow modes, continuation modes, or leaf executors. |
 
 The canonical live snapshot is
@@ -23,18 +23,23 @@ evidence only.
 
 ## Model, Effort, And Profile Truth
 
-Current custom-agent files may configure `model`, `model_reasoning_effort`, and `sandbox_mode`. The
-direct spawn interface available to this repository accepts only `task_name`, `message`, and
-`fork_turns`; it does not expose per-child profile, model, effort, or sandbox selection and returns
-no such readback.
+Current custom-agent files configure `model`, `model_reasoning_effort`, `sandbox_mode`, and bounded
+instructions. Sol/Terra MultiAgent V2 exposes named selection only after effective configuration
+sets `hide_spawn_agent_metadata=false` and moves the expanded schema to the non-reserved
+`tool_namespace="agents"`. A fresh task can then dispatch `agent_type=<runtime_agent_name>` with
+`fork_turns="none"` or a positive bounded turn count. Omitted or `all` inherits the parent agent
+type, model, and effort and therefore cannot select a different profile.
 
 Therefore:
 
-- a prompt may request a class but cannot attest the selected model or effort;
+- a prompt or `task_name` may request a class but cannot attest selection;
 - an installed TOML proves configuration bytes, not that a child used the profile;
 - generic subagent output remains generic evidence;
-- named workflow evidence requires a later receipt joining logical role, selected profile, active
-  hook-reported model, installed-profile digest, child identity, and result vehicle;
+- profile selection requires the parent launch plus matching child role/model/effort/sandbox
+  readback;
+- gate-authoritative named workflow evidence additionally requires a receipt joining logical role,
+  selected profile, active hook-reported model, installed-profile digest, child identity, and result
+  vehicle;
 - hook model readback does not prove reasoning effort. The exact profile digest binds expected effort.
 
 Ultra is a root orchestration control because it adds automatic delegation. It is not the next leaf
@@ -50,8 +55,9 @@ as an executor solely from caller-supplied booleans.
 
 Use `inline` when the root can safely own the work. Use `manual` when automation is unsafe or
 unavailable. Existing `team-execution` values remain readable during migration, but new
-`verified-workflow` claims stay planned-unproved until the package, runtime receipt, and cutover gates
-land.
+`verified-workflow` claims stay planned-unproved until U5-U8 land the package, complete receipt, and
+cutover gates. The U4 fresh-task proof establishes named profile selection only; it does not grant a
+logical role result gate authority.
 
 ## Transitional Saga State
 

@@ -1,5 +1,40 @@
 # Decisions
 
+## 2026-07-11: Bootstrap MultiAgent V2 For Named Verified Workflow Profiles
+
+Verified Workflows keeps its existing architecture: 25 logical role/lens definitions map through
+risk-selected execution classes to five named Codex profiles, and the root thread owns the workflow
+DAG, integration, gates, and final adjudication. The earlier conclusion that Sol/Terra could not
+select those profiles was a capability-detection error, not a reason to redesign the profile set.
+
+The effective Codex configuration for profile-selected MultiAgent V2 work must include:
+
+```toml
+[features.multi_agent_v2]
+hide_spawn_agent_metadata = false
+tool_namespace = "agents"
+```
+
+The root dispatches a fresh named child with `agent_type = <runtime_agent_name>` and
+`fork_turns = "none"` by default. `task_name` remains workflow identity only. A positive bounded
+turn count is allowed when explicitly justified; omitted or `all` is forbidden for profile-selected
+work because full-history forks inherit the parent agent type, model, and effort.
+
+The runtime bootstrap is a prerequisite, not an assumption. Installation/cutover must verify the
+effective config in an isolated task and then a fresh real task, prove a differential parent/child
+model and effort, and stop rather than substitute a generic child if `agent_type` is absent or the
+child receipt disagrees. User-profile mutation remains a root-owned U8 cutover action with rollback;
+an unpublished plugin or ordinary workflow run must not silently edit global Codex configuration.
+
+This decision supersedes only the inline-only/unavailable-selector conclusion in the earlier
+2026-07-11 decision and related U4 characterization. It does not weaken named-child receipt,
+installed-profile digest, role/lens binding, observed child-context, mutation-audit, structured
+result, root-verification, independence, or severity-gate requirements. Inline remains an explicit
+degraded path where the role permits it, not the normal model-pinned execution path.
+
+Learning: `docs/engineering-journal/LEARNINGS.md`, "Sol And Terra V2 Can Select Named Profiles
+After Namespace Bootstrap."
+
 ## 2026-07-11: Complete U4 Inline, Preserve Named-Child Proof, Then Pause
 
 The modernization run completes U4 in the root thread as five sequential checkpoints: workflow contract/compiler, behavior-preserving receipt-module extraction, executable receipts/root verification, severity-first gates, and named-child selection plus attestation. Extraction reduces the 6,000-plus-line receipt facade into cohesive modules without deleting schemas or behavior.

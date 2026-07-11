@@ -89,6 +89,10 @@ def probe_protocol(
     elif surface == "named" and hook_pair == "present":
         outcome = "attestation-candidate"
         limitations.append("unit fixture cannot prove a real child or live hook pair")
+    elif surface == "named":
+        outcome = "diagnostic"
+        limitations.append("named selector is configured but no matching live receipt was supplied")
+        limitations.append("profile selection requires a non-full-history fork")
     elif independence == "required":
         outcome = "blocked"
         blockers.append("required independence lacks named-profile runtime proof")
@@ -98,7 +102,7 @@ def probe_protocol(
             limitations.append("spawn surface cannot request or read back an agent type")
         elif surface in {"backpressure", "capacity-zero"}:
             limitations.append("child capacity is unavailable")
-        else:
+        elif surface == "absent":
             limitations.append("native child spawn is unavailable")
         if hook_pair != "present":
             limitations.append("no matching start/stop receipt exists")

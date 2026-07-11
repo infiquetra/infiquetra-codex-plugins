@@ -3,14 +3,14 @@
     "capability_snapshot": {
       "path": "docs/validation/codex-runtime-capability-snapshot.json",
       "schema_path": "docs/validation/codex-runtime-capability-snapshot.schema.json",
-      "schema_sha256": "3c2f331475d13d93d27e265eac9450e6c951dd993d5682a94c1db29255648d66",
+      "schema_sha256": "8aef75ba322116b69e5eaf7a1a86a1fd49f81cfba3bbbf902cf77428cd986e1c",
       "schema_version": 1,
-      "sha256": "b978f0631b4b0b3178e4201ff2f27f0bbba6fddcb690b97d2c935ddb52810070"
+      "sha256": "7261c1133afc62578e9f5db86e9f63f80208ec6751048c082cc47b137014603c"
     },
     "classification_path": "docs/portability/codex-saga-07517-drift-classification.md",
     "plan": {
       "path": "docs/plans/2026-07-10-codex-plugin-model-execution-modernization-plan.md",
-      "sha256": "c5ee8929e88491943879b652c23ca761c8a0e9b844c0f1ddb9b01a0d27b6a0bd"
+      "sha256": "1205cbf45590e8b7cdbe19ea5f7032c0ad2fec39a48e0989b7baef356ccac200"
     },
     "reviews": [
       {
@@ -20,8 +20,8 @@
     ],
     "runbook": {
       "path": "docs/portability/claude-to-codex-plugin-port-runbook.md",
-      "sha256": "b2d50c95b7d8601a07b47e0520817a14471a8f162227e8fae628c90711a29c60",
-      "version": 2
+      "sha256": "321c19f3ee35d43ec1f817da123c4f69a5321dc2e0df34306ea55632792f8a63",
+      "version": 3
     }
   },
   "codex": {
@@ -833,7 +833,7 @@
     },
     {
       "artifact_path": "docs/validation/codex-plugin-modernization-u4.json",
-      "artifact_sha256": "8f08c662e7da30042e81f807977de7b48f1d8975c2cd5295477225a19f3c5b32",
+      "artifact_sha256": "ec359785408a4fd8866e1f7c189e1698684999b31954264fb46f6c717a576ec9",
       "argv": [
         "PYTHONPATH=.",
         "uv",

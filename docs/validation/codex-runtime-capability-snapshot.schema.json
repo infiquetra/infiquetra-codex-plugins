@@ -175,10 +175,14 @@
         "spawn": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["available", "request_fields", "per_child_agent_type", "per_child_model", "per_child_effort", "per_child_sandbox", "selection_readback_fields"],
+          "required": ["available", "tool_namespace", "hide_spawn_agent_metadata", "request_fields", "default_fork_turns", "profile_selection_fork_turns", "per_child_agent_type", "per_child_model", "per_child_effort", "per_child_sandbox", "selection_readback_fields"],
           "properties": {
             "available": {"type": "boolean"},
+            "tool_namespace": {"type": "string"},
+            "hide_spawn_agent_metadata": {"type": "boolean"},
             "request_fields": {"$ref": "#/$defs/stringList"},
+            "default_fork_turns": {"type": "string"},
+            "profile_selection_fork_turns": {"$ref": "#/$defs/stringList"},
             "per_child_agent_type": {"type": "boolean"},
             "per_child_model": {"type": "boolean"},
             "per_child_effort": {"type": "boolean"},

@@ -86,7 +86,22 @@ def test_runbook_has_exact_versioned_structure() -> None:
 
     assert headings == list(REQUIRED_H2)
     assert "Status: canonical" in text
-    assert "Runbook version: `2`" in text
+    assert "Runbook version: `3`" in text
+
+
+def test_runbook_requires_v2_named_profile_bootstrap_and_non_full_fork() -> None:
+    text = RUNBOOK.read_text(encoding="utf-8")
+
+    for required in (
+        "hide_spawn_agent_metadata=false",
+        'tool_namespace="agents"',
+        "reserved `collaboration`",
+        "`agent_type`",
+        "`fork_turns=none`",
+        "full-history fork",
+        "child role/model/effort/sandbox",
+    ):
+        assert required in text
 
 
 def test_authority_mapping_and_stop_ids_are_unique() -> None:

@@ -75,7 +75,7 @@ def test_configured_effort_is_not_misreported_as_catalog_default() -> None:
 
     assert snapshot["configured_defaults"] == {
         "model": "gpt-5.6-sol",
-        "model_reasoning_effort": "max",
+        "model_reasoning_effort": "xhigh",
     }
     sol = next(model for model in snapshot["catalog"]["models"] if model["slug"] == "gpt-5.6-sol")
     assert sol["default_effort"] == "low"
@@ -94,14 +94,31 @@ def test_host_capacity_is_distinct_from_configured_thread_ceiling() -> None:
     assert runtime["effective_max_children"] == runtime["effective_total_slots"] - 1
 
 
-def test_spawn_contract_does_not_invent_per_child_selection_or_readback() -> None:
+def test_spawn_contract_records_configured_named_profile_selection_and_readback() -> None:
     spawn = load_snapshot()["collaboration"]["spawn"]
 
-    assert spawn["request_fields"] == ["fork_turns", "message", "task_name"]
-    assert spawn["selection_readback_fields"] == []
-    assert spawn["per_child_agent_type"] is False
-    assert spawn["per_child_model"] is False
-    assert spawn["per_child_effort"] is False
+    assert spawn["tool_namespace"] == "agents"
+    assert spawn["hide_spawn_agent_metadata"] is False
+    assert spawn["request_fields"] == [
+        "agent_type",
+        "fork_turns",
+        "message",
+        "model",
+        "reasoning_effort",
+        "service_tier",
+        "task_name",
+    ]
+    assert spawn["default_fork_turns"] == "all"
+    assert spawn["profile_selection_fork_turns"] == ["none", "positive-integer"]
+    assert spawn["selection_readback_fields"] == [
+        "agent_type",
+        "effort",
+        "model",
+        "sandbox_mode",
+    ]
+    assert spawn["per_child_agent_type"] is True
+    assert spawn["per_child_model"] is True
+    assert spawn["per_child_effort"] is True
     assert spawn["per_child_sandbox"] is False
 
 
@@ -127,6 +144,7 @@ def test_capability_dimensions_do_not_conflate_goal_hooks_or_subagents() -> None
     assert workflow["source-workflow"] == "unsupported"
     assert workflow["verified-workflow"] == "planned-unproved"
     assert vehicles["generic-subagent"] == "available"
+    assert vehicles["named-profile-subagent"] == "available"
     assert {"goal", "hooks", "fork"}.isdisjoint(vehicles)
 
 

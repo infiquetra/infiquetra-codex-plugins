@@ -25,13 +25,13 @@ def snapshot() -> tuple[dict[str, object], str]:
     return payload, digest
 
 
-def test_current_generic_surface_is_inline_only() -> None:
+def test_current_named_surface_is_diagnostic_without_live_receipt() -> None:
     value, digest = snapshot()
     result = P.probe_protocol(snapshot=value, snapshot_sha256=digest)
     assert result["claim"] == "unit-fixture-only"
     assert result["runtime_proof"] is False
-    assert result["spawn_surface"] == "generic"
-    assert result["outcome"] == "inline-only"
+    assert result["spawn_surface"] == "named"
+    assert result["outcome"] == "diagnostic"
 
 
 @pytest.mark.parametrize("surface", ["absent", "backpressure", "capacity-zero"])

@@ -3,7 +3,7 @@
 ## Contract Metadata
 
 - Status: canonical
-- Runbook version: `2`
+- Runbook version: `3`
 - Machine contract: `ports/<date>-<scope>.json`
 - Contract tool: `../../scripts/port_contract.py`
 - Digest rule: the machine contract stores the SHA-256 of the exact UTF-8 runbook bytes.
@@ -78,9 +78,14 @@ or persist raw catalog instructions.
 
 A feature flag, file on disk, requested model, or caller boolean is not execution proof. A current
 spawn interface that lacks model, effort, profile, or sandbox selectors cannot dynamically enforce
-them. Custom-agent files may configure those values, but a named-profile claim still requires
-observable selection and readback evidence. Goal is continuation only. Claude Workflow and fork are
-not active leaf backends.
+them. For Sol/Terra MultiAgent V2, first verify whether metadata was hidden by configuration before
+classifying the capability unavailable. The verified bootstrap uses
+`hide_spawn_agent_metadata=false` and a non-reserved `tool_namespace="agents"`; setting only the
+first field under reserved `collaboration` can be rejected by the backend. Custom-agent files may
+configure model, effort, and sandbox, but named-profile work must dispatch `agent_type` with
+`fork_turns=none` or a positive bounded value and verify the child role/model/effort/sandbox. Omitted
+or `all` is a full-history fork that inherits the parent agent type, model, and effort. Goal is
+continuation only. Claude Workflow and fork are not active leaf backends.
 
 Choose a Codex surface only when the runtime supports the required behavior:
 
@@ -135,11 +140,14 @@ must use lowercase letters, digits, and underscores. A deterministic validator h
 Planning selects the logical role and risk-adjusted class. Render standalone custom-agent TOML files
 under `.codex/agents/` for project discovery or `$CODEX_HOME/agents/` for personal installation;
 validate their bytes against the plugin source. A config declaration or task name alone is not
-selection proof. The root Codex thread owns the DAG,
+selection proof. Verify the effective V2 namespace/schema and use `agent_type` plus a non-full-history
+fork; then compare the first child `turn_context` or equivalent receipt with the selected profile.
+The root Codex thread owns the DAG,
 spawning, status/clarification messages, waiting, integration, and adjudication. Every execution
 attempt uses a fresh context. A class/profile digest proves requested configuration only. A generic
-or root-accountability subagent result is diagnostic and cannot satisfy a gate without host-issued
-selection/identity attestation; current gate-authoritative role work falls back inline.
+or root-accountability subagent result is diagnostic and cannot satisfy a gate without observable
+selection/identity evidence. Missing or mismatched readback falls back inline for preferred
+independence and blocks required independence.
 
 ## State, Trust, Authentication, And Mutation Boundaries
 
@@ -170,9 +178,12 @@ selection/identity attestation; current gate-authoritative role work falls back 
    suite.
 8. Prove clean isolated installation and a separately authenticated seeded-migration lane. Never copy
    credentials from the default profile.
-9. Start a fresh Codex session and prove only the model/profile/hook/plugin discovery and readback
-   that the active surface exposes. Record `inline-only` when per-child selection or host attestation
-   is unavailable; never fabricate a task receipt.
+9. Start a fresh Codex session and prove the effective namespace/schema plus only the
+   model/profile/hook/plugin discovery and child readback that the active surface exposes. For a
+   named-profile claim, require `agent_type`, a non-full-history fork, and matching child
+   role/model/effort/sandbox. Record `inline-only` when selection is unavailable and `diagnostic`
+   when selection exists without the receipt required by the consuming gate; never fabricate a task
+   receipt.
 10. Pass `validate --stage cutover`, activate exactly one package identity, and verify exact rollback
     of every managed surface.
 

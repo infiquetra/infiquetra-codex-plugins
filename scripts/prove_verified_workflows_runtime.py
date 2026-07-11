@@ -168,7 +168,11 @@ def _snapshot_projection(snapshot: dict[str, Any]) -> dict[str, Any]:
     spawn = collaboration.get("spawn")
     expected_spawn_fields = {
         "available",
+        "tool_namespace",
+        "hide_spawn_agent_metadata",
         "request_fields",
+        "default_fork_turns",
+        "profile_selection_fork_turns",
         "per_child_agent_type",
         "per_child_model",
         "per_child_effort",
@@ -188,8 +192,22 @@ def _snapshot_projection(snapshot: dict[str, Any]) -> dict[str, Any]:
         raise RuntimeProofError("capability snapshot spawn booleans are invalid")
     request_fields = spawn["request_fields"]
     readback_fields = spawn["selection_readback_fields"]
-    if request_fields != ["fork_turns", "message", "task_name"]:
+    if spawn["tool_namespace"] != "agents" or spawn["hide_spawn_agent_metadata"] is not False:
+        raise RuntimeProofError("capability snapshot named-profile bootstrap drifted")
+    if request_fields != [
+        "agent_type",
+        "fork_turns",
+        "message",
+        "model",
+        "reasoning_effort",
+        "service_tier",
+        "task_name",
+    ]:
         raise RuntimeProofError("capability snapshot spawn request fields drifted")
+    if spawn["default_fork_turns"] != "all" or spawn[
+        "profile_selection_fork_turns"
+    ] != ["none", "positive-integer"]:
+        raise RuntimeProofError("capability snapshot profile-selection fork contract drifted")
     if not isinstance(readback_fields, list) or any(
         value not in {"agent_type", "model", "effort", "sandbox_mode"}
         for value in readback_fields
@@ -428,8 +446,11 @@ def build_proof(
             "active collaboration spawn schema lacks agent_type and selection readback"
         )
     else:
-        outcome = "inline-only"
-        reason = "named-profile capability requires a fresh normalized hook receipt"
+        outcome = "diagnostic"
+        reason = (
+            "configured named-profile selection is available; tracked characterization carries "
+            "no live child receipt"
+        )
     hook_content = _read_regular(PLUGIN_ROOT / "hooks" / "hooks.json", "hook definition")
     hook_handler = _read_regular(
         PLUGIN_ROOT / "hooks" / "agent_receipt.py", "hook handler"
@@ -479,7 +500,8 @@ def build_proof(
             "project profile discovery is expected configuration, not runtime selection",
             "hook permission_mode is not effective sandbox_mode",
             "reasoning effort is expected from the exact profile digest, not observed by hooks",
-            "host-attested subagent capability is unavailable on the active spawn surface",
+            "profile-selected work requires agent_type with fork_turns none or a positive integer",
+            "tracked characterization does not contain a live child turn_context receipt",
             "isolated readback proves bytes only; it does not prove hook trust or task execution",
         ],
     }

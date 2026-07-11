@@ -90,7 +90,9 @@ def test_operator_choice_documents_separate_codex_capability_dimensions() -> Non
         "Hooks",
     ):
         assert dimension in text
-    assert "per-child profile, model, effort, or sandbox" in text
+    assert "V2 `agent_type` selects custom-agent TOML" in text
+    assert "`fork_turns=\"none\"`" in text
+    assert "matching child role/model/effort/sandbox" in text
     assert "generic subagent output remains generic evidence" in text
     assert "Ultra is a root orchestration control" in text
     assert "Source `cc-workflows-ultracode`, fork, Goal, hooks, and generic subagents" in text

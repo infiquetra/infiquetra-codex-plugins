@@ -1,8 +1,8 @@
 {
-  "capability_outcome": "inline-only",
+  "capability_outcome": "diagnostic",
   "claim": "runtime-capability-characterization",
   "codex_cli_version": "0.144.1",
-  "harness_sha256": "35a8f98999274feb881304b2ee983a96f10c9af8bfed01b00ed326ca83e57da7",
+  "harness_sha256": "a495e2c9ce8245a10f33a641cca2c3c7beeaa7d6ddcc7b45cc1054f646a181d7",
   "hook_capabilities": {
     "definition_sha256": "8f5eca1811d2ea751c7eecbded0fab704c54496f6b9a82f5feda01d260aae9e1",
     "events": [
@@ -22,7 +22,8 @@
     "project profile discovery is expected configuration, not runtime selection",
     "hook permission_mode is not effective sandbox_mode",
     "reasoning effort is expected from the exact profile digest, not observed by hooks",
-    "host-attested subagent capability is unavailable on the active spawn surface",
+    "profile-selected work requires agent_type with fork_turns none or a positive integer",
+    "tracked characterization does not contain a live child turn_context receipt",
     "isolated readback proves bytes only; it does not prove hook trust or task execution"
   ],
   "live_envelope_sha256": null,
@@ -82,17 +83,21 @@
     "regular_files_only": true,
     "source_bytes_match": true
   },
-  "reason": "active collaboration spawn schema lacks agent_type and selection readback",
+  "reason": "configured named-profile selection is available; tracked characterization carries no live child receipt",
   "role_registry_sha256": "011eea995e8c263c37805aa30b1c3f6b7cb5559c4c5e867a0d951adb95ccb4bc",
   "root_mediated_task_reported": false,
   "runtime_receipt_ref": null,
   "runtime_receipt_sha256": null,
   "schema_version": 1,
-  "snapshot_sha256": "b978f0631b4b0b3178e4201ff2f27f0bbba6fddcb690b97d2c935ddb52810070",
+  "snapshot_sha256": "7261c1133afc62578e9f5db86e9f63f80208ec6751048c082cc47b137014603c",
   "spawn_request_fields": [
+    "agent_type",
     "fork_turns",
     "message",
+    "model",
+    "reasoning_effort",
+    "service_tier",
     "task_name"
   ],
-  "spawn_surface": "generic"
+  "spawn_surface": "named"
 }

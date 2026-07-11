@@ -32,17 +32,18 @@ All notable changes to this plugin are documented here.
   typed output, cwd, timeout, and output ceilings. Raw command streams are never retained.
 - Derive tester/scanner claims from protected command-output records, block required monitor/deploy
   evidence until an authenticated adapter exists, and reject broad permission modes.
-- Treat candidate child receipts as root-accountability diagnostics with no gate authority until
-  Codex provides host-issued attestation; use truthful inline execution for the current generic
-  spawn surface and a fresh context for every remediation attempt.
+- Bootstrap Sol/Terra MultiAgent V2 named-profile selection through an expanded non-reserved
+  `agents` namespace; require `agent_type`, a non-full-history fork, and child runtime readback while
+  retaining the full hook/profile/result join for Verified Workflows receipt authority.
 - Make protected resolutions authorize only a later affected-role rerun, require finding and subject
   continuity across attempts, and require explicit abandonment before pruning incomplete raw starts.
 - Add severity-first `pass`, `block`, and `escalate` gates that load exact protected evidence for
   every workflow step, derive validator/finding state, reject self-acceptance, and keep numeric
   scores advisory.
-- Add a sanitized runtime proof harness and tracked current characterization. The active generic
-  spawn surface yields `inline-only`; isolated live readback proves installed bytes only, and no
-  hook trust, fresh task, profile selection, or subagent receipt is claimed.
+- Add a sanitized runtime proof harness and tracked current characterization. The configured named
+  spawn surface yields `diagnostic` without embedded live evidence; separate fresh-task proof
+  demonstrates selected profile/model/effort/sandbox, while isolated readback and U8 still own hook
+  trust, installed-byte, cutover, and rollback authority.
 
 ### Migration
 

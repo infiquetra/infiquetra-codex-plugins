@@ -41,11 +41,14 @@ def test_codex_operator_choice_separates_runtime_dimensions() -> None:
         assert dimension in body
 
 
-def test_operator_choice_does_not_claim_dynamic_child_selection() -> None:
+def test_operator_choice_requires_configured_named_child_selection_and_readback() -> None:
     body = _read(OPERATOR_CHOICE)
 
-    assert "does not expose per-child profile, model, effort, or sandbox selection" in body
-    assert "no such readback" in body
+    assert "hide_spawn_agent_metadata=false" in body
+    assert 'tool_namespace="agents"' in body
+    assert "agent_type=<runtime_agent_name>" in body
+    assert 'fork_turns="none"' in body
+    assert "child role/model/effort/sandbox" in body
     assert "generic subagent output remains generic evidence" in body
 
 

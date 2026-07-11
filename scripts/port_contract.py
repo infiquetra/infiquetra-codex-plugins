@@ -18,7 +18,7 @@ from typing import Any
 
 
 SCHEMA_VERSION = 1
-RUNBOOK_VERSION = 2
+RUNBOOK_VERSION = 3
 DEFAULT_MANIFEST = Path("docs/portability/ports/2026-07-10-saga-07517.json")
 DEFAULT_RENDER = Path("docs/portability/codex-saga-07517-drift-classification.md")
 DEFAULT_RUNBOOK = Path("docs/portability/claude-to-codex-plugin-port-runbook.md")
@@ -814,13 +814,36 @@ def _validate_capability_snapshot(root: Path, entry: Mapping[str, Any], errors: 
                 errors.append("capability snapshot thread capacity arithmetic is inconsistent")
     spawn = snapshot.get("collaboration", {}).get("spawn", {})
     if isinstance(spawn, dict):
-        if spawn.get("request_fields") != ["fork_turns", "message", "task_name"]:
+        if spawn.get("tool_namespace") != "agents":
+            errors.append("capability snapshot spawn namespace must be `agents`")
+        if spawn.get("hide_spawn_agent_metadata") is not False:
+            errors.append("capability snapshot must expose named-profile metadata")
+        if spawn.get("request_fields") != [
+            "agent_type",
+            "fork_turns",
+            "message",
+            "model",
+            "reasoning_effort",
+            "service_tier",
+            "task_name",
+        ]:
             errors.append("capability snapshot spawn fields do not match the live tool contract")
-        for field in ("per_child_agent_type", "per_child_model", "per_child_effort", "per_child_sandbox"):
-            if spawn.get(field) is not False:
-                errors.append(f"capability snapshot must not claim `{field}`")
-        if spawn.get("selection_readback_fields") != []:
-            errors.append("capability snapshot must not claim child selection readback")
+        if spawn.get("default_fork_turns") != "all" or spawn.get(
+            "profile_selection_fork_turns"
+        ) != ["none", "positive-integer"]:
+            errors.append("capability snapshot profile-selection fork contract drifted")
+        for field in ("per_child_agent_type", "per_child_model", "per_child_effort"):
+            if spawn.get(field) is not True:
+                errors.append(f"capability snapshot must claim configured `{field}`")
+        if spawn.get("per_child_sandbox") is not False:
+            errors.append("capability snapshot must not claim direct per-child sandbox override")
+        if spawn.get("selection_readback_fields") != [
+            "agent_type",
+            "effort",
+            "model",
+            "sandbox_mode",
+        ]:
+            errors.append("capability snapshot child receipt fields drifted")
     dimensions = snapshot.get("capability_dimensions", {})
     workflow_names = {row.get("name"): row.get("status") for row in dimensions.get("workflow_modes", []) if isinstance(row, dict)}
     if workflow_names.get("source-workflow") != "unsupported":

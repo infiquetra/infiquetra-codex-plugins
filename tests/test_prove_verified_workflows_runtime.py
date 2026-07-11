@@ -21,7 +21,7 @@ def snapshot() -> tuple[dict[str, object], str]:
     )
 
 
-def test_dry_run_is_inline_only_and_sanitized() -> None:
+def test_dry_run_is_named_diagnostic_and_sanitized() -> None:
     value, digest = snapshot()
     proof = P.build_proof(
         snapshot=value,
@@ -30,8 +30,9 @@ def test_dry_run_is_inline_only_and_sanitized() -> None:
         codex_home=None,
         authenticated_isolated_home=False,
     )
-    assert proof["capability_outcome"] == "inline-only"
-    assert proof["spawn_surface"] == "generic"
+    assert proof["capability_outcome"] == "diagnostic"
+    assert proof["spawn_surface"] == "named"
+    assert "agent_type" in proof["spawn_request_fields"]
     assert proof["live_invocation_performed"] is False
     assert proof["runtime_receipt_ref"] is None
     assert len(proof["profiles"]) == 5
@@ -185,6 +186,14 @@ def test_snapshot_projection_rejects_unexpected_request_field() -> None:
     value["collaboration"]["spawn"]["request_fields"] = ["sk-secret123456"]  # type: ignore[index]
 
     with pytest.raises(P.RuntimeProofError, match="request fields drifted"):
+        P._snapshot_projection(value)
+
+
+def test_snapshot_projection_rejects_reserved_namespace() -> None:
+    value, _digest = snapshot()
+    value["collaboration"]["spawn"]["tool_namespace"] = "collaboration"  # type: ignore[index]
+
+    with pytest.raises(P.RuntimeProofError, match="bootstrap drifted"):
         P._snapshot_projection(value)
 
 

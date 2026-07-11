@@ -58,22 +58,25 @@ bounded evidence only. Peer messaging is optional and never required.
 5. For each `agent-lens`, load the exact role file and provide only the bounded step, protected
    subject, declared evidence, role criteria, and output schema. Use fresh context for independent
    review when available. Agent-lens rows are evidence-only; workspace mutation remains root-owned.
-6. Map the durable kebab-case execution class to its exact underscore-form `runtime_agent_name`, then
-   treat both as requested configuration until the runtime selects and reports that agent type.
-   Task names and prompt text are not selection. The current generic Codex spawn surface exposes
-   neither per-child agent-type/profile/model/effort selection nor selection readback,
-   so preferred independence runs inline as `verified-workflow-inline`; required independence
-   blocks.
+6. Map the durable kebab-case execution class to its exact underscore-form `runtime_agent_name`.
+   Before model-pinned work, require the active spawn schema to expose `agent_type`; Sol/Terra V2
+   normally needs `hide_spawn_agent_metadata=false` plus a non-reserved `tool_namespace="agents"`
+   in effective Codex config and a fresh task after that config changes. Dispatch with
+   `agent_type=<runtime_agent_name>` and `fork_turns="none"` by default, then verify the child receipt
+   reports the planned role, model, effort, and permission boundary. Task names and prompt text are
+   not selection. Missing selector or mismatched readback degrades preferred independence inline and
+   blocks required independence.
 7. Give every `run`, `follow-up`, or `revalidate` attempt a fresh execution context. Use follow-up
    messages only for status or clarification within the already-bound attempt; they cannot change
    its role, class, subject, or evidence and cannot stand in for a new receipt. Selectively rerun
    only affected roles with a new intent. Never label a helper or nested `codex` process as native
    delegation.
-8. A future named-child join may record installed hook readback, launch acknowledgement, and exact
+8. A named-child join may record installed hook readback, launch acknowledgement, and exact
    retained start/stop events as a root-accountability chain of diagnostic evidence. The launch acknowledgement may
    follow the hook start because native spawn returns only after launch. Reject broad permission
-   modes. Until Codex supplies host-issued child attestation, this chain has no gate authority and
-   cannot satisfy required independence.
+   modes. Root-verified native child `turn_context` proves the configured runtime selection boundary;
+   the full hook/profile/result join remains required wherever the workflow contract demands
+   Verified Workflows receipt authority.
 9. For deterministic validators, execute only the pinned argv, implementation and evidence-schema
    digests, repository-root cwd, timeout, and output ceiling. Persist stream hashes and byte counts
    plus the validated typed stdout projection; never persist raw stdout or stderr. Root-run tester

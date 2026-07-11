@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "captured_at": "2026-07-10T16:10:52Z",
+  "captured_at": "2026-07-11T06:55:32Z",
   "refs": {
     "codex": {
       "historical_plan_base": "788902513e48ea95fd0504ac3c850c8c02e5d920",
@@ -33,7 +33,7 @@
   },
   "configured_defaults": {
     "model": "gpt-5.6-sol",
-    "model_reasoning_effort": "max"
+    "model_reasoning_effort": "xhigh"
   },
   "catalog": {
     "source": "refreshed",
@@ -122,12 +122,16 @@
   "collaboration": {
     "spawn": {
       "available": true,
-      "request_fields": ["fork_turns", "message", "task_name"],
-      "per_child_agent_type": false,
-      "per_child_model": false,
-      "per_child_effort": false,
+      "tool_namespace": "agents",
+      "hide_spawn_agent_metadata": false,
+      "request_fields": ["agent_type", "fork_turns", "message", "model", "reasoning_effort", "service_tier", "task_name"],
+      "default_fork_turns": "all",
+      "profile_selection_fork_turns": ["none", "positive-integer"],
+      "per_child_agent_type": true,
+      "per_child_model": true,
+      "per_child_effort": true,
       "per_child_sandbox": false,
-      "selection_readback_fields": []
+      "selection_readback_fields": ["agent_type", "effort", "model", "sandbox_mode"]
     },
     "steer": {
       "available": true,
@@ -167,7 +171,7 @@
       {"name": "inline", "status": "available"},
       {"name": "deterministic-tool", "status": "available"},
       {"name": "generic-subagent", "status": "available"},
-      {"name": "named-profile-subagent", "status": "planned-unproved"}
+      {"name": "named-profile-subagent", "status": "available"}
     ],
     "role_identities": [
       {"name": "generic", "status": "available"},
@@ -175,8 +179,8 @@
     ],
     "execution_class_controls": [
       {"name": "prompt-steered", "status": "advisory-only"},
-      {"name": "custom-agent-file", "status": "planned-unproved"},
-      {"name": "per-spawn-override", "status": "unavailable"}
+      {"name": "custom-agent-file", "status": "available"},
+      {"name": "per-spawn-override", "status": "available"}
     ],
     "hook_roles": [
       {"name": "observe", "status": "configurable"},

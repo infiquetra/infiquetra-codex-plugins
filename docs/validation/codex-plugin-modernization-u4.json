@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "unit": "U4",
-  "recorded_at": "2026-07-11T06:06:44Z",
+  "recorded_at": "2026-07-11T06:55:32Z",
   "repo_head": "bde4d4350758212c7cad0cfa4ef61e7492f9218b",
-  "claim": "root-owned-workflow-inline-only",
-  "capability_outcome": "inline-only",
+  "claim": "root-owned-workflow-named-profile-ready",
+  "capability_outcome": "attested",
   "module_lines": {
     "dispatch_receipt.py": 1219,
     "named_child_attestation.py": 230,
@@ -107,13 +107,18 @@
   ],
   "runtime_proof": {
     "artifact": "docs/validation/verified-workflows-runtime-proof.json",
-    "spawn_surface": "generic",
+    "spawn_surface": "named",
     "spawn_request_fields": [
+      "agent_type",
       "fork_turns",
       "message",
+      "model",
+      "reasoning_effort",
+      "service_tier",
       "task_name"
     ],
-    "named_profile_selector": false,
+    "tool_namespace": "agents",
+    "named_profile_selector": true,
     "live_invocation_performed": false,
     "runtime_receipt_ref": null
   },
@@ -130,23 +135,25 @@
     "source_bytes_match": true
   },
   "fresh_cli_probe": {
-    "parent_thread_id": "019f4fb8-8f7e-76c1-accf-6d238c41e5e1",
-    "child_thread_id": "019f4fb8-addd-7d82-abfc-b3d9fccbb245",
-    "requested_runtime_agent_name": "review_high",
-    "observed_agent_role": null,
-    "expected_model": "gpt-5.6-sol",
-    "observed_model": "gpt-5.6-sol",
-    "expected_effort": "high",
-    "observed_effort": "xhigh",
+    "parent_thread_id": "019f4ff4-69ac-71a0-826e-04eef2836295",
+    "child_thread_id": "019f4ff4-83a8-7a40-bb15-8f4deda12c86",
+    "tool_namespace": "agents",
+    "requested_runtime_agent_name": "scan_low",
+    "requested_fork_turns": "none",
+    "observed_agent_role": "scan_low",
+    "expected_model": "gpt-5.6-luna",
+    "observed_model": "gpt-5.6-luna",
+    "expected_effort": "low",
+    "observed_effort": "low",
     "expected_sandbox": "read-only",
     "observed_sandbox": "read-only",
-    "outcome": "inline-only",
-    "reason": "spawn_agent exposed task_name but no agent_type; the task path did not select the custom profile"
+    "outcome": "attested",
+    "reason": "saved V2 config exposed agent_type in the non-reserved agents namespace; child role/model/effort/sandbox matched scan_low"
   },
   "limitations": [
-    "The active spawn schema cannot request or read back a named agent profile; a fresh CLI task confirmed task naming is not selection.",
-    "Profile files and hook schemas are configured evidence, not proof that a child ran with the selected model or effort.",
-    "The U5-U8 model-pinned Workflow Structure must remain paused unless a future runtime exposes named-profile selection and U4 attestation succeeds.",
+    "The tracked sanitized proof remains non-live; the separate fresh CLI probe establishes only the runtime selection boundary.",
+    "The earlier task-name-only probe remains negative regression evidence and must not be reinterpreted as profile selection.",
+    "Full Verified Workflows hook/profile/result receipt authority remains an isolated-install and U8 cutover gate.",
     "Raw abandonment, pruning, and verified deletion remain U8 cutover responsibilities."
   ]
 }

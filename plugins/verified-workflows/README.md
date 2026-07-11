@@ -16,7 +16,7 @@ Codex-native, root-owned workflow orchestration for Infiquetra work.
                          +--> inline role/reviewer ------+
 approved Workflow DAG --> root thread                   +--> evidence --> root gate
                          +--> deterministic validator ---+
-                         +--> candidate child diagnostic -X  (no host attestation)
+                         +--> named profile child -------+  (root verifies runtime receipt)
 
 root owns: state, scope, mutation, barriers, consolidation, Git, final decision
 child owns: one bounded task and its attributable result
@@ -64,8 +64,20 @@ provide project-scoped Codex discovery during development; repository validation
 extra, symlinked, or byte-drifted copies. U8 later installs the same five profiles globally. Profile
 presence is expected configuration, not evidence that Codex selected one or used its model, effort,
 sandbox, or independent child. U4 provides the receipt boundary for a runtime that can select named
-profiles. The active collaboration tool still exposes task naming but no agent-type selector, so a
-fresh-task probe records `agent_role=null` and the committed capability remains `inline-only`.
+profiles. Sol/Terra MultiAgent V2 requires this effective Codex configuration before the selector is
+available:
+
+```toml
+[features.multi_agent_v2]
+hide_spawn_agent_metadata = false
+tool_namespace = "agents"
+```
+
+Use `agent_type=<runtime_agent_name>` with `fork_turns=none` or a positive bounded turn count. The
+default `fork_turns=all` inherits the parent agent type, model, and effort and rejects those
+overrides. Setting only `hide_spawn_agent_metadata=false` under the reserved `collaboration`
+namespace is rejected by the backend. A saved-config fresh-task proof selected `scan_low` from a
+Sol/xhigh parent and recorded a Luna/low, read-only child.
 
 Validate the deterministic source bundle:
 
@@ -206,9 +218,9 @@ mutates profile state.
 - U3: logical roles and the five managed execution profiles (complete in source; project-discoverable,
   not globally installed)
 - U4: dispatch, hook receipts, gates, and sanitized runtime characterization (complete in source;
-  current outcome `inline-only`)
+  tracked non-live outcome `diagnostic`)
 - U4F: separate durable execution classes from Codex runtime agent names, bind `.codex/agents/`
-  discovery copies, and preserve the truthful `inline-only` result when the active selector is absent
+  discovery copies, bootstrap V2 named selection, and verify a differential fresh child before U5
 - U8: atomic marketplace/install cutover and rollback proof
 
 See [PORTABILITY.md](PORTABILITY.md) for the source mapping and
