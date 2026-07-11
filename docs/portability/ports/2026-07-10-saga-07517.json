@@ -830,6 +830,32 @@
       "recorded_at": "2026-07-10T22:50:34Z",
       "repo_head": "5d984680efd5df19843fd5eafaa556b995a5907e",
       "unit": "U3"
+    },
+    {
+      "artifact_path": "docs/validation/codex-plugin-modernization-u4.json",
+      "artifact_sha256": "54518ec3174641a0ddfeed39ec47c1ad64b3732fd803259428b6f6df102ff2a0",
+      "argv": [
+        "PYTHONPATH=.",
+        "uv",
+        "run",
+        "pytest",
+        "-q",
+        "plugins/verified-workflows/tests",
+        "tests/test_prove_verified_workflows_runtime.py",
+        "tests/test_verified_workflows_orchestration_regressions.py",
+        "tests/test_verified_workflows_agents.py",
+        "tests/test_verified_workflows_migration.py",
+        "tests/test_validate_codex_plugins.py",
+        "tests/test_port_runbook.py",
+        "tests/test_port_contract.py"
+      ],
+      "cwd": ".",
+      "evidence_id": "u4-verified-workflow-check-20260711",
+      "exit_code": 0,
+      "kind": "check",
+      "recorded_at": "2026-07-11T05:00:24Z",
+      "repo_head": "fec2dce66fb8972d867adf2e57eb5fcb332c0d7f",
+      "unit": "U4"
     }
   ],
   "port_id": "2026-07-10-saga-07517",
@@ -3027,7 +3053,9 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u4-verified-workflow-check-20260711"
+        ],
         "host_primitives": [],
         "new_path": "plugins/team-execution/skills/team-execution/SKILL.md",
         "old_path": null,
@@ -3042,7 +3070,7 @@
         "rationale": "Adapt Claude's mutable session-tier segment override to Codex's approved-plan boundary: every workflow run immutably binds one execution class plus installed profile/model/effort digests. An operator class change closes that chain and starts a newly approved workflow run; in-flight follow-ups retain the exact class and never consume ambient session state.",
         "row_id": "src-e904d9facc6388ed",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "skill",
         "treatment": "codex-adapt",
         "units": [

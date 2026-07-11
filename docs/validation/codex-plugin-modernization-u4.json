@@ -1,0 +1,116 @@
+{
+  "schema_version": 1,
+  "unit": "U4",
+  "recorded_at": "2026-07-11T05:00:24Z",
+  "repo_head": "fec2dce66fb8972d867adf2e57eb5fcb332c0d7f",
+  "claim": "root-owned-workflow-inline-only",
+  "capability_outcome": "inline-only",
+  "module_lines": {
+    "dispatch_receipt.py": 1219,
+    "named_child_attestation.py": 229,
+    "protected_store.py": 503,
+    "workflow_records.py": 3231,
+    "workspace_evidence.py": 1513
+  },
+  "checks": [
+    {
+      "name": "u4-focused-tests",
+      "argv": [
+        "PYTHONPATH=.",
+        "uv",
+        "run",
+        "pytest",
+        "-q",
+        "plugins/verified-workflows/tests",
+        "tests/test_prove_verified_workflows_runtime.py",
+        "tests/test_verified_workflows_orchestration_regressions.py",
+        "tests/test_verified_workflows_agents.py",
+        "tests/test_verified_workflows_migration.py",
+        "tests/test_validate_codex_plugins.py",
+        "tests/test_port_runbook.py",
+        "tests/test_port_contract.py"
+      ],
+      "exit_code": 0,
+      "summary": "297 tests passed in bounded partitioned invocations"
+    },
+    {
+      "name": "full-suite",
+      "argv": [
+        "PYTHONPATH=.",
+        "uv",
+        "run",
+        "pytest"
+      ],
+      "exit_code": 0,
+      "summary": "1706 tests passed in testpath partitions"
+    },
+    {
+      "name": "current-repository-validator",
+      "argv": [
+        "PYTHONPATH=.",
+        "uv",
+        "run",
+        "python",
+        "scripts/validate_codex_plugins.py"
+      ],
+      "exit_code": 0,
+      "summary": "current active inventory and U4 runtime surfaces valid"
+    },
+    {
+      "name": "classification-gate",
+      "argv": [
+        "python3",
+        "scripts/port_contract.py",
+        "validate",
+        "--stage",
+        "classification"
+      ],
+      "exit_code": 0,
+      "summary": "classification stage valid"
+    },
+    {
+      "name": "generated-classification",
+      "argv": [
+        "python3",
+        "scripts/port_contract.py",
+        "render",
+        "--check"
+      ],
+      "exit_code": 0,
+      "summary": "generated classification is byte-current"
+    },
+    {
+      "name": "scoped-ruff",
+      "argv": [
+        "uv",
+        "run",
+        "ruff",
+        "check",
+        "plugins/verified-workflows",
+        "scripts/port_contract.py",
+        "scripts/prove_verified_workflows_runtime.py",
+        "scripts/validate_codex_plugins.py"
+      ],
+      "exit_code": 0,
+      "summary": "no findings on U4 Python surfaces"
+    }
+  ],
+  "runtime_proof": {
+    "artifact": "docs/validation/verified-workflows-runtime-proof.json",
+    "spawn_surface": "generic",
+    "spawn_request_fields": [
+      "fork_turns",
+      "message",
+      "task_name"
+    ],
+    "named_profile_selector": false,
+    "live_invocation_performed": false,
+    "runtime_receipt_ref": null
+  },
+  "limitations": [
+    "The active spawn schema cannot request or read back a named profile.",
+    "Profile files and hook schemas are configured evidence, not proof that a child ran with the selected model or effort.",
+    "The U5-U8 model-pinned Workflow Structure must remain paused unless a future runtime exposes named-profile selection and U4 attestation succeeds.",
+    "Raw abandonment, pruning, and verified deletion remain U8 cutover responsibilities."
+  ]
+}
