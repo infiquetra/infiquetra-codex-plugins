@@ -322,7 +322,7 @@
     {
       "classification": "lineage-documentation",
       "path": "docs/portability/codex-saga-07517-drift-classification.md",
-      "sha256": "206b466cd62d9ebcae688be45fda14eff32b1e638dbf21259acb8c3879a80946",
+      "sha256": "9970f25213edf2e043de5d519d372e8a15cd0a99464e605892c510b8a454c701",
       "tokens": [
         "team-execution"
       ]
@@ -338,7 +338,7 @@
     {
       "classification": "lineage-documentation",
       "path": "docs/portability/ports/2026-07-10-saga-07517.json",
-      "sha256": "cc7a71be953934adc1b10a8e48ecf4e8c4bb9c54280a01b497136b58d2c1be24",
+      "sha256": "1da9e147b0c59bf306e987f9e6e3f29d1c24be57e2d2ab5db6f483afa6cac498",
       "tokens": [
         "Team Execution",
         "team-execution"
@@ -462,7 +462,7 @@
     {
       "classification": "migration-documentation",
       "path": "docs/validation/codex-plugin-modernization-cutover.json",
-      "sha256": "428a4ad20229be27074190f048ff0d5cb3f2cd199fb36034d89c302ba75bc26d",
+      "sha256": "7112c7336bfa9cd442c99f56e2a02548d557cfa4d692cb99c9568076061cbeab",
       "tokens": [
         "team-execution"
       ]
@@ -903,7 +903,7 @@
     {
       "classification": "frozen-source-contract",
       "path": "scripts/port_contract.py",
-      "sha256": "80d5da0e3a7c04acb6ae90d7cfacb82c06ced96fa0c9c4cecaf46242de7a2b28",
+      "sha256": "8c51ce3af31d2ca143bc8e4f1084ccbc18aacdbb626d6ce105d77c68afe1ed3c",
       "tokens": [
         "team-execution"
       ]
