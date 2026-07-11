@@ -312,7 +312,7 @@
     {
       "classification": "historical-evidence",
       "path": "docs/plans/2026-07-10-codex-plugin-model-execution-modernization-plan.md",
-      "sha256": "4dba0b723866708d89cfa1b333c5dda4c75a49bcf89f47ae93c67ef8dd28a1a4",
+      "sha256": "dd4bd30ed4675deb6c8a5266877961f5773cf861239adab033a362818b856304",
       "tokens": [
         "#team-structure",
         "Team Execution",
@@ -364,7 +364,7 @@
     {
       "classification": "lineage-documentation",
       "path": "docs/portability/ports/2026-07-10-saga-07517.json",
-      "sha256": "33434123bbad92527d2dd15d39e41bdcd7d9934ca1652addb65c37fb80ce6921",
+      "sha256": "d51a10ee13cf08ab1e49ed371e8e21808492283a84f4d021e6c8ec6a6d5ce7a0",
       "tokens": [
         "Team Execution",
         "team-execution"
@@ -1404,7 +1404,7 @@
     }
   ],
   "generated_by": "scripts/build_legacy_workflow_inventory.py",
-  "historical_inventory_sha256": "9c51ae7c0905a41e3734a71b7b4f2b1c921ef5ffe292418b7f3689de2e48e8b5",
+  "historical_inventory_sha256": "1fdbc1b55815c3de62e56d74d30438417436328c59ade23ca4d11801b2d3ca41",
   "history_sentinels": {
     "docs/investigations/2026-06-30-team-execution-saga-orchestration-debug-report.md": {
       "sha256": "ecc08eceda3a67dc81d15b1930753fe236ca7c1ae9b3ad9dd506cdecfb0ac4fa",
