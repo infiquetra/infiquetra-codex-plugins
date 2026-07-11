@@ -10,7 +10,7 @@
     "classification_path": "docs/portability/codex-saga-07517-drift-classification.md",
     "plan": {
       "path": "docs/plans/2026-07-10-codex-plugin-model-execution-modernization-plan.md",
-      "sha256": "e6e555fd2872b7a2442ebdc6af05b5542cc6ac85ca3a73454edfc910794b0c9d"
+      "sha256": "768e35cde26587671b745f694017a2df46e5ad92ffd9e578246a9837319ac331"
     },
     "reviews": [
       {
@@ -35,7 +35,7 @@
       {
         "change": "M",
         "evidence_refs": [
-
+          "u8-cutover-20260711"
         ],
         "invariant": "Preserve execution-base behavior and history for README.md.",
         "new_path": "README.md",
@@ -49,7 +49,7 @@
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-5581be3f47302dfd",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "reconcile",
         "units": [
           "U8"
@@ -58,7 +58,7 @@
       {
         "change": "M",
         "evidence_refs": [
-
+          "u8-cutover-20260711"
         ],
         "invariant": "Preserve execution-base behavior and history for docs/engineering-journal/DECISIONS.md.",
         "new_path": "docs/engineering-journal/DECISIONS.md",
@@ -72,16 +72,16 @@
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-313d2cf5a21dbc54",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "preserve",
         "units": [
-
+          "U8"
         ]
       },
       {
         "change": "A",
         "evidence_refs": [
-
+          "u8-cutover-20260711"
         ],
         "invariant": "Preserve execution-base behavior and history for docs/plans/2026-07-10-codex-plugin-model-execution-modernization-plan.md.",
         "new_path": "docs/plans/2026-07-10-codex-plugin-model-execution-modernization-plan.md",
@@ -95,16 +95,16 @@
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-1b133af77a831c5f",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "preserve",
         "units": [
-
+          "U8"
         ]
       },
       {
         "change": "A",
         "evidence_refs": [
-
+          "u8-cutover-20260711"
         ],
         "invariant": "Preserve execution-base behavior and history for docs/reviews/2026-07-10-codex-plugin-model-execution-modernization-plan-doc-review-r2.md.",
         "new_path": "docs/reviews/2026-07-10-codex-plugin-model-execution-modernization-plan-doc-review-r2.md",
@@ -118,16 +118,16 @@
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-3546c0e14ef4a0fd",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "preserve",
         "units": [
-
+          "U8"
         ]
       },
       {
         "change": "A",
         "evidence_refs": [
-
+          "u8-cutover-20260711"
         ],
         "invariant": "Preserve execution-base behavior and history for docs/reviews/2026-07-10-codex-plugin-model-execution-modernization-plan-doc-review-r3.md.",
         "new_path": "docs/reviews/2026-07-10-codex-plugin-model-execution-modernization-plan-doc-review-r3.md",
@@ -141,16 +141,16 @@
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-f19cfaef92802292",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "preserve",
         "units": [
-
+          "U8"
         ]
       },
       {
         "change": "A",
         "evidence_refs": [
-
+          "u8-cutover-20260711"
         ],
         "invariant": "Preserve execution-base behavior and history for docs/reviews/2026-07-10-codex-plugin-model-execution-modernization-plan-doc-review.md.",
         "new_path": "docs/reviews/2026-07-10-codex-plugin-model-execution-modernization-plan-doc-review.md",
@@ -164,16 +164,16 @@
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-5b5b8ce6d7aedfe4",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "preserve",
         "units": [
-
+          "U8"
         ]
       },
       {
         "change": "M",
         "evidence_refs": [
-
+          "u8-cutover-20260711"
         ],
         "invariant": "Preserve execution-base behavior and history for docs/saga/generated/lifecycle-facts.json.",
         "new_path": "docs/saga/generated/lifecycle-facts.json",
@@ -187,7 +187,7 @@
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-89cc453421bad4a4",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "reconcile",
         "units": [
           "U8"
@@ -222,7 +222,7 @@
       {
         "change": "M",
         "evidence_refs": [
-
+          "u8-cutover-20260711"
         ],
         "invariant": "Preserve execution-base behavior and history for plugins/mission-control/.codex-plugin/plugin.json.",
         "new_path": "plugins/mission-control/.codex-plugin/plugin.json",
@@ -236,7 +236,7 @@
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-6c255b1d62ef3718",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "preserve",
         "units": [
           "U8"
@@ -245,7 +245,7 @@
       {
         "change": "M",
         "evidence_refs": [
-
+          "u8-cutover-20260711"
         ],
         "invariant": "Preserve execution-base behavior and history for plugins/mission-control/CHANGELOG.md.",
         "new_path": "plugins/mission-control/CHANGELOG.md",
@@ -259,7 +259,7 @@
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-97172da2308bf99e",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "preserve",
         "units": [
           "U8"
@@ -268,7 +268,7 @@
       {
         "change": "M",
         "evidence_refs": [
-
+          "u8-cutover-20260711"
         ],
         "invariant": "Preserve execution-base behavior and history for plugins/mission-control/README.md.",
         "new_path": "plugins/mission-control/README.md",
@@ -282,7 +282,7 @@
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-f3ca108fe3b1bb10",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "preserve",
         "units": [
           "U8"
@@ -291,7 +291,7 @@
       {
         "change": "M",
         "evidence_refs": [
-
+          "u8-cutover-20260711"
         ],
         "invariant": "Preserve execution-base behavior and history for plugins/mission-control/config/sdlc-schema.json.",
         "new_path": "plugins/mission-control/config/sdlc-schema.json",
@@ -305,7 +305,7 @@
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-a981230e43203985",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "preserve",
         "units": [
           "U8"
@@ -314,7 +314,7 @@
       {
         "change": "M",
         "evidence_refs": [
-
+          "u8-cutover-20260711"
         ],
         "invariant": "Preserve execution-base behavior and history for plugins/mission-control/scripts/sdlc_manager.py.",
         "new_path": "plugins/mission-control/scripts/sdlc_manager.py",
@@ -328,7 +328,7 @@
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-8568d1b391a031f3",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "preserve",
         "units": [
           "U8"
@@ -337,7 +337,7 @@
       {
         "change": "M",
         "evidence_refs": [
-
+          "u8-cutover-20260711"
         ],
         "invariant": "Preserve execution-base behavior and history for plugins/mission-control/skills/flow/SKILL.md.",
         "new_path": "plugins/mission-control/skills/flow/SKILL.md",
@@ -351,7 +351,7 @@
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-9a03ccbd6eef0110",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "preserve",
         "units": [
           "U8"
@@ -360,7 +360,7 @@
       {
         "change": "M",
         "evidence_refs": [
-
+          "u8-cutover-20260711"
         ],
         "invariant": "Preserve execution-base behavior and history for plugins/mission-control/skills/issues/SKILL.md.",
         "new_path": "plugins/mission-control/skills/issues/SKILL.md",
@@ -374,7 +374,7 @@
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-c9844af1dfc2ccb7",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "preserve",
         "units": [
           "U8"
@@ -383,7 +383,7 @@
       {
         "change": "M",
         "evidence_refs": [
-
+          "u8-cutover-20260711"
         ],
         "invariant": "Preserve execution-base behavior and history for plugins/mission-control/skills/issues/references/issue-types.md.",
         "new_path": "plugins/mission-control/skills/issues/references/issue-types.md",
@@ -397,7 +397,7 @@
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-82e29cd40e4e9a97",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "preserve",
         "units": [
           "U8"
@@ -406,7 +406,7 @@
       {
         "change": "M",
         "evidence_refs": [
-
+          "u8-cutover-20260711"
         ],
         "invariant": "Preserve execution-base behavior and history for plugins/mission-control/skills/issues/references/templates-reference.md.",
         "new_path": "plugins/mission-control/skills/issues/references/templates-reference.md",
@@ -420,7 +420,7 @@
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-312a66c36c5ecd44",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "preserve",
         "units": [
           "U8"
@@ -429,7 +429,7 @@
       {
         "change": "M",
         "evidence_refs": [
-
+          "u8-cutover-20260711"
         ],
         "invariant": "Preserve execution-base behavior and history for plugins/mission-control/skills/labels/references/labels-reference.md.",
         "new_path": "plugins/mission-control/skills/labels/references/labels-reference.md",
@@ -443,7 +443,7 @@
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-d8c45615e53b05d3",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "preserve",
         "units": [
           "U8"
@@ -452,7 +452,7 @@
       {
         "change": "M",
         "evidence_refs": [
-
+          "u8-cutover-20260711"
         ],
         "invariant": "Preserve execution-base behavior and history for plugins/mission-control/skills/milestones/SKILL.md.",
         "new_path": "plugins/mission-control/skills/milestones/SKILL.md",
@@ -466,7 +466,7 @@
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-8793af92cc86d47d",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "preserve",
         "units": [
           "U8"
@@ -475,7 +475,7 @@
       {
         "change": "M",
         "evidence_refs": [
-
+          "u8-cutover-20260711"
         ],
         "invariant": "Preserve execution-base behavior and history for plugins/mission-control/skills/milestones/references/objective-workflow.md.",
         "new_path": "plugins/mission-control/skills/milestones/references/objective-workflow.md",
@@ -489,7 +489,7 @@
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-558506e5d46ce203",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "preserve",
         "units": [
           "U8"
@@ -498,7 +498,7 @@
       {
         "change": "M",
         "evidence_refs": [
-
+          "u8-cutover-20260711"
         ],
         "invariant": "Preserve execution-base behavior and history for plugins/mission-control/skills/rollout/references/work-hierarchy.md.",
         "new_path": "plugins/mission-control/skills/rollout/references/work-hierarchy.md",
@@ -512,7 +512,7 @@
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-91a4d29d8fe64463",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "preserve",
         "units": [
           "U8"
@@ -521,7 +521,7 @@
       {
         "change": "M",
         "evidence_refs": [
-
+          "u8-cutover-20260711"
         ],
         "invariant": "Preserve execution-base behavior and history for plugins/mission-control/tests/test_flow_subcommands.py.",
         "new_path": "plugins/mission-control/tests/test_flow_subcommands.py",
@@ -535,7 +535,7 @@
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-b0d4da73bdab025b",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "preserve",
         "units": [
           "U8"
@@ -544,7 +544,7 @@
       {
         "change": "M",
         "evidence_refs": [
-
+          "u8-cutover-20260711"
         ],
         "invariant": "Preserve execution-base behavior and history for plugins/mission-control/tests/test_issue_create_interactive.py.",
         "new_path": "plugins/mission-control/tests/test_issue_create_interactive.py",
@@ -558,7 +558,7 @@
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-c06298a530f34b47",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "preserve",
         "units": [
           "U8"
@@ -567,7 +567,7 @@
       {
         "change": "M",
         "evidence_refs": [
-
+          "u8-cutover-20260711"
         ],
         "invariant": "Preserve execution-base behavior and history for plugins/mission-control/tests/test_prompt_alignment.py.",
         "new_path": "plugins/mission-control/tests/test_prompt_alignment.py",
@@ -581,7 +581,7 @@
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-7acce98f94485e48",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "preserve",
         "units": [
           "U8"
@@ -590,7 +590,7 @@
       {
         "change": "M",
         "evidence_refs": [
-
+          "u8-cutover-20260711"
         ],
         "invariant": "Preserve execution-base behavior and history for plugins/saga/.codex-plugin/plugin.json.",
         "new_path": "plugins/saga/.codex-plugin/plugin.json",
@@ -604,7 +604,7 @@
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-0291a82600297d4a",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "reconcile",
         "units": [
           "U8"
@@ -613,7 +613,7 @@
       {
         "change": "M",
         "evidence_refs": [
-
+          "u8-cutover-20260711"
         ],
         "invariant": "Preserve execution-base behavior and history for plugins/saga/CHANGELOG.md.",
         "new_path": "plugins/saga/CHANGELOG.md",
@@ -627,7 +627,7 @@
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-d9b93b161f476cd3",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "reconcile",
         "units": [
           "U8"
@@ -636,7 +636,7 @@
       {
         "change": "M",
         "evidence_refs": [
-
+          "u8-cutover-20260711"
         ],
         "invariant": "Preserve execution-base behavior and history for plugins/saga/PORTABILITY.md.",
         "new_path": "plugins/saga/PORTABILITY.md",
@@ -650,7 +650,7 @@
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-1dccec3525727a9d",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "reconcile",
         "units": [
           "U8"
@@ -948,7 +948,7 @@
       "unit": "U5",
       "kind": "check",
       "artifact_path": "docs/validation/codex-plugin-modernization-u5.json",
-      "artifact_sha256": "a022a8b9e8f9c701de7569a225ffcdde9a1cd339d135743d559dcad9e6042a70",
+      "artifact_sha256": "be78d621d13580e56f5cbe3a140548abde7737b375cca4913dfbf792c7e28a77",
       "argv": [
         "PYTHONPATH=.",
         "uv",
@@ -970,8 +970,8 @@
       ],
       "cwd": ".",
       "exit_code": 0,
-      "recorded_at": "2026-07-11T14:25:19Z",
-      "repo_head": "726379954273cad9dc8d22870c92d971d8cee34a",
+      "recorded_at": "2026-07-11T16:24:13Z",
+      "repo_head": "f56ee8b4bfce4b71ba610d945fa6c6e9d230feab",
       "target_paths": [
         "plugins/saga/hooks/hooks.json",
         "plugins/saga/hooks/session_context.py",
@@ -1026,14 +1026,14 @@
         "tests/test_saga_session_context.py",
         "tests/test_verified_workflow_readiness.py"
       ],
-      "target_tree_sha256": "4a3cced39f9388f0433ac35f64dae3919f78f25e92f022f972279f2e6ba62532"
+      "target_tree_sha256": "7657581c32d38a6adc3e27465393fd0c097f8228ca86e61f0f17e963c5234409"
     },
     {
       "evidence_id": "u6-validation",
       "unit": "U6",
       "kind": "check",
       "artifact_path": "docs/validation/codex-plugin-modernization-u6.json",
-      "artifact_sha256": "93ef93d2316c381a736d5e762919adb0ea7fee723ebe2b0b85390e948f9a523c",
+      "artifact_sha256": "8e0a446255ee09631787c7dcefd826d3b079d297d61745c6b761e1a3f1c228a3",
       "argv": [
         "PYTHONPATH=.",
         "uv",
@@ -1064,8 +1064,8 @@
       ],
       "cwd": ".",
       "exit_code": 0,
-      "recorded_at": "2026-07-11T14:14:50Z",
-      "repo_head": "c2d21b81a6cda35e81bb1385e9b610fc6939c1b1",
+      "recorded_at": "2026-07-11T16:24:13Z",
+      "repo_head": "f56ee8b4bfce4b71ba610d945fa6c6e9d230feab",
       "target_paths": [
         "plugins/fleet-core/scripts/fleet_commons/bridge_receipt.py",
         "plugins/fleet-core/scripts/fleet_commons/tier_resolver.py",
@@ -1107,14 +1107,14 @@
         "tests/test_u6_branch_coverage.py",
         "tests/test_workflow_emitter.py"
       ],
-      "target_tree_sha256": "6d2c7dddec327989f16263be8a5b3cf7dfd9a7a879ddc560662bc79b8ae9f6b1"
+      "target_tree_sha256": "cc0a35ead169b0987980a803f7bd671c27a55e663bedacfa4f7adef7f42fe340"
     },
     {
       "evidence_id": "u7-validation",
       "unit": "U7",
       "kind": "check",
       "artifact_path": "docs/validation/codex-plugin-modernization-u7.json",
-      "artifact_sha256": "cb54dfb074b0ba01ae53291d43681d2cf02b78bae39ae1da121e6a2269506df6",
+      "artifact_sha256": "80dd7b6ce8098783abea8d54b0ce92aa674ecbf29741a5bc05fc352db3bfea93",
       "argv": [
         "python3",
         "-m",
@@ -1140,8 +1140,8 @@
       ],
       "cwd": ".",
       "exit_code": 0,
-      "recorded_at": "2026-07-11T14:14:50Z",
-      "repo_head": "c2d21b81a6cda35e81bb1385e9b610fc6939c1b1",
+      "recorded_at": "2026-07-11T16:22:55Z",
+      "repo_head": "b6e0e4d067c50b60101b3816457f503fa17a8539",
       "target_paths": [
         "plugins/fleet-core/scripts/fleet_commons/tier_palette.py",
         "plugins/saga/references/effort-policy.yaml",
@@ -1200,7 +1200,93 @@
         "tests/test_spend_authority.py",
         "tests/test_verified_workflow_advisory.py"
       ],
-      "target_tree_sha256": "a54f9f1b34fd995e4d23f5cc6a61cd5687321a0259807152b4d515cde8a2c09b"
+      "target_tree_sha256": "161be6537f34caa723f735cadd89db23121f60f37e77b1b673a1f32467a5d46f"
+    },
+    {
+      "evidence_id": "u8-review-20260711",
+      "unit": "U8",
+      "kind": "review",
+      "artifact_path": "docs/validation/codex-plugin-modernization-cutover.json",
+      "artifact_sha256": "428a4ad20229be27074190f048ff0d5cb3f2cd199fb36034d89c302ba75bc26d",
+      "argv": [
+        "u8-review-panel",
+        "architecture",
+        "adversarial",
+        "security"
+      ],
+      "cwd": ".",
+      "exit_code": 0,
+      "recorded_at": "2026-07-11T16:17:12Z",
+      "repo_head": "b49f61cd9d044ea5b0e6b7138a0477bbddfdcae2"
+    },
+    {
+      "evidence_id": "u8-isolated-install-20260711",
+      "unit": "U8",
+      "kind": "isolated-install",
+      "artifact_path": "docs/validation/codex-plugin-modernization-cutover.json",
+      "artifact_sha256": "428a4ad20229be27074190f048ff0d5cb3f2cd199fb36034d89c302ba75bc26d",
+      "argv": [
+        "python3",
+        "scripts/validate_codex_plugins.py",
+        "--mode",
+        "target-fixture"
+      ],
+      "cwd": ".",
+      "exit_code": 0,
+      "recorded_at": "2026-07-11T16:17:12Z",
+      "repo_head": "b49f61cd9d044ea5b0e6b7138a0477bbddfdcae2"
+    },
+    {
+      "evidence_id": "u8-fresh-session-20260711",
+      "unit": "U8",
+      "kind": "fresh-session",
+      "artifact_path": "docs/validation/codex-plugin-modernization-cutover.json",
+      "artifact_sha256": "428a4ad20229be27074190f048ff0d5cb3f2cd199fb36034d89c302ba75bc26d",
+      "argv": [
+        "codex",
+        "-a",
+        "on-request",
+        "-s",
+        "read-only",
+        "fresh-profile-readback"
+      ],
+      "cwd": ".",
+      "exit_code": 0,
+      "recorded_at": "2026-07-11T16:17:12Z",
+      "repo_head": "b49f61cd9d044ea5b0e6b7138a0477bbddfdcae2"
+    },
+    {
+      "evidence_id": "u8-rollback-20260711",
+      "unit": "U8",
+      "kind": "rollback",
+      "artifact_path": "docs/validation/codex-plugin-modernization-cutover.json",
+      "artifact_sha256": "428a4ad20229be27074190f048ff0d5cb3f2cd199fb36034d89c302ba75bc26d",
+      "argv": [
+        "seeded-migration-lane",
+        "rollback",
+        "exact-readback"
+      ],
+      "cwd": ".",
+      "exit_code": 0,
+      "recorded_at": "2026-07-11T16:17:12Z",
+      "repo_head": "b49f61cd9d044ea5b0e6b7138a0477bbddfdcae2"
+    },
+    {
+      "evidence_id": "u8-cutover-20260711",
+      "unit": "U8",
+      "kind": "cutover",
+      "artifact_path": "docs/validation/codex-plugin-modernization-cutover.json",
+      "artifact_sha256": "428a4ad20229be27074190f048ff0d5cb3f2cd199fb36034d89c302ba75bc26d",
+      "argv": [
+        "codex",
+        "plugin",
+        "add",
+        "verified-workflows@infiquetra-codex-plugins"
+      ],
+      "cwd": ".",
+      "exit_code": 0,
+      "recorded_at": "2026-07-11T16:17:12Z",
+      "repo_head": "b49f61cd9d044ea5b0e6b7138a0477bbddfdcae2"
     }
   ],
   "port_id": "2026-07-10-saga-07517",
@@ -1208,11 +1294,11 @@
 
   ],
   "release_evidence": {
-    "cutover": null,
-    "fresh_session": null,
-    "isolated_install": null,
-    "review": null,
-    "rollback": null
+    "cutover": "u8-cutover-20260711",
+    "fresh_session": "u8-fresh-session-20260711",
+    "isolated_install": "u8-isolated-install-20260711",
+    "review": "u8-review-20260711",
+    "rollback": "u8-rollback-20260711"
   },
   "schema_version": 1,
   "source": {
@@ -1241,7 +1327,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u8-cutover-20260711"
         ],
         "host_primitives": [
 
@@ -1257,7 +1343,7 @@
         "rationale": "Adapt the Claude manifest only in the U8 release transaction after Fleet Core behavior and installed-state proof are complete.",
         "row_id": "src-c89dcbffa88c9a73",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "claude-manifest",
         "treatment": "codex-adapt",
         "units": [
@@ -1273,7 +1359,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u8-cutover-20260711"
         ],
         "host_primitives": [
 
@@ -1289,7 +1375,7 @@
         "rationale": "Record the adapted Fleet Core release notes in U8 with the version and cutover evidence; U2 does not publish metadata early.",
         "row_id": "src-ae2bfb19c195be7f",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "changelog",
         "treatment": "codex-adapt",
         "units": [
@@ -1625,7 +1711,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u8-cutover-20260711"
         ],
         "host_primitives": [
 
@@ -1641,7 +1727,7 @@
         "rationale": "Recreate release metadata in the Codex manifest after tested behavior lands; never copy the Claude manifest.",
         "row_id": "src-48459813ea962414",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "claude-manifest",
         "treatment": "codex-adapt",
         "units": [
@@ -1657,7 +1743,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u8-cutover-20260711"
         ],
         "host_primitives": [
 
@@ -1673,7 +1759,7 @@
         "rationale": "Rewrite release and generated documentation for the tested Codex surface at cutover.",
         "row_id": "src-d9b93b161f476cd3",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "changelog",
         "treatment": "codex-adapt",
         "units": [
@@ -1761,19 +1847,19 @@
         "new_path": "plugins/saga/docs/commands.md",
         "old_path": null,
         "planned_targets": [
-          "plugins/saga/docs/commands.md"
+
         ],
         "planned_tests": [
-          "tests/test_validate_codex_plugins.py"
+
         ],
-        "rationale": "Rewrite release and generated documentation for the tested Codex surface at cutover.",
+        "rationale": "Defer the source plugin-internal documentation because Codex lifecycle documentation is generated from the repo-owned docs/saga surfaces; importing it would duplicate canon.",
         "row_id": "src-f92b30bbc5cbd720",
         "similarity": null,
         "state": "classified",
         "surface_kind": "documentation",
-        "treatment": "codex-adapt",
+        "treatment": "defer",
         "units": [
-          "U8"
+
         ]
       },
       {
@@ -1793,19 +1879,19 @@
         "new_path": "plugins/saga/docs/model/saga-docs-model.yaml",
         "old_path": null,
         "planned_targets": [
-          "plugins/saga/docs/model/saga-docs-model.yaml"
+
         ],
         "planned_tests": [
-          "tests/test_validate_codex_plugins.py"
+
         ],
-        "rationale": "Rewrite release and generated documentation for the tested Codex surface at cutover.",
+        "rationale": "Defer the source plugin-internal documentation because Codex lifecycle documentation is generated from the repo-owned docs/saga surfaces; importing it would duplicate canon.",
         "row_id": "src-7c6ab528ab0dafa1",
         "similarity": null,
         "state": "classified",
         "surface_kind": "config",
-        "treatment": "codex-adapt",
+        "treatment": "defer",
         "units": [
-          "U8"
+
         ]
       },
       {
@@ -3675,7 +3761,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u8-cutover-20260711"
         ],
         "host_primitives": [
 
@@ -3691,7 +3777,7 @@
         "rationale": "Record source lineage in the Verified Workflows release notes without claiming byte parity.",
         "row_id": "src-6c16f4db66473b2f",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "changelog",
         "treatment": "codex-adapt",
         "units": [
@@ -6053,7 +6139,7 @@
           "codex-execution-base"
         ],
         "evidence_refs": [
-
+          "u8-cutover-20260711"
         ],
         "host_primitives": [
 
@@ -6072,7 +6158,7 @@
         "rationale": "Verify the renamed package metadata, advisory/convergence discovery terms, and per-unit external-engine evidence contract together at the U8 release boundary rather than treating an upstream Team Execution version assertion as U4 runtime proof.",
         "row_id": "src-e53a8d2271d26bbb",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [

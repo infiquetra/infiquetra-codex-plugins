@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "unit": "U7",
-  "recorded_at": "2026-07-11T16:17:12Z",
+  "recorded_at": "2026-07-11T16:22:55Z",
   "repo_head": "b6e0e4d067c50b60101b3816457f503fa17a8539",
   "target_tree_sha256": "161be6537f34caa723f735cadd89db23121f60f37e77b1b673a1f32467a5d46f",
   "claim": "codex-safe-external-engine-trust-economics-attestation-and-advisory-reconciliation",
