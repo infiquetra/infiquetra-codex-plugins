@@ -276,7 +276,7 @@ STAGED_MARKETPLACE_SHA256 = (
     "42803919b39b720599b9692bfdcd95bcfe8c31b06ebb2c976aacaa890fdfea8a"
 )
 LEGACY_WORKFLOW_HISTORICAL_INVENTORY_SHA256 = (
-    "102ce32245e76a041affb0f72e0eb8a2c70647d4fa0f9aad0f9670ee6147b4b8"
+    "28629cd87365344459eaa028cb494372f704a8a5244ec3b19b7accc63511be75"
 )
 LEGACY_WORKFLOW_INVENTORY = Path(
     "docs/validation/verified-workflows-legacy-token-inventory.json"

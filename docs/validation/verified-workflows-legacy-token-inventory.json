@@ -72,14 +72,6 @@
       ]
     },
     {
-      "classification": "historical-evidence",
-      "path": "docs/code-reviews/2026-07-11-work-verified-workflows-modernization-code-review.md",
-      "sha256": "4c391c46cb98621e2e9eeaa1524dce473c20b21abc9803e5ebf07cb06782bcf8",
-      "tokens": [
-        "Team Execution"
-      ]
-    },
-    {
       "classification": "migration-documentation",
       "path": "docs/cutover/saga-family-rollback-and-split.md",
       "sha256": "8af6b58f595c02f5a180bd40d068685ab5e3cab64225c48288b89d106be155f6",
@@ -1078,7 +1070,7 @@
     }
   ],
   "generated_by": "scripts/build_legacy_workflow_inventory.py",
-  "historical_inventory_sha256": "805036afff5c3083f955b334652ed09888c0c777608f78f5da0eb8d2935c3605",
+  "historical_inventory_sha256": "28629cd87365344459eaa028cb494372f704a8a5244ec3b19b7accc63511be75",
   "history_sentinels": {
     "docs/investigations/2026-06-30-team-execution-saga-orchestration-debug-report.md": {
       "sha256": "ecc08eceda3a67dc81d15b1930753fe236ca7c1ae9b3ad9dd506cdecfb0ac4fa",

@@ -15,7 +15,7 @@
 Correctness, security, testing, and maintainability/conventions (always-on); reliability because the
 diff changes retry, receipt, hook, and external-request failure paths; adversarial because the change
 replaces a workflow runtime and crosses local-profile, plugin-install, and HTTP trust boundaries; and
-deploy/migration-verification because U8 retires Team Execution, migrates five managed profiles, and
+deploy/migration-verification because U8 retires the legacy workflow package, migrates five managed profiles, and
 requires exact rollback/readback evidence.
 
 Architecture, adversarial, security, and smoke reviews ran under the approved U8 Workflow Structure.
@@ -42,7 +42,7 @@ No unresolved findings at confidence 75 or higher.
 ## Built-vs-planned
 
 - Scope Check: **CLEAN.** Intent: modernize Fleet Core, Saga, and the workflow runtime against the
-  frozen Claude source window, preserve Codex execution-base behavior, retire Team Execution, and
+  frozen Claude source window, preserve Codex execution-base behavior, retire the legacy workflow package, and
   prove install, rollback, fresh-session, and cutover truth. Delivered: the full U1-U9 plan surface,
   final cachebusted plugins, profile/readback evidence, and a cutover-valid port contract.
 - U1 source inventory and capability gate: **DONE** — frozen manifest and runtime capability snapshot.
