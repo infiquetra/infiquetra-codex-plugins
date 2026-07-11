@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "unit": "U5",
-  "recorded_at": "2026-07-11T09:10:35Z",
-  "repo_head": "37619d093a035e32fb76ec49529af88a6836e8f9",
-  "target_tree_sha256": "10777ce68d492bcdd80cf78f27a0ce77d5cf8d16c538297ddd523065a5243293",
+  "recorded_at": "2026-07-11T09:30:59Z",
+  "repo_head": "eb77447527ceec14491fa125784fce470d479ea1",
+  "target_tree_sha256": "a63e51de9dc09a9da224abcc2538407e55f5d4d7e87fca5164eeef23ec28df69",
   "claim": "saga-canonical-workflow-dispatch-and-continuation-boundary",
   "checks": [
     {
       "name": "u5-focused-suite",
       "argv": ["PYTHONPATH=.", "uv", "run", "pytest", "-q", "plugins/saga/tests", "tests/test_outcome_dispatcher.py", "tests/test_outcome_backends.py", "tests/test_outcome_dispatch_migration.py", "tests/test_outcome_command.py", "tests/test_outcome_integration.py", "tests/test_outcome_liveness.py", "tests/test_outcome_completion.py", "tests/test_outcome_replay.py", "tests/test_capability_degrade.py", "tests/test_verified_workflow_readiness.py", "tests/test_saga_session_context.py"],
       "exit_code": 0,
-      "summary": "506 passed"
+      "summary": "513 passed"
     },
     {
       "name": "legacy-token-inventory",
@@ -40,6 +40,9 @@
     "lost-acknowledgement replay blocks duplicate launch",
     "portable imported launch chains require exact receipt payloads",
     "generic Saga save cannot self-assert Goal or logical-role identity",
-    "canonical active-skill vocabulary and complete compatibility coverage"
+    "canonical active-skill vocabulary and complete compatibility coverage",
+    "owner-state unpredictable run identity and receipt freshness",
+    "operator-only handoff authorization and nonportable copied authority",
+    "explicit Goal request binding and canonical no-ref readiness fallback"
   ]
 }
