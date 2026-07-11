@@ -36,9 +36,10 @@ round-trips deterministically and offline.
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
 
@@ -53,6 +54,7 @@ if str(_SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS_DIR))
 
 import fleet_commons_shim  # noqa: E402
+import workflow_emitter as _workflow_emitter  # noqa: E402
 
 _tier_palette = fleet_commons_shim.load("tier_palette")
 MODELS: tuple[str, ...] = _tier_palette.MODELS
@@ -68,6 +70,7 @@ _CHEAP_MODELS = _tier_palette.CHEAP_MODELS
 # refute-N pass rules (KTD3 / KTD5). A finding survives unless refuted per this rule:
 # majority => >= ceil(N/2) verifiers refute; unanimous => all N refute.
 PASS_RULES = ("majority", "unanimous")
+ENGINE_INTENTS = _workflow_emitter.ENGINE_INTENTS
 
 # Hard upper bound on a verify panel's verifier count. N above this FAILS validate/emit --
 # the bound directly guards the rate-limit overcorrection (R3: the 22/23-judges panel that
@@ -221,6 +224,46 @@ class SpecError(ValueError):
     """
 
 
+def _engine_registry_module() -> Any:
+    module = sys.modules.get("engine_registry")
+    if module is not None:
+        return module
+    path = Path(__file__).resolve().with_name("engine_registry.py")
+    spec = importlib.util.spec_from_file_location("engine_registry", path)
+    if spec is None or spec.loader is None:
+        raise SpecError("engine registry module is unavailable")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules["engine_registry"] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def _validate_external_engine_selector(
+    where: str,
+    engine: str | None,
+    capability: str | None,
+    engine_intent: str | None,
+) -> None:
+    if engine is not None and capability is not None:
+        raise SpecError(f"{where}: engine and capability are mutually exclusive")
+    if engine is None and capability is None:
+        if engine_intent is not None:
+            raise SpecError(f"{where}: engine_intent requires engine or capability")
+        return
+    if engine_intent not in ENGINE_INTENTS:
+        raise SpecError(f"{where}: engine_intent {engine_intent!r} not in {ENGINE_INTENTS}")
+    registry_module = _engine_registry_module()
+    registry_path = Path(__file__).resolve().parent.parent / "references" / "engine-registry.yaml"
+    try:
+        registry = registry_module.Registry.load(registry_path)
+        if engine is not None:
+            registry.by_key(engine)
+        elif capability not in registry.capabilities:
+            raise registry_module.RegistryError(f"unknown capability {capability!r}")
+    except registry_module.RegistryError as exc:
+        raise SpecError(f"{where}: external-engine selector is invalid: {exc}") from exc
+
+
 @dataclass(frozen=True)
 class Tier:
     """A per-unit ``{model, effort}`` tier (R2(b))."""
@@ -357,6 +400,10 @@ class Unit:
     # An optional refute-N judge-panel over this unit's output (KTD5). Absent => no panel;
     # an absent field round-trips unchanged so team_emitter / existing specs are untouched.
     verify: Verify | None = None
+    # External-engine selection is an advisory dispatch intent, never a native-child selector.
+    engine: str | None = None
+    capability: str | None = None
+    engine_intent: str | None = None
 
     def validate(self, where: str) -> None:
         if not self.unit_id:
@@ -364,6 +411,9 @@ class Unit:
         self.tier.validate(f"unit {self.unit_id}")
         if self.verify is not None:
             self.verify.validate(f"unit {self.unit_id}")
+        _validate_external_engine_selector(
+            f"unit {self.unit_id}", self.engine, self.capability, self.engine_intent
+        )
         if self.fanout and not self.targets:
             # R10: a fan-out unit MUST enumerate its targets -- never a silent filter.
             raise SpecError(
@@ -382,6 +432,14 @@ class Unit:
         where = f"unit {unit_id or '<missing id>'}"
         if "tier" not in data:
             raise SpecError(f"{where}: missing 'tier'")
+        engine_raw = data.get("engine")
+        capability_raw = data.get("capability")
+        engine = str(engine_raw) if engine_raw is not None else None
+        capability = str(capability_raw) if capability_raw is not None else None
+        intent_raw = data.get("engine_intent")
+        engine_intent = str(intent_raw) if intent_raw is not None else None
+        if engine_intent is None and (engine is not None or capability is not None):
+            engine_intent = "offload"
         return cls(
             unit_id=unit_id,
             label=str(data.get("label", unit_id)),
@@ -395,6 +453,9 @@ class Unit:
             targets=[str(t) for t in data.get("targets", [])],
             pilot=str(data.get("pilot", "")),
             verify=(Verify.from_dict(data["verify"], where) if data.get("verify") else None),
+            engine=engine,
+            capability=capability,
+            engine_intent=engine_intent,
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -415,6 +476,12 @@ class Unit:
         # team_emitter and existing specs never gain a new key (R5).
         if self.verify is not None:
             out["verify"] = self.verify.to_dict()
+        if self.engine is not None:
+            out["engine"] = self.engine
+        if self.capability is not None:
+            out["capability"] = self.capability
+        if self.engine_intent is not None:
+            out["engine_intent"] = self.engine_intent
         return out
 
 
@@ -432,6 +499,8 @@ class ExecutionSpec:
     units: list[Unit]
     # The repo the emitted workflow operates on (the harness `REPO` constant).
     repo: str = ""
+    revision: int = 1
+    revision_note: str = ""
 
     def unit_by_id(self, unit_id: str) -> Unit | None:
         for unit in self.units:
@@ -451,6 +520,8 @@ class ExecutionSpec:
             raise SpecError("spec needs a non-empty name")
         if not self.units:
             raise SpecError("spec needs at least one unit")
+        if isinstance(self.revision, bool) or not isinstance(self.revision, int) or self.revision < 1:
+            raise SpecError("spec revision must be a positive integer")
 
         seen: set[str] = set()
         var_owner: dict[str, str] = {}
@@ -506,11 +577,16 @@ class ExecutionSpec:
     def from_dict(cls, data: dict[str, Any]) -> ExecutionSpec:
         if "units" not in data or not isinstance(data["units"], list):
             raise SpecError("spec needs a 'units' list")
+        revision = data.get("revision", 1)
+        if isinstance(revision, bool) or not isinstance(revision, int):
+            raise SpecError("spec revision must be a positive integer")
         return cls(
             name=str(data.get("name", "")),
             description=str(data.get("description", "")),
             units=[Unit.from_dict(u) for u in data["units"]],
             repo=str(data.get("repo", "")),
+            revision=revision,
+            revision_note=str(data.get("revision_note", "")),
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -518,8 +594,44 @@ class ExecutionSpec:
             "name": self.name,
             "description": self.description,
             "repo": self.repo,
+            "revision": self.revision,
+            "revision_note": self.revision_note,
             "units": [u.to_dict() for u in self.units],
         }
+
+
+def revise_spec_tiers(
+    spec: ExecutionSpec,
+    overrides: dict[str, Tier],
+    *,
+    already_run_ids: list[str] | tuple[str, ...] = (),
+    reason: str,
+) -> ExecutionSpec:
+    """Return an explicit next execution-spec revision for not-yet-run tier changes."""
+
+    if not reason.strip():
+        raise SpecError("execution-spec revision requires a non-empty reason")
+    known = {unit.unit_id for unit in spec.units}
+    unknown = sorted(set(overrides).difference(known))
+    if unknown:
+        raise SpecError(f"execution-spec revision names unknown units: {unknown}")
+    already_run = set(already_run_ids)
+    units = [
+        replace(unit, tier=overrides[unit.unit_id])
+        if unit.unit_id in overrides and unit.unit_id not in already_run
+        else replace(unit)
+        for unit in spec.units
+    ]
+    revised = ExecutionSpec(
+        name=spec.name,
+        description=spec.description,
+        units=units,
+        repo=spec.repo,
+        revision=spec.revision + 1,
+        revision_note=reason.strip(),
+    )
+    revised.validate()
+    return revised
 
 
 # ---------------------------------------------------------------------------
@@ -624,7 +736,9 @@ def _verifier_prompt(unit: Unit) -> str:
         f"REFUTE-N VERIFIER over unit {unit.unit_id} ({unit.label}). You are an adversarial "
         f"skeptic: attempt to REFUTE the unit's result, do NOT re-do its work. Read the unit's "
         f"output and the evidence it cites; for each claimed finding decide REFUTED (with a "
-        f"concrete reason) or UPHELD. Emit a structured verdict {{refuted: [...], upheld: [...]}}."
+        f"concrete reason) or UPHELD. Emit refuted, upheld, verifier_identity, fallback_depth, "
+        f"and examined_sha. Preserve the supplied identity/depth values exactly and bind "
+        f"examined_sha to the tracked subject you actually inspected."
     ]
     if unit.tier.is_cheap:
         parts.append(BUDGET_RIDER)
@@ -665,6 +779,7 @@ def _emit_panel_reconciliation(
         f"label: {_js_string(unit.label + ' verifier')}",
         f"model: {_js_string(unit.tier.model)}",
         f"effort: {_js_string(unit.tier.effort)}",
+        f"schema: {json.dumps(_workflow_emitter.verifier_schema(), sort_keys=True)}",
     ]
 
     verdicts_var = f"{name_prefix}verdicts"
@@ -677,17 +792,26 @@ def _emit_panel_reconciliation(
     lines.append(f"{indent}const {verdicts_var} = await parallel([")
     for _ in range(n):
         lines.append(f"{indent}  () => agent(")
-        lines.append(f"{indent}    {_js_string(verifier_prompt)},")
+        lines.append(
+            f"{indent}    __verifierPrompt({_js_string(verifier_prompt)}, {result_var}),"
+        )
         lines.append(f"{indent}    {{ " + ", ".join(verifier_opts) + f", input: {result_var} }},")
         lines.append(f"{indent}  ),")
     lines.append(f"{indent}])")
+    valid_verdict_var = f"{name_prefix}valid_verifier_verdict"
     lines.append(
-        f"{indent}const {reported_var} = {verdicts_var}.filter((v) => "
-        f"v != null && Array.isArray(v.refuted))"
+        f'{indent}const {valid_verdict_var} = (v) => v != null && typeof v === "object" && '
+        f"Array.isArray(v.refuted) && Array.isArray(v.upheld) && "
+        f'typeof v.verifier_identity === "string" && v.verifier_identity.length > 0 && '
+        f'Number.isInteger(v.fallback_depth) && v.fallback_depth >= 0 && '
+        f'typeof v.examined_sha === "string" && /^[0-9a-f]{{40}}$/.test(v.examined_sha)'
+    )
+    lines.append(
+        f"{indent}const {reported_var} = {verdicts_var}.filter((v) => {valid_verdict_var}(v))"
     )
     lines.append(
         f"{indent}const {missing_idx_var} = {verdicts_var}.map((v, i) => "
-        f"(v == null || !Array.isArray(v.refuted) ? i + 1 : null)).filter((i) => i != null)"
+        f"(!{valid_verdict_var}(v) ? i + 1 : null)).filter((i) => i != null)"
     )
     lines.append(
         f"{indent}const {refute_count_var} = {reported_var}.filter((v) => "
@@ -714,6 +838,13 @@ def _emit_panel_reconciliation(
     lines.append(
         f"{indent}      ({reported_var}.length < {floor} ? "
         f'" — UNDER-STRENGTH (quorum floor {floor})" : ""))'
+    )
+    lines.append(f"{indent}}}")
+    lines.append(f"{indent}if ({reported_var}.length < {floor}) {{")
+    lines.append(
+        f"{indent}  throw new Error(`verifier-under-strength: Unit {unit.unit_id} reported "
+        f"${{{reported_var}.length}}/{n} verifiers (quorum floor {floor}; "
+        f"missing #${{{missing_idx_var}.join(', #')}})`)"
     )
     lines.append(f"{indent}}}")
 
@@ -909,6 +1040,8 @@ def emit_workflow_script(spec: ExecutionSpec) -> str:
 
     lines.append(_JS_GATE_HELPER)
     lines.append("")
+    lines.append(_workflow_emitter.JS_VERIFIER_PROMPT_HELPER)
+    lines.append("")
 
     # Topological waves (KTD4): each layer's units are mutually independent and run in a
     # single parallel() wave; layers are sequenced by await (the dependency barrier). A
@@ -919,6 +1052,13 @@ def emit_workflow_script(spec: ExecutionSpec) -> str:
 
     def _emit_unit_header(unit: Unit) -> None:
         lines.append(f"// ---- {unit.unit_id}: {unit.label} ----")
+        marker = _workflow_emitter.external_engine_marker(
+            engine=unit.engine,
+            capability=unit.capability,
+            intent=unit.engine_intent,
+        )
+        if marker is not None:
+            lines.append(f"// external-engine intent: {marker}")
         if unit.depends_on:
             lines.append(f"// depends_on: {', '.join(unit.depends_on)} (barrier)")
         if unit.pilot:
@@ -1106,6 +1246,9 @@ class Segment:
     unit_ids: list[str]
     tier: Tier
     depends_on: list[str]
+    engine: str | None = None
+    capability: str | None = None
+    engine_intent: str | None = None
 
 
 def segment_units(spec: ExecutionSpec) -> list[Segment]:
@@ -1124,7 +1267,11 @@ def segment_units(spec: ExecutionSpec) -> list[Segment]:
     current_units: list[Unit] = []
 
     for unit in spec.units:
-        if not unit.files:
+        if unit.engine is not None:
+            key = f"engine:{unit.engine}"
+        elif unit.capability is not None:
+            key = f"capability:{unit.capability}"
+        elif not unit.files:
             key = ""
         else:
             first_file = unit.files[0]
@@ -1156,8 +1303,14 @@ def segment_units(spec: ExecutionSpec) -> list[Segment]:
     temp_segments: list[dict[str, Any]] = []
 
     for key, units in segments_data:
-        base_dir = key[len("plugins/") :] if key.startswith("plugins/") else key
-        base_id = f"worker-{base_dir}" if base_dir else "worker"
+        if key.startswith("engine:"):
+            base_dir = key[len("engine:") :].replace("/", "-")
+            base_id = f"worker-engine-{base_dir}"
+        elif key.startswith("capability:"):
+            base_id = f"worker-capability-{key[len('capability:') :]}"
+        else:
+            base_dir = key[len("plugins/") :] if key.startswith("plugins/") else key
+            base_id = f"worker-{base_dir}" if base_dir else "worker"
 
         count = counts.get(base_id, 0) + 1
         counts[base_id] = count
@@ -1209,6 +1362,11 @@ def segment_units(spec: ExecutionSpec) -> list[Segment]:
                 unit_ids=unit_ids,
                 tier=seg_tier,
                 depends_on=seg_deps,
+                engine=units[0].engine,
+                capability=units[0].capability,
+                engine_intent=_workflow_emitter.merge_engine_intents(
+                    unit.engine_intent for unit in units
+                ),
             )
         )
 

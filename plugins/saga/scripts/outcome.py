@@ -698,7 +698,8 @@ def nodes_from_parent_issue(
 ) -> tuple[list[dict[str, Any]], list[dict[str, str]], str]:
     """Build outcome node dicts from a GitHub issue's direct sub-issues.
 
-    Returns ``(nodes, dropped_edges, parent_title)``. Each node carries ``subplot_id=sub-<N>``, a
+    Returns ``(nodes, dropped_edges, parent_title)``. Each node carries a stable number-only subplot
+    id unless duplicate issue numbers across repositories require a repo-qualified id, a
     ``kind`` from the sub-issue's labels (``non-code`` label -> ``non-code``, else ``code``), an authored
     ``state`` from the sub-issue's state+reason, a ``github`` provenance stamp the reconcile/board-sync
     consumers read, and ``depends_on`` from the inferred (cycle-safe) edges.
@@ -712,7 +713,8 @@ def nodes_from_parent_issue(
     for sub in subissues:
         labels = {str(x).lower() for x in (sub.get("labels") or [])}
         if "capability" in labels or int(sub.get("sub_issue_count") or 0) > 0:
-            tracker_children.append(f"{owner}/{repo}#{sub['number']}")
+            child_repo = str(sub.get("repo") or f"{owner}/{repo}")
+            tracker_children.append(f"{child_repo}#{sub['number']}")
     if tracker_children:
         refs = ", ".join(tracker_children)
         raise OutcomeError(
@@ -722,12 +724,14 @@ def nodes_from_parent_issue(
         )
 
     depends_on_by_subplot, dropped = outcome_edges.edges_from_relationships(subissues)
+    subplot_ids = outcome_edges.subplot_ids_for_subissues(subissues)
 
     repo_full = f"{owner}/{repo}"
     nodes: list[dict[str, Any]] = []
     for sub in subissues:
         n = sub["number"]
-        sid = f"sub-{n}"
+        raw_repo = str(sub.get("repo") or "")
+        sid = subplot_ids[(raw_repo, int(n))]
         labels = [str(x).lower() for x in (sub.get("labels") or [])]
         kind = "non-code" if "non-code" in labels else "code"
         node: dict[str, Any] = {
@@ -737,7 +741,11 @@ def nodes_from_parent_issue(
             "state": _ingest_state(sub.get("state"), sub.get("state_reason")),
             # Stamp the sub-issue's OWN number (fully-qualified) so reconcile/board-sync resolve it,
             # never the parent issue (#375 KTD4/R5).
-            "github": {"repo": repo_full, "issue": f"{repo_full}#{n}", "sub_issue": n},
+            "github": {
+                "repo": raw_repo or repo_full,
+                "issue": f"{raw_repo or repo_full}#{n}",
+                "sub_issue": n,
+            },
         }
         deps = depends_on_by_subplot.get(sid)
         if deps:

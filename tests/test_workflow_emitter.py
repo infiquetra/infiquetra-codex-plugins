@@ -105,6 +105,42 @@ def test_round_trip_to_dict_from_dict() -> None:
     assert rebuilt.units[0].tier.model == "haiku"
 
 
+def test_verifier_emission_binds_visibility_identity_and_quorum() -> None:
+    mod = _load()
+    data = _valid_spec_dict()
+    units = data["units"]
+    assert isinstance(units, list)
+    units[1]["verify"] = {"n": 3, "pass_rule": "majority"}
+
+    script = mod.emit_workflow_script(mod.ExecutionSpec.from_dict(data))
+
+    assert "VERIFIER VISIBILITY PROTOCOL" in script
+    assert "UNIT RESULT INPUT (authoritative structured evidence)" in script
+    assert "status --short" in script
+    assert "named untracked output files" in script
+    assert "examined_sha" in script
+    assert "verifier_identity" in script
+    assert "fallback_depth" in script
+    assert "verifier-under-strength: Unit U2" in script
+
+
+def test_external_engine_marker_is_advisory_only() -> None:
+    mod = _load()
+    data = _valid_spec_dict()
+    units = data["units"]
+    assert isinstance(units, list)
+    units[1]["capability"] = "code-generation"
+    units[1]["engine_intent"] = "divergence"
+
+    script = mod.emit_workflow_script(mod.ExecutionSpec.from_dict(data))
+
+    assert (
+        "external-engine intent: capability=code-generation intent=divergence "
+        "authority=advisory-only" in script
+    )
+    assert 'dispatch: "external-engine"' not in script
+
+
 # ---------------------------------------------------------------------------
 # R10: a fan-out unit without enumerated targets FAILS emit.
 # ---------------------------------------------------------------------------

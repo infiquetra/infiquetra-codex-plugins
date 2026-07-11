@@ -52,6 +52,90 @@ def _ledger(tmp_path: Path) -> Path:
     return d
 
 
+def test_progress_comment_payload_gets_stable_marker(tmp_path: Path) -> None:
+    writer = RecordingWriter()
+    payload = {"body": "visible progress"}
+
+    record = BP.authorize_and_write(
+        "issue-progress-comment",
+        "infiquetra/x",
+        42,
+        "done",
+        board_writer=writer,
+        ledger_dir=_ledger(tmp_path),
+        payload=payload,
+    )
+
+    key = CERT_MOD.idempotency_key("issue-progress-comment", "infiquetra/x", 42, "done")
+    marker = BP._comment_idempotency_marker(key)
+    assert record["status"] == "written"
+    assert writer.calls[0]["payload"]["body"] == f"visible progress\n\n{marker}"
+    assert payload == {"body": "visible progress"}
+
+
+def test_default_writer_skips_existing_marked_comment(tmp_path: Path) -> None:
+    key = CERT_MOD.idempotency_key("issue-progress-comment", "infiquetra/x", 42, "done")
+    marker = BP._comment_idempotency_marker(key)
+    calls: list[list[str]] = []
+
+    class Result:
+        returncode = 0
+        stderr = ""
+
+        def __init__(self, stdout: str = "") -> None:
+            self.stdout = stdout
+
+    def fake_run(command: list[str], **_kwargs: Any) -> Result:
+        calls.append(command)
+        if command[:2] == ["gh", "api"]:
+            return Result(json.dumps([[{"body": f"already posted {marker}"}]]))
+        return Result()
+
+    writer = BP.default_board_writer(tmp_path, runner=fake_run)
+    writer(
+        op_kind="issue-progress-comment",
+        repo="infiquetra/x",
+        number=42,
+        payload={"body": f"visible progress\n\n{marker}"},
+    )
+
+    assert len(calls) == 1
+    assert calls[0][:2] == ["gh", "api"]
+    assert "--slurp" in calls[0]
+
+
+def test_comment_crash_replay_restores_local_ledger_without_duplicate(tmp_path: Path) -> None:
+    ledger = _ledger(tmp_path)
+    key = CERT_MOD.idempotency_key("issue-progress-comment", "infiquetra/x", 42, "done")
+    marker = BP._comment_idempotency_marker(key)
+    calls: list[list[str]] = []
+
+    class Result:
+        returncode = 0
+        stderr = ""
+
+        def __init__(self, stdout: str = "") -> None:
+            self.stdout = stdout
+
+    def fake_run(command: list[str], **_kwargs: Any) -> Result:
+        calls.append(command)
+        return Result(json.dumps([{"body": f"previous crash left {marker}"}]))
+
+    record = BP.authorize_and_write(
+        "issue-progress-comment",
+        "infiquetra/x",
+        42,
+        "done",
+        board_writer=BP.default_board_writer(tmp_path, runner=fake_run),
+        ledger_dir=ledger,
+        payload={"body": "visible progress"},
+    )
+
+    assert record["status"] == "written"
+    assert len(calls) == 1
+    assert (ledger / BP._safe_ledger_name(key)).exists()
+
+
 def test_default_board_writer_resolves_installed_cache_sibling(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

@@ -176,6 +176,11 @@ def dispatch(
             if runner_receipt is None
             else [
                 *_bridge_receipt.validate_receipt(runner_receipt),
+                *_receipt_binding_errors(
+                    runner_receipt,
+                    resolution=resolution,
+                    invocation=invocation,
+                ),
                 *bridge_signatures.validate_receipt_signature(
                     runner_receipt,
                     evidence_text=output,
@@ -207,6 +212,39 @@ def dispatch(
 
     _record_advisory_facts(ledger, invocation, evidence, result, subplot_id=subplot_id, at=at)
     return evidence
+
+
+def _receipt_binding_errors(
+    receipt: dict[str, Any],
+    *,
+    resolution: Resolution,
+    invocation: dict[str, Any],
+) -> list[str]:
+    """Bind a transport-valid receipt to the route that was actually requested."""
+
+    errors: list[str] = []
+    expected_transport = "http" if invocation.get("via") == "engine-bridge-http" else "cli"
+    expected = {
+        "engine_id": resolution.engine_id,
+        "variant": resolution.variant,
+        "transport": expected_transport,
+    }
+    for field, value in expected.items():
+        if receipt.get(field) != value:
+            errors.append(
+                f"proof-integrity: receipt {field} mismatch "
+                f"expected={value!r} observed={receipt.get(field)!r}"
+            )
+    if expected_transport == "http":
+        runner = receipt.get("runner")
+        observed_model = runner.get("model") if isinstance(runner, dict) else None
+        expected_model = invocation.get("model")
+        if observed_model != expected_model:
+            errors.append(
+                "proof-integrity: receipt model mismatch "
+                f"expected={expected_model!r} observed={observed_model!r}"
+            )
+    return errors
 
 
 def _num(value: Any) -> float:

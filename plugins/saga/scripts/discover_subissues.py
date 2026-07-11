@@ -8,7 +8,7 @@ import json
 import subprocess  # nosec B404
 import sys
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 
 # ``stateReason`` seeds a closed sub-issue's terminal node state (#375 KTD2); ``trackedIssues`` is the
 # stable relationship signal for edge inference (#375 KTD1 — a tracker depends on what it tracks). We
@@ -29,9 +29,15 @@ query SubIssues($owner: String!, $repo: String!, $number: Int!) {
           state
           stateReason
           url
+          repository { nameWithOwner }
           labels(first: 10) { nodes { name } }
           assignees(first: 5) { nodes { login } }
-          trackedIssues(first: 50) { nodes { number } }
+          trackedIssues(first: 50) {
+            nodes {
+              number
+              repository { nameWithOwner }
+            }
+          }
           subIssues(first: 1) { totalCount }
         }
       }
@@ -75,7 +81,15 @@ def fetch_subissues(
     if getattr(result, "returncode", 0) != 0:
         print(f"gh api graphql failed: {getattr(result, 'stderr', '')}", file=sys.stderr)
         raise SystemExit(2)
-    return json.loads(result.stdout)
+    try:
+        payload = json.loads(result.stdout)
+    except json.JSONDecodeError as exc:
+        print("gh api graphql returned invalid JSON", file=sys.stderr)
+        raise SystemExit(2) from exc
+    if not isinstance(payload, dict):
+        print("gh api graphql returned non-object JSON", file=sys.stderr)
+        raise SystemExit(2)
+    return cast(dict[str, object], payload)
 
 
 def fetch_parent_issue(
@@ -93,9 +107,30 @@ def fetch_objective(
 
 
 def normalize(payload: dict[str, object]) -> dict[str, object]:
-    issue = payload.get("data", {}).get("repository", {}).get("issue", {})
+    data = payload.get("data")
+    repository = data.get("repository", {}) if isinstance(data, dict) else {}
+    issue = repository.get("issue", {}) if isinstance(repository, dict) else {}
     subissues = issue.get("subIssues", {}) if isinstance(issue, dict) else {}
-    nodes = subissues.get("nodes", []) if isinstance(subissues, dict) else []
+    raw_nodes = subissues.get("nodes", []) if isinstance(subissues, dict) else []
+    nodes = [node for node in raw_nodes if isinstance(node, dict)] if isinstance(raw_nodes, list) else []
+
+    def _connection_nodes(node: dict[str, Any], key: str) -> list[dict[str, Any]]:
+        connection = node.get(key)
+        values = connection.get("nodes", []) if isinstance(connection, dict) else []
+        return [value for value in values if isinstance(value, dict)] if isinstance(values, list) else []
+
+    def _repo_name(node: dict[str, Any]) -> str:
+        repo_data = node.get("repository")
+        name = repo_data.get("nameWithOwner") if isinstance(repo_data, dict) else None
+        return name if isinstance(name, str) else ""
+
+    def _tracked_ref(node: dict[str, Any]) -> object:
+        repo_name = _repo_name(node)
+        return (
+            {"number": node.get("number"), "repo": repo_name}
+            if repo_name
+            else node.get("number")
+        )
     return {
         "parent": {
             "number": issue.get("number"),
@@ -110,18 +145,16 @@ def normalize(payload: dict[str, object]) -> dict[str, object]:
                 "state": node.get("state"),
                 "state_reason": node.get("stateReason"),
                 "url": node.get("url"),
-                "labels": [
-                    label.get("name") for label in (node.get("labels", {}).get("nodes") or [])
-                ],
+                "repo": _repo_name(node),
+                "labels": [label.get("name") for label in _connection_nodes(node, "labels")],
                 "assignees": [
-                    assignee.get("login")
-                    for assignee in (node.get("assignees", {}).get("nodes") or [])
+                    assignee.get("login") for assignee in _connection_nodes(node, "assignees")
                 ],
                 "sub_issue_count": (node.get("subIssues") or {}).get("totalCount", 0),
                 # #375 KTD1: a tracker depends on what it tracks; empty when absent (degrade-to-no-edges).
                 "blocked_by": [
-                    t.get("number")
-                    for t in (node.get("trackedIssues", {}).get("nodes") or [])
+                    _tracked_ref(t)
+                    for t in _connection_nodes(node, "trackedIssues")
                     if t.get("number") is not None
                 ],
             }

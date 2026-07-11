@@ -9,17 +9,21 @@ external engine never holds a gated verdict.** Dispatch produces *advisory evide
 (The code field is spelled `verified_by_claude` as a lineage name; on the Codex host it means "verified
 by the driving session.")
 
-## The two dispatch paths
+## Dispatch paths
 
 The adapter dispatches to the wrapper each engine already owns — it does not re-implement containment.
 
-- **Codex** (`resolution.engine_id == "codex"`) → `codex:codex-rescue`. The invocation carries
-  `sandbox: read-only` (R23) and `task` set to `resolution.payload` **byte-for-byte** — the assembled
-  protocol + context is forwarded verbatim, never paraphrased or shell-interpolated (R9/R11/AE5).
 - **agy** (`resolution.engine_id == "agy"`) → `agy:delegate`. The invocation is an
   `agy.delegation.v1` envelope with `mode: no-write` (R23), `task` = `resolution.payload`, and `model`
-  set to the registry entry's **verbatim canonical string** (e.g. `Gemini 3.1 Pro (High)`), forwarded
-  byte-for-byte because agy's `--model` is passed through unmodified.
+  and `effort` copied from the validated registry row.
+- **HTTP** (`invocation.via == "engine-bridge-http"`) → the generic OpenAI-compatible bridge. The
+  invocation contains the reviewed HTTPS provider root, model, effort, and bearer environment
+  variable name. The secret value exists only in the outbound header and never enters evidence.
+
+Native Codex children are not external engines. Their `gpt-5.6-sol`, `gpt-5.6-terra`, or
+`gpt-5.6-luna` model and scalar effort are selected by Fleet Core execution classes and Verified
+Workflows profiles, then verified from host-issued child context. `codex:delegate` and stale
+`codex --effort` recipes are rejected by the registry.
 
 Both paths are **evidence-only by default** (R23): the engine returns proposed output; it does not
 mutate the working tree. File-mutating external work is deferred until the ideation-R14 sandbox
@@ -29,11 +33,10 @@ evidence, not an edit (AE7).
 ## The advisory-evidence result type (R13 enforcement)
 
 `dispatch()` returns an `AdvisoryEvidence` — a value that carries `evidence`, `provenance`, a
-`verified_by_claude` flag (default `False`), and an optional `halt`. It carries **no gated-verdict
-field**. The structural guard is `satisfy_gate(evidence)`: it raises unless `verified_by_claude` is
-`True`. So external evidence cannot satisfy a gated return until a distinct host verification step
-has stamped it — a workflow cannot wire raw external output into a gate even by mistake. This is R13
-made structural rather than merely asserted.
+`verified_by_claude` lineage flag (default `False`), a typed `runner_receipt`, and an optional `halt`.
+The lineage field keeps the persisted schema compatible; on Codex it means independent root
+verification. Runner results containing `verdict`, `gate_status`, or `adjudicated` are structurally
+rejected. An `ok` result without a schema-valid, signature-valid bridge receipt is also rejected.
 
 ## Failure modes → halt + provenance
 
@@ -49,7 +52,8 @@ overflow from the resolver) short-circuits: `dispatch()` returns that halt witho
 Any fallback or substitution emits a visible one-line note (`downgrade_note(engine, reason)`), shaped
 like the existing `orchestration_downgrade` record (`plugins/saga/references/saga-spec.md:121-125`), so
 a later `/retro` or `/optimize` pass — and the operator — can see the run went degraded and why.
-Degradation is durable, never silent.
+Degradation is durable, never silent. An implicit worker fallback returns to the Codex root inline;
+an explicitly selected unavailable engine and every unavailable advisory reviewer halt.
 
 ## Override semantics (R20)
 
@@ -61,11 +65,6 @@ Degradation is durable, never silent.
 
 ## Backends (Codex host truth)
 
-Inline/interactive dispatch and serial autonomous dispatch are in scope: a wrapper shells out to the
-engine's CLI within the Codex host session. Claude-host-only autonomous surfaces (`cc-workflows` /
-Workflow wave-thunks, TeamCreate chaperone emission) are **negative-gated** on the Codex host — they are
-not an active dispatch backend here; a request routed at one degrades to serial dispatch with a
-`downgrade_note` rather than emitting a Claude-only orchestration surface. team-execution dispatch
-(R10/R12) remains **deferred** — it needs an external-engine worker context-package slot that does not
-exist yet (`plugins/team-execution/skills/team-execution/SKILL.md`). Because external engines are never
-gatekeepers (R13/R15), they are off team-execution's critical path, so this deferral costs nothing today.
+Root-owned dispatch and dry-run route explanation are in scope. Claude Workflow, TeamCreate, fork,
+and peer-team messaging are negative-gated. External-engine evidence never satisfies Verified
+Workflows reviewer, validator, or gate arithmetic, even when its transport receipt is valid.

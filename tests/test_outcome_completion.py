@@ -316,3 +316,27 @@ def test_production_harvester_child_outcome_recurses(repo: Path) -> None:
     )
     # the child outcome's leaf reads done -> child terminal-successful -> parent's child node unlocks
     assert result.harvested == ["sub"]
+
+
+def test_github_refs_normalize_owner_repo_numbers_to_urls() -> None:
+    seen: list[list[str]] = []
+
+    def runner(args: list[str], **_kwargs: Any) -> SimpleNamespace:
+        seen.append(args)
+        payload = (
+            {"state": "MERGED", "mergedAt": "2026-07-11T00:00:00Z"}
+            if args[1] == "pr"
+            else {"state": "CLOSED"}
+        )
+        return SimpleNamespace(returncode=0, stdout=json.dumps(payload), stderr="")
+
+    assert GH.pr_state("o/r#493", runner=runner) == "merged"
+    assert GH.issue_state("o/r#7", runner=runner) == "closed"
+    assert seen[0][3] == "https://github.com/o/r/pull/493"
+    assert seen[1][3] == "https://github.com/o/r/issues/7"
+
+
+def test_parse_github_ref_accepts_urls_and_rejects_bare_number() -> None:
+    assert GH._parse_ref("infiquetra/plugins#362") == ("infiquetra", "plugins", "362")
+    assert GH._parse_ref("https://github.com/o/r/issues/7") == ("o", "r", "7")
+    assert GH._parse_ref("42") is None

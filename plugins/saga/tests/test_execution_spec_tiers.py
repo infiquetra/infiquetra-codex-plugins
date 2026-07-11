@@ -110,3 +110,83 @@ def test_spec_validate_rejects_over_ceiling_unit() -> None:
     )
     with pytest.raises(ES.SpecError):
         spec.validate()
+
+
+def test_external_engine_selector_defaults_to_offload_and_roundtrips() -> None:
+    data = {
+        "name": "external",
+        "units": [
+            {
+                "unit_id": "a",
+                "tier": {"model": "sonnet", "effort": "medium"},
+                "engine": "agy/gemini-3.5-flash-high",
+            }
+        ],
+    }
+
+    spec = ES.ExecutionSpec.from_dict(data)
+    spec.validate()
+
+    assert spec.units[0].engine_intent == "offload"
+    assert spec.to_dict()["units"][0]["engine"] == "agy/gemini-3.5-flash-high"
+
+
+def test_native_codex_cannot_be_declared_as_external_engine() -> None:
+    data = {
+        "name": "invalid-native-route",
+        "units": [
+            {
+                "unit_id": "a",
+                "tier": {"model": "sonnet", "effort": "medium"},
+                "engine": "codex/gpt-5.6-sol",
+            }
+        ],
+    }
+
+    with pytest.raises(ES.SpecError, match="unknown engine"):
+        ES.ExecutionSpec.from_dict(data).validate()
+
+
+def test_segment_intent_merge_uses_canonical_divergence_order() -> None:
+    units = []
+    for index, intent in enumerate(("offload", "divergence", "second-opinion"), start=1):
+        units.append(
+            ES.Unit(
+                unit_id=f"u{index}",
+                label=f"u{index}",
+                tier=ES.Tier("sonnet", "medium"),
+                prompt="advisory work",
+                engine="agy/gemini-3.5-flash-high",
+                engine_intent=intent,
+            )
+        )
+    spec = ES.ExecutionSpec(name="intent-order", description="", units=units)
+
+    segments = ES.segment_units(spec)
+
+    assert len(segments) == 1
+    assert segments[0].engine_intent == "divergence"
+
+
+def test_operator_tier_change_creates_explicit_spec_revision() -> None:
+    spec = ES.ExecutionSpec(
+        name="revision",
+        description="",
+        units=[
+            _unit("done", "haiku", "low", ["plugins/a/a.py"]),
+            _unit("next", "haiku", "low", ["plugins/b/b.py"]),
+        ],
+    )
+
+    revised = ES.revise_spec_tiers(
+        spec,
+        {"done": ES.Tier("opus", "high"), "next": ES.Tier("opus", "high")},
+        already_run_ids=["done"],
+        reason="operator approved a stronger remaining unit",
+    )
+
+    assert revised.revision == 2
+    assert revised.revision_note.startswith("operator approved")
+    assert revised.units[0].tier == ES.Tier("haiku", "low")
+    assert revised.units[1].tier == ES.Tier("opus", "high")
+    assert spec.revision == 1
