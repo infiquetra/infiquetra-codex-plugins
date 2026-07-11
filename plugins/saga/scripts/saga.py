@@ -677,13 +677,12 @@ def save(
     prior = restore(root, saga.saga_id)
     goal_bound = False
     if goal_result is not None:
-        requested = (saga.continuation_mode, saga.continuation_ref)
+        if saga.continuation_mode != "goal":
+            raise ValueError("Goal binding requires an explicit goal continuation request")
+        requested_ref = saga.continuation_ref
         saga = bind_goal_continuation(saga, goal_result)
         goal_bound = saga.continuation_mode == "goal"
-        if requested[0] == "goal" and requested != (
-            saga.continuation_mode,
-            saga.continuation_ref,
-        ):
+        if requested_ref and goal_bound and requested_ref != saga.continuation_ref:
             raise ValueError("Goal result does not match the requested continuation binding")
     merged = _merge(prior, saga, moment, explicit_scalars=explicit_scalars)
     merged = _replace(

@@ -45,6 +45,13 @@ without an acknowledgement, do not launch it again automatically: reconcile the 
 or record an operator-confirmed handoff. This fail-closed recovery prevents crash replay from
 duplicating leaf side effects.
 
+Launch receipts live only under the owner-controlled canonical user-state root and bind the
+unpredictable run identity plus issuance time from the current intent. Repository-local receipts,
+stale receipts, and receipts from a prior run cannot authorize dispatch. A dispatcher cannot claim
+`handed-off`; only the explicit operator `reconcile-dispatch` path may record that state. Portable
+bundles carry acknowledgements for audit, but imports must reconcile launch or handoff authority
+locally rather than treating copied evidence as authorization.
+
 `start --from-parent-issue <owner>/<repo>#<N>` seeds the DAG directly from a GitHub issue's
 direct sub-issues instead of the two-node design/build starter: one node per sub-issue (`kind` from a
 `non-code` label, else `code`), an authored terminal `state` for a closed sub-issue

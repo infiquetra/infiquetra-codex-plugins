@@ -66,16 +66,21 @@ def _write_team_ref(repo_root: Path) -> str:
 
 def _launch_ack(req: Any) -> dict[str, str]:
     leaf_saga_id = f"leaf-{req.outcome_id}-{req.subplot_id}"
-    receipt_path = (
-        req.repo_root
-        / ".codex/verified-workflows/dispatch-receipts"
-        / f"{req.outcome_id}-{req.subplot_id}.json"
-    )
+    state_root = Path.home() / ".codex/verified-workflows/state" / req.repo_root.name
+    receipt_path = state_root / "dispatch-receipts" / f"{req.outcome_id}-{req.subplot_id}.json"
     receipt_path.parent.mkdir(parents=True, exist_ok=True)
+    marker = {
+        "schema": "saga.workflow-repo-identity.v1",
+        "repo_root_sha256": hashlib.sha256(req.repo_root.resolve().as_posix().encode()).hexdigest(),
+    }
+    marker_path = state_root / ".repo-identity.json"
+    marker_path.write_text(json.dumps(marker, sort_keys=True) + "\n", encoding="utf-8")
+    marker_path.chmod(0o600)
     payload = {
         "schema": "saga.outcome-dispatch-launch.v1",
         "producer_kind": "verified-workflow",
-        "run_identity": f"run-{req.outcome_id}",
+        "run_identity": req.run_identity,
+        "issued_at": max(req.intent_created_at, OUTCOME.time.time()),
         "outcome_id": req.outcome_id,
         "subplot_id": req.subplot_id,
         "backend": req.backend,
@@ -84,15 +89,16 @@ def _launch_ack(req: Any) -> dict[str, str]:
     }
     content = (json.dumps(payload, sort_keys=True) + "\n").encode()
     receipt_path.write_bytes(content)
+    receipt_path.chmod(0o600)
     return {
         "ack_kind": "launched",
         "dispatch_ack_ref": (
-            f"{receipt_path.relative_to(req.repo_root).as_posix()}"
+            f"~/{receipt_path.relative_to(Path.home()).as_posix()}"
             f"#sha256={hashlib.sha256(content).hexdigest()}"
         ),
         "leaf_saga_id": leaf_saga_id,
         "producer_kind": "verified-workflow",
-        "run_identity": f"run-{req.outcome_id}",
+        "run_identity": req.run_identity,
         "dispatch_intent_id": req.dispatch_intent_id,
         "outcome_id": req.outcome_id,
         "subplot_id": req.subplot_id,
@@ -113,8 +119,11 @@ def test_dispatch_prepares_but_does_not_claim_launch(tmp_path: Path) -> None:
     assert "return_channel" not in out
 
 
-def test_dispatch_team_execution_without_ref_halts() -> None:
-    out = D.dispatch(_req("verified-workflow"))
+def test_dispatch_team_execution_without_ref_halts(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    out = D.dispatch(_req("verified-workflow", repo_root=tmp_path))
 
     assert out["status"] == "halt"
     assert out["receipt"]["backend"] == "verified-workflow"
@@ -228,6 +237,7 @@ def repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
         "run",
         lambda args, **kw: SimpleNamespace(returncode=0, stdout=str(common) + "\n", stderr=""),
     )
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
     return tmp_path
 
 

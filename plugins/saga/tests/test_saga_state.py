@@ -88,7 +88,12 @@ def test_save_rejects_unbacked_continuation_or_identity(
 
 
 def test_save_binds_new_goal_only_from_supplied_tool_result(tmp_path: Path) -> None:
-    candidate = saga.Saga(saga_id="task-goal-save", kind="task", id="goal-save")
+    candidate = saga.Saga(
+        saga_id="task-goal-save",
+        kind="task",
+        id="goal-save",
+        continuation_mode="goal",
+    )
     saga.save(
         tmp_path,
         candidate,
@@ -98,6 +103,17 @@ def test_save_binds_new_goal_only_from_supplied_tool_result(tmp_path: Path) -> N
     restored = saga.restore(tmp_path, "task-goal-save")
     assert restored is not None
     assert (restored.continuation_mode, restored.continuation_ref) == ("goal", "goal-123")
+
+
+def test_goal_result_without_explicit_request_is_rejected(tmp_path: Path) -> None:
+    candidate = saga.Saga(saga_id="task-goal-implicit", kind="task", id="goal-implicit")
+    with pytest.raises(ValueError, match="explicit goal continuation request"):
+        saga.save(
+            tmp_path,
+            candidate,
+            runner=quiet_git_runner,
+            goal_result={"goal_id": "goal-123"},
+        )
 
 
 @pytest.mark.parametrize("flag", ["--continuation-mode", "--continuation-ref", "--identity-mode"])

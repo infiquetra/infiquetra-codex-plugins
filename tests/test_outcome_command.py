@@ -54,6 +54,7 @@ def repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
         return SimpleNamespace(returncode=0, stdout=str(common) + "\n", stderr="")
 
     monkeypatch.setattr(M.outcome_store.subprocess, "run", fake_run)
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
     return tmp_path
 
 
@@ -69,16 +70,21 @@ def _recorder():
 
 def _runtime_ack(req: Any) -> dict[str, str]:
     leaf_saga_id = f"leaf-{req.subplot_id}"
-    receipt_path = (
-        req.repo_root
-        / ".codex/verified-workflows/dispatch-receipts"
-        / f"{req.outcome_id}-{req.subplot_id}.json"
-    )
+    state_root = Path.home() / ".codex/verified-workflows/state" / req.repo_root.name
+    receipt_path = state_root / "dispatch-receipts" / f"{req.outcome_id}-{req.subplot_id}.json"
     receipt_path.parent.mkdir(parents=True, exist_ok=True)
+    marker = {
+        "schema": "saga.workflow-repo-identity.v1",
+        "repo_root_sha256": hashlib.sha256(req.repo_root.resolve().as_posix().encode()).hexdigest(),
+    }
+    marker_path = state_root / ".repo-identity.json"
+    marker_path.write_text(json.dumps(marker, sort_keys=True) + "\n", encoding="utf-8")
+    marker_path.chmod(0o600)
     payload = {
         "schema": "saga.outcome-dispatch-launch.v1",
         "producer_kind": "verified-workflow",
-        "run_identity": f"run-{req.outcome_id}",
+        "run_identity": req.run_identity,
+        "issued_at": max(req.intent_created_at, M.time.time()),
         "outcome_id": req.outcome_id,
         "subplot_id": req.subplot_id,
         "backend": req.backend,
@@ -87,15 +93,16 @@ def _runtime_ack(req: Any) -> dict[str, str]:
     }
     content = (json.dumps(payload, sort_keys=True) + "\n").encode()
     receipt_path.write_bytes(content)
+    receipt_path.chmod(0o600)
     return {
         "ack_kind": "launched",
         "dispatch_ack_ref": (
-            f"{receipt_path.relative_to(req.repo_root).as_posix()}"
+            f"~/{receipt_path.relative_to(Path.home()).as_posix()}"
             f"#sha256={hashlib.sha256(content).hexdigest()}"
         ),
         "leaf_saga_id": leaf_saga_id,
         "producer_kind": "verified-workflow",
-        "run_identity": f"run-{req.outcome_id}",
+        "run_identity": req.run_identity,
         "dispatch_intent_id": req.dispatch_intent_id,
         "outcome_id": req.outcome_id,
         "subplot_id": req.subplot_id,
@@ -315,16 +322,25 @@ def test_export_import_roundtrips_across_repos(
         "run",
         lambda args, **kw: SimpleNamespace(returncode=0, stdout=str(common2) + "\n", stderr=""),
     )
-    spec = M.import_bundle(dest, bundle)
+    with pytest.raises(M.OutcomeError, match="not portable"):
+        M.import_bundle(dest, bundle)
+    assert not M.spec_path(dest, "ship-x").exists()
+
+    portable = copy.deepcopy(bundle)
+    portable["dispatch_ledger"] = [
+        record for record in portable["dispatch_ledger"] if record.get("phase") != "ack"
+    ]
+    portable["dispatch_receipts"] = {}
+    spec = M.import_bundle(dest, portable)
     assert spec.outcome_id == "ship-x"
-    # completion + dispatch replayed -> design done, build dispatched (same derived status)
+    # Completion and intents are portable, but launch authority must be reconciled locally.
     st = M.status(dest, "ship-x")
-    assert st["states"]["design"] == "done" and st["states"]["build"] == "dispatched"
+    assert st["states"]["design"] == "done" and st["states"]["build"] == "intent-created"
 
     # re-import is idempotent: the dispatch ledger does not grow on a second import
     dest_store = STORE.Store.for_outcome("ship-x", dest)
     ledger_before = len(STORE.read_ledger(dest_store))
-    M.import_bundle(dest, bundle)
+    M.import_bundle(dest, portable)
     assert len(STORE.read_ledger(dest_store)) == ledger_before
 
 

@@ -37,6 +37,7 @@ import importlib.util
 import json
 import os
 import re
+import secrets
 import stat
 import sys
 import time
@@ -58,6 +59,7 @@ import outcome_store  # noqa: E402
 import fleet_commons_shim  # noqa: E402
 
 _workflow_compat = fleet_commons_shim.load("workflow_compat")
+MAX_LAUNCH_RECEIPT_AGE_SECONDS = 24 * 60 * 60
 
 # Where the canonical spec lives on the outcome's own branch (KTD1/R26). The committed spec is the
 # structural source of truth; the store under the git-common-dir is its performance cache.
@@ -90,6 +92,8 @@ class DispatchRequest:
     repo_root: Path
     orchestration_ref: str = ""
     dispatch_intent_id: str = ""
+    run_identity: str = ""
+    intent_created_at: float = 0.0
 
 
 def _default_dispatcher(req: DispatchRequest) -> str:
@@ -159,6 +163,10 @@ def reconcile_dispatch_ack(
         canonical_backend = (
             "verified-workflow" if legacy_backend == "team-execution" else legacy_backend
         )
+        if ack_kind == "launched":
+            run_identity, issued_at = _peek_launch_receipt_identity(Path(repo_root), ref)
+        else:
+            run_identity, issued_at = ref, time.time()
         migrated_intent = {
             "phase": "intent",
             "kind": "outcome.dispatch.v2",
@@ -166,12 +174,16 @@ def reconcile_dispatch_ack(
             "dispatch_intent_id": intent_id,
             "subplot_id": subplot_id,
             "backend": canonical_backend,
+            "run_identity": run_identity,
+            "at": issued_at,
             "migration_from_key": str(legacy[-1].get("key", "")),
             "migration_from_backend": legacy_backend,
         }
         outcome_store.append_ledger_once(store, migrated_intent)
         intents = [migrated_intent]
     backend = str(intents[-1].get("backend", ""))
+    intent_run_identity = str(intents[-1].get("run_identity", ""))
+    intent_created_at = float(intents[-1].get("at", 0.0) or 0.0)
     receipt_fields: dict[str, str]
     if ack_kind == "launched":
         receipt_fields = _load_launch_receipt(
@@ -182,6 +194,8 @@ def reconcile_dispatch_ack(
             backend=backend,
             dispatch_intent_id=intent_id,
             leaf_saga_id=leaf,
+            run_identity=intent_run_identity,
+            intent_created_at=intent_created_at,
         )
     else:
         if not re.fullmatch(r"operator:[A-Za-z0-9][A-Za-z0-9._:@/-]{0,159}", ref):
@@ -196,6 +210,9 @@ def reconcile_dispatch_ack(
         "backend": backend,
         "ack_kind": ack_kind,
         "dispatch_ack_ref": ref,
+        "receipt_authority": (
+            "owner-user-state-v1" if ack_kind == "launched" else "operator-confirmed-v1"
+        ),
         "at": time.time(),
         **receipt_fields,
     }
@@ -215,8 +232,10 @@ def _load_launch_receipt(
     backend: str,
     dispatch_intent_id: str,
     leaf_saga_id: str,
+    run_identity: str,
+    intent_created_at: float,
 ) -> dict[str, str]:
-    """Load one digest-bound, no-follow launch receipt from the ignored protected root."""
+    """Load one fresh, run-bound receipt from the owner-controlled user-state root."""
 
     content, expected_sha256 = _read_launch_receipt(repo_root, ref)
     return _validate_launch_receipt_content(
@@ -227,6 +246,8 @@ def _load_launch_receipt(
         backend=backend,
         dispatch_intent_id=dispatch_intent_id,
         leaf_saga_id=leaf_saga_id,
+        run_identity=run_identity,
+        intent_created_at=intent_created_at,
     )
 
 
@@ -234,20 +255,26 @@ def _read_launch_receipt(repo_root: Path, ref: str) -> tuple[bytes, str]:
     path_text, marker, expected_sha256 = ref.partition("#sha256=")
     if not marker or not re.fullmatch(r"[0-9a-f]{64}", expected_sha256):
         raise OutcomeError("launch receipt ref must end with #sha256=<64 lowercase hex>")
-    relative = Path(path_text)
-    if relative.is_absolute() or path_text.startswith("~/") or ".." in relative.parts:
-        raise OutcomeError("launch receipt path must be repository-contained")
-    allowed = (
-        repo_root
-        / Path(_workflow_compat.emit(_workflow_compat.REPO_STATE_ROOT))
-        / "dispatch-receipts"
-    ).resolve()
-    candidate = repo_root / relative
+    state_ref = f"{_workflow_compat.emit(_workflow_compat.USER_STATE_ROOT)}{repo_root.name}/"
+    receipt_prefix = f"{state_ref}dispatch-receipts/"
+    if not path_text.startswith(receipt_prefix):
+        raise OutcomeError("launch receipt must use the canonical protected user-state root")
+    suffix = Path(path_text.removeprefix(receipt_prefix))
+    if not suffix.parts or suffix.is_absolute() or ".." in suffix.parts:
+        raise OutcomeError("launch receipt path escapes the protected receipt root")
+    state_root = Path(state_ref).expanduser()
+    allowed = state_root / "dispatch-receipts"
+    candidate = allowed / suffix
     try:
-        candidate.resolve().relative_to(allowed)
+        candidate.resolve().relative_to(allowed.resolve())
     except (OSError, ValueError) as exc:
         raise OutcomeError("launch receipt path escapes the protected receipt root") from exc
-    current = repo_root
+    home = Path.home()
+    try:
+        relative = candidate.relative_to(home)
+    except ValueError as exc:
+        raise OutcomeError("launch receipt path escapes the user home") from exc
+    current = home
     for part in relative.parts:
         current = current / part
         try:
@@ -255,18 +282,85 @@ def _read_launch_receipt(repo_root: Path, ref: str) -> tuple[bytes, str]:
                 raise OutcomeError("launch receipt path must not contain symlinks")
         except OSError as exc:
             raise OutcomeError("launch receipt path could not be inspected") from exc
+    _validate_receipt_state_identity(repo_root, state_root)
     try:
         fd = os.open(candidate, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
     except OSError as exc:
         raise OutcomeError("launch receipt is missing or unreadable") from exc
     try:
         metadata = os.fstat(fd)
-        if not stat.S_ISREG(metadata.st_mode) or metadata.st_size > 64 * 1024:
-            raise OutcomeError("launch receipt must be a bounded regular file")
+        if (
+            not stat.S_ISREG(metadata.st_mode)
+            or metadata.st_size > 64 * 1024
+            or metadata.st_uid != os.getuid()
+            or metadata.st_mode & 0o022
+        ):
+            raise OutcomeError("launch receipt must be an owner-controlled bounded regular file")
         content = os.read(fd, metadata.st_size + 1)
     finally:
         os.close(fd)
     return content, expected_sha256
+
+
+def _validate_receipt_state_identity(repo_root: Path, state_root: Path) -> None:
+    try:
+        metadata = state_root.stat()
+    except OSError as exc:
+        raise OutcomeError("protected user-state root is missing") from exc
+    if (
+        not stat.S_ISDIR(metadata.st_mode)
+        or metadata.st_uid != os.getuid()
+        or metadata.st_mode & 0o022
+    ):
+        raise OutcomeError("protected user-state root is not owner-controlled")
+    marker = state_root / ".repo-identity.json"
+    try:
+        fd = os.open(marker, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+    except OSError as exc:
+        raise OutcomeError("protected user-state root lacks repository identity proof") from exc
+    try:
+        marker_stat = os.fstat(fd)
+        if (
+            not stat.S_ISREG(marker_stat.st_mode)
+            or marker_stat.st_size > 4096
+            or marker_stat.st_uid != os.getuid()
+            or marker_stat.st_mode & 0o022
+        ):
+            raise OutcomeError("repository identity proof is not owner-controlled")
+        marker_content = os.read(fd, marker_stat.st_size + 1)
+    finally:
+        os.close(fd)
+    try:
+        identity = json.loads(marker_content)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise OutcomeError("repository identity proof is invalid JSON") from exc
+    expected = {
+        "schema": "saga.workflow-repo-identity.v1",
+        "repo_root_sha256": hashlib.sha256(repo_root.resolve().as_posix().encode()).hexdigest(),
+    }
+    if identity != expected:
+        raise OutcomeError("repository identity proof does not match this repository")
+
+
+def _peek_launch_receipt_identity(repo_root: Path, ref: str) -> tuple[str, float]:
+    content, expected_sha256 = _read_launch_receipt(repo_root, ref)
+    if hashlib.sha256(content).hexdigest() != expected_sha256:
+        raise OutcomeError("launch receipt digest does not match")
+    try:
+        receipt = json.loads(content)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise OutcomeError("launch receipt is not valid JSON") from exc
+    if not isinstance(receipt, dict):
+        raise OutcomeError("launch receipt must be a JSON object")
+    run_identity = str(receipt.get("run_identity", ""))
+    issued_at = receipt.get("issued_at")
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,159}", run_identity):
+        raise OutcomeError("launch receipt run_identity is missing or unsafe")
+    if isinstance(issued_at, bool) or not isinstance(issued_at, (int, float)):
+        raise OutcomeError("launch receipt issued_at is missing or invalid")
+    if not 0 <= time.time() - float(issued_at) <= MAX_LAUNCH_RECEIPT_AGE_SECONDS:
+        raise OutcomeError("launch receipt is outside the freshness window")
+    return run_identity, float(issued_at)
 
 
 def _validate_launch_receipt_content(
@@ -278,6 +372,8 @@ def _validate_launch_receipt_content(
     backend: str,
     dispatch_intent_id: str,
     leaf_saga_id: str,
+    run_identity: str,
+    intent_created_at: float,
 ) -> dict[str, str]:
     actual_sha256 = hashlib.sha256(content).hexdigest()
     if actual_sha256 != expected_sha256:
@@ -296,16 +392,24 @@ def _validate_launch_receipt_content(
         "backend": backend,
         "dispatch_intent_id": dispatch_intent_id,
         "leaf_saga_id": leaf_saga_id,
+        "run_identity": run_identity,
     }
     for key, value in expected.items():
         if receipt.get(key) != value:
             raise OutcomeError(f"launch receipt {key} does not match the dispatch intent")
-    run_identity = str(receipt.get("run_identity", ""))
-    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,159}", run_identity):
-        raise OutcomeError("launch receipt run_identity is missing or unsafe")
+    issued_at = receipt.get("issued_at")
+    if isinstance(issued_at, bool) or not isinstance(issued_at, (int, float)):
+        raise OutcomeError("launch receipt issued_at is missing or invalid")
+    current_time = time.time()
+    if (
+        float(issued_at) < intent_created_at
+        or float(issued_at) > current_time + 60
+        or current_time - float(issued_at) > MAX_LAUNCH_RECEIPT_AGE_SECONDS
+    ):
+        raise OutcomeError("launch receipt is stale or predates the dispatch intent")
     return {
         "producer_kind": str(receipt["producer_kind"]),
-        "run_identity": run_identity,
+        "run_identity": str(receipt["run_identity"]),
         "receipt_sha256": actual_sha256,
     }
 
@@ -1125,6 +1229,8 @@ def _reconcile_once(
                 halted.append(receipt)
                 continue
         intent_id = f"dispatch-intent:{spec.outcome_id}:{sid}"
+        intent_run_identity = f"outcome-run-{secrets.token_hex(16)}"
+        intent_created_at = time.time()
         intent_created = outcome_store.append_ledger_once(
             store,
             {
@@ -1134,6 +1240,8 @@ def _reconcile_once(
                 "dispatch_intent_id": intent_id,
                 "subplot_id": sid,
                 "backend": resolved_backend,
+                "run_identity": intent_run_identity,
+                "at": intent_created_at,
             },
         )
         if not intent_created:
@@ -1158,6 +1266,8 @@ def _reconcile_once(
             repo_root=Path(repo_root),
             orchestration_ref=orchestration_ref,
             dispatch_intent_id=intent_id,
+            run_identity=intent_run_identity,
+            intent_created_at=intent_created_at,
         )
         try:
             acknowledgement = dispatch(request)
@@ -1196,17 +1306,12 @@ def _reconcile_once(
                 )
             )
             if (
-                ack_kind not in {"launched", "handed-off"}
+                ack_kind != "launched"
                 or not ack_ref
                 or not binding_matches
                 or producer_kind != _workflow_compat.emit(_workflow_compat.PRODUCER_KIND)
                 or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,159}", run_identity)
                 or (ack_kind == "launched" and not leaf_saga_id)
-                or (ack_kind == "handed-off" and leaf_saga_id)
-                or (
-                    ack_kind == "handed-off"
-                    and not re.fullmatch(r"operator:[A-Za-z0-9][A-Za-z0-9._:@/-]{0,159}", ack_ref)
-                )
             ):
                 outcome_store.release_lease(store, f"dispatch-{sid}", holder)
                 halted.append(
@@ -1229,6 +1334,8 @@ def _reconcile_once(
                         backend=resolved_backend,
                         dispatch_intent_id=intent_id,
                         leaf_saga_id=leaf_saga_id,
+                        run_identity=intent_run_identity,
+                        intent_created_at=intent_created_at,
                     )
                 except OutcomeError as exc:
                     outcome_store.release_lease(store, f"dispatch-{sid}", holder)
@@ -1264,6 +1371,7 @@ def _reconcile_once(
                 "backend": resolved_backend,
                 "ack_kind": ack_kind,
                 "dispatch_ack_ref": ack_ref,
+                "receipt_authority": "owner-user-state-v1",
                 "producer_kind": producer_kind,
                 "run_identity": run_identity,
                 "at": now(),
@@ -1346,6 +1454,7 @@ def export_bundle(
             record.get("kind") == "outcome.dispatch.v2"
             and record.get("phase") == "ack"
             and record.get("ack_kind") == "launched"
+            and record.get("receipt_authority") == "owner-user-state-v1"
         ):
             ref = str(record.get("dispatch_ack_ref", ""))
             content, _digest = _read_launch_receipt(repo_root, ref)
@@ -1416,10 +1525,7 @@ def _validate_import_dispatch_ledger(
         raise OutcomeError("dispatch_receipts must be a bounded object")
     subplot_ids = {node.subplot_id for node in spec.nodes}
     intents: dict[str, dict[str, Any]] = {}
-    used_receipts: set[str] = set()
-    writes: list[tuple[Path, bytes]] = []
     seen: set[tuple[str, str]] = set()
-    canonical_root = repo_root / ".codex/verified-workflows/dispatch-receipts"
 
     for raw in records:
         if not isinstance(raw, dict):
@@ -1444,6 +1550,8 @@ def _validate_import_dispatch_ledger(
             "dispatch_intent_id",
             "subplot_id",
             "backend",
+            "run_identity",
+            "at",
             "migration_from_key",
             "migration_from_backend",
         }
@@ -1460,6 +1568,7 @@ def _validate_import_dispatch_ledger(
                 "producer_kind",
                 "run_identity",
                 "receipt_sha256",
+                "receipt_authority",
                 "leaf_saga_id",
                 "orchestration_ref",
                 "at",
@@ -1470,80 +1579,24 @@ def _validate_import_dispatch_ledger(
         if key != intent_id or raw.get("dispatch_intent_id") != intent_id:
             raise OutcomeError("dispatch record does not bind the outcome intent")
         if phase == "intent":
-            if intent_id in intents or raw.get("backend") not in outcome_spec.NODE_BACKENDS:
+            if (
+                intent_id in intents
+                or raw.get("backend") not in outcome_spec.NODE_BACKENDS
+                or not re.fullmatch(
+                    r"[A-Za-z0-9][A-Za-z0-9._:-]{0,159}", str(raw.get("run_identity", ""))
+                )
+                or isinstance(raw.get("at"), bool)
+                or not isinstance(raw.get("at"), (int, float))
+            ):
                 raise OutcomeError("dispatch intent is duplicate or incomplete")
             intents[intent_id] = raw
             continue
-        intent = intents.get(intent_id)
-        if intent is None or raw.get("backend") != intent.get("backend"):
-            raise OutcomeError("dispatch acknowledgement is orphaned or backend-mismatched")
-        ack_kind = raw.get("ack_kind")
-        ref = str(raw.get("dispatch_ack_ref", ""))
-        if ack_kind == "handed-off":
-            if raw.get("leaf_saga_id") or not re.fullmatch(
-                r"operator:[A-Za-z0-9][A-Za-z0-9._:@/-]{0,159}", ref
-            ):
-                raise OutcomeError("imported handoff acknowledgement is invalid")
-            producer = str(raw.get("producer_kind", ""))
-            run_identity = str(raw.get("run_identity", ""))
-            if not (
-                (producer == "operator" and run_identity == ref)
-                or (
-                    producer == _workflow_compat.emit(_workflow_compat.PRODUCER_KIND)
-                    and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,159}", run_identity)
-                )
-            ):
-                raise OutcomeError("imported handoff provenance is invalid")
-            continue
-        if ack_kind != "launched" or not str(raw.get("leaf_saga_id", "")):
-            raise OutcomeError("imported launch acknowledgement is invalid")
-        encoded = receipt_payloads.get(ref)
-        if not isinstance(encoded, str):
-            raise OutcomeError("imported launch acknowledgement lacks its receipt payload")
-        try:
-            content = base64.b64decode(encoded, validate=True)
-        except (ValueError, TypeError) as exc:
-            raise OutcomeError("imported launch receipt payload is not valid base64") from exc
-        path_text, marker, expected_sha256 = ref.partition("#sha256=")
-        relative = Path(path_text)
-        if (
-            not marker
-            or not re.fullmatch(r"[0-9a-f]{64}", expected_sha256)
-            or relative.is_absolute()
-            or ".." in relative.parts
-        ):
-            raise OutcomeError("imported launch receipt reference is invalid")
-        candidate = repo_root / relative
-        try:
-            candidate.resolve().relative_to(canonical_root.resolve())
-        except (OSError, ValueError) as exc:
-            raise OutcomeError("imported launch receipt escapes the canonical root") from exc
-        fields = _validate_launch_receipt_content(
-            content,
-            expected_sha256=expected_sha256,
-            outcome_id=spec.outcome_id,
-            subplot_id=subplot_id,
-            backend=str(intent["backend"]),
-            dispatch_intent_id=intent_id,
-            leaf_saga_id=str(raw["leaf_saga_id"]),
+        raise OutcomeError(
+            "authoritative dispatch acknowledgements are not portable; reconcile them locally"
         )
-        if any(raw.get(field) != value for field, value in fields.items()):
-            raise OutcomeError("imported launch acknowledgement conflicts with its receipt")
-        current = repo_root
-        for part in relative.parts:
-            current = current / part
-            if current.is_symlink():
-                raise OutcomeError("imported launch receipt path contains a symlink")
-        if candidate.exists():
-            existing, _digest = _read_launch_receipt(repo_root, ref)
-            if existing != content:
-                raise OutcomeError("imported launch receipt conflicts with existing evidence")
-        else:
-            writes.append((candidate, content))
-        used_receipts.add(ref)
-    if set(receipt_payloads) != used_receipts:
-        raise OutcomeError("dispatch_receipts contains unreferenced payloads")
-    return writes
+    if receipt_payloads:
+        raise OutcomeError("dispatch_receipts require a local authoritative acknowledgement")
+    return []
 
 
 # ---------------------------------------------------------------------------

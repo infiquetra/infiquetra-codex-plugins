@@ -92,10 +92,31 @@ def test_plan_ref_blocks_mixed_provenance_before_fast_path(tmp_path: Path, confl
         (tmp_path / ".codex/team-execution").mkdir(parents=True)
     else:
         (tmp_path / ".verified-workflows.json").write_text("{}\n", encoding="utf-8")
-        (tmp_path / ".team-execution.json").write_text("{}\n", encoding="utf-8")
+        (tmp_path / ".team-execution.json").write_text('{"legacy": true}\n', encoding="utf-8")
     result = validate(tmp_path, "docs/plans/x.md#workflow-structure")
     assert result.status == "blocked"
     assert "both exist" in result.reason
+
+
+def test_identical_dual_config_is_deterministic_and_canonical(tmp_path: Path) -> None:
+    write_plan(tmp_path)
+    for name in (".verified-workflows.json", ".team-execution.json"):
+        (tmp_path / name).write_text("{}\n", encoding="utf-8")
+    assert validate(tmp_path, "docs/plans/x.md#workflow-structure").status == "ready"
+
+
+def test_no_ref_falls_back_to_canonical_root_and_rejects_legacy_only(tmp_path: Path) -> None:
+    (tmp_path / ".gitignore").write_text(".codex/verified-workflows/\n", encoding="utf-8")
+    canonical = tmp_path / ".codex/verified-workflows/run"
+    canonical.mkdir(parents=True)
+    assert validate(tmp_path, "").status == "ready"
+
+    canonical.rmdir()
+    canonical.parent.rmdir()
+    (tmp_path / ".codex/team-execution/run").mkdir(parents=True)
+    result = validate(tmp_path, "")
+    assert result.status == "blocked"
+    assert "only legacy" in result.reason
 
 
 def test_user_state_root_rejects_symlink_and_requires_repo_identity(

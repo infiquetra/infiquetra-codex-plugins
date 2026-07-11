@@ -80,6 +80,22 @@ def validate_verified_workflow_ready(
                 "Verified Workflows receipt has not been materialized yet",
                 "materialize Workflow Structure before marking the plan ready",
             )
+        repo_state = repo_root / WORKFLOW_COMPAT.emit(WORKFLOW_COMPAT.REPO_STATE_ROOT)
+        if repo_state.is_dir():
+            return _resolve_repo_root(repo_root, repo_state, legacy)
+        user_ref = f"{WORKFLOW_COMPAT.emit(WORKFLOW_COMPAT.USER_STATE_ROOT)}{repo_root.name}/"
+        if Path(user_ref).expanduser().is_dir():
+            return _resolve_user_root(repo_root, user_ref, legacy)
+        legacy_repo = repo_root / WORKFLOW_COMPAT.legacy_values(WORKFLOW_COMPAT.REPO_STATE_ROOT)[0]
+        legacy_user = Path(
+            f"{WORKFLOW_COMPAT.legacy_values(WORKFLOW_COMPAT.USER_STATE_ROOT)[0]}{repo_root.name}/"
+        ).expanduser()
+        if legacy_repo.exists() or legacy_user.exists():
+            return legacy.ReadinessResult(
+                "blocked",
+                "only legacy workflow state is available for a canonical run",
+                "migrate evidence into one canonical Verified Workflows state root",
+            )
         return legacy.ReadinessResult(
             "blocked",
             "missing orchestration_ref for executable Verified Workflows",
@@ -178,6 +194,20 @@ def _provenance_conflict(repo_root: Path, legacy: Any) -> Any | None:
     )
     for canonical, old, label in pairs:
         if canonical.exists() and old.exists():
+            if label == "repository workflow config files":
+                try:
+                    if (
+                        not canonical.is_symlink()
+                        and not old.is_symlink()
+                        and canonical.is_file()
+                        and old.is_file()
+                        and canonical.stat().st_size <= 64 * 1024
+                        and old.stat().st_size <= 64 * 1024
+                        and canonical.read_bytes() == old.read_bytes()
+                    ):
+                        continue
+                except OSError:
+                    pass
             return legacy.ReadinessResult(
                 "blocked",
                 f"canonical and legacy {label} both exist",

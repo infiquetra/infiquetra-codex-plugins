@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
+import shutil
 import sys
 import threading
 from concurrent.futures import ThreadPoolExecutor
@@ -40,6 +41,7 @@ def repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
         "run",
         lambda *_a, **_kw: SimpleNamespace(returncode=0, stdout=f"{common}\n", stderr=""),
     )
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
     return tmp_path
 
 
@@ -52,6 +54,8 @@ def runtime_ack(req: Any, *, kind: str = "launched") -> dict[str, str]:
             subplot_id=req.subplot_id,
             backend=req.backend,
             leaf_saga_id=leaf,
+            run_identity=req.run_identity,
+            issued_at=max(req.intent_created_at, OUTCOME.time.time()),
         )
         if kind == "launched"
         else f"operator:run-{req.outcome_id}"
@@ -61,7 +65,7 @@ def runtime_ack(req: Any, *, kind: str = "launched") -> dict[str, str]:
         "dispatch_ack_ref": ref,
         "leaf_saga_id": leaf,
         "producer_kind": "verified-workflow",
-        "run_identity": f"run-{req.outcome_id}",
+        "run_identity": req.run_identity,
         "dispatch_intent_id": req.dispatch_intent_id,
         "outcome_id": req.outcome_id,
         "subplot_id": req.subplot_id,
@@ -143,12 +147,116 @@ def test_live_dispatch_rejects_unverified_launch_receipts(repo: Path, mutation: 
 
 def test_manual_ack_settles_without_liveness(repo: Path) -> None:
     OUTCOME.start(repo, "u5c", "U5", nodes=[{"subplot_id": "leaf", "title": "leaf"}])
-    result = OUTCOME.advance(
-        repo, "u5c", dispatcher=lambda req: runtime_ack(req, kind="handed-off")
+    result = OUTCOME.advance(repo, "u5c", dispatcher=lambda _req: {"status": "prepared"})
+    assert result.status["states"]["leaf"] == "intent-created"
+    OUTCOME.reconcile_dispatch_ack(
+        OUTCOME._store(repo, "u5c"),
+        repo_root=repo,
+        outcome_id="u5c",
+        subplot_id="leaf",
+        ack_kind="handed-off",
+        dispatch_ack_ref="operator:run-u5c",
     )
-    assert result.dispatched == []
     assert OUTCOME.status(repo, "u5c")["states"]["leaf"] == "handed-off"
     assert OUTCOME.outcome_store.replay_pending(OUTCOME._store(repo, "u5c")) == []
+
+
+def test_automated_dispatcher_cannot_claim_operator_handoff(repo: Path) -> None:
+    OUTCOME.start(repo, "auto-handoff", "U5", nodes=[{"subplot_id": "leaf", "title": "leaf"}])
+    result = OUTCOME.advance(
+        repo,
+        "auto-handoff",
+        dispatcher=lambda req: runtime_ack(req, kind="handed-off"),
+    )
+    assert result.dispatched == []
+    assert result.halted[0]["reason"] == "invalid dispatch acknowledgement"
+    assert result.status["states"]["leaf"] == "intent-created"
+
+
+def test_previous_run_receipt_cannot_authorize_fresh_intent(repo: Path) -> None:
+    OUTCOME.start(repo, "fresh", "U5", nodes=[{"subplot_id": "leaf", "title": "leaf"}])
+    first = OUTCOME.advance(repo, "fresh", dispatcher=runtime_ack)
+    assert first.status["states"]["leaf"] == "dispatched"
+    old_ack = next(
+        record
+        for record in OUTCOME.outcome_store.read_ledger(OUTCOME._store(repo, "fresh"))
+        if record.get("phase") == "ack"
+    )
+
+    shutil.rmtree(OUTCOME._store(repo, "fresh").root)
+    OUTCOME.spec_path(repo, "fresh").unlink()
+    OUTCOME.start(repo, "fresh", "U5", nodes=[{"subplot_id": "leaf", "title": "leaf"}])
+    OUTCOME.advance(repo, "fresh", dispatcher=lambda _req: {"status": "prepared"})
+    with pytest.raises(OUTCOME.OutcomeError, match="run_identity"):
+        OUTCOME.reconcile_dispatch_ack(
+            OUTCOME._store(repo, "fresh"),
+            repo_root=repo,
+            outcome_id="fresh",
+            subplot_id="leaf",
+            ack_kind="launched",
+            dispatch_ack_ref=old_ack["dispatch_ack_ref"],
+            leaf_saga_id=old_ack["leaf_saga_id"],
+        )
+
+
+def test_expired_launch_receipt_is_rejected(repo: Path) -> None:
+    OUTCOME.start(repo, "expired", "U5", nodes=[{"subplot_id": "leaf", "title": "leaf"}])
+
+    def expired(req: Any) -> dict[str, str]:
+        acknowledgement = runtime_ack(req)
+        acknowledgement["dispatch_ack_ref"] = _launch_receipt(
+            repo,
+            outcome_id=req.outcome_id,
+            subplot_id=req.subplot_id,
+            backend=req.backend,
+            leaf_saga_id=acknowledgement["leaf_saga_id"],
+            run_identity=req.run_identity,
+            issued_at=OUTCOME.time.time() - OUTCOME.MAX_LAUNCH_RECEIPT_AGE_SECONDS - 1,
+        )
+        return acknowledgement
+
+    result = OUTCOME.advance(repo, "expired", dispatcher=expired)
+    assert result.dispatched == []
+    assert "stale" in result.halted[0]["reason"]
+
+
+def test_self_consistent_workspace_receipt_cannot_authorize_launch(repo: Path) -> None:
+    OUTCOME.start(repo, "workspace-forge", "U5", nodes=[{"subplot_id": "leaf", "title": "leaf"}])
+
+    def forged(req: Any) -> dict[str, str]:
+        leaf = "forged-leaf"
+        payload = {
+            "schema": "saga.outcome-dispatch-launch.v1",
+            "producer_kind": "verified-workflow",
+            "run_identity": req.run_identity,
+            "issued_at": max(req.intent_created_at, OUTCOME.time.time()),
+            "outcome_id": req.outcome_id,
+            "subplot_id": req.subplot_id,
+            "backend": req.backend,
+            "dispatch_intent_id": req.dispatch_intent_id,
+            "leaf_saga_id": leaf,
+        }
+        content = (json.dumps(payload, sort_keys=True) + "\n").encode()
+        path = repo / ".codex/verified-workflows/dispatch-receipts/forged.json"
+        path.parent.mkdir(parents=True)
+        path.write_bytes(content)
+        return {
+            "ack_kind": "launched",
+            "dispatch_ack_ref": (
+                f"{path.relative_to(repo).as_posix()}#sha256={hashlib.sha256(content).hexdigest()}"
+            ),
+            "leaf_saga_id": leaf,
+            "producer_kind": "verified-workflow",
+            "run_identity": req.run_identity,
+            "dispatch_intent_id": req.dispatch_intent_id,
+            "outcome_id": req.outcome_id,
+            "subplot_id": req.subplot_id,
+            "backend": req.backend,
+        }
+
+    result = OUTCOME.advance(repo, "workspace-forge", dispatcher=forged)
+    assert result.dispatched == []
+    assert "protected user-state root" in result.halted[0]["reason"]
 
 
 def _launch_receipt(
@@ -158,13 +266,24 @@ def _launch_receipt(
     subplot_id: str,
     backend: str,
     leaf_saga_id: str,
+    run_identity: str = "legacy-run",
+    issued_at: float | None = None,
 ) -> str:
-    path = repo / ".codex/verified-workflows/dispatch-receipts/launch.json"
-    path.parent.mkdir(parents=True, exist_ok=True)
+    state_root = Path.home() / ".codex/verified-workflows/state" / repo.name
+    path = state_root / "dispatch-receipts/launch.json"
+    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    marker = {
+        "schema": "saga.workflow-repo-identity.v1",
+        "repo_root_sha256": hashlib.sha256(repo.resolve().as_posix().encode()).hexdigest(),
+    }
+    marker_path = state_root / ".repo-identity.json"
+    marker_path.write_text(json.dumps(marker, sort_keys=True) + "\n", encoding="utf-8")
+    marker_path.chmod(0o600)
     payload = {
         "schema": "saga.outcome-dispatch-launch.v1",
         "producer_kind": "verified-workflow",
-        "run_identity": f"run-{outcome_id}",
+        "run_identity": run_identity,
+        "issued_at": issued_at if issued_at is not None else OUTCOME.time.time(),
         "outcome_id": outcome_id,
         "subplot_id": subplot_id,
         "backend": backend,
@@ -173,7 +292,9 @@ def _launch_receipt(
     }
     content = (json.dumps(payload, sort_keys=True) + "\n").encode()
     path.write_bytes(content)
-    return f"{path.relative_to(repo).as_posix()}#sha256={hashlib.sha256(content).hexdigest()}"
+    path.chmod(0o600)
+    relative = path.relative_to(Path.home()).as_posix()
+    return f"~/{relative}#sha256={hashlib.sha256(content).hexdigest()}"
 
 
 def test_legacy_commit_reconciles_append_only_with_digest_bound_launch(repo: Path) -> None:
@@ -181,12 +302,15 @@ def test_legacy_commit_reconciles_append_only_with_digest_bound_launch(repo: Pat
     OUTCOME.advance(repo, "legacy", dispatcher=lambda _req: "synthetic-leaf")
     store = OUTCOME._store(repo, "legacy")
     before = list(OUTCOME.outcome_store.read_ledger(store))
+    intent = next(record for record in before if record.get("phase") == "intent")
     ref = _launch_receipt(
         repo,
         outcome_id="legacy",
         subplot_id="leaf",
         backend="inline",
         leaf_saga_id="real-leaf",
+        run_identity=intent["run_identity"],
+        issued_at=max(intent["at"], OUTCOME.time.time()),
     )
     record = OUTCOME.reconcile_dispatch_ack(
         store,
@@ -210,12 +334,19 @@ def test_launch_reconciliation_rejects_forged_or_escaping_receipt(
 ) -> None:
     OUTCOME.start(repo, "forged", "U5", nodes=[{"subplot_id": "leaf", "title": "leaf"}])
     OUTCOME.advance(repo, "forged", dispatcher=lambda _req: "synthetic-leaf")
+    intent = next(
+        record
+        for record in OUTCOME.outcome_store.read_ledger(OUTCOME._store(repo, "forged"))
+        if record.get("phase") == "intent"
+    )
     ref = _launch_receipt(
         repo,
         outcome_id="forged",
         subplot_id="leaf",
         backend="inline",
         leaf_saga_id="real-leaf",
+        run_identity=intent["run_identity"],
+        issued_at=max(intent["at"], OUTCOME.time.time()),
     )
     leaf = "real-leaf"
     if mutation == "digest":

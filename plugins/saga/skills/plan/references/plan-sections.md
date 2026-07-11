@@ -204,7 +204,7 @@ the plan to write the code for them and without re-asking the operator. Concrete
 - Per-unit test scenarios specific enough that the implementer knows exactly what to test.
 - Clear dependencies and sequencing (U-ID dependency cites).
 - For `verified-workflow`, a concrete `## Workflow Structure` receipt or linked Verified Workflows artifact with
-  a saga `orchestration_ref` such as `docs/plans/YYYY-MM-DD-<topic>-plan.md#team-structure`.
+  a saga `orchestration_ref` such as `docs/plans/YYYY-MM-DD-<topic>-plan.md#workflow-structure`.
 
 ---
 

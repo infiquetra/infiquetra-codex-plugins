@@ -540,10 +540,26 @@ def reduce_dispatch_ledger(store: Store) -> dict[str, dict[str, Any]]:
         elif (
             kind == "outcome.dispatch.v2"
             and phase == "ack"
-            and record.get("ack_kind") in {"launched", "handed-off"}
+            and (
+                (
+                    record.get("ack_kind") == "launched"
+                    and record.get("receipt_authority") == "owner-user-state-v1"
+                )
+                or (
+                    record.get("ack_kind") == "handed-off"
+                    and record.get("receipt_authority") == "operator-confirmed-v1"
+                )
+            )
         ):
             reduced[subplot_id] = {
                 "state": ("dispatched" if record.get("ack_kind") == "launched" else "handed-off"),
+                "record": record,
+                "settled": True,
+                "halted": False,
+            }
+        elif kind == "outcome.dispatch.v2" and phase == "ack":
+            reduced[subplot_id] = {
+                "state": "legacy-unverified",
                 "record": record,
                 "settled": True,
                 "halted": False,
@@ -567,12 +583,12 @@ def replay_pending(store: Store) -> list[dict[str, Any]]:
         if not key:
             continue
         phase = rec.get("phase")
-        if phase == "commit" or (
-            phase == "ack"
-            and rec.get("kind") == "outcome.dispatch.v2"
-            and rec.get("ack_kind") in {"launched", "handed-off"}
-        ):
+        if phase == "commit":
             committed.add(key)
+        elif phase == "ack" and rec.get("kind") == "outcome.dispatch.v2":
+            reduced = reduced_dispatch.get(str(rec.get("subplot_id", "")), {})
+            if reduced.get("settled"):
+                committed.add(key)
         elif phase == "intent" and rec.get("kind") == "outcome.dispatch.v2":
             reduced = reduced_dispatch.get(str(rec.get("subplot_id", "")), {})
             if reduced.get("state") == "intent-created" and not reduced.get("settled"):

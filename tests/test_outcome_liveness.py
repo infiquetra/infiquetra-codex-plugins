@@ -57,6 +57,7 @@ def _dispatch(store: Any, sid: str, at: float) -> None:
             "dispatch_intent_id": f"dispatch-intent:o:{sid}",
             "subplot_id": sid,
             "ack_kind": "launched",
+            "receipt_authority": "owner-user-state-v1",
             "dispatch_ack_ref": f"protected:{sid}",
             "leaf_saga_id": f"l-{sid}",
             "at": at,
