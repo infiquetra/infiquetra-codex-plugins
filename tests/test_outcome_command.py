@@ -328,6 +328,13 @@ def test_export_import_roundtrips_across_repos(
     # Completion and intents are portable, but launch authority must be reconciled locally.
     st = M.status(dest, "ship-x")
     assert st["states"]["design"] == "done" and st["states"]["build"] == "intent-created"
+    reexported = M.export_bundle(dest, "ship-x")
+    assert reexported["dispatch_audit"] == bundle["dispatch_audit"]
+    assert M.status(dest, "ship-x")["states"]["build"] == "intent-created"
+    assert any(
+        record.get("kind") == M.DISPATCH_AUDIT_KIND
+        for record in STORE.read_ledger(STORE.Store.for_outcome("ship-x", dest))
+    )
 
     # re-import is idempotent: the dispatch ledger does not grow on a second import
     dest_store = STORE.Store.for_outcome("ship-x", dest)

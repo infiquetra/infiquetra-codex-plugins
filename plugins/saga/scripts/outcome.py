@@ -60,6 +60,7 @@ import fleet_commons_shim  # noqa: E402
 
 _workflow_compat = fleet_commons_shim.load("workflow_compat")
 MAX_LAUNCH_RECEIPT_AGE_SECONDS = 24 * 60 * 60
+DISPATCH_AUDIT_KIND = "outcome.dispatch.audit.v1"
 
 # Where the canonical spec lives on the outcome's own branch (KTD1/R26). The committed spec is the
 # structural source of truth; the store under the git-common-dir is its performance cache.
@@ -1471,9 +1472,10 @@ def export_bundle(
     for node in spec.nodes:
         for ev in outcome_store.read_completion_events(store, node.subplot_id):
             events.append(ev.to_dict())
+    ledger_records = outcome_store.read_ledger(store)
     all_dispatch_records = [
         record
-        for record in outcome_store.read_ledger(store)
+        for record in ledger_records
         if record.get("kind") in {"dispatch", "outcome.dispatch.v2"}
     ]
     dispatch_ledger = [
@@ -1481,9 +1483,24 @@ def export_bundle(
         for record in all_dispatch_records
         if record.get("phase") not in {"ack", "authority-ack"}
     ]
-    dispatch_audit = [
+    direct_dispatch_audit = [
         record for record in all_dispatch_records if record.get("phase") in {"ack", "authority-ack"}
     ]
+    archived_dispatch_audit = [
+        record["record"]
+        for record in ledger_records
+        if record.get("kind") == DISPATCH_AUDIT_KIND
+        and record.get("phase") == "archive"
+        and isinstance(record.get("record"), dict)
+    ]
+    dispatch_audit: list[dict[str, Any]] = []
+    seen_audit: set[str] = set()
+    for record in [*direct_dispatch_audit, *archived_dispatch_audit]:
+        digest = _dispatch_audit_digest(record)
+        if digest in seen_audit:
+            continue
+        seen_audit.add(digest)
+        dispatch_audit.append(record)
     return {
         "schema": "outcome-bundle/1",
         "spec": spec.to_dict(),
@@ -1500,8 +1517,8 @@ def import_bundle(
     """Reconstruct an outcome from a bundle: write the spec to the branch + replay events/records.
 
     Fully **idempotent** — re-importing the same bundle does not duplicate state: completion events
-    replay through the write-once, idempotency-keyed store; dispatch ledger records are deduped
-    against the existing ledger by their ``(phase, key)`` so the ledger does not grow on re-import.
+    replay through the write-once, idempotency-keyed store; active dispatch records are deduped by
+    ``(phase, key)`` and inert audit records by their content digest.
     """
     if bundle.get("schema") != "outcome-bundle/1":
         raise OutcomeError(f"unrecognized bundle schema {bundle.get('schema')!r}")
@@ -1514,18 +1531,11 @@ def import_bundle(
         records,
         bundle.get("dispatch_receipts", {}),
     )
-    dispatch_audit = bundle.get("dispatch_audit", [])
-    if (
-        not isinstance(dispatch_audit, list)
-        or len(dispatch_audit) > 10000
-        or any(
-            not isinstance(record, dict)
-            or record.get("kind") != "outcome.dispatch.v2"
-            or record.get("phase") not in {"ack", "authority-ack"}
-            for record in dispatch_audit
-        )
-    ):
-        raise OutcomeError("dispatch_audit must contain bounded non-authoritative acknowledgements")
+    audit_wrappers = _validate_import_dispatch_audit(
+        spec,
+        records,
+        bundle.get("dispatch_audit", []),
+    )
     raw_events = bundle.get("completion_events", [])
     if not isinstance(raw_events, list) or len(raw_events) > 10000:
         raise OutcomeError("completion_events must be a bounded list")
@@ -1540,13 +1550,105 @@ def import_bundle(
     for event in completion_events:
         outcome_store.write_completion_event(store, event)
     existing = {(str(r.get("phase")), str(r.get("key"))) for r in outcome_store.read_ledger(store)}
-    for rec in records:
+    for rec in [*records, *audit_wrappers]:
         ident = (str(rec.get("phase")), str(rec.get("key")))
         if ident in existing:
             continue  # already present -> skip so re-import does not grow the ledger
         outcome_store.append_ledger(store, rec)
         existing.add(ident)
     return spec
+
+
+def _dispatch_audit_digest(record: dict[str, Any]) -> str:
+    """Return the stable identity for one inert, non-authoritative audit record."""
+
+    payload = json.dumps(record, sort_keys=True, separators=(",", ":"), allow_nan=False)
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def _validate_import_dispatch_audit(
+    spec: outcome_spec.OutcomeSpec,
+    dispatch_records: object,
+    audit_records: object,
+) -> list[dict[str, Any]]:
+    """Validate and wrap imported acknowledgements so they remain visible but never authoritative."""
+
+    if not isinstance(audit_records, list) or len(audit_records) > 10000:
+        raise OutcomeError("dispatch_audit must contain bounded non-authoritative acknowledgements")
+    if not isinstance(dispatch_records, list):
+        raise OutcomeError("dispatch_ledger must be a bounded list")
+    subplot_ids = {node.subplot_id for node in spec.nodes}
+    intents = {
+        str(record.get("key")): record
+        for record in dispatch_records
+        if isinstance(record, dict)
+        and record.get("kind") == "outcome.dispatch.v2"
+        and record.get("phase") == "intent"
+    }
+    allowed = {
+        "phase",
+        "kind",
+        "key",
+        "dispatch_intent_id",
+        "subplot_id",
+        "backend",
+        "ack_kind",
+        "dispatch_ack_ref",
+        "producer_kind",
+        "run_identity",
+        "receipt_sha256",
+        "receipt_authority",
+        "leaf_saga_id",
+        "orchestration_ref",
+        "at",
+    }
+    seen: set[str] = set()
+    wrappers: list[dict[str, Any]] = []
+    for record in audit_records:
+        if not isinstance(record, dict) or not set(record).issubset(allowed):
+            raise OutcomeError(
+                "dispatch_audit must contain bounded non-authoritative acknowledgements"
+            )
+        phase = str(record.get("phase", ""))
+        key = str(record.get("key", ""))
+        subplot_id = str(record.get("subplot_id", ""))
+        intent_id = f"dispatch-intent:{spec.outcome_id}:{subplot_id}"
+        at = record.get("at")
+        intent = intents.get(intent_id)
+        if (
+            record.get("kind") != "outcome.dispatch.v2"
+            or phase not in {"ack", "authority-ack"}
+            or subplot_id not in subplot_ids
+            or key != intent_id
+            or record.get("dispatch_intent_id") != intent_id
+            or intent is None
+            or record.get("backend") != intent.get("backend")
+            or record.get("ack_kind") not in {"launched", "handed-off"}
+            or not isinstance(record.get("dispatch_ack_ref"), str)
+            or not record["dispatch_ack_ref"]
+            or len(record["dispatch_ack_ref"]) > 4096
+            or isinstance(at, bool)
+            or not isinstance(at, (int, float))
+            or not math.isfinite(float(at))
+        ):
+            raise OutcomeError(
+                "dispatch_audit must contain bounded non-authoritative acknowledgements"
+            )
+        digest = _dispatch_audit_digest(record)
+        if digest in seen:
+            raise OutcomeError(
+                "dispatch_audit must contain bounded non-authoritative acknowledgements"
+            )
+        seen.add(digest)
+        wrappers.append(
+            {
+                "kind": DISPATCH_AUDIT_KIND,
+                "phase": "archive",
+                "key": f"dispatch-audit:{digest}",
+                "record": record,
+            }
+        )
+    return wrappers
 
 
 def _validate_import_dispatch_ledger(
