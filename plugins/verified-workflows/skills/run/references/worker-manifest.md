@@ -31,6 +31,12 @@ expected sandbox as configured, not observed. Absolute paths, transcripts, promp
 raw results, environment values, and credentials are forbidden. Without host-issued child
 attestation, this is root-accountability diagnostic evidence and always blocks the gate.
 
+External providers do not write worker intents, receipts, or results. Saga binds their dispatch
+identity, attestation, liveness, and reconciliation evidence before Verified Workflows may retain a
+protected advisory reference. That reference declares `seat_type=external-second-opinion` and
+`gate_authority=none`; its findings, score, status, failure, or absence never enter reviewer,
+validator, severity, or completion arithmetic.
+
 Inline receipts bind the role/lens/result but explicitly state that no separate child, model,
 effort, or sandbox was observed. Deterministic receipts bind the command contract, protected
 stream hashes/sizes plus typed stdout projection, and no-write audit, with no model fields. Raw

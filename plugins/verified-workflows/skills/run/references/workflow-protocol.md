@@ -78,3 +78,15 @@ Canonical gate-authoritative state and receipt roots are under the plugin-provid
 directory outside the repository workspace. Repo-local `.codex/verified-workflows/` is a read-only
 legacy migration input only: excluding an active root from the no-write audit would let a child
 alter evidence invisibly. Mixed active roots halt.
+
+## External Advisory Boundary
+
+An external engine is not a workflow worker. Saga owns provider resolution, economics, dispatch,
+attestation, liveness, and typed reconciliation. Verified Workflows may consume only a protected
+structural advisory record whose `seat_type` is `external-second-opinion` and whose
+`gate_authority` is `none`. The record may report convergence, Codex-only, external-only, and
+conflicting finding keys plus a rendered-report digest. It cannot satisfy a role, contribute a
+score, change severity, satisfy a validator, pass a barrier, or block completion.
+
+See [external-engine-workers.md](external-engine-workers.md) for the provider sequence and persisted
+lineage names.
