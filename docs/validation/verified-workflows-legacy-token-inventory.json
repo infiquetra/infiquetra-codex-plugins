@@ -364,7 +364,7 @@
     {
       "classification": "lineage-documentation",
       "path": "docs/portability/ports/2026-07-10-saga-07517.json",
-      "sha256": "f96bc446ecd34e592d436833ba556d53366a7939608731e6313ff4b2150ceafe",
+      "sha256": "47db01257202832d9b670d37c324fd11dae6c15a4a59ac33b210b9217e8ed0c7",
       "tokens": [
         "Team Execution",
         "team-execution"
@@ -665,7 +665,7 @@
     {
       "classification": "current-pre-cutover-documentation",
       "path": "docs/work-sessions/2026-07-11-u5-saga-resume.md",
-      "sha256": "2b78d9700a9429c8949507fe4427ef4f24db9e93e639a56f243cdfd2f77bb13f",
+      "sha256": "4e00fd40fc288eb6288f91c9566395ee23d05ebf369f9dc25ae2858da4b48747",
       "tokens": [
         "team-execution"
       ]
@@ -1165,7 +1165,7 @@
     {
       "classification": "frozen-source-contract",
       "path": "scripts/port_contract.py",
-      "sha256": "2e2a7f479243f723b3bd6ebfad771e211b5eef30554fcf54e65da563a9664ab7",
+      "sha256": "80d5da0e3a7c04acb6ae90d7cfacb82c06ced96fa0c9c4cecaf46242de7a2b28",
       "tokens": [
         "team-execution"
       ]

@@ -14,12 +14,10 @@
 
 ## Evidence
 
-- Commit: `fa6f72e fix(saga): honor explicit default scalar saves`.
+- Commit: `e2cf3f8 fix(saga): honor explicit default scalar saves`.
 - Check: `UV_CACHE_DIR=/private/tmp/codex-uv-cache PYTHONPATH=. uv run pytest
   plugins/saga/tests/test_saga_state.py -q` — 10 passed.
-- The local sandbox denies writes below `.codex/saga`, so the superseding Saga tick could not be
-  persisted from this task even though repository source writes are permitted. The next root with
-  that local-state permission must save the active U5 tick using this session as its evidence.
+- The root-owned Saga tick was persisted after the workspace-write implementation task returned.
 
 ## U5 Completion
 
@@ -40,18 +38,31 @@
   rather than becoming caller-asserted capabilities.
 - Added `docs/validation/codex-plugin-modernization-u5.json`, verified all U5 source and Codex rows
   with its evidence, rendered the classification, and regenerated the legacy-token inventory.
+- Fresh named-profile review blocked commit `651f9a6`: architecture and adversarial review ran as
+  Sol/max/read-only, security as Sol/high/read-only, and concurrency validation as
+  Terra/medium/workspace-write. Root verification confirmed the reported launch, reducer,
+  compatibility, path-containment, evidence-binding, and instruction-context defects.
+- Commit `1de047d` resolved every U5 P1/P2 finding: production dispatch cannot synthesize launch,
+  launch reconciliation is digest-bound and append-only, one v1/v2 reducer feeds replay/liveness/
+  reporting/export, local stale-lease and acknowledgement races are serialized, Goal/identity
+  combinations fail closed, SessionStart output is bounded and fixed, and active Saga skills emit
+  canonical workflow instructions.
+- Commit `def7179` makes port evidence bind an exact reviewed target tree. The U5 artifact and port
+  manifest now point to that commit and its 36-path tree digest rather than an ancestor-only claim.
 
 ## Checks
 
 - `PYTHONPATH=. uv run pytest -q plugins/saga/tests tests/test_outcome_dispatcher.py
   tests/test_outcome_backends.py tests/test_outcome_dispatch_migration.py
-  tests/test_outcome_integration.py tests/test_verified_workflow_readiness.py` — 384 passed.
+  tests/test_outcome_command.py tests/test_outcome_integration.py tests/test_outcome_liveness.py
+  tests/test_verified_workflow_readiness.py tests/test_saga_session_context.py` — 431 passed.
+- `PYTHONPATH=. uv run pytest -q tests/test_port_contract.py` — 24 passed.
 - `python3 scripts/port_contract.py validate --stage unit --unit U5` — passed.
 - `python3 scripts/build_legacy_workflow_inventory.py --check` and
   `python3 scripts/validate_codex_plugins.py` — passed.
 
 ## Next Step
 
-Commit the completed U5 source, validation, inventory, and rendered-classification changes. Do not
-write ignored `.codex/saga` state from this worktree; `.serena/project.yml` remains user-owned and
-unstaged.
+Re-run the four U5 named-profile lenses against `e2cf3f8..HEAD`; resolve any remaining actionable
+finding, then persist the attested U5 boundary and begin U6. `.serena/project.yml` remains user-owned
+and unstaged.
