@@ -338,7 +338,7 @@
     {
       "classification": "lineage-documentation",
       "path": "docs/portability/ports/2026-07-10-saga-07517.json",
-      "sha256": "0e6d545650527da1507918f0c43002d8f76469f2ddf9c095dcd3e2f934af1950",
+      "sha256": "fc2d95fcd7027ad8f6c1c0d13396ae8b67c88a25507a7b80c9dbcaf12409410d",
       "tokens": [
         "Team Execution",
         "team-execution"
