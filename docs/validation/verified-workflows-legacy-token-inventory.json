@@ -364,7 +364,7 @@
     {
       "classification": "lineage-documentation",
       "path": "docs/portability/ports/2026-07-10-saga-07517.json",
-      "sha256": "47db01257202832d9b670d37c324fd11dae6c15a4a59ac33b210b9217e8ed0c7",
+      "sha256": "b867fefdc409567b99def5d8c9c7f4cb77540820c19053e3007edea77bb2ad3b",
       "tokens": [
         "Team Execution",
         "team-execution"
@@ -866,7 +866,7 @@
     {
       "classification": "temporary-saga-writer",
       "path": "plugins/saga/scripts/outcome.py",
-      "sha256": "89369a9736a47dd875d96f8da3b0d058d1af63e2d6f620fddab08fc318854988",
+      "sha256": "ffdd0988454c900460b3e3efde31864ff331b0082e5a1cc06962070b5c0742e5",
       "tokens": [
         "team-execution"
       ]
@@ -874,7 +874,7 @@
     {
       "classification": "temporary-saga-writer",
       "path": "plugins/saga/scripts/outcome_dispatcher.py",
-      "sha256": "9c9fdde9bf83df0f6588b56848f7b6c1c71e038f8dd2d5e9e76fb0f2e65b685e",
+      "sha256": "abf802c5400bc9a76fb2e93e0ee4f08a23ed51fd6f666532bca3c7222556e0da",
       "tokens": [
         "## Team Structure",
         "team-execution"
@@ -907,7 +907,7 @@
     {
       "classification": "temporary-saga-writer",
       "path": "plugins/saga/scripts/saga.py",
-      "sha256": "a0978ec9a9e45449f683b6193f2109750b04c80a2cf976779ec109ce3e7d7615",
+      "sha256": "84a5e33c7514142e54ba0cd5ca1fcda17cdbf202ed23228be9cc87937468b240",
       "tokens": [
         "team-execution"
       ]
@@ -937,94 +937,18 @@
     {
       "classification": "temporary-saga-reader",
       "path": "plugins/saga/scripts/verified_workflow_readiness.py",
-      "sha256": "7e267ddb8552d7465fbf5441fcbccc8a40444fa3d5f9d4795b87f2771aadb8cc",
+      "sha256": "16c089c149060ff0fc052f270da6a72d2a6f1bf610213e352e635f9ab4733081",
       "tokens": [
         "Team Execution",
-        "team-execution"
-      ]
-    },
-    {
-      "classification": "temporary-saga-instructions",
-      "path": "plugins/saga/skills/code-review/SKILL.md",
-      "sha256": "12fdbb14041abe9894b357e1f8cc1034ccb6804d6327221c149de1e58d02b223",
-      "tokens": [
-        "team-execution"
-      ]
-    },
-    {
-      "classification": "temporary-saga-instructions",
-      "path": "plugins/saga/skills/doc-review/SKILL.md",
-      "sha256": "7dde3949af6d552ca1f158a36fec2e1939df75a5f2de351484d26070bcac7b14",
-      "tokens": [
-        "team-execution"
-      ]
-    },
-    {
-      "classification": "temporary-saga-instructions",
-      "path": "plugins/saga/skills/founder-review/SKILL.md",
-      "sha256": "d4b21626a9fa1d58581564d5e92da3541e559b289f4f98d8b2f6c07aa51035c1",
-      "tokens": [
-        "team-execution"
-      ]
-    },
-    {
-      "classification": "temporary-saga-instructions",
-      "path": "plugins/saga/skills/investigate/SKILL.md",
-      "sha256": "dd14b72ccde950fd3468a010426b64d1a22064b400fd2f6003023d97f2792f7f",
-      "tokens": [
-        "team-execution"
-      ]
-    },
-    {
-      "classification": "temporary-saga-instructions",
-      "path": "plugins/saga/skills/investigate/references/methodology.md",
-      "sha256": "56bbd2665c1b0b496d0b9ef9b679538965c83eaa4ee76ce7aca5057a92440016",
-      "tokens": [
-        "team-execution"
-      ]
-    },
-    {
-      "classification": "temporary-saga-instructions",
-      "path": "plugins/saga/skills/loop/references/drive-and-resume.md",
-      "sha256": "9d22f58caa320f143af9158018c4e8733a0806c9a234cd82383aa14950f4d6e2",
-      "tokens": [
-        "Team Execution",
-        "team-execution"
-      ]
-    },
-    {
-      "classification": "temporary-saga-instructions",
-      "path": "plugins/saga/skills/optimize/SKILL.md",
-      "sha256": "92e350b4f34a3a2b6ee81a069c7ae023d09eca1548e93f1f7920e92f54a81dde",
-      "tokens": [
-        "team-execution"
-      ]
-    },
-    {
-      "classification": "temporary-saga-instructions",
-      "path": "plugins/saga/skills/optimize/references/experiment-loop.md",
-      "sha256": "9563bd1788ca8579d1c26845068d36f416fa10cd60669f43306df61af12d462d",
-      "tokens": [
         "team-execution"
       ]
     },
     {
       "classification": "temporary-saga-instructions",
       "path": "plugins/saga/skills/plan/references/plan-sections.md",
-      "sha256": "42507424e5d0cb241a531a76db70796e6ceb1ecaa1e69619d02e04cde006bc05",
+      "sha256": "526af5f39bca79d55f7210dfa833147562c025f5a4e711769c4992b4a3a70931",
       "tokens": [
-        "## Team Structure",
-        "#team-structure",
-        "Team Execution",
-        "team-execution"
-      ]
-    },
-    {
-      "classification": "temporary-saga-instructions",
-      "path": "plugins/saga/skills/qa/SKILL.md",
-      "sha256": "4024387b5e53aa39c2e7e0ef313a7bd55412c8946e75cf709c1e523e9bfab71d",
-      "tokens": [
-        "team-execution"
+        "#team-structure"
       ]
     },
     {
@@ -1032,31 +956,6 @@
       "path": "plugins/saga/skills/resume/SKILL.md",
       "sha256": "cb8f7d4c5bdc3fd0cacca7c73c69d6c83b8c8aacd2911f373d12c9042bcb4578",
       "tokens": [
-        "team-execution"
-      ]
-    },
-    {
-      "classification": "temporary-saga-instructions",
-      "path": "plugins/saga/skills/retro/SKILL.md",
-      "sha256": "9e7994dcbc9a97d0d72e687895797b003d4c9e6bdad7ae64d73978e7917b3daa",
-      "tokens": [
-        "team-execution"
-      ]
-    },
-    {
-      "classification": "temporary-saga-instructions",
-      "path": "plugins/saga/skills/retro/references/self-edit-safety.md",
-      "sha256": "fdfe4f16959838422fca5b99c01c82498ac4c83706631b7b1341b4dfbc2bff17",
-      "tokens": [
-        "team-execution"
-      ]
-    },
-    {
-      "classification": "temporary-saga-instructions",
-      "path": "plugins/saga/skills/work/references/execution-strategy.md",
-      "sha256": "2433916203d9e724c957e42838fa9cf87960220a0749837ce4af74c04abea327",
-      "tokens": [
-        "Team Execution",
         "team-execution"
       ]
     },
@@ -1071,7 +970,7 @@
     {
       "classification": "migration-fixture",
       "path": "plugins/saga/tests/test_saga_state.py",
-      "sha256": "11ae5bc0e9bc8fe8ebf264581d5232e1a8e51eec01e9f09d1d4d91cc2c575290",
+      "sha256": "c471fec3fc5651444e702c65bb4b46805255663855a8068b093da5158d7cab32",
       "tokens": [
         "team-execution"
       ]
@@ -1191,7 +1090,7 @@
     {
       "classification": "migration-fixture",
       "path": "tests/test_capability_degrade.py",
-      "sha256": "431d3a0b9e41bcaa9a03787da173f38c46ff8373ef270b2ce86f9e5c9b7dda1e",
+      "sha256": "3290619044280e173799cf9b66f417489c6eefd889b5ecc98cad905cd0c79180",
       "tokens": [
         "## Team Structure",
         "team-execution"
@@ -1209,7 +1108,7 @@
     {
       "classification": "migration-fixture",
       "path": "tests/test_outcome_dispatcher.py",
-      "sha256": "6e6190999c7c60cf10997bc9ebbcfd75adc38678fe1e91627817e0673b993bc4",
+      "sha256": "b4b53860fbff5b3233718b59a0211e1f8612e44dc207f744f356c713843e2ff5",
       "tokens": [
         "#team-structure",
         "team_execution_ref"
@@ -1226,7 +1125,7 @@
     {
       "classification": "migration-fixture",
       "path": "tests/test_outcome_integration.py",
-      "sha256": "24eadc964f6faf43d423130ec535c7e68323bafc1c4673bc9df42a01e3462a81",
+      "sha256": "845f413026032615a62e549a0cf202129b70e30e8748e9cf73685858949733cb",
       "tokens": [
         "team-execution"
       ]
@@ -1346,9 +1245,10 @@
     {
       "classification": "migration-fixture",
       "path": "tests/test_verified_workflow_readiness.py",
-      "sha256": "39cb4c52dc83407997192721d58797b2364a5a8ead841fc62902897ce7e6ccdd",
+      "sha256": "eb246e19c3a3509df805f83e5575037cd419c330f3f75aedb97e0c1590b8b4ba",
       "tokens": [
         "#team-structure",
+        ".team-execution.json",
         "team-execution"
       ]
     },

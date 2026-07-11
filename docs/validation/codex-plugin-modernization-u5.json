@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "unit": "U5",
-  "recorded_at": "2026-07-11T08:37:23Z",
-  "repo_head": "def717950a125dfd1aa6523eece618b4eb5da747",
-  "target_tree_sha256": "6c5fe7e0018fbf3941d2c44def68604e12f9f8fc1c88aa3524b85ef9f4fa758d",
+  "recorded_at": "2026-07-11T09:10:35Z",
+  "repo_head": "37619d093a035e32fb76ec49529af88a6836e8f9",
+  "target_tree_sha256": "10777ce68d492bcdd80cf78f27a0ce77d5cf8d16c538297ddd523065a5243293",
   "claim": "saga-canonical-workflow-dispatch-and-continuation-boundary",
   "checks": [
     {
       "name": "u5-focused-suite",
-      "argv": ["PYTHONPATH=.", "uv", "run", "pytest", "-q", "plugins/saga/tests", "tests/test_outcome_dispatcher.py", "tests/test_outcome_backends.py", "tests/test_outcome_dispatch_migration.py", "tests/test_outcome_integration.py", "tests/test_verified_workflow_readiness.py"],
+      "argv": ["PYTHONPATH=.", "uv", "run", "pytest", "-q", "plugins/saga/tests", "tests/test_outcome_dispatcher.py", "tests/test_outcome_backends.py", "tests/test_outcome_dispatch_migration.py", "tests/test_outcome_command.py", "tests/test_outcome_integration.py", "tests/test_outcome_liveness.py", "tests/test_outcome_completion.py", "tests/test_outcome_replay.py", "tests/test_capability_degrade.py", "tests/test_verified_workflow_readiness.py", "tests/test_saga_session_context.py"],
       "exit_code": 0,
-      "summary": "431 passed"
+      "summary": "506 passed"
     },
     {
       "name": "legacy-token-inventory",
@@ -35,6 +35,11 @@
     "atomic acknowledgement and expired-lease concurrency",
     "digest-bound launch receipt and canonical readiness containment",
     "v1/v2 replay, liveness, report, and export/import reduction",
-    "bounded instruction-inert SessionStart context"
+    "bounded instruction-inert SessionStart context",
+    "production prepared intent without synthetic v1 commit",
+    "lost-acknowledgement replay blocks duplicate launch",
+    "portable imported launch chains require exact receipt payloads",
+    "generic Saga save cannot self-assert Goal or logical-role identity",
+    "canonical active-skill vocabulary and complete compatibility coverage"
   ]
 }
