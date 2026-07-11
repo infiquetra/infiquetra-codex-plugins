@@ -108,6 +108,31 @@ def test_squash_merge_returns_error_not_conflict_on_failure() -> None:
     assert GH.squash_merge("1", runner=_gh_runner(rc=1)) == "error"
 
 
+def test_qualified_refs_are_normalized_for_pr_reads_and_mutations() -> None:
+    calls: list[list[str]] = []
+
+    def runner(args: list[str], **_kw: Any) -> SimpleNamespace:
+        calls.append(args)
+        body = {"baseRefOid": "base", "headRefOid": "head", "mergeStateStatus": "CLEAN"}
+        return SimpleNamespace(returncode=0, stdout=json.dumps(body), stderr="")
+
+    ref = "infiquetra/team-mimir#110"
+    assert GH.base_ref_oid(ref, runner=runner) == "base"
+    assert GH.head_ref_oid(ref, runner=runner) == "head"
+    assert GH.merge_state(ref, runner=runner) == "clean"
+    assert GH.update_branch(ref, runner=runner) is True
+    assert GH.squash_merge(ref, expected_head="head", runner=runner) == "merged"
+
+    target = "https://github.com/infiquetra/team-mimir/pull/110"
+    assert calls == [
+        ["gh", "pr", "view", target, "--json", "baseRefOid"],
+        ["gh", "pr", "view", target, "--json", "headRefOid"],
+        ["gh", "pr", "view", target, "--json", "mergeStateStatus"],
+        ["gh", "pr", "update-branch", target],
+        ["gh", "pr", "merge", target, "--squash", "--match-head-commit", "head"],
+    ]
+
+
 def test_branch_exists_only_a_definite_404_is_gone() -> None:
     assert GH.branch_exists("feat", runner=_gh_runner("refs/heads/feat")) is True
     assert GH.branch_exists("feat", runner=_gh_runner(rc=1, err="HTTP 404: Not Found")) is False

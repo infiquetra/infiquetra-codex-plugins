@@ -259,7 +259,9 @@ def base_ref_oid(pr_ref: str, *, runner: Callable[..., Any] | None = None) -> st
     and as reference/telemetry. The authoritative stale-tree guard is GitHub itself, via the
     ``--match-head-commit`` CAS on ``gh pr merge`` — not a local compare of this value.
     """
-    rc, out, _err = _run_gh(["pr", "view", str(pr_ref), "--json", "baseRefOid"], runner=runner)
+    rc, out, _err = _run_gh(
+        ["pr", "view", _gh_ref(pr_ref, "pull"), "--json", "baseRefOid"], runner=runner
+    )
     if rc != 0 or not out:
         return ""
     try:
@@ -272,7 +274,9 @@ def base_ref_oid(pr_ref: str, *, runner: Callable[..., Any] | None = None) -> st
 def head_ref_oid(pr_ref: str, *, runner: Callable[..., Any] | None = None) -> str:
     """The PR head commit SHA (``headRefOid``); "" on any failure. Used for the ``--match-head-commit``
     CAS so GitHub rejects a squash if the head moved since (a stale tree cannot be merged)."""
-    rc, out, _err = _run_gh(["pr", "view", str(pr_ref), "--json", "headRefOid"], runner=runner)
+    rc, out, _err = _run_gh(
+        ["pr", "view", _gh_ref(pr_ref, "pull"), "--json", "headRefOid"], runner=runner
+    )
     if rc != 0 or not out:
         return ""
     try:
@@ -285,7 +289,7 @@ def head_ref_oid(pr_ref: str, *, runner: Callable[..., Any] | None = None) -> st
 def merge_state(pr_ref: str, *, runner: Callable[..., Any] | None = None) -> str:
     """GitHub's mergeStateStatus, lowercased to MERGE_STATES; "unknown" on any failure (R34)."""
     rc, out, _err = _run_gh(
-        ["pr", "view", str(pr_ref), "--json", "mergeStateStatus"], runner=runner
+        ["pr", "view", _gh_ref(pr_ref, "pull"), "--json", "mergeStateStatus"], runner=runner
     )
     if rc != 0 or not out:
         return "unknown"
@@ -318,7 +322,7 @@ def branch_exists(branch: str, *, runner: Callable[..., Any] | None = None) -> b
 
 def update_branch(pr_ref: str, *, runner: Callable[..., Any] | None = None) -> bool:
     """Update the PR branch with its base (the R12 rebase-then-reverify step). True iff it succeeded."""
-    rc, _out, _err = _run_gh(["pr", "update-branch", str(pr_ref)], runner=runner)
+    rc, _out, _err = _run_gh(["pr", "update-branch", _gh_ref(pr_ref, "pull")], runner=runner)
     return rc == 0
 
 
@@ -335,7 +339,7 @@ def squash_merge(
     given, ``--match-head-commit`` makes GitHub reject the merge if the PR head moved since (a CAS on
     the head), so a stale tree cannot be squashed.
     """
-    args = ["pr", "merge", str(pr_ref), "--squash"]
+    args = ["pr", "merge", _gh_ref(pr_ref, "pull"), "--squash"]
     if expected_head:
         args += ["--match-head-commit", expected_head]
     rc, _out, _err = _run_gh(args, runner=runner)
