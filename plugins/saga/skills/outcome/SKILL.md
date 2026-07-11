@@ -79,7 +79,7 @@ Inactive source backends:
 
 - Workflow
 - fork
-- goal
+- explicit Goal continuation (never a leaf backend)
 - hooks
 
 If an inactive or unavailable backend is requested, emit a visible halt/degrade

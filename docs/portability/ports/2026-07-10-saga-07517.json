@@ -34,7 +34,9 @@
     "rows": [
       {
         "change": "M",
-        "evidence_refs": [],
+        "evidence_refs": [
+
+        ],
         "invariant": "Preserve execution-base behavior and history for README.md.",
         "new_path": "README.md",
         "old_path": null,
@@ -55,92 +57,124 @@
       },
       {
         "change": "M",
-        "evidence_refs": [],
+        "evidence_refs": [
+
+        ],
         "invariant": "Preserve execution-base behavior and history for docs/engineering-journal/DECISIONS.md.",
         "new_path": "docs/engineering-journal/DECISIONS.md",
         "old_path": null,
         "planned_targets": [
           "docs/engineering-journal/DECISIONS.md"
         ],
-        "planned_tests": [],
+        "planned_tests": [
+
+        ],
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-313d2cf5a21dbc54",
         "similarity": null,
         "state": "classified",
         "treatment": "preserve",
-        "units": []
+        "units": [
+
+        ]
       },
       {
         "change": "A",
-        "evidence_refs": [],
+        "evidence_refs": [
+
+        ],
         "invariant": "Preserve execution-base behavior and history for docs/plans/2026-07-10-codex-plugin-model-execution-modernization-plan.md.",
         "new_path": "docs/plans/2026-07-10-codex-plugin-model-execution-modernization-plan.md",
         "old_path": null,
         "planned_targets": [
           "docs/plans/2026-07-10-codex-plugin-model-execution-modernization-plan.md"
         ],
-        "planned_tests": [],
+        "planned_tests": [
+
+        ],
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-1b133af77a831c5f",
         "similarity": null,
         "state": "classified",
         "treatment": "preserve",
-        "units": []
+        "units": [
+
+        ]
       },
       {
         "change": "A",
-        "evidence_refs": [],
+        "evidence_refs": [
+
+        ],
         "invariant": "Preserve execution-base behavior and history for docs/reviews/2026-07-10-codex-plugin-model-execution-modernization-plan-doc-review-r2.md.",
         "new_path": "docs/reviews/2026-07-10-codex-plugin-model-execution-modernization-plan-doc-review-r2.md",
         "old_path": null,
         "planned_targets": [
           "docs/reviews/2026-07-10-codex-plugin-model-execution-modernization-plan-doc-review-r2.md"
         ],
-        "planned_tests": [],
+        "planned_tests": [
+
+        ],
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-3546c0e14ef4a0fd",
         "similarity": null,
         "state": "classified",
         "treatment": "preserve",
-        "units": []
+        "units": [
+
+        ]
       },
       {
         "change": "A",
-        "evidence_refs": [],
+        "evidence_refs": [
+
+        ],
         "invariant": "Preserve execution-base behavior and history for docs/reviews/2026-07-10-codex-plugin-model-execution-modernization-plan-doc-review-r3.md.",
         "new_path": "docs/reviews/2026-07-10-codex-plugin-model-execution-modernization-plan-doc-review-r3.md",
         "old_path": null,
         "planned_targets": [
           "docs/reviews/2026-07-10-codex-plugin-model-execution-modernization-plan-doc-review-r3.md"
         ],
-        "planned_tests": [],
+        "planned_tests": [
+
+        ],
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-f19cfaef92802292",
         "similarity": null,
         "state": "classified",
         "treatment": "preserve",
-        "units": []
+        "units": [
+
+        ]
       },
       {
         "change": "A",
-        "evidence_refs": [],
+        "evidence_refs": [
+
+        ],
         "invariant": "Preserve execution-base behavior and history for docs/reviews/2026-07-10-codex-plugin-model-execution-modernization-plan-doc-review.md.",
         "new_path": "docs/reviews/2026-07-10-codex-plugin-model-execution-modernization-plan-doc-review.md",
         "old_path": null,
         "planned_targets": [
           "docs/reviews/2026-07-10-codex-plugin-model-execution-modernization-plan-doc-review.md"
         ],
-        "planned_tests": [],
+        "planned_tests": [
+
+        ],
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-5b5b8ce6d7aedfe4",
         "similarity": null,
         "state": "classified",
         "treatment": "preserve",
-        "units": []
+        "units": [
+
+        ]
       },
       {
         "change": "M",
-        "evidence_refs": [],
+        "evidence_refs": [
+
+        ],
         "invariant": "Preserve execution-base behavior and history for docs/saga/generated/lifecycle-facts.json.",
         "new_path": "docs/saga/generated/lifecycle-facts.json",
         "old_path": null,
@@ -187,7 +221,9 @@
       },
       {
         "change": "M",
-        "evidence_refs": [],
+        "evidence_refs": [
+
+        ],
         "invariant": "Preserve execution-base behavior and history for plugins/mission-control/.codex-plugin/plugin.json.",
         "new_path": "plugins/mission-control/.codex-plugin/plugin.json",
         "old_path": null,
@@ -208,7 +244,9 @@
       },
       {
         "change": "M",
-        "evidence_refs": [],
+        "evidence_refs": [
+
+        ],
         "invariant": "Preserve execution-base behavior and history for plugins/mission-control/CHANGELOG.md.",
         "new_path": "plugins/mission-control/CHANGELOG.md",
         "old_path": null,
@@ -229,7 +267,9 @@
       },
       {
         "change": "M",
-        "evidence_refs": [],
+        "evidence_refs": [
+
+        ],
         "invariant": "Preserve execution-base behavior and history for plugins/mission-control/README.md.",
         "new_path": "plugins/mission-control/README.md",
         "old_path": null,
@@ -250,7 +290,9 @@
       },
       {
         "change": "M",
-        "evidence_refs": [],
+        "evidence_refs": [
+
+        ],
         "invariant": "Preserve execution-base behavior and history for plugins/mission-control/config/sdlc-schema.json.",
         "new_path": "plugins/mission-control/config/sdlc-schema.json",
         "old_path": null,
@@ -271,7 +313,9 @@
       },
       {
         "change": "M",
-        "evidence_refs": [],
+        "evidence_refs": [
+
+        ],
         "invariant": "Preserve execution-base behavior and history for plugins/mission-control/scripts/sdlc_manager.py.",
         "new_path": "plugins/mission-control/scripts/sdlc_manager.py",
         "old_path": null,
@@ -292,7 +336,9 @@
       },
       {
         "change": "M",
-        "evidence_refs": [],
+        "evidence_refs": [
+
+        ],
         "invariant": "Preserve execution-base behavior and history for plugins/mission-control/skills/flow/SKILL.md.",
         "new_path": "plugins/mission-control/skills/flow/SKILL.md",
         "old_path": null,
@@ -313,7 +359,9 @@
       },
       {
         "change": "M",
-        "evidence_refs": [],
+        "evidence_refs": [
+
+        ],
         "invariant": "Preserve execution-base behavior and history for plugins/mission-control/skills/issues/SKILL.md.",
         "new_path": "plugins/mission-control/skills/issues/SKILL.md",
         "old_path": null,
@@ -334,7 +382,9 @@
       },
       {
         "change": "M",
-        "evidence_refs": [],
+        "evidence_refs": [
+
+        ],
         "invariant": "Preserve execution-base behavior and history for plugins/mission-control/skills/issues/references/issue-types.md.",
         "new_path": "plugins/mission-control/skills/issues/references/issue-types.md",
         "old_path": null,
@@ -355,7 +405,9 @@
       },
       {
         "change": "M",
-        "evidence_refs": [],
+        "evidence_refs": [
+
+        ],
         "invariant": "Preserve execution-base behavior and history for plugins/mission-control/skills/issues/references/templates-reference.md.",
         "new_path": "plugins/mission-control/skills/issues/references/templates-reference.md",
         "old_path": null,
@@ -376,7 +428,9 @@
       },
       {
         "change": "M",
-        "evidence_refs": [],
+        "evidence_refs": [
+
+        ],
         "invariant": "Preserve execution-base behavior and history for plugins/mission-control/skills/labels/references/labels-reference.md.",
         "new_path": "plugins/mission-control/skills/labels/references/labels-reference.md",
         "old_path": null,
@@ -397,7 +451,9 @@
       },
       {
         "change": "M",
-        "evidence_refs": [],
+        "evidence_refs": [
+
+        ],
         "invariant": "Preserve execution-base behavior and history for plugins/mission-control/skills/milestones/SKILL.md.",
         "new_path": "plugins/mission-control/skills/milestones/SKILL.md",
         "old_path": null,
@@ -418,7 +474,9 @@
       },
       {
         "change": "M",
-        "evidence_refs": [],
+        "evidence_refs": [
+
+        ],
         "invariant": "Preserve execution-base behavior and history for plugins/mission-control/skills/milestones/references/objective-workflow.md.",
         "new_path": "plugins/mission-control/skills/milestones/references/objective-workflow.md",
         "old_path": null,
@@ -439,7 +497,9 @@
       },
       {
         "change": "M",
-        "evidence_refs": [],
+        "evidence_refs": [
+
+        ],
         "invariant": "Preserve execution-base behavior and history for plugins/mission-control/skills/rollout/references/work-hierarchy.md.",
         "new_path": "plugins/mission-control/skills/rollout/references/work-hierarchy.md",
         "old_path": null,
@@ -460,7 +520,9 @@
       },
       {
         "change": "M",
-        "evidence_refs": [],
+        "evidence_refs": [
+
+        ],
         "invariant": "Preserve execution-base behavior and history for plugins/mission-control/tests/test_flow_subcommands.py.",
         "new_path": "plugins/mission-control/tests/test_flow_subcommands.py",
         "old_path": null,
@@ -481,7 +543,9 @@
       },
       {
         "change": "M",
-        "evidence_refs": [],
+        "evidence_refs": [
+
+        ],
         "invariant": "Preserve execution-base behavior and history for plugins/mission-control/tests/test_issue_create_interactive.py.",
         "new_path": "plugins/mission-control/tests/test_issue_create_interactive.py",
         "old_path": null,
@@ -502,7 +566,9 @@
       },
       {
         "change": "M",
-        "evidence_refs": [],
+        "evidence_refs": [
+
+        ],
         "invariant": "Preserve execution-base behavior and history for plugins/mission-control/tests/test_prompt_alignment.py.",
         "new_path": "plugins/mission-control/tests/test_prompt_alignment.py",
         "old_path": null,
@@ -523,7 +589,9 @@
       },
       {
         "change": "M",
-        "evidence_refs": [],
+        "evidence_refs": [
+
+        ],
         "invariant": "Preserve execution-base behavior and history for plugins/saga/.codex-plugin/plugin.json.",
         "new_path": "plugins/saga/.codex-plugin/plugin.json",
         "old_path": null,
@@ -544,7 +612,9 @@
       },
       {
         "change": "M",
-        "evidence_refs": [],
+        "evidence_refs": [
+
+        ],
         "invariant": "Preserve execution-base behavior and history for plugins/saga/CHANGELOG.md.",
         "new_path": "plugins/saga/CHANGELOG.md",
         "old_path": null,
@@ -565,7 +635,9 @@
       },
       {
         "change": "M",
-        "evidence_refs": [],
+        "evidence_refs": [
+
+        ],
         "invariant": "Preserve execution-base behavior and history for plugins/saga/PORTABILITY.md.",
         "new_path": "plugins/saga/PORTABILITY.md",
         "old_path": null,
@@ -586,7 +658,9 @@
       },
       {
         "change": "M",
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u5-validation"
+        ],
         "invariant": "Preserve execution-base behavior and history for plugins/saga/references/outcome-spec.md.",
         "new_path": "plugins/saga/references/outcome-spec.md",
         "old_path": null,
@@ -599,7 +673,7 @@
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-4139bbc718648096",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "reconcile",
         "units": [
           "U5"
@@ -607,7 +681,9 @@
       },
       {
         "change": "M",
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u5-validation"
+        ],
         "invariant": "Preserve execution-base behavior and history for plugins/saga/scripts/discover_subissues.py.",
         "new_path": "plugins/saga/scripts/discover_subissues.py",
         "old_path": null,
@@ -620,7 +696,7 @@
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-2eee1627fe7f230e",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "reconcile",
         "units": [
           "U5"
@@ -628,7 +704,9 @@
       },
       {
         "change": "M",
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u5-validation"
+        ],
         "invariant": "Preserve execution-base behavior and history for plugins/saga/scripts/outcome.py.",
         "new_path": "plugins/saga/scripts/outcome.py",
         "old_path": null,
@@ -641,7 +719,7 @@
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-3b34fc68149a7c76",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "reconcile",
         "units": [
           "U5"
@@ -649,7 +727,9 @@
       },
       {
         "change": "M",
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u5-validation"
+        ],
         "invariant": "Preserve execution-base behavior and history for plugins/saga/scripts/outcome_edges.py.",
         "new_path": "plugins/saga/scripts/outcome_edges.py",
         "old_path": null,
@@ -662,7 +742,7 @@
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-b72a6362dd91adac",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "reconcile",
         "units": [
           "U5"
@@ -670,7 +750,9 @@
       },
       {
         "change": "M",
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u5-validation"
+        ],
         "invariant": "Preserve execution-base behavior and history for plugins/saga/skills/outcome/SKILL.md.",
         "new_path": "plugins/saga/skills/outcome/SKILL.md",
         "old_path": null,
@@ -683,7 +765,7 @@
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-b6ceaf447672f765",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "reconcile",
         "units": [
           "U5"
@@ -691,7 +773,9 @@
       },
       {
         "change": "M",
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u5-validation"
+        ],
         "invariant": "Preserve execution-base behavior and history for plugins/saga/tests/test_codex_operator_choice.py.",
         "new_path": "plugins/saga/tests/test_codex_operator_choice.py",
         "old_path": null,
@@ -704,7 +788,7 @@
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-4b72b04bb9ba214a",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "reconcile",
         "units": [
           "U5"
@@ -712,7 +796,9 @@
       },
       {
         "change": "M",
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u5-validation"
+        ],
         "invariant": "Preserve execution-base behavior and history for plugins/saga/tests/test_outcome_from_objective.py.",
         "new_path": "plugins/saga/tests/test_outcome_from_objective.py",
         "old_path": null,
@@ -725,7 +811,7 @@
         "rationale": "Preserve approved Codex behavior from the historical planning base through the frozen execution base; later units may reconcile it only with explicit tests.",
         "row_id": "codex-bcf74447df5d25d5",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "reconcile",
         "units": [
           "U5"
@@ -856,10 +942,36 @@
       "recorded_at": "2026-07-11T06:06:44Z",
       "repo_head": "bde4d4350758212c7cad0cfa4ef61e7492f9218b",
       "unit": "U4"
+    },
+    {
+      "evidence_id": "u5-validation",
+      "unit": "U5",
+      "kind": "check",
+      "artifact_path": "docs/validation/codex-plugin-modernization-u5.json",
+      "artifact_sha256": "5c7cd3295682380c52f3c7766497b7beb5bfa8ba974c29c514d404d08295d6f7",
+      "argv": [
+        "PYTHONPATH=.",
+        "uv",
+        "run",
+        "pytest",
+        "-q",
+        "plugins/saga/tests",
+        "tests/test_outcome_dispatcher.py",
+        "tests/test_outcome_backends.py",
+        "tests/test_outcome_dispatch_migration.py",
+        "tests/test_outcome_integration.py",
+        "tests/test_verified_workflow_readiness.py"
+      ],
+      "cwd": ".",
+      "exit_code": 0,
+      "recorded_at": "2026-07-11T12:00:00Z",
+      "repo_head": "e2cf3f810a5e2ce9e1d61bb1c04fcd95ed9808af"
     }
   ],
   "port_id": "2026-07-10-saga-07517",
-  "refresh_changes": [],
+  "refresh_changes": [
+
+  ],
   "release_evidence": {
     "cutover": null,
     "fresh_session": null,
@@ -893,8 +1005,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/fleet-core/.claude-plugin/plugin.json",
         "old_path": null,
         "planned_targets": [
@@ -921,8 +1037,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/fleet-core/CHANGELOG.md",
         "old_path": null,
         "planned_targets": [
@@ -949,8 +1069,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": ["u2-fleet-core-check-20260710"],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u2-fleet-core-check-20260710"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/fleet-core/scripts/fleet_commons/bridge_receipt.py",
         "old_path": null,
         "planned_targets": [
@@ -977,8 +1101,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": ["u2-fleet-core-check-20260710"],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u2-fleet-core-check-20260710"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/fleet-core/scripts/fleet_commons/cost_weights.json",
         "old_path": null,
         "planned_targets": [
@@ -1005,8 +1133,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": ["u2-fleet-core-check-20260710"],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u2-fleet-core-check-20260710"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/fleet-core/scripts/fleet_commons/cost_weights.py",
         "old_path": null,
         "planned_targets": [
@@ -1033,8 +1165,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": ["u2-fleet-core-check-20260710"],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u2-fleet-core-check-20260710"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/fleet-core/scripts/fleet_commons/delegation_audit.py",
         "old_path": null,
         "planned_targets": [
@@ -1061,8 +1197,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": ["u2-fleet-core-check-20260710"],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u2-fleet-core-check-20260710"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/fleet-core/scripts/fleet_commons/delegation_state.py",
         "old_path": null,
         "planned_targets": [
@@ -1089,8 +1229,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": ["u2-fleet-core-check-20260710"],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u2-fleet-core-check-20260710"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/fleet-core/scripts/fleet_commons/output_attestation.py",
         "old_path": null,
         "planned_targets": [
@@ -1117,8 +1261,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": ["u2-fleet-core-check-20260710"],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u2-fleet-core-check-20260710"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/fleet-core/scripts/fleet_commons/render_tier_table.py",
         "old_path": null,
         "planned_targets": [
@@ -1145,8 +1293,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": ["u2-fleet-core-check-20260710"],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u2-fleet-core-check-20260710"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/fleet-core/scripts/fleet_commons/retry_backoff.py",
         "old_path": null,
         "planned_targets": [
@@ -1173,8 +1325,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": ["u2-fleet-core-check-20260710"],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u2-fleet-core-check-20260710"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/fleet-core/scripts/fleet_commons/tier_palette.py",
         "old_path": null,
         "planned_targets": [
@@ -1201,8 +1357,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/fleet-core/scripts/fleet_commons/tier_policy.json",
         "old_path": null,
         "planned_targets": [
@@ -1217,7 +1377,9 @@
         "state": "classified",
         "surface_kind": "config",
         "treatment": "reject",
-        "units": []
+        "units": [
+
+        ]
       },
       {
         "capability_refs": [
@@ -1227,8 +1389,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/.claude-plugin/plugin.json",
         "old_path": null,
         "planned_targets": [
@@ -1255,8 +1421,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/CHANGELOG.md",
         "old_path": null,
         "planned_targets": [
@@ -1283,7 +1453,9 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+
+        ],
         "host_primitives": [
           "ClaudeCommand"
         ],
@@ -1313,7 +1485,9 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+
+        ],
         "host_primitives": [
           "ClaudeCommand"
         ],
@@ -1331,7 +1505,9 @@
         "state": "classified",
         "surface_kind": "command",
         "treatment": "reject",
-        "units": []
+        "units": [
+
+        ]
       },
       {
         "capability_refs": [
@@ -1341,8 +1517,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/docs/commands.md",
         "old_path": null,
         "planned_targets": [
@@ -1369,8 +1549,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/docs/model/saga-docs-model.yaml",
         "old_path": null,
         "planned_targets": [
@@ -1397,7 +1581,9 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+
+        ],
         "host_primitives": [
           "ClaudeHook"
         ],
@@ -1427,7 +1613,9 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+
+        ],
         "host_primitives": [
           "ClaudeHook"
         ],
@@ -1457,7 +1645,9 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+
+        ],
         "host_primitives": [
           "ClaudeHook"
         ],
@@ -1487,8 +1677,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/references/bridge-signatures.json",
         "old_path": null,
         "planned_targets": [
@@ -1515,8 +1709,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/references/dispatch-adapter-contract.md",
         "old_path": null,
         "planned_targets": [
@@ -1543,8 +1741,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/references/effort-policy.yaml",
         "old_path": null,
         "planned_targets": [
@@ -1571,8 +1773,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/references/engine-dispatch.md",
         "old_path": null,
         "planned_targets": [
@@ -1599,8 +1805,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/references/engine-output-trust-boundary.md",
         "old_path": null,
         "planned_targets": [
@@ -1627,8 +1837,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/references/engine-registry.yaml",
         "old_path": null,
         "planned_targets": [
@@ -1655,8 +1869,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u5-validation"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/references/execution-spec.md",
         "old_path": null,
         "planned_targets": [
@@ -1668,7 +1886,7 @@
         "rationale": "Reconcile source semantics with the approved Codex lifecycle, continuation, dispatch, and persistence boundary.",
         "row_id": "src-56dc896ca492641a",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "reference",
         "treatment": "codex-adapt",
         "units": [
@@ -1683,8 +1901,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/references/model-releases.yaml",
         "old_path": null,
         "planned_targets": [
@@ -1711,8 +1933,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u5-validation"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/references/run-fact-ledger.md",
         "old_path": null,
         "planned_targets": [
@@ -1724,7 +1950,7 @@
         "rationale": "Reconcile source semantics with the approved Codex lifecycle, continuation, dispatch, and persistence boundary.",
         "row_id": "src-970c8dd60b9f8b75",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "reference",
         "treatment": "codex-adapt",
         "units": [
@@ -1739,8 +1965,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u5-validation"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/references/saga-spec.md",
         "old_path": null,
         "planned_targets": [
@@ -1752,7 +1982,7 @@
         "rationale": "Reconcile source semantics with the approved Codex lifecycle, continuation, dispatch, and persistence boundary.",
         "row_id": "src-3845c5921b3e63f5",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "reference",
         "treatment": "codex-adapt",
         "units": [
@@ -1767,8 +1997,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u5-validation"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/references/sandbox-spawn-sites.md",
         "old_path": null,
         "planned_targets": [
@@ -1780,7 +2014,7 @@
         "rationale": "Reconcile source semantics with the approved Codex lifecycle, continuation, dispatch, and persistence boundary.",
         "row_id": "src-d71389f4dcd3ec24",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "reference",
         "treatment": "codex-adapt",
         "units": [
@@ -1795,8 +2029,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/references/surface_intent_defaults.yaml",
         "old_path": null,
         "planned_targets": [
@@ -1823,8 +2061,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/scripts/board_progression.py",
         "old_path": null,
         "planned_targets": [
@@ -1851,8 +2093,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/scripts/bridge_signatures.py",
         "old_path": null,
         "planned_targets": [
@@ -1879,8 +2125,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/scripts/chaperone_economics.py",
         "old_path": null,
         "planned_targets": [
@@ -1907,8 +2157,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/scripts/check_empty_delivery.py",
         "old_path": null,
         "planned_targets": [
@@ -1935,8 +2189,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/scripts/check_engine_registry.py",
         "old_path": null,
         "planned_targets": [
@@ -1963,8 +2221,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/scripts/discover_subissues.py",
         "old_path": null,
         "planned_targets": [
@@ -1991,8 +2253,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/scripts/effort_ledger.py",
         "old_path": null,
         "planned_targets": [
@@ -2019,8 +2285,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/scripts/engine_bridge_http.py",
         "old_path": null,
         "planned_targets": [
@@ -2047,8 +2317,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/scripts/engine_dispatch.py",
         "old_path": null,
         "planned_targets": [
@@ -2075,8 +2349,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/scripts/engine_offer.py",
         "old_path": null,
         "planned_targets": [
@@ -2103,8 +2381,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/scripts/engine_onboarding.py",
         "old_path": null,
         "planned_targets": [
@@ -2131,8 +2413,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/scripts/engine_overlay.py",
         "old_path": null,
         "planned_targets": [
@@ -2159,8 +2445,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/scripts/engine_promotion.py",
         "old_path": null,
         "planned_targets": [
@@ -2187,8 +2477,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/scripts/engine_recommend.py",
         "old_path": null,
         "planned_targets": [
@@ -2215,8 +2509,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/scripts/engine_registry.py",
         "old_path": null,
         "planned_targets": [
@@ -2243,8 +2541,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/scripts/engine_registry_cli.py",
         "old_path": null,
         "planned_targets": [
@@ -2271,8 +2573,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/scripts/engine_registry_conformance.py",
         "old_path": null,
         "planned_targets": [
@@ -2299,8 +2605,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/scripts/engine_resolver.py",
         "old_path": null,
         "planned_targets": [
@@ -2327,8 +2637,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/scripts/execution_spec.py",
         "old_path": null,
         "planned_targets": [
@@ -2355,8 +2669,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u5-validation"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/scripts/manifest_reader.py",
         "old_path": null,
         "planned_targets": [
@@ -2368,7 +2686,7 @@
         "rationale": "Reconcile source persistence or dispatch behavior with Saga launch acknowledgement and canonical workflow vocabulary.",
         "row_id": "src-627e8ef533965b40",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -2383,8 +2701,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u5-validation"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/scripts/manifest_store.py",
         "old_path": null,
         "planned_targets": [
@@ -2396,7 +2718,7 @@
         "rationale": "Reconcile source persistence or dispatch behavior with Saga launch acknowledgement and canonical workflow vocabulary.",
         "row_id": "src-b4fc1497a5a9b8ab",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -2411,8 +2733,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u5-validation"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/scripts/outcome.py",
         "old_path": null,
         "planned_targets": [
@@ -2424,7 +2750,7 @@
         "rationale": "Reconcile source persistence or dispatch behavior with Saga launch acknowledgement and canonical workflow vocabulary.",
         "row_id": "src-3b34fc68149a7c76",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -2439,8 +2765,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/scripts/outcome_edges.py",
         "old_path": null,
         "planned_targets": [
@@ -2467,8 +2797,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/scripts/outcome_github.py",
         "old_path": null,
         "planned_targets": [
@@ -2495,8 +2829,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/scripts/provenance_manifest.py",
         "old_path": null,
         "planned_targets": [
@@ -2523,8 +2861,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/scripts/reconcile.py",
         "old_path": null,
         "planned_targets": [
@@ -2551,8 +2893,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u5-validation"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/scripts/run_ledger.py",
         "old_path": null,
         "planned_targets": [
@@ -2564,7 +2910,7 @@
         "rationale": "Reconcile source persistence or dispatch behavior with Saga launch acknowledgement and canonical workflow vocabulary.",
         "row_id": "src-4493db98ed5be1de",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -2579,8 +2925,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/scripts/spend_authority.py",
         "old_path": null,
         "planned_targets": [
@@ -2607,8 +2957,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u5-validation"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/scripts/team_emitter.py",
         "old_path": null,
         "planned_targets": [
@@ -2620,7 +2974,7 @@
         "rationale": "Reconcile source persistence or dispatch behavior with Saga launch acknowledgement and canonical workflow vocabulary.",
         "row_id": "src-f683300fb1cd7081",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -2635,8 +2989,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/scripts/tier_defaults.py",
         "old_path": null,
         "planned_targets": [
@@ -2651,7 +3009,9 @@
         "state": "classified",
         "surface_kind": "script",
         "treatment": "reject",
-        "units": []
+        "units": [
+
+        ]
       },
       {
         "capability_refs": [
@@ -2661,8 +3021,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/scripts/tier_session.py",
         "old_path": null,
         "planned_targets": [
@@ -2677,7 +3041,9 @@
         "state": "classified",
         "surface_kind": "script",
         "treatment": "reject",
-        "units": []
+        "units": [
+
+        ]
       },
       {
         "capability_refs": [
@@ -2687,8 +3053,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/skills/brainstorm/SKILL.md",
         "old_path": null,
         "planned_targets": [
@@ -2715,8 +3085,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/skills/code-review/SKILL.md",
         "old_path": null,
         "planned_targets": [
@@ -2743,8 +3117,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/skills/doc-review/SKILL.md",
         "old_path": null,
         "planned_targets": [
@@ -2771,8 +3149,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/skills/ideate/SKILL.md",
         "old_path": null,
         "planned_targets": [
@@ -2799,8 +3181,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/skills/ideate/references/convergence-and-partnership.md",
         "old_path": null,
         "planned_targets": [
@@ -2827,8 +3213,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/skills/ideate/references/ideation-artifact.md",
         "old_path": null,
         "planned_targets": [
@@ -2855,8 +3245,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u5-validation"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/skills/plan/SKILL.md",
         "old_path": null,
         "planned_targets": [
@@ -2868,7 +3262,7 @@
         "rationale": "Adapt the skill guidance to separated Saga lifecycle, continuation, workflow, and step-vehicle dimensions.",
         "row_id": "src-c471baea790a3b70",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "skill",
         "treatment": "codex-adapt",
         "units": [
@@ -2883,8 +3277,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/skills/retro/SKILL.md",
         "old_path": null,
         "planned_targets": [
@@ -2911,8 +3309,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u5-validation"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/skills/work/SKILL.md",
         "old_path": null,
         "planned_targets": [
@@ -2924,7 +3326,7 @@
         "rationale": "Adapt the skill guidance to separated Saga lifecycle, continuation, workflow, and step-vehicle dimensions.",
         "row_id": "src-93bdbd17f619d666",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "skill",
         "treatment": "codex-adapt",
         "units": [
@@ -2939,8 +3341,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u5-validation"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/skills/work/references/execution-strategy.md",
         "old_path": null,
         "planned_targets": [
@@ -2952,7 +3358,7 @@
         "rationale": "Adapt the skill guidance to separated Saga lifecycle, continuation, workflow, and step-vehicle dimensions.",
         "row_id": "src-f489ca5929921d63",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "skill",
         "treatment": "codex-adapt",
         "units": [
@@ -2967,8 +3373,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u5-validation"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/saga/skills/work/references/pr-continuation-loop.md",
         "old_path": null,
         "planned_targets": [
@@ -2980,7 +3390,7 @@
         "rationale": "Adapt the skill guidance to separated Saga lifecycle, continuation, workflow, and step-vehicle dimensions.",
         "row_id": "src-7b3cc00d30865490",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "skill",
         "treatment": "codex-adapt",
         "units": [
@@ -2998,7 +3408,9 @@
         "evidence_refs": [
           "u9-workflow-identity-check-20260710"
         ],
-        "host_primitives": [],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/team-execution/.claude-plugin/plugin.json",
         "old_path": null,
         "planned_targets": [
@@ -3025,8 +3437,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/team-execution/CHANGELOG.md",
         "old_path": null,
         "planned_targets": [
@@ -3056,7 +3472,9 @@
         "evidence_refs": [
           "u4-verified-workflow-check-20260711"
         ],
-        "host_primitives": [],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/team-execution/skills/team-execution/SKILL.md",
         "old_path": null,
         "planned_targets": [
@@ -3085,8 +3503,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/team-execution/skills/team-execution/references/consensus-protocol.md",
         "old_path": null,
         "planned_targets": [
@@ -3114,8 +3536,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/team-execution/skills/team-execution/references/external-engine-workers.md",
         "old_path": null,
         "planned_targets": [
@@ -3142,8 +3568,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": ["u3-role-profile-check-20260710"],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u3-role-profile-check-20260710"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/team-execution/skills/team-execution/references/reviewer-registry.md",
         "old_path": null,
         "planned_targets": [
@@ -3170,8 +3600,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": ["u3-role-profile-check-20260710"],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u3-role-profile-check-20260710"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/team-execution/skills/team-execution/references/validator-criteria.md",
         "old_path": null,
         "planned_targets": [
@@ -3198,8 +3632,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": ["u3-role-profile-check-20260710"],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u3-role-profile-check-20260710"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/team-execution/skills/team-execution/references/validator-registry.md",
         "old_path": null,
         "planned_targets": [
@@ -3226,8 +3664,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/team-execution/skills/team-execution/references/worker-manifest.md",
         "old_path": null,
         "planned_targets": [
@@ -3256,8 +3698,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "plugins/team-execution/skills/team-execution/scripts/consensus_advisory.py",
         "old_path": null,
         "planned_targets": [
@@ -3284,8 +3730,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/fixtures/delegation/claude-clone-agy.jsonl",
         "old_path": null,
         "planned_targets": [
@@ -3312,8 +3762,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/fixtures/delegation/claude-clone-codex.jsonl",
         "old_path": null,
         "planned_targets": [
@@ -3340,8 +3794,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/fixtures/delegation/empty.jsonl",
         "old_path": null,
         "planned_targets": [
@@ -3368,8 +3826,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/fixtures/delegation/real-agy.jsonl",
         "old_path": null,
         "planned_targets": [
@@ -3396,8 +3858,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/fixtures/delegation/real-codex.jsonl",
         "old_path": null,
         "planned_targets": [
@@ -3424,19 +3890,29 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_agy_delegate_contract.py",
         "old_path": null,
-        "planned_targets": [],
-        "planned_tests": [],
+        "planned_targets": [
+
+        ],
+        "planned_tests": [
+
+        ],
         "rationale": "Source-only Claude/external-delegate surface is intentionally omitted; a negative Codex boundary test replaces any active path.",
         "row_id": "src-5151852057fc940f",
         "similarity": null,
         "state": "classified",
         "surface_kind": "test",
         "treatment": "reject",
-        "units": []
+        "units": [
+
+        ]
       },
       {
         "capability_refs": [
@@ -3446,19 +3922,29 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_agy_plugin.py",
         "old_path": null,
-        "planned_targets": [],
-        "planned_tests": [],
+        "planned_targets": [
+
+        ],
+        "planned_tests": [
+
+        ],
         "rationale": "Source-only Claude/external-delegate surface is intentionally omitted; a negative Codex boundary test replaces any active path.",
         "row_id": "src-ba254b4e9f7215f5",
         "similarity": null,
         "state": "classified",
         "surface_kind": "test",
         "treatment": "reject",
-        "units": []
+        "units": [
+
+        ]
       },
       {
         "capability_refs": [
@@ -3468,8 +3954,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_board_progression.py",
         "old_path": null,
         "planned_targets": [
@@ -3496,8 +3986,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_bridge_lie_detector.py",
         "old_path": null,
         "planned_targets": [
@@ -3524,8 +4018,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": ["u2-fleet-core-check-20260710"],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u2-fleet-core-check-20260710"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_bridge_receipt.py",
         "old_path": null,
         "planned_targets": [
@@ -3552,8 +4050,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_bridge_receipt_drift.py",
         "old_path": null,
         "planned_targets": [
@@ -3580,8 +4082,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_bridge_signatures.py",
         "old_path": null,
         "planned_targets": [
@@ -3608,8 +4114,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_chaperone_economics.py",
         "old_path": null,
         "planned_targets": [
@@ -3636,8 +4146,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_chaperone_liveness.py",
         "old_path": null,
         "planned_targets": [
@@ -3664,8 +4178,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_check_empty_delivery.py",
         "old_path": null,
         "planned_targets": [
@@ -3692,19 +4210,29 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_codex_delegate_contract.py",
         "old_path": null,
-        "planned_targets": [],
-        "planned_tests": [],
+        "planned_targets": [
+
+        ],
+        "planned_tests": [
+
+        ],
         "rationale": "Source-only Claude/external-delegate surface is intentionally omitted; a negative Codex boundary test replaces any active path.",
         "row_id": "src-579656432b588bb6",
         "similarity": null,
         "state": "classified",
         "surface_kind": "test",
         "treatment": "reject",
-        "units": []
+        "units": [
+
+        ]
       },
       {
         "capability_refs": [
@@ -3714,19 +4242,29 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_codex_delegate_lifecycle.py",
         "old_path": null,
-        "planned_targets": [],
-        "planned_tests": [],
+        "planned_targets": [
+
+        ],
+        "planned_tests": [
+
+        ],
         "rationale": "Source-only Claude/external-delegate surface is intentionally omitted; a negative Codex boundary test replaces any active path.",
         "row_id": "src-bc7d34ba4152bf7e",
         "similarity": null,
         "state": "classified",
         "surface_kind": "test",
         "treatment": "reject",
-        "units": []
+        "units": [
+
+        ]
       },
       {
         "capability_refs": [
@@ -3736,19 +4274,29 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_codex_delegate_modes.py",
         "old_path": null,
-        "planned_targets": [],
-        "planned_tests": [],
+        "planned_targets": [
+
+        ],
+        "planned_tests": [
+
+        ],
         "rationale": "Source-only Claude/external-delegate surface is intentionally omitted; a negative Codex boundary test replaces any active path.",
         "row_id": "src-2b8fdf66bd5e6636",
         "similarity": null,
         "state": "classified",
         "surface_kind": "test",
         "treatment": "reject",
-        "units": []
+        "units": [
+
+        ]
       },
       {
         "capability_refs": [
@@ -3758,19 +4306,29 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_codex_plugin.py",
         "old_path": null,
-        "planned_targets": [],
-        "planned_tests": [],
+        "planned_targets": [
+
+        ],
+        "planned_tests": [
+
+        ],
         "rationale": "Source-only Claude/external-delegate surface is intentionally omitted; a negative Codex boundary test replaces any active path.",
         "row_id": "src-476373c24037ab8a",
         "similarity": null,
         "state": "classified",
         "surface_kind": "test",
         "treatment": "reject",
-        "units": []
+        "units": [
+
+        ]
       },
       {
         "capability_refs": [
@@ -3780,8 +4338,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": ["u2-fleet-core-check-20260710"],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u2-fleet-core-check-20260710"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_cost_weights.py",
         "old_path": null,
         "planned_targets": [
@@ -3808,8 +4370,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": ["u2-fleet-core-check-20260710"],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u2-fleet-core-check-20260710"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_delegation_audit.py",
         "old_path": null,
         "planned_targets": [
@@ -3836,8 +4402,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_delegation_tripwire.py",
         "old_path": null,
         "planned_targets": [
@@ -3864,8 +4434,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_effort_ledger.py",
         "old_path": null,
         "planned_targets": [
@@ -3892,8 +4466,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_engine_bridge_http.py",
         "old_path": null,
         "planned_targets": [
@@ -3920,8 +4498,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_engine_dispatch_attestation.py",
         "old_path": null,
         "planned_targets": [
@@ -3948,8 +4530,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_engine_dispatch_ledger.py",
         "old_path": null,
         "planned_targets": [
@@ -3976,8 +4562,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_engine_offer.py",
         "old_path": null,
         "planned_targets": [
@@ -4004,8 +4594,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_engine_onboarding.py",
         "old_path": null,
         "planned_targets": [
@@ -4032,8 +4626,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_engine_output_trust_boundary.py",
         "old_path": null,
         "planned_targets": [
@@ -4060,8 +4658,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_engine_overlay.py",
         "old_path": null,
         "planned_targets": [
@@ -4088,8 +4690,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_engine_promotion.py",
         "old_path": null,
         "planned_targets": [
@@ -4116,8 +4722,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_engine_recommend.py",
         "old_path": null,
         "planned_targets": [
@@ -4144,8 +4754,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_engine_registry_cli.py",
         "old_path": null,
         "planned_targets": [
@@ -4172,8 +4786,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_engine_registry_conformance.py",
         "old_path": null,
         "planned_targets": [
@@ -4200,8 +4818,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_engine_registry_lint.py",
         "old_path": null,
         "planned_targets": [
@@ -4228,8 +4850,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_fleet_commons_resolution.py",
         "old_path": null,
         "planned_targets": [
@@ -4256,8 +4882,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_ideate_engine_lane.py",
         "old_path": null,
         "planned_targets": [
@@ -4284,8 +4914,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_manifest_consumer_matrix.py",
         "old_path": null,
         "planned_targets": [
@@ -4312,8 +4946,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u5-validation"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_manifest_reader.py",
         "old_path": null,
         "planned_targets": [
@@ -4325,7 +4963,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-06024fa908bc0f9b",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -4340,8 +4978,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u5-validation"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_manifest_store.py",
         "old_path": null,
         "planned_targets": [
@@ -4353,7 +4995,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-cc5cdbca9694e5ca",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -4368,8 +5010,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_mission_control.py",
         "old_path": null,
         "planned_targets": [
@@ -4396,8 +5042,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_outcome_board_sync.py",
         "old_path": null,
         "planned_targets": [
@@ -4424,8 +5074,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_outcome_command.py",
         "old_path": null,
         "planned_targets": [
@@ -4452,8 +5106,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u5-validation"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_outcome_completion.py",
         "old_path": null,
         "planned_targets": [
@@ -4465,7 +5123,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-599ad060bb24c4f6",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -4480,8 +5138,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u5-validation"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_outcome_from_objective.py",
         "old_path": null,
         "planned_targets": [
@@ -4493,7 +5155,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-26d25b33a7a61b87",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -4508,8 +5170,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u5-validation"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_outcome_integration.py",
         "old_path": null,
         "planned_targets": [
@@ -4521,7 +5187,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-4b82419410cdebad",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -4536,8 +5202,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": ["u2-fleet-core-check-20260710"],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u2-fleet-core-check-20260710"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_output_attestation.py",
         "old_path": null,
         "planned_targets": [
@@ -4564,8 +5234,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_provenance_manifest.py",
         "old_path": null,
         "planned_targets": [
@@ -4592,8 +5266,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_reconcile.py",
         "old_path": null,
         "planned_targets": [
@@ -4620,8 +5298,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": ["u2-fleet-core-check-20260710"],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u2-fleet-core-check-20260710"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_retry_backoff.py",
         "old_path": null,
         "planned_targets": [
@@ -4648,8 +5330,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u5-validation"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_run_ledger.py",
         "old_path": null,
         "planned_targets": [
@@ -4661,7 +5347,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-0dd7c0c07ad25cf4",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -4676,8 +5362,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_saga_docs_coverage.py",
         "old_path": null,
         "planned_targets": [
@@ -4704,8 +5394,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_saga_engine_dispatch.py",
         "old_path": null,
         "planned_targets": [
@@ -4732,8 +5426,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_saga_engine_registry.py",
         "old_path": null,
         "planned_targets": [
@@ -4760,8 +5458,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_saga_engine_resolver.py",
         "old_path": null,
         "planned_targets": [
@@ -4788,8 +5490,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_saga_execution_spec.py",
         "old_path": null,
         "planned_targets": [
@@ -4816,8 +5522,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u5-validation"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_saga_plugin.py",
         "old_path": null,
         "planned_targets": [
@@ -4829,7 +5539,7 @@
         "rationale": "Adapt the source behavior assertion or fixture to the corresponding Codex-owned surface and retain negative host-boundary coverage.",
         "row_id": "src-47a006317748a1e9",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -4844,8 +5554,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_saga_retro.py",
         "old_path": null,
         "planned_targets": [
@@ -4872,8 +5586,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_spend_authority.py",
         "old_path": null,
         "planned_targets": [
@@ -4900,8 +5618,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_spend_delta.py",
         "old_path": null,
         "planned_targets": [
@@ -4928,8 +5650,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_spend_envelope.py",
         "old_path": null,
         "planned_targets": [
@@ -4956,19 +5682,29 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_spore_hooks_registration.py",
         "old_path": null,
-        "planned_targets": [],
-        "planned_tests": [],
+        "planned_targets": [
+
+        ],
+        "planned_tests": [
+
+        ],
         "rationale": "Source-only Claude/external-delegate surface is intentionally omitted; a negative Codex boundary test replaces any active path.",
         "row_id": "src-67327c6e88905f8d",
         "similarity": null,
         "state": "classified",
         "surface_kind": "test",
         "treatment": "reject",
-        "units": []
+        "units": [
+
+        ]
       },
       {
         "capability_refs": [
@@ -4978,8 +5714,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_team_emitter.py",
         "old_path": null,
         "planned_targets": [
@@ -5010,8 +5750,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_team_execution_consensus.py",
         "old_path": null,
         "planned_targets": [
@@ -5039,8 +5783,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_team_execution_consensus_advisory.py",
         "old_path": null,
         "planned_targets": [
@@ -5067,8 +5815,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_team_execution_plugin.py",
         "old_path": null,
         "planned_targets": [
@@ -5098,8 +5850,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_tier_defaults.py",
         "old_path": null,
         "planned_targets": [
@@ -5114,7 +5870,9 @@
         "state": "classified",
         "surface_kind": "test",
         "treatment": "reject",
-        "units": []
+        "units": [
+
+        ]
       },
       {
         "capability_refs": [
@@ -5124,8 +5882,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": ["u2-fleet-core-check-20260710"],
-        "host_primitives": [],
+        "evidence_refs": [
+          "u2-fleet-core-check-20260710"
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_tier_resolver.py",
         "old_path": null,
         "planned_targets": [
@@ -5152,8 +5914,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_tier_session.py",
         "old_path": null,
         "planned_targets": [
@@ -5168,7 +5934,9 @@
         "state": "classified",
         "surface_kind": "test",
         "treatment": "reject",
-        "units": []
+        "units": [
+
+        ]
       },
       {
         "capability_refs": [
@@ -5178,8 +5946,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_verify_spawn_gate_summary.py",
         "old_path": null,
         "planned_targets": [
@@ -5206,8 +5978,12 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
-        "host_primitives": [],
+        "evidence_refs": [
+
+        ],
+        "host_primitives": [
+
+        ],
         "new_path": "tests/test_workflow_emitter.py",
         "old_path": null,
         "planned_targets": [

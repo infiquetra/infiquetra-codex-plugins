@@ -21,8 +21,37 @@
   persisted from this task even though repository source writes are permitted. The next root with
   that local-state permission must save the active U5 tick using this session as its evidence.
 
+## U5 Completion
+
+- Canonical new-write vocabulary now uses `inline`, `manual`, and `verified-workflow`; the legacy
+  `team-execution` input is normalized on read/save rather than emitted by new Saga ticks.
+- Saga records `continuation_mode`, `continuation_ref`, and `identity_mode`. Goal remains an explicit
+  continuation binding, not an outcome backend.
+- Outcome reconciliation writes `outcome.dispatch.v2` intents and accepts only a typed launched or
+  handed-off acknowledgement as settlement. A legacy synthetic leaf commit remains visible as
+  `legacy-unverified` and cannot advance dependent work.
+- Added the canonical readiness adapter and a single non-mutating SessionStart hook for startup,
+  resume, and compact context.
+- Recovered an interrupted intent correctly: only acknowledgement and legacy commit states settle
+  deduplication, so an intent without an acknowledgement retries rather than remaining permanently
+  hidden. Reconciliation appends a v2 acknowledgement and cannot rewrite history.
+- Migrated hierarchy and board-sync fixtures from the synthetic v1 commit to a typed v2 launch
+  acknowledgement. The source-only Workflow, fork, subagent, and Goal vehicles now halt visibly
+  rather than becoming caller-asserted capabilities.
+- Added `docs/validation/codex-plugin-modernization-u5.json`, verified all U5 source and Codex rows
+  with its evidence, rendered the classification, and regenerated the legacy-token inventory.
+
+## Checks
+
+- `PYTHONPATH=. uv run pytest -q plugins/saga/tests tests/test_outcome_dispatcher.py
+  tests/test_outcome_backends.py tests/test_outcome_dispatch_migration.py
+  tests/test_outcome_integration.py tests/test_verified_workflow_readiness.py` — 384 passed.
+- `python3 scripts/port_contract.py validate --stage unit --unit U5` — passed.
+- `python3 scripts/build_legacy_workflow_inventory.py --check` and
+  `python3 scripts/validate_codex_plugins.py` — passed.
+
 ## Next Step
 
-Complete the remaining U5 source migration and its unit-stage port-contract evidence before starting
-U6. Preserve `.serena/project.yml`; do not mutate the real Codex profile, marketplace installation,
-GitHub, PR state, merge state, or production-facing credentials.
+Commit the completed U5 source, validation, inventory, and rendered-classification changes. Do not
+write ignored `.codex/saga` state from this worktree; `.serena/project.yml` remains user-owned and
+unstaged.

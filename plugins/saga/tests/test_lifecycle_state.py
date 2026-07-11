@@ -23,7 +23,7 @@ lifecycle_state = load_script("lifecycle_state")
 def test_codex_backend_choices_exclude_source_workflow_backend() -> None:
     result = lifecycle_state.recommend_execution_backend(broad_independent_fanout=True)
 
-    assert result["recommended"] == "team-execution"
+    assert result["recommended"] == "verified-workflow"
     assert result["alternatives"] == ["inline", "manual"]
     assert result["source_workflow_excluded"] is True
     assert "cc-workflows-ultracode" not in str(result)
@@ -34,14 +34,14 @@ def test_inline_remains_default_for_low_risk_work() -> None:
     result = lifecycle_state.recommend_execution_backend()
 
     assert result["recommended"] == "inline"
-    assert result["alternatives"] == ["manual", "team-execution"]
+    assert result["alternatives"] == ["manual", "verified-workflow"]
 
 
 def test_manual_handoff_can_be_recommended() -> None:
     result = lifecycle_state.recommend_execution_backend(manual_handoff=True)
 
     assert result["recommended"] == "manual"
-    assert result["alternatives"] == ["inline", "team-execution"]
+    assert result["alternatives"] == ["inline", "verified-workflow"]
 
 
 def test_large_no_code_surface_stays_inline_without_coordination_signal() -> None:
@@ -73,8 +73,8 @@ def test_cross_repo_and_adversarial_confidence_still_escalate() -> None:
     )
     adversarial = lifecycle_state.recommend_execution_backend(adversarial_confidence=True)
 
-    assert cross_repo["recommended"] == "team-execution"
-    assert adversarial["recommended"] == "team-execution"
+    assert cross_repo["recommended"] == "verified-workflow"
+    assert adversarial["recommended"] == "verified-workflow"
 
 
 def test_destination_normalizes_nonprod_deploy_intent() -> None:

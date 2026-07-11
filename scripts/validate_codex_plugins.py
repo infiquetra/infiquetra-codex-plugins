@@ -350,8 +350,10 @@ LEGACY_WORKFLOW_SAGA_WRITERS = {
 LEGACY_WORKFLOW_SAGA_READERS = {
     Path("plugins/saga/scripts/override_rate_reader.py"),
     Path("plugins/saga/scripts/team_execution_readiness.py"),
+    Path("plugins/saga/scripts/verified_workflow_readiness.py"),
 }
 LEGACY_WORKFLOW_SAGA_INSTRUCTIONS = {
+    Path("plugins/saga/references/execution-spec.md"),
     Path("plugins/saga/references/engine-dispatch.md"),
     Path("plugins/saga/references/operator-choice.md"),
     Path("plugins/saga/references/saga-spec.md"),
@@ -673,6 +675,8 @@ def validate_staged_workflow_identity(root: Path, errors: list[str]) -> None:
 def expected_legacy_workflow_classification(path: Path) -> str | None:
     """Return the required classification for one inventoried legacy-token path."""
 
+    if path == Path("docs/work-sessions/2026-07-11-u5-saga-resume.md"):
+        return "current-pre-cutover-documentation"
     if path in LEGACY_WORKFLOW_EXACT_CLASSIFICATIONS:
         return LEGACY_WORKFLOW_EXACT_CLASSIFICATIONS[path]
     if path.parts[:2] == ("plugins", "team-execution"):

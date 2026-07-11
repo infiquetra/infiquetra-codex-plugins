@@ -8,7 +8,8 @@ import json
 import sys
 from collections.abc import Sequence
 
-ORCHESTRATION_TIERS = ("inline", "manual", "team-execution")
+ORCHESTRATION_TIERS = ("inline", "manual", "verified-workflow")
+LEGACY_ORCHESTRATION_TIERS = ("team-execution",)
 SOURCE_ONLY_ORCHESTRATION_TIERS = (
     "cc-workflows-ultracode",
     "workflow",
@@ -139,7 +140,7 @@ def recommend_execution_backend(
         recommended = "manual"
         rationale = "automation is unsafe or unavailable -> operator handoff"
     elif team:
-        recommended = "team-execution"
+        recommended = "verified-workflow"
         rationale = (
             "size, risk, consensus, fan-out, or adversarial-confidence signal -> "
             "team protocol fits"
@@ -148,7 +149,7 @@ def recommend_execution_backend(
         recommended = "inline"
         rationale = "no escalation signal -> the agent does the work itself"
 
-    reachable = ["inline", "manual", "team-execution"]
+    reachable = ["inline", "manual", "verified-workflow"]
     alternatives = [backend for backend in reachable if backend != recommended]
 
     return {
@@ -161,6 +162,8 @@ def recommend_execution_backend(
 
 
 def _portable_fallback(fallback_mode: str) -> str:
+    if fallback_mode == "team-execution":
+        return "verified-workflow"
     if fallback_mode in ORCHESTRATION_TIERS:
         return fallback_mode
     return "inline"
@@ -175,6 +178,12 @@ def recheck_orchestration_capability(
     """Recheck a stored orchestration tier against Codex capabilities."""
 
     resumed = orchestration_mode or "inline"
+    if resumed == "team-execution":
+        return {
+            "downgraded": False, "from": resumed, "to": "verified-workflow",
+            "note": "legacy team-execution state normalized to verified-workflow for new work.",
+            "workflow_available": workflow_available, "source_backend_excluded": False,
+        }
     if resumed in ORCHESTRATION_TIERS:
         return {
             "downgraded": False,

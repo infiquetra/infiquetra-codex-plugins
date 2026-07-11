@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "unit": "U5",
+  "recorded_at": "2026-07-11T12:00:00Z",
+  "repo_head": "e2cf3f810a5e2ce9e1d61bb1c04fcd95ed9808af",
+  "claim": "saga-canonical-workflow-dispatch-and-continuation-boundary",
+  "checks": [
+    {
+      "name": "u5-focused-suite",
+      "argv": ["PYTHONPATH=.", "uv", "run", "pytest", "-q", "plugins/saga/tests", "tests/test_outcome_dispatcher.py", "tests/test_outcome_backends.py", "tests/test_outcome_dispatch_migration.py", "tests/test_outcome_integration.py", "tests/test_verified_workflow_readiness.py"],
+      "exit_code": 0,
+      "summary": "384 passed"
+    },
+    {
+      "name": "legacy-token-inventory",
+      "argv": ["python3", "scripts/build_legacy_workflow_inventory.py", "--check"],
+      "exit_code": 0,
+      "summary": "canonical inventory regenerated and byte-current"
+    }
+  ],
+  "coverage": [
+    "legacy read and canonical new writes",
+    "typed launch and handoff acknowledgements",
+    "append-only dispatch reconciliation",
+    "Goal stable-id continuation binding",
+    "SessionStart contained context hook",
+    "existing outcome hierarchy and board synchronization"
+  ]
+}

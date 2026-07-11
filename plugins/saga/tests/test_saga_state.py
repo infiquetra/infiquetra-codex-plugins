@@ -29,7 +29,7 @@ def quiet_git_runner(*_args: object, **_kwargs: object) -> SimpleNamespace:
 
 def test_saga_state_uses_codex_root(tmp_path: Path) -> None:
     assert saga.STATE_DIR == Path(".codex/saga")
-    assert saga.ORCHESTRATION_MODES == ("inline", "manual", "team-execution")
+    assert saga.ORCHESTRATION_MODES == ("inline", "manual", "verified-workflow")
 
     result = saga.save(
         tmp_path,
@@ -54,7 +54,14 @@ def test_saga_state_uses_codex_root(tmp_path: Path) -> None:
 
     state = json.loads(state_path.read_text(encoding="utf-8"))
     assert state["active_saga_id"] == "task-codex-port"
-    assert state["sagas"]["task-codex-port"]["orchestration_mode"] == "team-execution"
+    assert state["sagas"]["task-codex-port"]["orchestration_mode"] == "verified-workflow"
+
+
+def test_goal_continuation_requires_stable_goal_identifier() -> None:
+    base = saga.Saga(saga_id="task-goal", kind="task", id="goal")
+    assert saga.bind_goal_continuation(base, {"title": "not an id"}).continuation_mode == "turn"
+    bound = saga.bind_goal_continuation(base, {"goal_id": "goal-123"})
+    assert (bound.continuation_mode, bound.continuation_ref) == ("goal", "goal-123")
 
 
 def test_cli_rejects_source_only_backend(tmp_path: Path) -> None:

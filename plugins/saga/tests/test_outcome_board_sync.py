@@ -206,10 +206,13 @@ def test_schema_resolved_status_per_project(
         STORE_MOD.append_ledger(
             store,
             {
-                "phase": "commit",
-                "kind": "dispatch",
-                "key": "d:leaf1",
+                "phase": "ack",
+                "kind": "outcome.dispatch.v2",
+                "key": "dispatch-intent:o:leaf1",
+                "dispatch_intent_id": "dispatch-intent:o:leaf1",
                 "subplot_id": "leaf1",
+                "ack_kind": "launched",
+                "dispatch_ack_ref": "test:leaf1",
                 "leaf_saga_id": "l-leaf1",
             },
         )
@@ -545,7 +548,11 @@ def test_advance_threads_project_to_reconcile_board_for_nondefault_project(tmp_p
 
         writer = RecordingWriter()
         result = ENG_MOD.advance(
-            repo, "o", autonomous=True, board_writer=writer, project=project, attending=False
+            repo, "o", autonomous=True, board_writer=writer, project=project, attending=False,
+            dispatcher=lambda _req: {
+                "ack_kind": "launched", "dispatch_ack_ref": "test:leaf1",
+                "leaf_saga_id": "l-leaf1",
+            },
         )
 
         sf_records = [r for r in result.board_synced if r.get("op_kind") == "set-field-status"]

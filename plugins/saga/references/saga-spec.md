@@ -118,7 +118,10 @@ construct a `Saga` (no default); all others have the listed default.
 | `phase_status` | enum | — | `pending` | Phase completion (§4) — **MUST** be in `PHASE_STATUSES`. |
 | `status` | enum | — | `active` | Thread disposition (§4) — **MUST** be in `STATUSES`, **MUST NOT** be `pending`/`in_progress`. |
 | `next_step` | str | — | `""` | The one imperative resume anchor (top of `## Remaining`). |
-| `orchestration_mode` | enum | — | `inline` | Legacy v1 workflow recommendation — migration contract in `references/operator-choice.md`; **MUST** be in the accepted v1 `ORCHESTRATION_MODES` until U5. It is not the complete runtime capability model. |
+| `orchestration_mode` | enum | — | `inline` | Canonical workflow mode: `inline`, `manual`, or `verified-workflow`. Readers accept legacy `team-execution`; new serializers emit only canonical vocabulary. |
+| `continuation_mode` | enum | — | `turn` | `turn` or explicitly bound `goal`; a Goal binding requires a stable tool-returned identifier. |
+| `continuation_ref` | str | — | `""` | Stable Goal identifier only when `continuation_mode=goal`. |
+| `identity_mode` | enum | — | `generic` | `generic` or `logical-role-attested`; identity is distinct from workflow mode. |
 | `orchestration_ref` | str | — | `""` | Empty for `inline` / `manual`; for legacy `team-execution`, points to a `## Team Structure` receipt or protected evidence root. Legacy evidence is readable but does not attest a new Verified Workflow run. |
 | `issue_ref` | str | — | `""` | `owner/repo#N` pointer; empty for plan-only / pre-issue work. |
 | `destination` | enum | — | `plan-only` | Routing intent — **MUST** be in `DESTINATIONS`. Mirrors `lifecycle_state`. |

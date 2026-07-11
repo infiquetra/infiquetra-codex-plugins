@@ -44,15 +44,15 @@ import outcome_spec  # noqa: E402  (after the sys.path shim, by design)
 # cc-workflows-ultracode / goal) are only available when the host advertises them (KTD9) — the
 # coordinator is a Python script that cannot itself probe the Claude Code host, so they stay OFF by
 # default and an unavailable choice HALTs or DEGRADES (R23), never a silent substitution (R5).
-ALWAYS_AVAILABLE: tuple[str, ...] = ("inline", "team-execution", "manual")
-HOST_DEPENDENT: frozenset[str] = frozenset({"fork", "subagent", "cc-workflows-ultracode", "goal"})
+ALWAYS_AVAILABLE: tuple[str, ...] = ("inline", "verified-workflow", "manual")
+HOST_DEPENDENT: frozenset[str] = frozenset()
 DEFAULT_AVAILABLE: tuple[str, ...] = ALWAYS_AVAILABLE
 
 # The capability ladder degrade walks DOWN (R23): most-capable dynamic workflows -> review-gated
 # team-execution -> the always-runnable inline floor. A backend NOT on this ladder
 # (fork/subagent/goal/manual) has no defined lower rung, so an unavailable one HALTs rather than
 # silently substituting (R5). Mirrors lifecycle_state.ORCHESTRATION_TIERS.
-DEGRADE_LADDER: tuple[str, ...] = ("cc-workflows-ultracode", "team-execution", "inline")
+DEGRADE_LADDER: tuple[str, ...] = ("verified-workflow", "inline")
 
 
 class DispatcherError(ValueError):
@@ -105,16 +105,19 @@ def dispatch(req: Any, *, available: Sequence[str] = DEFAULT_AVAILABLE) -> dict[
     so this module does not import ``outcome``. A dispatched result carries the minted leaf saga id and
     the ``/resume`` return channel (R9); a halt result carries a :class:`HaltReceipt` dict (R5/R23).
     """
-    backend = str(req.backend)
+    backend = "verified-workflow" if str(req.backend) == "team-execution" else str(req.backend)
     if backend not in outcome_spec.NODE_BACKENDS:
-        raise DispatcherError(
-            f"backend {backend!r} is not in the executor menu {outcome_spec.NODE_BACKENDS}"
-        )
+        # Persisted source-only values remain readable but are never launched by Codex.
+        if backend in outcome_spec.LEGACY_NODE_BACKENDS:
+            receipt = HaltReceipt(str(req.outcome_id), str(req.subplot_id), backend,
+                "legacy source-only backend is unsupported by the Codex dispatcher — HALT; never substitute", tuple(available))
+            return {"status": "halt", "receipt": receipt.to_dict()}
+        raise DispatcherError(f"backend {backend!r} is not in the executor menu {outcome_spec.NODE_BACKENDS}")
     orchestration_ref = str(getattr(req, "orchestration_ref", "") or "").strip()
-    if backend == "team-execution":
-        readiness = _load_team_execution_readiness().validate_team_execution_ready(
+    if backend == "verified-workflow":
+        readiness = _load_verified_workflow_readiness().validate_verified_workflow_ready(
             Path(getattr(req, "repo_root", Path("."))),
-            orchestration_mode="team-execution",
+            orchestration_mode="verified-workflow",
             orchestration_ref=orchestration_ref,
             context="outcome-dispatch",
             plan_path=_plan_path_from_ref(orchestration_ref),
@@ -127,7 +130,7 @@ def dispatch(req: Any, *, available: Sequence[str] = DEFAULT_AVAILABLE) -> dict[
             subplot_id=str(req.subplot_id),
             backend=backend,
             reason=(
-                f"team-execution not ready for outcome-dispatch: {readiness.reason}; "
+                f"verified-workflow not ready for outcome-dispatch: {readiness.reason}; "
                 f"{readiness.repair_hint}"
             ),
             available=tuple(available),
@@ -157,19 +160,23 @@ def dispatch(req: Any, *, available: Sequence[str] = DEFAULT_AVAILABLE) -> dict[
         # The R9 re-entry token OUT — a stable native handoff, not a drift-prone pasted prompt.
         "return_channel": f"/resume {leaf_saga_id}",
     }
-    if backend == "team-execution":
+    if backend == "verified-workflow":
         result["orchestration_ref"] = orchestration_ref
     return result
 
 
-def make_dispatcher(*, available: Sequence[str] = DEFAULT_AVAILABLE) -> Callable[[Any], str]:
-    """A ``Dispatcher`` for ``outcome.advance``: leaf saga id on dispatch, HALT raises (never silent)."""
+def make_dispatcher(*, available: Sequence[str] = DEFAULT_AVAILABLE) -> Callable[[Any], dict[str, str]]:
+    """Adapt an actual launcher acknowledgement for ``outcome.advance``; HALT never substitutes."""
 
-    def _dispatch(req: Any) -> str:
+    def _dispatch(req: Any) -> dict[str, str]:
         result = dispatch(req, available=available)
         if result["status"] == "halt":
             raise BackendHaltError(HaltReceipt(**_receipt_kwargs(result["receipt"])))
-        return str(result["leaf_saga_id"])
+        return {
+            "ack_kind": "launched",
+            "dispatch_ack_ref": f"dispatcher:{req.outcome_id}:{req.subplot_id}",
+            "leaf_saga_id": str(result["leaf_saga_id"]),
+        }
 
     return _dispatch
 
@@ -189,9 +196,9 @@ def _plan_path_from_ref(ref: str) -> str:
     return path if path.startswith("docs/plans/") else ""
 
 
-def _load_team_execution_readiness() -> Any:
-    path = Path(__file__).resolve().parent / "team_execution_readiness.py"
-    spec = importlib.util.spec_from_file_location("team_execution_readiness", path)
+def _load_verified_workflow_readiness() -> Any:
+    path = Path(__file__).resolve().parent / "verified_workflow_readiness.py"
+    spec = importlib.util.spec_from_file_location("verified_workflow_readiness", path)
     if spec is None or spec.loader is None:
         raise ImportError(f"Unable to load {path}")
     module = importlib.util.module_from_spec(spec)
@@ -240,10 +247,7 @@ def resolve_available(
     floor — the coordinator never claims a host-dependent backend it cannot verify.
     """
     avail = set(ALWAYS_AVAILABLE)
-    if host_capable:
-        avail |= {"fork", "subagent", "goal"}
-    if host_capable and workflow_available:
-        avail.add("cc-workflows-ultracode")
+    # Host booleans are intentionally ignored: the skill-mediated runtime supplies acknowledgements.
     return tuple(b for b in outcome_spec.NODE_BACKENDS if b in avail)
 
 

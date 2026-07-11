@@ -78,7 +78,8 @@ LIFECYCLE_PHASES = ("ideation", "brainstorm", "plan", "review", "work", "qa", "r
 PHASE_STATUSES = ("pending", "in_progress", "complete")
 STATUSES = ("active", "blocked", "paused", "handed-off", "done", "abandoned")
 DESTINATIONS = ("plan-only", "pr", "merge", "nonprod-deploy")
-ORCHESTRATION_MODES = ("inline", "manual", "team-execution")
+ORCHESTRATION_MODES = ("inline", "manual", "verified-workflow")
+LEGACY_ORCHESTRATION_MODES = ("team-execution",)
 
 # ship_ceremony.py's local reversibility-tier vocabulary (issue #345), recorded alongside
 # ``ceremony_transition`` so a resumed ceremony can reason about what it is re-entering.
@@ -166,6 +167,9 @@ class Saga:
     orchestration_recommended: str = ""
     orchestration_operator_choice: str = ""
     orchestration_downgrade: str = ""
+    continuation_mode: str = "turn"
+    continuation_ref: str = ""
+    identity_mode: str = "generic"
 
     # Pointers (link, never duplicate, another owner's state).
     issue_ref: str = ""  # owner/repo#N (empty for plan-only)
@@ -243,6 +247,9 @@ FRONTMATTER_FIELDS: tuple[str, ...] = (
     "orchestration_recommended",
     "orchestration_operator_choice",
     "orchestration_downgrade",
+    "continuation_mode",
+    "continuation_ref",
+    "identity_mode",
     "issue_ref",
     "destination",
     "round",
@@ -355,7 +362,10 @@ def render_envelope(saga: Saga) -> str:
     """Render a saga to a gstack-style frontmatter + body envelope (str)."""
     lines: list[str] = ["---"]
     for key in FRONTMATTER_FIELDS:
-        lines.append(_render_value(key, getattr(saga, key)))
+        value = getattr(saga, key)
+        if key in {"orchestration_mode", "orchestration_recommended", "orchestration_operator_choice"} and value == "team-execution":
+            value = "verified-workflow"
+        lines.append(_render_value(key, value))
     for key in sorted(saga.extra):
         lines.append(_render_value(key, saga.extra[key]))
     lines.append("---")
@@ -379,6 +389,20 @@ def render_envelope(saga: Saga) -> str:
     return "\n".join(lines)
 
 
+def bind_goal_continuation(saga: Saga, goal_result: Any) -> Saga:
+    """Bind Goal continuation only when the host returned a stable identifier.
+
+    The Goal tool is outside this deterministic module.  Its raw result is deliberately not
+    persisted; callers pass the result here and only its stable id becomes Saga state.
+    """
+    identifier = ""
+    if isinstance(goal_result, dict):
+        identifier = str(goal_result.get("goal_id") or goal_result.get("id") or "").strip()
+    if not identifier:
+        return _replace(saga, continuation_mode="turn", continuation_ref="")
+    return _replace(saga, continuation_mode="goal", continuation_ref=identifier)
+
+
 def _coerce(name: str, raw: Any) -> Any:
     """Coerce a parsed frontmatter value to the dataclass field's type."""
     if name in _LIST_FIELDS:
@@ -394,7 +418,10 @@ def _coerce(name: str, raw: Any) -> Any:
             return int(raw)
         except (TypeError, ValueError):
             return 0
-    return "" if raw is None else str(raw)
+    value = "" if raw is None else str(raw)
+    if name in {"orchestration_mode", "orchestration_recommended", "orchestration_operator_choice"} and value == "team-execution":
+        return "verified-workflow"
+    return value
 
 
 def _split_frontmatter(text: str) -> tuple[str, str]:
@@ -641,6 +668,12 @@ def save(
     moment = now or _utc_now()
     prior = restore(root, saga.saga_id)
     merged = _merge(prior, saga, moment, explicit_scalars=explicit_scalars)
+    merged = _replace(
+        merged,
+        orchestration_mode="verified-workflow" if merged.orchestration_mode == "team-execution" else merged.orchestration_mode,
+        orchestration_recommended="verified-workflow" if merged.orchestration_recommended == "team-execution" else merged.orchestration_recommended,
+        orchestration_operator_choice="verified-workflow" if merged.orchestration_operator_choice == "team-execution" else merged.orchestration_operator_choice,
+    )
     _validate_orchestration_state(root, merged)
 
     git = current_git_state(root, runner=runner)
@@ -687,6 +720,8 @@ def save(
 
 
 def _validate_orchestration_state(root: Path, saga: Saga) -> None:
+    if saga.orchestration_mode == "team-execution":
+        saga = _replace(saga, orchestration_mode="verified-workflow")
     if (
         saga.orchestration_operator_choice
         and saga.orchestration_operator_choice != saga.orchestration_mode
@@ -696,12 +731,12 @@ def _validate_orchestration_state(root: Path, saga: Saga) -> None:
             "orchestration_operator_choice differs from orchestration_mode without "
             "orchestration_downgrade"
         )
-    if saga.orchestration_mode != "team-execution":
+    if saga.orchestration_mode != "verified-workflow":
         return
     context = _team_execution_readiness_context(saga)
-    readiness = _load_team_execution_readiness().validate_team_execution_ready(
+    readiness = _load_team_execution_readiness().validate_verified_workflow_ready(
         root,
-        orchestration_mode=saga.orchestration_mode,
+        orchestration_mode="verified-workflow",
         orchestration_ref=saga.orchestration_ref,
         context=context,
         plan_path=saga.plan_path,
@@ -724,8 +759,8 @@ def _team_execution_readiness_context(saga: Saga) -> str:
 
 
 def _load_team_execution_readiness() -> Any:
-    path = Path(__file__).resolve().parent / "team_execution_readiness.py"
-    spec = importlib.util.spec_from_file_location("team_execution_readiness", path)
+    path = Path(__file__).resolve().parent / "verified_workflow_readiness.py"
+    spec = importlib.util.spec_from_file_location("verified_workflow_readiness", path)
     if spec is None or spec.loader is None:
         raise ImportError(f"Unable to load {path}")
     module = importlib.util.module_from_spec(spec)
@@ -761,6 +796,9 @@ def _saga_summary(saga: Saga) -> dict[str, Any]:
         "orchestration_recommended": saga.orchestration_recommended,
         "orchestration_operator_choice": saga.orchestration_operator_choice,
         "orchestration_downgrade": saga.orchestration_downgrade,
+        "continuation_mode": saga.continuation_mode,
+        "continuation_ref": saga.continuation_ref,
+        "identity_mode": saga.identity_mode,
         "next_step": saga.next_step,
         "updated_at": saga.updated_at,
     }
@@ -1249,6 +1287,9 @@ def _build_save_saga(args: argparse.Namespace) -> Saga:
         orchestration_recommended=args.orchestration_recommended,
         orchestration_operator_choice=args.orchestration_operator_choice,
         orchestration_downgrade=args.orchestration_downgrade,
+        continuation_mode=args.continuation_mode,
+        continuation_ref=args.continuation_ref,
+        identity_mode=args.identity_mode,
         issue_ref=args.issue_ref,
         destination=args.destination,
         round=args.round or 0,
@@ -1292,11 +1333,14 @@ def _add_save_parser(sub: Any) -> None:
     p.add_argument("--round", type=int, default=0)
     p.add_argument("--progress-pct", type=int, default=0)
     p.add_argument("--destination", choices=list(DESTINATIONS), default="plan-only")
-    p.add_argument("--orchestration-mode", choices=list(ORCHESTRATION_MODES), default="inline")
+    p.add_argument("--orchestration-mode", choices=[*ORCHESTRATION_MODES, *LEGACY_ORCHESTRATION_MODES], default="inline")
     p.add_argument("--orchestration-ref", default="")
-    p.add_argument("--orchestration-recommended", choices=list(ORCHESTRATION_MODES), default="")
-    p.add_argument("--orchestration-operator-choice", choices=list(ORCHESTRATION_MODES), default="")
+    p.add_argument("--orchestration-recommended", choices=[*ORCHESTRATION_MODES, *LEGACY_ORCHESTRATION_MODES], default="")
+    p.add_argument("--orchestration-operator-choice", choices=[*ORCHESTRATION_MODES, *LEGACY_ORCHESTRATION_MODES], default="")
     p.add_argument("--orchestration-downgrade", default="")
+    p.add_argument("--continuation-mode", choices=("turn", "goal"), default="turn")
+    p.add_argument("--continuation-ref", default="")
+    p.add_argument("--identity-mode", choices=("generic", "logical-role-attested"), default="generic")
     p.add_argument("--issue-ref", default="")
     p.add_argument("--next-step", default="")
     p.add_argument("--plan-path", default="")

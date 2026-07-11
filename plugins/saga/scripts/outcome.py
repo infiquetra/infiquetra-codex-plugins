@@ -69,7 +69,8 @@ class OutcomeError(ValueError):
 # A dispatcher hands a ready leaf off to a backend and returns its leaf saga id. It MUST NOT run the
 # leaf's work in-process (R3) — it records/launches and returns. The record-only default is the
 # skeleton; U4/U9 supply real backend dispatchers with the same signature.
-Dispatcher = Callable[["DispatchRequest"], str]
+DispatchAcknowledgement = dict[str, str]
+Dispatcher = Callable[["DispatchRequest"], str | DispatchAcknowledgement]
 
 
 @dataclass(frozen=True)
@@ -102,6 +103,48 @@ def _default_dispatcher(req: DispatchRequest) -> str:
             )
         )
     return f"leaf-{req.outcome_id}-{req.subplot_id}"
+
+
+def reconcile_dispatch_ack(
+    store: Any,
+    *,
+    outcome_id: str,
+    subplot_id: str,
+    ack_kind: str,
+    dispatch_ack_ref: str,
+    leaf_saga_id: str = "",
+) -> dict[str, str]:
+    """Append an evidence-backed v2 acknowledgement for an unsettled dispatch intent.
+
+    This is intentionally append-only.  A caller must supply either a contained launch receipt
+    plus the real leaf id, or an operator-confirmed handoff reference; it cannot turn a synthetic
+    v1 id into launch proof.
+    """
+    if ack_kind not in {"launched", "handed-off"}:
+        raise OutcomeError("ack_kind must be `launched` or `handed-off`")
+    ref = dispatch_ack_ref.strip()
+    if not ref or ref.startswith("/") or ".." in Path(ref).parts:
+        raise OutcomeError("dispatch acknowledgement reference must be contained and non-empty")
+    leaf = leaf_saga_id.strip()
+    if ack_kind == "launched" and not leaf:
+        raise OutcomeError("launched acknowledgement requires a real leaf_saga_id")
+    if ack_kind == "handed-off" and leaf:
+        raise OutcomeError("handed-off acknowledgement must not claim a leaf_saga_id")
+    intent_id = f"dispatch-intent:{outcome_id}:{subplot_id}"
+    records = outcome_store.read_ledger(store)
+    if not any(rec.get("phase") == "intent" and rec.get("key") == intent_id for rec in records):
+        raise OutcomeError("no dispatch intent exists to reconcile")
+    if any(rec.get("phase") == "ack" and rec.get("key") == intent_id for rec in records):
+        raise OutcomeError("dispatch intent is already acknowledged")
+    record = {
+        "phase": "ack", "kind": "outcome.dispatch.v2", "key": intent_id,
+        "dispatch_intent_id": intent_id, "subplot_id": subplot_id,
+        "ack_kind": ack_kind, "dispatch_ack_ref": ref, "at": time.time(),
+    }
+    if leaf:
+        record["leaf_saga_id"] = leaf
+    outcome_store.append_ledger(store, record)
+    return record
 
 
 def _append_ledger_once(store: Any, record: dict[str, Any]) -> bool:
@@ -138,9 +181,9 @@ def _validate_team_execution_orchestration_ref(
     ref: str,
     available: Sequence[str] | None,
 ) -> tuple[str, outcome_dispatcher.HaltReceipt | None]:
-    result = _load_team_execution_readiness().validate_team_execution_ready(
+    result = _load_verified_workflow_readiness().validate_verified_workflow_ready(
         repo_root,
-        orchestration_mode="team-execution",
+        orchestration_mode="verified-workflow",
         orchestration_ref=ref,
         context="outcome-dispatch",
         plan_path=_plan_path_from_ref(ref),
@@ -151,9 +194,9 @@ def _validate_team_execution_orchestration_ref(
             outcome_dispatcher.HaltReceipt(
                 outcome_id=outcome_id,
                 subplot_id=subplot_id,
-                backend="team-execution",
+                backend="verified-workflow",
                 reason=(
-                    f"team-execution not ready for outcome-dispatch: {result.reason}; "
+                    f"verified-workflow not ready for outcome-dispatch: {result.reason}; "
                     f"{result.repair_hint}"
                 ),
                 available=tuple(available) if available is not None else outcome_dispatcher.DEFAULT_AVAILABLE,
@@ -167,9 +210,9 @@ def _plan_path_from_ref(ref: str) -> str:
     return path if path.startswith("docs/plans/") else ""
 
 
-def _load_team_execution_readiness() -> Any:
-    path = Path(__file__).resolve().parent / "team_execution_readiness.py"
-    spec = importlib.util.spec_from_file_location("team_execution_readiness", path)
+def _load_verified_workflow_readiness() -> Any:
+    path = Path(__file__).resolve().parent / "verified_workflow_readiness.py"
+    spec = importlib.util.spec_from_file_location("verified_workflow_readiness", path)
     if spec is None or spec.loader is None:
         raise ImportError(f"Unable to load {path}")
     module = importlib.util.module_from_spec(spec)
@@ -468,11 +511,28 @@ def _dispatch_records(store: Any) -> dict[str, str]:
     """
     out: dict[str, str] = {}
     for rec in outcome_store.read_ledger(store):
-        if rec.get("kind") == "dispatch" and rec.get("phase") == "commit":
+        if rec.get("kind") == "outcome.dispatch.v2" and rec.get("phase") == "ack" and rec.get("ack_kind") == "launched":
             sid = str(rec.get("subplot_id", ""))
             if sid:
                 out[sid] = str(rec.get("leaf_saga_id", ""))
     return out
+
+
+def _dispatch_ledger_states(store: Any) -> dict[str, str]:
+    """Derive U5 dispatch truth from append-only v2 records; never rewrite v1 history."""
+    states: dict[str, str] = {}
+    for rec in outcome_store.read_ledger(store):
+        sid = str(rec.get("subplot_id", ""))
+        if not sid:
+            continue
+        if rec.get("kind") == "outcome.dispatch.v2":
+            if rec.get("phase") == "intent":
+                states.setdefault(sid, "intent-created")
+            elif rec.get("phase") == "ack":
+                states[sid] = "dispatched" if rec.get("ack_kind") == "launched" else "handed-off"
+        elif rec.get("kind") == "dispatch" and rec.get("phase") == "commit":
+            states[sid] = "legacy-unverified"
+    return states
 
 
 def _terminal_state_map(store: Any) -> dict[str, str]:
@@ -497,6 +557,7 @@ def derive_states(spec: outcome_spec.OutcomeSpec, store: Any) -> dict[str, str]:
     success = outcome_store.completed_subplots(store, successful_only=True)
     terminals = _terminal_state_map(store)
     dispatched = _dispatch_records(store)
+    ledger_states = _dispatch_ledger_states(store)
     frontier = set(outcome_spec.ready_frontier(spec, success))
     states: dict[str, str] = {}
     for node in spec.nodes:
@@ -507,6 +568,8 @@ def derive_states(spec: outcome_spec.OutcomeSpec, store: Any) -> dict[str, str]:
             states[sid] = terminals[sid]  # negative terminal — surfaced, not masked
         elif sid in dispatched:
             states[sid] = LIVE_DISPATCHED
+        elif sid in ledger_states:
+            states[sid] = ledger_states[sid]
         elif sid in frontier:
             states[sid] = LIVE_READY
         else:
@@ -827,7 +890,10 @@ def _reconcile_once(
     silent substitution.
     """
     success = outcome_store.completed_subplots(store)  # success-only -> the frontier input
-    settled = set(_dispatch_records(store))  # subplots with a COMMIT dispatch record
+    settled = {
+        sid for sid, state in _dispatch_ledger_states(store).items()
+        if state in {"dispatched", "handed-off", "legacy-unverified"}
+    }
     dispatched: list[str] = []
     halted: list[dict[str, Any]] = []
     gated: list[str] = []
@@ -886,10 +952,10 @@ def _reconcile_once(
         key = f"dispatch:{sid}"
         orchestration_ref = (
             _team_execution_orchestration_ref(node)
-            if resolved_backend == "team-execution"
+        if resolved_backend in {"team-execution", "verified-workflow"}
             else ""
         )
-        if resolved_backend == "team-execution":
+        if resolved_backend in {"team-execution", "verified-workflow"}:
             orchestration_ref, ref_halt = _validate_team_execution_orchestration_ref(
                 Path(repo_root),
                 outcome_id=spec.outcome_id,
@@ -903,9 +969,11 @@ def _reconcile_once(
                 _append_ledger_once(store, {"phase": "halt", "kind": "dispatch", "key": key, **receipt})
                 halted.append(receipt)
                 continue
-        outcome_store.append_ledger(
-            store, {"phase": "intent", "kind": "dispatch", "key": key, "subplot_id": sid}
-        )
+        intent_id = f"dispatch-intent:{spec.outcome_id}:{sid}"
+        outcome_store.append_ledger(store, {
+            "phase": "intent", "kind": "outcome.dispatch.v2", "key": intent_id,
+            "dispatch_intent_id": intent_id, "subplot_id": sid, "backend": resolved_backend,
+        })
         request = DispatchRequest(
             outcome_id=spec.outcome_id,
             subplot_id=sid,
@@ -915,7 +983,7 @@ def _reconcile_once(
             orchestration_ref=orchestration_ref,
         )
         try:
-            leaf_saga_id = dispatch(request)
+            acknowledgement = dispatch(request)
         except outcome_dispatcher.BackendHaltError as halt:
             # A dispatcher-raised HALT (legacy / a restricted injected dispatcher). Release the lock so a
             # later tick re-attempts + re-surfaces it; record the receipt durably; never abort the tick.
@@ -932,19 +1000,24 @@ def _reconcile_once(
             # intent) cannot double-list the degradation.
             _append_ledger_once(store, {"phase": "degrade", "key": key, **degrade_receipt})
             degraded.append(degrade_receipt)
-        commit_record = {
-            "phase": "commit",
-            "kind": "dispatch",
-            "key": key,
-            "subplot_id": sid,
-            "leaf_saga_id": leaf_saga_id,
-            "backend": resolved_backend,
-            "at": now(),  # dispatch timestamp for the U9 liveness check (R31)
-        }
-        if request.orchestration_ref:
-            commit_record["orchestration_ref"] = request.orchestration_ref
-        outcome_store.append_ledger(store, commit_record)
-        dispatched.append(sid)
+        if isinstance(acknowledgement, dict):
+            ack_kind = acknowledgement.get("ack_kind")
+            ack_ref = str(acknowledgement.get("dispatch_ack_ref", "")).strip()
+            leaf_saga_id = str(acknowledgement.get("leaf_saga_id", "")).strip()
+            if ack_kind not in {"launched", "handed-off"} or not ack_ref or (ack_kind == "launched" and not leaf_saga_id):
+                outcome_store.release_lease(store, f"dispatch-{sid}", holder)
+                halted.append({"kind": "halt", "subplot_id": sid, "backend": resolved_backend, "reason": "invalid dispatch acknowledgement"})
+                continue
+            record = {"phase": "ack", "kind": "outcome.dispatch.v2", "key": intent_id, "dispatch_intent_id": intent_id, "subplot_id": sid, "backend": resolved_backend, "ack_kind": ack_kind, "dispatch_ack_ref": ack_ref, "at": now()}
+            if orchestration_ref:
+                record["orchestration_ref"] = orchestration_ref
+            if ack_kind == "launched":
+                record["leaf_saga_id"] = leaf_saga_id
+                dispatched.append(sid)
+            outcome_store.append_ledger(store, record)
+        else:
+            # Compatibility-only: a v1 dispatcher supplied a synthetic id. It settles dedupe but cannot progress.
+            outcome_store.append_ledger(store, {"phase": "commit", "kind": "dispatch", "key": key, "subplot_id": sid, "leaf_saga_id": str(acknowledgement), "backend": resolved_backend, "at": now()})
     return dispatched, halted, gated, degraded
 
 
@@ -1209,16 +1282,6 @@ def main(argv: list[str] | None = None) -> int:
         help="target mission-control board/workflow for autonomous board-sync (U4/#326)",
     )
     p_advance.add_argument(
-        "--host-capable",
-        action="store_true",
-        help="this host can run the forked-context backends (fork/subagent/goal)",
-    )
-    p_advance.add_argument(
-        "--workflow-available",
-        action="store_true",
-        help="this host can run cc-workflows-ultracode (the Workflow tool is present)",
-    )
-    p_advance.add_argument(
         "--persist",
         action="store_true",
         help="commit + push the spec to the outcome branch after advancing (R26/R27 durability)",
@@ -1281,6 +1344,13 @@ def main(argv: list[str] | None = None) -> int:
     p_reconcile.add_argument(
         "--resolve", metavar="DRIFT_ID", help="apply --action to the drift with this id"
     )
+
+    p_dispatch_ack = sub.add_parser("reconcile-dispatch", help="append an evidence-backed v2 dispatch acknowledgement")
+    p_dispatch_ack.add_argument("outcome_id")
+    p_dispatch_ack.add_argument("subplot_id")
+    p_dispatch_ack.add_argument("--ack-kind", choices=("launched", "handed-off"), required=True)
+    p_dispatch_ack.add_argument("--dispatch-ack-ref", required=True)
+    p_dispatch_ack.add_argument("--leaf-saga-id", default="")
     p_reconcile.add_argument(
         "--action", choices=("accept-board", "re-assert", "hold"), help="resolution for --resolve"
     )
@@ -1321,9 +1391,7 @@ def main(argv: list[str] | None = None) -> int:
             # HALTs when attended/guaranteed/side-effected, else degrades one rung when --autonomous.
             import outcome_decompose
 
-            avail = outcome_dispatcher.resolve_available(
-                host_capable=args.host_capable, workflow_available=args.workflow_available
-            )
+            avail = outcome_dispatcher.resolve_available()
             # The dispatcher mints any backend the degrade decision resolves to (it never halts here —
             # _reconcile_once owns the HALT/degrade decision via degrade_decision with `avail`).
             result = advance(
@@ -1418,6 +1486,12 @@ def main(argv: list[str] | None = None) -> int:
             bundle = json.loads(Path(args.path).read_text(encoding="utf-8"))
             spec = import_bundle(root, bundle)
             print(json.dumps({"imported": spec.outcome_id, "nodes": len(spec.nodes)}))
+        elif args.command == "reconcile-dispatch":
+            print(json.dumps(reconcile_dispatch_ack(
+                _store(root, args.outcome_id), outcome_id=args.outcome_id,
+                subplot_id=args.subplot_id, ack_kind=args.ack_kind,
+                dispatch_ack_ref=args.dispatch_ack_ref, leaf_saga_id=args.leaf_saga_id,
+            )))
         elif args.command == "reconcile":
             # #295 U5: explicit board<->saga drift detection (read-only on the world; no lease).
             import outcome_github  # noqa: PLC0415

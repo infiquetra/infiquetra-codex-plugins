@@ -19,13 +19,13 @@ from typing import Any
 
 ROOT = Path(__file__).parent.parent
 SCRIPTS = ROOT / "plugins" / "saga" / "scripts"
-TEAM_REF = "docs/plans/x.md#team-structure"
+TEAM_REF = "docs/plans/x.md#workflow-structure"
 
 
 def _write_team_ref(repo_root: Path) -> str:
     plan = repo_root / "docs" / "plans" / "x.md"
     plan.parent.mkdir(parents=True, exist_ok=True)
-    plan.write_text("# X\n\n## Team Structure\n\nroles\n", encoding="utf-8")
+    plan.write_text("# X\n\n## Workflow Structure\n\nroles\n", encoding="utf-8")
     return TEAM_REF
 
 
@@ -60,34 +60,29 @@ def _node(sid: str, **kw: Any) -> Any:
 # --------------------------------------------------------------------------- resolve_available (R6)
 
 
-def test_resolve_available_is_host_conditional() -> None:
-    assert D.resolve_available() == ("inline", "team-execution", "manual")
+def test_resolve_available_rejects_caller_asserted_capabilities() -> None:
+    assert D.resolve_available() == ("inline", "verified-workflow", "manual")
     host = D.resolve_available(host_capable=True)
-    assert (
-        "fork" in host
-        and "subagent" in host
-        and "goal" in host
-        and "cc-workflows-ultracode" not in host
-    )
+    assert host == D.resolve_available()
     full = D.resolve_available(host_capable=True, workflow_available=True)
-    assert "cc-workflows-ultracode" in full
+    assert full == D.resolve_available()
     # ordered by the spec's NODE_BACKENDS vocabulary (deterministic)
     assert list(full) == [b for b in SPEC.NODE_BACKENDS if b in set(full)]
 
 
 # --------------------------------------------------------------------------- degrade_decision (R23/AE1)
 
-_FLOOR = ("inline", "team-execution", "manual")  # cc-workflows-ultracode unavailable
+_FLOOR = ("inline", "verified-workflow", "manual")  # cc-workflows-ultracode unavailable
 
 
 def test_available_backend_dispatches() -> None:
     assert D.degrade_decision(
-        "team-execution",
+        "verified-workflow",
         available=_FLOOR,
         attending=True,
         guarantee_bearing=False,
         had_side_effect=False,
-    ) == ("dispatch", "team-execution", "")
+    ) == ("dispatch", "verified-workflow", "")
 
 
 def test_attending_halts_not_degrades() -> None:
@@ -109,7 +104,7 @@ def test_autonomous_away_degrades_one_rung() -> None:
         guarantee_bearing=False,
         had_side_effect=False,
     )
-    assert action == "degrade" and backend == "team-execution" and "R23" in reason
+    assert action == "halt" and backend == "cc-workflows-ultracode" and "no lower rung" in reason
 
 
 def test_guarantee_bearing_halts_even_when_away() -> None:
@@ -135,7 +130,7 @@ def test_side_effected_leaf_never_degrades() -> None:
 
 
 def test_backend_not_on_the_ladder_halts() -> None:
-    # fork is not on the cc-workflows->team-execution->inline degrade ladder -> no rung -> HALT.
+    # fork is not on the cc-workflows->verified-workflow->inline degrade ladder -> no rung -> HALT.
     action, _, _ = D.degrade_decision(
         "fork", available=_FLOOR, attending=False, guarantee_bearing=False, had_side_effect=False
     )
@@ -143,7 +138,7 @@ def test_backend_not_on_the_ladder_halts() -> None:
 
 
 def test_degrade_skips_an_unavailable_intermediate_rung() -> None:
-    # cc-workflows + team-execution both unavailable -> degrade to the inline floor (first available rung).
+    # cc-workflows + verified-workflow both unavailable -> degrade to the inline floor (first available rung).
     action, backend, _ = D.degrade_decision(
         "cc-workflows-ultracode",
         available=("inline",),
@@ -151,7 +146,7 @@ def test_degrade_skips_an_unavailable_intermediate_rung() -> None:
         guarantee_bearing=False,
         had_side_effect=False,
     )
-    assert action == "degrade" and backend == "inline"
+    assert action == "halt" and backend == "cc-workflows-ultracode"
 
 
 def test_is_guarantee_bearing() -> None:
@@ -177,12 +172,12 @@ def test_fork_is_cheap_only_when_everything_matches_within_ttl() -> None:
 
 def test_recommender_is_frontier_budget_aware() -> None:
     narrow = D.recommend_outcome_backend(frontier_width=1, broad_independent_fanout=True)
-    assert narrow["recommended"] == "team-execution"
+    assert narrow["recommended"] == "verified-workflow"
     assert "cc-workflows-ultracode" in narrow["unsupported_source_backends"]
     assert narrow["source_workflow_excluded"] is True
 
     wide = D.recommend_outcome_backend(frontier_width=20, broad_independent_fanout=True)
-    assert wide["recommended"] == "team-execution"
+    assert wide["recommended"] == "verified-workflow"
     assert "budget_note" in wide
     assert "manual" in wide["alternatives"]
 
@@ -197,7 +192,7 @@ def test_recommender_records_fork_as_unsupported_source_backend() -> None:
             "within_ttl": True,
         },
     )
-    assert cheap["recommended"] == "team-execution"
+    assert cheap["recommended"] == "verified-workflow"
     assert "fork" in cheap["unsupported_source_backends"]
 
     not_cheap = D.recommend_outcome_backend(
@@ -266,11 +261,11 @@ def test_advance_degrades_an_autonomous_cc_workflows_leaf_and_records_a_receipt(
         available=floor,
         attending=False,  # autonomous + away
     )
-    assert result.dispatched == ["build"] and result.halted == []
-    assert len(result.degraded) == 1 and result.degraded[0]["to_backend"] == "team-execution"
-    # the degrade is surfaced in the report (R23)
+    assert result.dispatched == [] and len(result.halted) == 1
+    assert result.degraded == []
+    # U5 rejects source-only workflow backends; no synthetic degradation is recorded.
     text = REP.report_markdown(repo, "o", store=ENG._store(repo, "o"))
-    assert "## Degradations" in text and "cc-workflows-ultracode → team-execution" in text
+    assert "cc-workflows-ultracode" not in text
 
 
 def test_advance_halts_an_attended_unavailable_leaf(tmp_path: Path) -> None:
@@ -373,7 +368,7 @@ def test_degrade_record_is_not_double_listed_after_a_crash(tmp_path: Path) -> No
             "outcome_id": "o",
             "subplot_id": "build",
             "from_backend": "cc-workflows-ultracode",
-            "to_backend": "team-execution",
+            "to_backend": "verified-workflow",
             "reason": "x",
         },
     )
@@ -390,7 +385,7 @@ def test_degrade_record_is_not_double_listed_after_a_crash(tmp_path: Path) -> No
         for r in STORE.read_ledger(store)
         if r.get("phase") == "commit" and r.get("kind") == "dispatch"
     ]
-    assert len(degrades) == 1 and len(commits) == 1  # one degrade, one dispatch — no double-list
+    assert len(degrades) == 1 and len(commits) == 0  # legacy source backend remains halted
 
 
 def test_cli_dispatch_dry_run_still_works(
@@ -399,5 +394,5 @@ def test_cli_dispatch_dry_run_still_works(
     # the U4 dry-run CLI is unchanged by the U9 menu expansion
     _write_team_ref(tmp_path)
     monkeypatch.chdir(tmp_path)
-    assert D.main(["o", "build", "team-execution", "--orchestration-ref", TEAM_REF]) == 0
+    assert D.main(["o", "build", "verified-workflow", "--orchestration-ref", TEAM_REF]) == 0
     assert json.loads(capsys.readouterr().out)["status"] == "dispatched"
