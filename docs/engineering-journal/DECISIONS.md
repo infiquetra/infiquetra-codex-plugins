@@ -1,5 +1,17 @@
 # Decisions
 
+## 2026-07-11: Complete U4 Inline, Preserve Named-Child Proof, Then Pause
+
+The modernization run completes U4 in the root thread as five sequential checkpoints: workflow contract/compiler, behavior-preserving receipt-module extraction, executable receipts/root verification, severity-first gates, and named-child selection plus attestation. Extraction reduces the 6,000-plus-line receipt facade into cohesive modules without deleting schemas or behavior.
+
+Named-profile definitions and named-child proof remain in U4 because precise child model/effort selection requires both halves. Selection proves the host accepted one of the five managed profiles; attestation joins the selected profile to hook-observed model, installed-profile digest, expected effort, role/lens, permission, child identity, and result. The current generic spawn schema exposes no profile selector, so U4 may truthfully end as `diagnostic`; definitions and hook evidence alone are not enforcement.
+
+Only raw-hook operational maintenance moves to U8: start-only/stop-only abandonment, digest-bound prune, and deletion after normalized readback. U4 retains safe capture, pair loading, normalized persistence, consumption markers, and exact-readback recovery of prepared normalization transactions because those are part of crash-safe attestation.
+
+After U4 passes its focused and integrated checks, the root writes the U5-U8 `## Workflow Structure` and pauses. U5-U8 may use model-pinned `scan-low`, `test-medium`, `review-high`, `review-max`, and `monitor-low` children only after named-profile selection plus attestation is proved. Otherwise the workflow remains paused unless the operator explicitly accepts a less precise root-inline or generic-child fallback. Verified Workflows may coordinate later units but never accepts its own output; root diff, tests, severity judgment, Git, cutover, and formal code review remain authoritative.
+
+Plan: `docs/plans/2026-07-10-codex-plugin-model-execution-modernization-plan.md`.
+
 ## 2026-07-10: Verified Workflows Replaces Team Execution And Future Ports Are Contract-Gated
 
 The Codex adapter no longer models reviewer and validator execution as a Claude-style peer team. The canonical package becomes `verified-workflows` `1.0.0`, with `verified-workflows:run`, Saga mode `verified-workflow`, `## Workflow Structure`, canonical Verified Workflows state and receipt vocabulary, and a root-owned DAG. The root Codex thread owns spawn, follow-up, wait, integration, remediation routing, and adjudication.

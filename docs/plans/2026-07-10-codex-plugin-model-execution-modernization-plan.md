@@ -5,8 +5,8 @@ status: active
 date: 2026-07-10
 origin: docs/plans/2026-06-27-port-recent-claude-plugin-updates.md
 deepened: 2026-07-10
-amended: 2026-07-10
-reviewed: 2026-07-10
+amended: 2026-07-11
+reviewed: 2026-07-11
 ---
 
 # Codex Plugin Model, Execution, and Upstream Modernization Plan
@@ -15,7 +15,9 @@ reviewed: 2026-07-10
 
 Modernize the Codex model, agent, workflow, and porting contracts before importing the next Claude plugin window. The dependency order is: freeze capability truth and codify an enforced port contract, preserve the live Codex changes that landed after the original planning base, land the Sol/Terra/Luna execution classes in fleet-core, establish `verified-workflows` as the Codex-native successor to the upstream `team-execution` lineage, preserve 25 logical roles through a smaller attested profile set, repair Saga's execution boundary, selectively import the Claude `0.64.0 -> 0.75.17` family delta without losing the current Codex `0.65.0` behavior, and cut over only after fresh-session proof.
 
-Execution of U1-U9 does not depend on either the legacy Team Execution adapter or Verified Workflows. Saga records the effective backend as `inline`, while the root Codex thread directly coordinates bounded native subagents for exploration, implementation, review, and validation; Verified Workflows remains a product under construction and a system under test.
+Execution is now split at the Verified Workflows bootstrap boundary. U1-U4 run inline under the root Codex thread, with U4 completed as five sequential, independently reviewable subunits and no subagent dependency. The run then pauses. U5-U8 resume from a durable `## Workflow Structure` only after the runtime proves that a named profile can be selected and the resulting child can be joined to its configured model/effort evidence; otherwise the workflow remains planned and paused rather than silently substituting a generic child.
+
+Verified Workflows may coordinate U5-U8 after U4 is complete, but it never becomes its own acceptance authority. The root retains Saga state, shared-file integration, Git, cutover, and final severity-based decisions, while model-pinned children perform only the bounded work declared in the workflow.
 
 This plan supersedes the uncompleted portions of `docs/plans/2026-06-27-port-recent-claude-plugin-updates.md` without rewriting that plan's history. It continues the existing `task-port-recent-claude-plugin-updates` Saga.
 
@@ -148,7 +150,7 @@ R6. Preserve safe agent synchronization across the package rename: recognize the
 
 ### Verified Workflows and Saga
 
-R7. Claim `verified-workflow-subagent` only when a receipt binds the selected logical role, execution class, selected agent type, hook-reported active model, exact installed-profile digest, role/lens digest, child task identity, and result vehicle. The installed-profile digest is accepted proof of expected effort because current hooks attest model but not effort; generic subagents remain `generic-subagent` evidence and do not satisfy workflow gates.
+R7. Claim `verified-workflow-subagent` only when the runtime accepted an explicit named-profile selection and a receipt binds the selected logical role, execution class, selected agent type, hook-reported active model, exact installed-profile digest, role/lens digest, child task identity, and result vehicle. The installed-profile digest is accepted proof of expected effort because current hooks attest model but not effort; generic subagents remain `generic-subagent` evidence and do not satisfy workflow gates.
 
 R8. Keep `verified-workflow-inline` as the truthful root-owned fallback when profile selection, hook trust, capacity, or safety is unavailable, record `deterministic-tool` for non-agent validators, and disclose the independence limitation of inline logical-role review. Inline may satisfy an agent-lens whose registry marks independence preferred, but it may not satisfy a role whose registry marks independent context required.
 
@@ -179,6 +181,10 @@ R19. Preserve existing Saga ticks, outcome ledgers, plan anchors, configuration,
 R20. Bootstrap a versioned machine port manifest in U1 before any source-behavior unit starts. It must bind the historical Codex planning base, approved execution base, plan-base drift inventory, frozen Claude refs, the four exact rename-aware source pathspecs and inventory digest, the current Codex capability-snapshot digest, the runbook version and SHA-256, one treatment per source path, preserved Codex-only invariants, planned targets/tests, verified evidence, version policy, review, isolated-install, fresh-session, and rollback artifacts.
 
 Classification-stage completeness blocks U2-U9 source work; unit-stage completeness blocks each unit's integration; cutover-stage completeness blocks release.
+
+R21. Complete U4 inline as five explicit subunits: workflow contract/compiler, behavior-preserving receipt-module extraction, inline/deterministic and root-verification receipts, severity-first gate policy, and named-child selection plus attestation. Moving code out of `dispatch_receipt.py` must preserve behavior and tests; removal or deferral must be separately named and justified.
+
+R22. Stop after U4 verification and write the U5-U8 `## Workflow Structure` handoff. Agent-backed U5-U8 steps must name a logical role, execution class, expected profile/model/effort, independence requirement, mutation boundary, and validator/reviewer evidence. They may start only when current runtime proof confirms named-profile selection and receipt readback; generic children cannot be substituted when precise model/effort selection is required.
 
 ---
 
@@ -232,9 +238,9 @@ The parser allowlists only model slug, default reasoning level, supported reason
 
 CI uses fixture catalogs and never depends on a network or mutable user catalog.
 
-KTD5. Make receipts the workflow boundary: plugin installation, profile-file presence, a generic spawn, and `protocol_probe --subagents present` are characterization only. `verified-workflow-subagent` begins only after a real Codex child produces a receipt joined to the planned logical role, selected execution class and agent type, hook-reported active model, SHA-256 digest of the exact installed profile, role/lens digest, child/task identity, and result reference.
+KTD5. Make selection plus attestation the workflow boundary: plugin installation, profile-file presence, a generic spawn, and `protocol_probe --subagents present` are characterization only. `verified-workflow-subagent` begins only when the runtime accepts an explicit named-profile selection and a real Codex child produces a receipt joined to the planned logical role, selected execution class and agent type, hook-reported active model, SHA-256 digest of the exact installed profile, role/lens digest, child/task identity, and result reference.
 
-The installed-profile digest is sufficient proof of expected effort; the hook does not observe effort and the receipt must not say it did. Raw allowlisted SubagentStart/Stop events are atomic, size-bounded, prompt-free files in the host-provided plugin data directory (`0700` directory, `0600` files); normalization validates containment, session/child/role pairing, timestamps, model, digests, and result reference before writing the protected gate receipt. Successful raw pairs are deleted after normalization; incomplete pairs remain diagnostic evidence until an explicit age-bounded prune command removes them.
+The installed-profile digest is sufficient proof of expected effort only after selection is proved; the hook does not observe effort and the receipt must not say it did. Raw allowlisted SubagentStart/Stop events are atomic, size-bounded, prompt-free files in the host-provided plugin data directory (`0700` directory, `0600` files). U4 owns safe capture, pair loading, normalized persistence, consumption markers, and recovery of a prepared normalization transaction after exact receipt readback; U8 owns abandonment, age-bounded prune, and deletion after normalized persistence is verified.
 
 KTD6. Split Saga execution dimensions instead of growing one backend enum: lifecycle/state remains Saga; continuation is the current task or an explicitly requested Goal; canonical workflow mode is `inline`, `manual`, or `verified-workflow`; each workflow step records `subagent`, `inline`, or `deterministic-tool`; identity is generic or logical-role-attested; hooks observe or persist receipts, while enforcement guards remain deferred. Readers accept legacy `team-execution`, but serializers emit only `verified-workflow`.
 
@@ -260,13 +266,15 @@ U8 proves both a clean isolated install and a seeded old-to-new migration/rollba
 
 Unmanaged agents, unrelated hooks, credentials, and user-owned repo changes are never rollback targets.
 
-KTD13. Execute U1-U9 through Codex-native subagent orchestration owned by the root thread: Saga records `orchestration_mode=inline`, the root keeps lifecycle state, integration, Git, and final gate authority, and direct Codex children receive bounded U-ID tasks. Read-heavy exploration and independent validation may run in parallel; shared-workspace writes are single-writer unless isolated worktrees exist.
+KTD13. Bootstrap through U4 inline, then switch only after a proved workflow handoff: U1-U4 run in the root thread with Saga `orchestration_mode=inline`; no child implements or accepts U4. After U4 focused and broad checks pass, the root writes the U5-U8 Workflow Structure and pauses for operator confirmation. U5 may use the completed root-owned DAG while Saga still records the effective mode as inline; after U5 lands the canonical fields, U6-U8 may record `verified-workflow`.
 
-Verified Workflows roles and receipts may be exercised only as U3/U4/U8 product evidence, U7 may exercise advisory logic as product evidence, and none of those results determine whether their own implementation is accepted.
+Verified Workflows roles and receipts may coordinate U5-U8 only after the selector/attestation gate passes. They remain product evidence, never acceptance authority: the root independently inspects diffs, tests, and findings, and this plan's formal `/code-review` gate remains outside Verified Workflows.
 
 KTD14. Treat generic-child role, model, effort, and read-only labels as requested scope rather than enforced isolation until the active runtime proves otherwise. Run every source unit with the parent in `workspace-write` when the host supports it, record the effective permission mode, and reserve U8's real-profile mutation for a separate root-only boundary after isolated proof; if the host forces broader permissions, requested-read-only child evidence remains advisory and no child receives an external-mutation task.
 
 Before each U-ID and each parallel read/review wave, the root records the base HEAD and pre-existing dirty-path set, intersects that set with the unit's declared files, and pauses on overlap until ownership is resolved or an isolated-worktree approach is explicitly selected. The root checks the worktree again after every child wave; an unexpected mutation invalidates that child's evidence and stops integration without rewriting or deleting pre-existing user changes. Independent reviewers and validators use `fork_turns=none` with explicit plan, diff, acceptance, and check inputs; explorers and workers receive only the minimum relevant U-ID context.
+
+Generic children remain available for explicitly advisory work, but they are not the fallback for the model-pinned U5-U8 Workflow Structure. If the named-profile selector is absent, the default is to stop at the U4 handoff rather than imply that prompt steering selected the requested model or effort.
 
 KTD15. Rename as a compatibility migration, not a text replacement: `verified-workflows`, `verified-workflows:run`, `verified-workflow`, `## Workflow Structure`, `.codex/verified-workflows/`, `verified-workflow-subagent`, `verified-workflow-inline`, and `verified_workflow_ref` are canonical new writes. One fleet-core `workflow_compat` registry owns the closed old-to-new vocabulary so Saga and Verified Workflows consume it through their normal fleet-core shims without importing one plugin from the other. U9 may hold the unchanged legacy source package beside the unpublished target source while the active marketplace still points only to Team Execution; U8 removes the legacy source in the same transaction that activates the new marketplace entry, and no release or installed profile may expose both.
 
@@ -284,7 +292,13 @@ KTD18. Separate port guidance from enforcement: `docs/portability/claude-to-code
 
 `init` never overwrites an existing classified manifest; refresh requires an explicit operation plus the expected prior digest. U1 may bootstrap only the contract/runbook/capability artifacts, and classification must pass before U2-U9 source work. Every source-consuming unit claims permitted rows and writes target/test evidence before its unit-stage gate; U8 requires every non-deferred row verified and every defer/reject rationale current.
 
+The canonical runbook version is allowed to advance when a later unit materially changes the normative port procedure. U4 advances it from v1 to v2 for host-attested selection, fresh-attempt remediation, and prompt-free evidence rules; the same checkpoint updates the contract's supported runbook version, active manifest authority digest, generated classification, legacy-token inventory, and version assertions atomically.
+
 Historical classifications are evidence, not current capability authority.
+
+KTD19. Split U4 by responsibility without deleting behavior: `workflow_dispatch.py` remains the DAG/compiler, protected content-addressed storage moves to `protected_store.py`, Git/workspace subject evidence moves to `workspace_evidence.py`, intent/result/resolution/root records move to `workflow_records.py`, and named-child joins move to `named_child_attestation.py`. `dispatch_receipt.py` becomes a compatibility CLI/facade during the extraction. Existing schemas, references, and tests remain valid unless an explicit migration is added.
+
+KTD20. Distinguish named-child selection from named-child attestation: selection is the host/runtime capability to request one of U3's five profiles; attestation is the U4 hook and receipt chain that proves which profile/model/result actually ran. Both are required for a pinned model/effort claim. The current 0.144.1 session exposes attestation inputs through hooks but its spawn schema exposes no named-profile selector, so the expected U4 outcome may be `diagnostic` rather than `attested`; that is a truthful stop condition for model-pinned U5-U8 delegation, not a reason to remove the machinery.
 
 ---
 
@@ -414,37 +428,53 @@ Integration: a temporary Codex home receives exactly five profiles, all 25 logic
 
 ### U4. Implement and Attest the Root-Owned Verified Workflow
 
-Prove which logical role ran and make the workflow DAG, follow-up loop, and severity/validator gates executable policy.
+Finish the workflow foundation inline, preserve its real functionality, and stop before using it to delegate later units.
 
-**Goal:** Add `## Workflow Structure`, root-owned step dispatch and follow-up, logical-role receipts, truthful inline/deterministic fallback, minimal SubagentStart/SubagentStop hook evidence, and a machine-checkable gate with explicit hard-failure precedence; enable subagent vehicle claims only when a fresh isolated runtime proves them.
+**Goal:** Add `## Workflow Structure`, root-owned step dispatch and follow-up, logical-role receipts, truthful inline/deterministic fallback, minimal SubagentStart/SubagentStop hook evidence, and a machine-checkable gate with explicit hard-failure precedence. Complete U4 in five sequential inline subunits, then produce the U5-U8 workflow handoff and pause.
 
-**Requirements:** R7, R8, R9, R12, R14, R20.
+**Requirements:** R7, R8, R9, R12, R14, R20, R21, R22.
 
 **Dependencies:** U3.
 
-**Files:** `plugins/verified-workflows/hooks/hooks.json`, `plugins/verified-workflows/hooks/agent_receipt.py`, `plugins/verified-workflows/scripts/workflow_dispatch.py`, `plugins/verified-workflows/scripts/dispatch_receipt.py`, `plugins/verified-workflows/scripts/gate_evaluator.py`, `plugins/verified-workflows/scripts/protocol_probe.py`, `scripts/prove_verified_workflows_runtime.py`, `docs/validation/verified-workflows-runtime-proof.json`, `plugins/verified-workflows/skills/run/SKILL.md`, `plugins/verified-workflows/skills/run/references/workflow-protocol.md`, `plugins/verified-workflows/skills/run/references/gate-policy.md`, `plugins/verified-workflows/skills/run/references/validator-evidence-state.md`, `plugins/verified-workflows/skills/run/references/worker-manifest.md`, `plugins/verified-workflows/skills/run/references/delegation-safety.md`, `plugins/verified-workflows/tests/test_workflow_dispatch.py`, `plugins/verified-workflows/tests/test_dispatch_receipt.py`, `plugins/verified-workflows/tests/test_gate_evaluator.py`, `plugins/verified-workflows/tests/test_protocol_probe.py`, `tests/test_prove_verified_workflows_runtime.py`, `tests/test_verified_workflows_orchestration_regressions.py`.
+**Files:** `plugins/verified-workflows/hooks/hooks.json`, `plugins/verified-workflows/hooks/agent_receipt.py`, `plugins/verified-workflows/scripts/workflow_dispatch.py`, `plugins/verified-workflows/scripts/dispatch_receipt.py`, `plugins/verified-workflows/scripts/protected_store.py`, `plugins/verified-workflows/scripts/workspace_evidence.py`, `plugins/verified-workflows/scripts/workflow_records.py`, `plugins/verified-workflows/scripts/named_child_attestation.py`, `plugins/verified-workflows/scripts/gate_evaluator.py`, `plugins/verified-workflows/scripts/protocol_probe.py`, `scripts/prove_verified_workflows_runtime.py`, `scripts/port_contract.py`, `scripts/build_legacy_workflow_inventory.py`, `docs/portability/claude-to-codex-plugin-port-runbook.md`, `docs/portability/ports/2026-07-10-saga-07517.json`, `docs/portability/codex-saga-07517-drift-classification.md`, `docs/validation/verified-workflows-runtime-proof.json`, `docs/validation/verified-workflows-legacy-token-inventory.json`, `plugins/verified-workflows/skills/run/SKILL.md`, `plugins/verified-workflows/skills/run/references/workflow-protocol.md`, `plugins/verified-workflows/skills/run/references/gate-policy.md`, `plugins/verified-workflows/skills/run/references/validator-evidence-state.md`, `plugins/verified-workflows/skills/run/references/worker-manifest.md`, `plugins/verified-workflows/skills/run/references/delegation-safety.md`, `plugins/verified-workflows/tests/test_workflow_dispatch.py`, `plugins/verified-workflows/tests/test_protected_store.py`, `plugins/verified-workflows/tests/test_workspace_evidence.py`, `plugins/verified-workflows/tests/test_workflow_records.py`, `plugins/verified-workflows/tests/test_named_child_attestation.py`, `plugins/verified-workflows/tests/test_dispatch_receipt.py`, `plugins/verified-workflows/tests/test_gate_evaluator.py`, `plugins/verified-workflows/tests/test_protocol_probe.py`, `tests/test_prove_verified_workflows_runtime.py`, `tests/test_verified_workflows_orchestration_regressions.py`, `tests/test_port_runbook.py`, `tests/test_port_contract.py`, `tests/test_validate_codex_plugins.py`, `tests/test_verified_workflows_migration.py`.
 
-**Approach:** Claim only permitted U4 workflow source rows and preserve applicable execution-base drift. Treat `protocol_probe` as a unit fixture, not live proof. `workflow_dispatch.py` is a deterministic DAG/state interpreter: it consumes an approved `## Workflow Structure`, validates rows, and emits typed ready-step or follow-up intents, but it never starts Codex processes or calls collaboration tools.
+**Approach:** Claim only permitted U4 workflow source rows and preserve applicable execution-base drift. Treat `protocol_probe` as a unit fixture, not live proof. Execute the following subunits sequentially in the root thread. Each subunit gets a focused test pass, diff inspection, and atomic commit before the next begins; U4 gets one integrated regression pass before the pause.
 
-The `verified-workflows:run` skill is the runtime adapter; the root resolves each role file, constructs the bounded role/lens task from the versioned specification plus step context, invokes native spawn/follow-up/wait controls when available, returns the result reference to the deterministic scripts, and remains the only completion authority. Rows bind step ID, dependencies/barrier, logical role, role kind, independence, execution class and resolved expected model/effort when agent-backed, mutation boundary, required evidence, and role/lens digest. The root waits at barriers, routes follow-up or consolidated remediation to the owning thread, selectively reruns affected roles, and requires an attested child for `independence=required`; an inline fallback may satisfy only `independence=preferred`.
+#### U4A. Workflow Contract and Compiler
 
-Root-mediated follow-up is required; peer messaging is optional and never required. Each step records `subagent`, `inline`, or `deterministic-tool` rather than one global delegated/serial team mode.
+Keep `workflow_dispatch.py` as a deterministic DAG/state interpreter. It consumes an approved `## Workflow Structure`, validates rows and dependency barriers, resolves role/class policy, and emits typed ready-step or follow-up intents; it never starts Codex processes or calls collaboration tools. Rows bind step ID, dependencies/barrier, logical role, role kind, independence, execution class and resolved expected model/effort when agent-backed, mutation boundary, required evidence, and role/lens digest.
 
-The trusted plugin hook accepts at most 64 KiB and records only event name, parent/session/turn/child identifiers, selected profile, active model, permission mode, installed-profile digest, and timestamps; it never records prompts, transcripts, tool arguments, results, environment, or credentials. The handler validates `agent_type` as one of U3's five slugs, resolves only `$CODEX_HOME/agents/<validated-slug>.toml` with the same fallback as U3, verifies containment plus the new marker, and computes the digest itself. It writes atomic raw files beneath a contained per-session/per-child directory in `PLUGIN_DATA` with KTD5 permissions.
+#### U4B. Behavior-Preserving Receipt Module Extraction
 
-`dispatch_receipt.py` joins one start/stop pair to the planned logical role, class, role/lens digest, expected effort from the profile digest, and allowlisted result reference. `gate_evaluator.py` requires role evidence, no unresolved blocker, required validator success, and root verification; numeric scores never override severity.
+Extract means move cohesive functions into smaller modules while keeping behavior, schemas, references, and tests. It does not mean delete receipt functionality. Move protected content-addressed persistence/loading to `protected_store.py`; Git baseline, subject ancestry, workspace snapshots, and mutation audit to `workspace_evidence.py`; workflow-run, intent, hook-trust, launch, command-output, result, resolution, and root-verification records to `workflow_records.py`. Keep `dispatch_receipt.py` as a thin compatibility CLI/facade so existing callers do not break during the refactor.
 
-`prove_verified_workflows_runtime.py` is dry-run by default. `--live` requires a caller-supplied, already authenticated isolated `CODEX_HOME` or an explicit operator-completed login in that home; the harness never reads, copies, symlinks, prints, or persists the default profile's `auth.json`, keychain material, tokens, or provider credentials. It installs/trusts the new plugin/hook, syncs five profiles, opens a fresh task for one role/class pair, and records an attested subagent receipt, `inline-only`, or `auth-unavailable`.
+#### U4C. Executable Receipts and Root Verification
 
-The latter two outcomes cannot support a subagent claim and do not become false release blockers for the inline capability.
+Preserve inline, deterministic-tool, command-output, result, resolution, mutation-audit, and root-verification receipts plus normalized replay/idempotency. A prepared consumption marker is recovered in U4C only after the exact normalized receipt reads back; without that recovery, a crash between normalized persistence and the committed marker would strand otherwise valid U4 evidence. The `verified-workflows:run` skill remains the runtime adapter: the root constructs bounded tasks, owns follow-up/wait/consolidation, returns result references to deterministic scripts, and remains the completion authority. Root-mediated communication is required; peer messaging is optional.
+
+#### U4D. Severity-First Gate Policy
+
+Keep `gate_evaluator.py` as a separate deterministic policy boundary. It requires the planned role evidence, no unresolved P0/P1 or security blocker, required validator success, dependency/barrier completion, and root verification. Numeric scores and advisory seats never override severity, and a remediation-cycle cap escalates rather than passes. For this plan's own implementation reviews, P0/P1 block; P2/P3 are triaged against scope instead of being automatically expanded into unrelated work.
+
+#### U4E. Named-Child Selection and Attestation Bridge
+
+Keep the named-child machinery because it is what makes precise model/effort delegation provable. Separate two claims: selection proves the host accepted one of U3's five named profiles; attestation proves the resulting child matched the selected agent type, hook-observed model, installed-profile digest, expected effort bound by that digest, role/lens digest, permission mode, child/task identity, and result reference. The hook accepts at most 64 KiB, records only allowlisted identifiers/model/profile/permission/timestamps, computes the managed profile digest itself, and writes atomic raw events beneath contained `PLUGIN_DATA` directories.
+
+`named_child_attestation.py` joins the launch request, start/stop pair, selected profile, and result. It emits `unavailable` when the runtime has no selector, `diagnostic` when hook evidence exists but selection or host authority is unproved, and `attested` only when both halves pass. Generic spawn, prompt steering, installed TOML presence, or hook observation alone never becomes a pinned model/effort claim.
+
+Before a live attempt, the root inspects the active collaboration schema. If it exposes an explicit named-profile selector, the root invokes that host-native control and supplies its launch/result references to the deterministic receipt scripts; if it does not, U4 records `diagnostic` without pretending a launch request selected the profile. `prove_verified_workflows_runtime.py` never spawns a child. Its dry-run validates supplied evidence, while `--live` additionally requires a caller-supplied, already authenticated isolated `CODEX_HOME` and never copies or exposes credentials.
+
+The proof records `attested`, `diagnostic`, `inline-only`, or `auth-unavailable`. Only `attested` enables the model-pinned U5-U8 workflow. U4 retains raw capture, safe pair loading, normalized persistence, consumption-marker recovery, and readback; abandonment, prune, and deletion move to U8 because they are installed hook-data lifecycle work, not model-selection proof.
+
+U4E also lands the already-started runbook v2 change as one contract transaction. Update `port_contract.py` and its tests to support the declared active version, refresh the manifest's plan/review/runbook authority entries from exact bytes, render the classification, and regenerate the legacy-token inventory after the plan, decision, and review artifacts are final. A manually edited digest or a runbook version rollback is not acceptable.
 
 **Patterns to follow:** Preserve the current role criteria and hard-failure intent from `plugins/team-execution/skills/team-execution/` as legacy behavior evidence, but use severity-first review findings and contained receipt validation from `plugins/saga/scripts/team_execution_readiness.py` rather than its old names.
 
-**Test scenarios:** Happy path: a DAG interpreter emits ready intents, the skill/root runs independent read-only roles in parallel, joins at a barrier, sends consolidated fixes to one worker, selectively reruns affected roles, executes required deterministic validators, and yields `verified-workflow-subagent` only for a matching role/class/profile/lens/model/digest/result chain; a preferred-independence inline role yields `verified-workflow-inline` with its limitation. Edge cases: duplicate or out-of-order events, incomplete pairs, stale pruning, backpressure, max-thread exhaustion, stale profile or lens digest, allowed risk escalation, deterministic tool step, root follow-up to a running or idle child, default/explicit Codex homes, unavailable isolated authentication, and called-twice intent/normalization/gate evaluation remain idempotent. Error paths: a Python helper claiming it spawned a child, automatic default-profile credential copy/symlink, secret-bearing proof, dependency cycle, unsatisfied barrier, required-independence role forced inline, peer messaging required by the plan, oversized/malformed event, prompt-bearing field, payload-supplied path/digest, escape, unsafe permissions, unknown/generic profile, missing trust, mismatched model, missing result, forged child, unresolved P0/P1/security finding, required validator failure, or numeric score used to override severity blocks or escalates; the cycle cap never passes it.
+**Test scenarios:** Happy path: U4A emits ready intents; U4B preserves all existing public schemas and CLI behavior across extracted modules; U4C produces replay-safe inline/deterministic/result/root records; U4D blocks unresolved severity or validator failures; U4E yields `verified-workflow-subagent` only for a matching explicit selector plus role/class/profile/lens/model/digest/result chain, and runbook v2 plus its manifest/classification/inventory artifacts validate from exact bytes. Edge cases: duplicate or out-of-order events, incomplete pairs retained for later maintenance, backpressure, max-thread exhaustion, stale profile or lens digest, allowed risk escalation, deterministic tool step, root follow-up to a running or idle child, unavailable named selector, unavailable isolated authentication, called-twice intent/normalization/gate evaluation, and a historical manifest retaining runbook v1 remain deterministic and idempotent. Error paths: a helper claiming it spawned a child, prompt steering reported as selection, automatic credential copy/symlink, secret-bearing proof, dependency cycle, unsatisfied barrier, required-independence role forced inline, peer messaging required by the plan, oversized/malformed event, prompt-bearing field, payload-supplied path/digest, path escape, unsafe permissions, unknown/generic profile, missing trust, mismatched model, missing result, forged child, unresolved P0/P1/security finding, required validator failure, numeric score used to override severity, active runbook version/schema mismatch, stale authority digest, or stale legacy-token inventory blocks or escalates.
 
-Integration: the isolated harness records a valid role/class receipt, explicit `inline-only`, or `auth-unavailable`; a generic-only task proves automatic root-owned inline fallback, and the U4 unit-stage manifest gate passes.
+Integration: the isolated harness records `attested`, `diagnostic`, `inline-only`, or `auth-unavailable`; a generic-only task proves automatic root-owned inline fallback without satisfying named-role evidence, and the U4 unit-stage manifest gate passes.
 
-**Verification:** No test or live report can claim `verified-workflow-subagent` without a complete role/class/lens/profile receipt chain; no helper script claims native spawn authority; the sanitized proof names its capability outcome and hook/profile hashes; gate output is deterministic pass/block/escalate with contained evidence. An `inline-only` result leaves U5-U8 executable through root-owned Saga `inline`, but cannot satisfy subagent evidence or any role marked independence required; all U4 manifest rows pass their unit gate.
+**Verification:** Each U4A-U4E checkpoint passes focused tests and is committed separately; the extracted facade remains compatible; a crash after prepared-marker persistence recovers only from exact normalized readback; no live report claims `verified-workflow-subagent` without explicit selection plus a complete receipt chain; no helper claims native spawn authority; the sanitized proof names its capability outcome and hook/profile hashes; gate output is deterministic pass/block/escalate with contained evidence; runbook v2, contract validation, generated classification, and legacy inventory are byte-current; the integrated U4 suite and U4 manifest gate pass. The root then writes `## Workflow Structure` into this plan at `docs/plans/2026-07-10-codex-plugin-model-execution-modernization-plan.md#workflow-structure`, records that pointer in the Saga handoff, and pauses. `diagnostic`, `inline-only`, or `auth-unavailable` leaves ordinary root-inline work possible but blocks the requested model-pinned delegation until runtime capability changes or the operator explicitly chooses a less precise fallback.
 
 ### U5. Repair Saga's Codex-Native Continuation and Dispatch Boundary
 
@@ -530,11 +560,11 @@ Publish metadata only after source, installed state, hooks, agents, and runtime 
 
 **Goal:** Release fleet-core `0.8.4`, Saga `0.75.17`, and `verified-workflows` `1.0.0`; retire installed `team-execution` `2.3.0`; update all inventory/docs/generated surfaces; refresh the local marketplace install; and prove role/class policy, truthful subagent-or-inline execution, hooks, legacy Saga re-entry, runbook/contract conformance, imported behavior, and rollback in fresh Codex tasks.
 
-**Requirements:** R1, R5-R8, R12-R20.
+**Requirements:** R1, R5-R8, R12-R20, R22.
 
 **Dependencies:** U1, U3, U4, U5, U6, U7, U9.
 
-**Files:** `plugins/team-execution/**`, `plugins/fleet-core/.codex-plugin/plugin.json`, `plugins/saga/.codex-plugin/plugin.json`, `plugins/verified-workflows/.codex-plugin/plugin.json`, `.agents/plugins/marketplace.json`, `README.md`, `plugins/fleet-core/README.md`, `plugins/saga/README.md`, `plugins/verified-workflows/README.md`, `plugins/fleet-core/CHANGELOG.md`, `plugins/saga/CHANGELOG.md`, `plugins/verified-workflows/CHANGELOG.md`, `docs/baseline/codex-visible-plugins.md`, `docs/portability/ports/2026-07-10-saga-07517.json`, `docs/portability/codex-plugin-modernization-cutover-and-rollback.md`, `docs/validation/codex-plugin-modernization-cutover.json`, `docs/validation/saga-family-target-inventory.json`, `docs/saga/generated/lifecycle-facts.json`, `scripts/port_contract.py`, `scripts/validate_codex_plugins.py`, `scripts/build_saga_docs_facts.py`, `scripts/render_saga_docs_assets.py`, `tests/test_port_contract.py`, `tests/test_validate_codex_plugins.py`, `tests/test_saga_docs_package.py`, `tests/test_verified_workflows_agents.py`, `tests/test_verified_workflows_migration.py`.
+**Files:** `plugins/team-execution/**`, `plugins/fleet-core/.codex-plugin/plugin.json`, `plugins/saga/.codex-plugin/plugin.json`, `plugins/verified-workflows/.codex-plugin/plugin.json`, `plugins/verified-workflows/scripts/raw_hook_maintenance.py`, `plugins/verified-workflows/tests/test_raw_hook_maintenance.py`, `.agents/plugins/marketplace.json`, `README.md`, `plugins/fleet-core/README.md`, `plugins/saga/README.md`, `plugins/verified-workflows/README.md`, `plugins/fleet-core/CHANGELOG.md`, `plugins/saga/CHANGELOG.md`, `plugins/verified-workflows/CHANGELOG.md`, `docs/baseline/codex-visible-plugins.md`, `docs/portability/ports/2026-07-10-saga-07517.json`, `docs/portability/codex-plugin-modernization-cutover-and-rollback.md`, `docs/validation/codex-plugin-modernization-cutover.json`, `docs/validation/saga-family-target-inventory.json`, `docs/saga/generated/lifecycle-facts.json`, `scripts/port_contract.py`, `scripts/validate_codex_plugins.py`, `scripts/build_saga_docs_facts.py`, `scripts/render_saga_docs_assets.py`, `tests/test_port_contract.py`, `tests/test_validate_codex_plugins.py`, `tests/test_saga_docs_package.py`, `tests/test_verified_workflows_agents.py`, `tests/test_verified_workflows_migration.py`.
 
 **Approach:** Update behavior-bearing release versions/manifests together, remove the temporary legacy source root in the same release change that activates the Verified Workflows marketplace entry, and run all Python checks through the locked project environment (`PYTHONPATH=. uv run ...`; the repository root is required because pytest uses importlib mode while tests import `scripts.*`). Transition the port manifest to cutover-ready only after every non-deferred source row is verified, every defer/reject rationale is revalidated, every Codex execution-base invariant passes, and the review/cutover paths exist.
 
@@ -544,13 +574,15 @@ Before mutation, create KTD12's protected, uncommitted local rollback bundle and
 
 Run two isolated lanes. A clean-home lane proves first installation, trust, five-profile sync, skill/hook discovery, and canonical writes. A seeded-migration lane reconstructs the prior managed Team Execution package, markers, agents, trust shape, old roots, and pending managed events from safe fixtures or the local rollback bundle; it then proves read-old/write-new migration, removal of Team Execution, duplicate-surface absence, and an exact rollback to the seeded pre-state.
 
-Neither lane copies default-profile credentials; a live isolated fresh task runs only when the operator has separately authenticated that isolated home, otherwise U4's capability remains `inline-only` or `auth-unavailable`. Apply the transaction to the real profile only after source/full-suite/contract/both-isolated-lane gates pass, using `--allow-real-profile` plus matching pre-state and rollback-bundle digests. Then open a fresh task through the already authenticated real profile to prove runtime discovery; on any failure, execute KTD12 rollback and verify exact prior readback.
+Add the raw-hook lifecycle operations deferred from U4 as a cutover-owned module: classify start-only or stop-only leaves as abandoned only after an explicit age threshold, render a digest-bound dry-run prune plan, apply only that exact plan, and delete a complete raw pair only after its normalized receipt and consumption marker read back successfully. These operations never participate in named-profile selection or gate authority; they keep trusted installed hook state bounded and recoverable.
+
+Neither lane copies default-profile credentials; a live isolated fresh task runs only when the operator has separately authenticated that isolated home, otherwise U4's capability remains `diagnostic`, `inline-only`, or `auth-unavailable`. Apply the transaction to the real profile only after source/full-suite/contract/both-isolated-lane gates pass, using `--allow-real-profile` plus matching pre-state and rollback-bundle digests. Then open a fresh task through the already authenticated real profile to prove runtime discovery; on any failure, execute KTD12 rollback and verify exact prior readback.
 
 **Patterns to follow:** Follow existing generated-doc `--check` gates and marketplace/source/cache separation. Preserve unrelated user changes, including `.serena/project.yml`.
 
 **Test scenarios:** Happy path: cutover-stage port-contract validation, generated docs, focused tests, and full `PYTHONPATH=. uv run pytest` pass; the clean-home lane exposes the three target versions and exactly five profiles; the seeded lane migrates from Team Execution, proves legacy Saga re-entry/canonical writes, removes duplicate surfaces, and restores exact prior managed state on rollback; fresh tasks prove risk-class selection, logical-role/lens binding, inline fallback, hook receipts, and only the new plugin skills. When U4 produced a receipt, fresh tasks additionally prove review-high, test-medium, and scan-low execution before subagent vehicle claims are enabled.
 
-Edge cases: second install, unrelated profiles/hooks, old managed markers, pending old raw events, untrusted new hooks, stale cache, unavailable preferred model, newer Claude or Codex `origin/main`, and unchanged legacy artifact checksums are handled without extending the frozen proof. Error paths: incomplete/stale port manifest, unclassified execution-base drift, manifest/version/runbook drift, missing or unreadable local rollback bundle, raw trust/config values in committed proof, both plugins enabled, duplicate skill/hook, old active write, conflicting roots, old trust reused, missing locked dependency/import root, cache edited as source, generic child reported as role-attested, required-independence role satisfied inline, missing receipt, unsanitized proof, full-suite failure, failed isolated rollback, failed real-profile apply, or failed real-profile rollback blocks cutover. Integration: one end-to-end plan/work/review/outcome slice produces model, workflow, gate, Saga, and external-advisory receipts without automatic PR, merge, deploy, or provider mutation.
+Edge cases: second install, unrelated profiles/hooks, old managed markers, pending old raw events, start-only/stop-only leaves below and above the abandonment age, stale prune-plan digest, untrusted new hooks, stale cache, unavailable preferred model, newer Claude or Codex `origin/main`, and unchanged legacy artifact checksums are handled without extending the frozen proof. Error paths: incomplete/stale port manifest, unclassified execution-base drift, manifest/version/runbook drift, missing or unreadable local rollback bundle, raw trust/config values in committed proof, deletion before normalized readback, prune apply without the matching dry-run digest, both plugins enabled, duplicate skill/hook, old active write, conflicting roots, old trust reused, missing locked dependency/import root, cache edited as source, generic child reported as role-attested, required-independence role satisfied inline, missing receipt, unsanitized proof, full-suite failure, failed isolated rollback, failed real-profile apply, or failed real-profile rollback blocks cutover. Integration: one end-to-end plan/work/review/outcome slice produces model, workflow, gate, Saga, and external-advisory receipts without automatic PR, merge, deploy, or provider mutation.
 
 **Verification:** Source and installed readback match target versions; active inventory contains Verified Workflows and not Team Execution; all checks pass; the sanitized cutover record contains hashed pre-state, both isolated-lane proofs, applied state, capability outcome, and rollback status without restoration secrets; the local rollback bundle is separately validated; five-profile accounting plus role/class proofs and one inline fallback are durable; live role receipts are required only for subagent vehicle claims; the port manifest has 100% stage-appropriate treatment/evidence and Codex-drift coverage; and generated classification is current.
 
@@ -558,19 +590,20 @@ Edge cases: second install, unrelated profiles/hooks, old managed markers, pendi
 
 ## Codex-Native Execution Strategy
 
-The root Codex thread owns the run directly; Verified Workflows is one of the components it creates and tests.
+The run has one inline bootstrap phase and one gated workflow phase; the root remains authoritative in both.
 
 ### Runtime Contract
 
 - Destination: `plan-only` for this planning turn.
-- Shape-based recommendation after cutover: `verified-workflow` because the nine units are cross-cutting and include security, migration, review, and fan-out signals.
-- Operator-selected and effective Saga backend: `inline` because the recommended backend is under repair.
-- Mechanical strategy: direct Codex serial or parallel subagents coordinated by the root thread.
+- Bootstrap phase: U1-U4 use Saga `inline`; U4A-U4E execute sequentially in the root thread with no child implementation or acceptance dependency.
+- Mandatory pause: after U4 checks and manifest evidence, write/read back the U5-U8 Workflow Structure, refresh the runtime capability snapshot, and wait for explicit operator confirmation.
+- Workflow phase: U5-U8 use the U4 root-owned DAG only when a named-profile selector and U4 attestation chain are both proved. U5 may still persist Saga mode `inline` until its new canonical workflow fields land; U6-U8 may persist `verified-workflow` afterward.
+- Precise-delegation stop rule: if current spawn still lacks named-profile selection, do not substitute a generic child for an agent-backed step whose model/effort matters. Leave U5-U8 planned and paused unless the operator explicitly chooses root-inline or advisory generic execution.
 - Permission strategy: parent `workspace-write` for U1-U7 when supported; broader real-profile authority is root-only in U8 after isolated proof.
 - Root authority: Saga state, task ordering, shared-file integration, Git boundaries, final verification, and completion decisions.
-- Fallback: when native subagents are unavailable or backpressured, continue serially in the root thread; do not fall back into either the legacy or new workflow plugin.
+- Acceptance boundary: Verified Workflows coordinates bounded tasks and records product evidence; it never accepts its own implementation or overrides the root's diff, test, severity, and formal code-review decisions.
 
-The operator-choice rationale is explicit: using Verified Workflows to implement and accept Verified Workflows would make the target protocol its own bootstrap trust root. `inline` identifies the runtime owner and does not mean every task must stay in one model context.
+This preserves the useful half of the new machinery: after U4, the workflow can select low-cost bounded workers, strong reviewers, and deterministic validators without becoming a peer-team runtime or a bootstrap trust root.
 
 ### Agent Topology and Model Policy
 
@@ -578,40 +611,57 @@ Use the lowest-capability role that can complete each bounded task, while keepin
 
 | Codex role | Work | Preferred model / effort | Mutation boundary |
 |---|---|---|---|
-| Root coordinator | Plan state, cross-unit decisions, integration, final verification | `gpt-5.6-sol` / `max` | Sole owner of Saga, shared integration files, Git, install, and cutover |
-| Explorer | Code/docs tracing, source classification, file-overlap discovery | `gpt-5.6-terra` / `medium` | Requested read-only; root verifies no mutation |
-| Worker | One bounded implementation unit or isolated file set | `gpt-5.6-sol` / `high` | One writer at a time in the shared worktree; parallel only in isolated worktrees |
-| Reviewer | Correctness, architecture, security, and regression review | `gpt-5.6-sol` / `high` | Requested read-only; root verifies no mutation; findings remain advisory |
-| Validator | Focused tests, schema checks, logs, and evidence reduction | `gpt-5.6-terra` / `medium`; `gpt-5.6-luna` / `low` for deterministic scans | Requested read-only except declared test artifacts; root verifies scope |
+| Root coordinator | U4 bootstrap, plan state, cross-unit decisions, integration, final verification | `gpt-5.6-sol` / `xhigh`; escalate one bounded question to `max` only with evidence | Sole owner of Saga, shared integration files, Git, install, and cutover |
+| `scan-low` | Code/docs tracing, source classification, bounded inventory | U3-managed `gpt-5.6-luna` / `low` profile | Read-only local scan |
+| `test-medium` | Registered tester roles, focused tests, and migration fixtures | U3-managed `gpt-5.6-terra` / `medium` profile | Declared test/fixture files or requested read-only validation; not a generic product-code worker |
+| `review-high` | Default correctness, architecture, operations, and regression review | U3-managed `gpt-5.6-sol` / `high` profile | Read-only; findings advisory to root |
+| `review-max` | Exceptional state-migration, trust, security, or adversarial review | U3-managed `gpt-5.6-sol` / `max` profile | Read-only; use only for named high-risk questions |
+| `monitor-low` | CI, fresh-session, install, and runtime observation | U3-managed `gpt-5.6-luna` / `low` profile | Allowlisted external reads/waits; no mutation |
 
-The root model and effort are selected explicitly before execution. The active generic spawn surface accepts task name, message, and fork context but exposes no per-child model, effort, named profile, sandbox override, or selection readback; prompt steering is therefore a request, not proof. Codex can load `model`, `model_reasoning_effort`, and `sandbox_mode` from a selected custom-agent TOML, but U3 only installs those profiles and U4 must prove profile plus logical-role selection through hook and lens evidence.
+The root model and effort are selected explicitly before execution; `xhigh` is sufficient for completing the bounded U4 refactor and proof work. The active generic spawn surface accepts task name, message, and fork context but exposes no per-child model, effort, named profile, sandbox override, or selection readback. Codex can load `model`, `model_reasoning_effort`, and `sandbox_mode` from a selected custom-agent TOML, but U4E must prove both that the host accepted that named profile and that the resulting child matched the hook/profile/result receipt.
 
-Until that proof exists, child values and mutation labels are preferences guarded by KTD14, and U3/U4 remain systems under test rather than execution governors.
+Until that proof exists, child values and mutation labels are preferences guarded by KTD14. The profiles and named-child machinery are therefore necessary but not sufficient: definitions provide the precise requested configuration, while U4E determines whether this runtime can actually select and prove it.
 
 Ultra is not selected for this run. The root already has an explicit dependency graph and bounded fan-out, so proactive delegation would reduce predictability without adding a missing capability.
 
 ### Per-Unit Wave
 
-Each U-ID moves through the same host-native sequence.
+U4 moves through an inline sequence; after the pause, each U5-U8 workflow slice uses the proved named-profile sequence.
 
 ```text
-root selects U-ID and ownership
-          |
-          +--> requested-RO explorer(s) -----+
-          |                                   |
-          +--> docs/schema researcher --------+--> root synthesizes
-                                                  |
-                                      one worker or root writes
-                                                  |
-                              +-------------------+-------------------+
-                              |                                       |
-                    requested-RO reviewer                  focused validator(s)
-                              +-------------------+-------------------+
-                                                  |
-                                  root inspects diff, verifies, commits
+U4A -> U4B -> U4C -> U4D -> U4E
+ |       |       |       |       |
+focused test + root diff audit + atomic commit
+                         |
+              integrated U4 verification
+                         |
+              explicit operator pause
+                         |
+       selector + attestation capability gate
+                         |
+          U5-U8 Workflow Structure
+                         |
+ root writes -> named reviewer(s) + validator(s)
+                         |
+             root verifies and commits
 ```
 
-The root waits at every join before opening the next dependent unit. A child reports its U-ID, files read or changed, checks run, result, and unresolved risks; it does not update Saga state or declare the unit complete. Explorers and workers receive only the relevant U-ID context, while independent reviewers and validators use `fork_turns=none` and receive explicit target paths, acceptance criteria, diff or merge-base inputs, and required checks in their task message.
+The root waits at every join before opening the next dependent unit. A child reports its workflow step, selected profile receipt, files read or changed, checks run, result, and unresolved risks; it does not update Saga state or declare the unit complete. Independent reviewers and validators use fresh context and receive explicit target paths, acceptance criteria, diff or merge-base inputs, and required checks.
+
+### U4 Completion Pause and U5-U8 Workflow Handoff
+
+The pause produces one continuation inside this plan, not a competing plan artifact.
+
+| Unit | Root-owned implementation | Named logical roles and execution classes | Delegated evidence | Start condition |
+|---|---|---|---|---|
+| U5 | All Saga state/schema/ledger source changes and migration decisions | Base `architecture-reviewer` and `devils-advocate-reviewer` at `review-max`; base `security-reviewer` at `review-high`; `concurrency-tester` at `test-medium` | Launch-state, append-only migration, crash/replay, idempotency, and regression evidence | U4E `attested`; Saga persists inline until U5 canonical fields land |
+| U6 | All host-neutral correctness/engine source changes, import ordering, and overlap integration | Base reviewers at `review-high`; conditional `testing-reviewer` at `review-high`; `scenario-tester` and `concurrency-tester` at `test-medium` where their registry signals apply | Architecture/correctness findings plus scenario, retry, and integration-test evidence | U5 canonical workflow boundary passes |
+| U7 | All trust/economics/advisory source changes and authority decisions | `security-reviewer` and `devils-advocate-reviewer` at `review-max`; `architecture-reviewer` at `review-high`; `security-scanner` at `scan-low`; `scenario-tester` at `test-medium` | Trust-boundary, unsafe-sink, economics, substitution, advisory-isolation, and reconciliation evidence | U6 substrate passes |
+| U8 | All marketplace/profile mutation, hook trust, rollback, and release decisions | Base reviewers at `review-high`, escalating `security-reviewer` to `review-max`; `smoke-tester` at `test-medium`; `github-actions-monitor` at `monitor-low` | Cutover/rollback findings, isolated-install smoke evidence, CI status/log evidence, and root-owned fresh-session readback | U5-U7 pass; real-profile mutation remains root-only |
+
+The current registry contains no general implementation-worker logical role, so no tester or scanner may be repurposed to write product code. Registered testers may own only declared test/fixture paths consistent with their lens; the root owns all product-source writes and integration.
+
+At the pause, regenerate the table's effective model/effort and profile digests from the current fleet-core catalog rather than copying stale values. The Workflow Structure records the exact logical role ID, role/lens digest, resolved execution class/model/effort/profile digest, independence, files, mutation boundary, dependencies, expected evidence, retry policy, and stop conditions. If U4E is not `attested`, retain this table as the ready handoff and stop.
 
 ### Concurrency and File Ownership
 
@@ -631,15 +681,16 @@ The routing maximizes context isolation without creating write races.
 |---|---|---|
 | Capability and fleet-core bootstrap | U1-U2 | Parallel requested-read-only grounding; root or one worker serializes shared policy changes. |
 | Package identity migration | U9 | One writer owns the source move and compatibility vocabulary; independent history/denylist checks inspect afterward. |
-| Role profiles and workflow receipts | U3-U4 | One implementation writer; independent reviewers and validators inspect afterward. Managed Verified Workflows profiles are only systems under test. |
-| Saga runtime boundary | U5 | One writer owns shared Saga state code; requested-read-only regression and schema agents may run in parallel. |
-| Upstream import batches | U6-U7 | Parallelize classification and focused test analysis; serialize overlapping source changes or isolate them in worktrees. |
-| Release and cutover | U8 | Root-only mutation and readback after parallel requested-read-only preflight checks. |
+| Role profiles and workflow receipts | U3-U4 | Root-only inline bootstrap; U4A-U4E are sequential checkpoints and Verified Workflows remains the system under test. |
+| Saga runtime boundary | U5 | After the pause, one root writer owns shared Saga state while named read-only reviewers and validators inspect it. |
+| Upstream import batches | U6-U7 | Root serializes all product-source changes; registered tester/scanner tasks may parallelize disjoint test, fixture, scan, and review work; `review-high` or `review-max` provides fresh-context review. |
+| Release and cutover | U8 | Root-only mutation and readback after named preflight, isolated validation, operations review, and monitoring steps. |
 
 ### Acceptance Gates
 
 - Each U-ID passes its named focused tests before the root integrates it.
-- At least one fresh-context, requested-read-only Codex review examines each behavior-bearing unit; security-sensitive U3, U4, U5, U7, and U8 receive a dedicated security or operations pass.
+- U4A-U4E each receive a root diff audit plus focused checks, then one integrated U4 regression pass; no child or Verified Workflows gate accepts the bootstrap. The formal `/code-review` later supplies the independent work-to-PR review.
+- After the U4 pause, each behavior-bearing U5-U8 unit receives the named fresh-context review and validator coverage in the handoff table; security-sensitive U5, U7, and U8 use the specified `review-max` or operations profile.
 - The root resolves findings by severity and verifies the actual diff and test output; no numeric workflow score is used to accept this plan's work.
 - `/code-review` remains the formal work-to-PR gate after U1-U9, followed by the U8 port-contract, full-suite, isolated-profile, fresh-session, and rollback gates.
 - Verified Workflows receipts, role evidence, and validator policy are accepted only as declared product-test evidence for U3, U4, U7, and U8. They never decide whether their own implementation is correct.
@@ -668,8 +719,8 @@ The largest risks are false runtime proof, source drift, and trust-boundary regr
 |---|---|---|
 | Codex catalog or schema changes after planning | Pinned models or fields become invalid. | Refresh catalog at U1/U8, use fixture-driven normalization, and require compatible fallback/readback. |
 | Codex `origin/main` advances after the historical planning base | Current Saga or plugin behavior can be overwritten by a source-only port. | U1 freezes the approved execution base, inventories every plan-base drift path, and blocks units that do not preserve or explicitly reconcile it. |
-| Verified Workflows is used to implement or accept itself | A defect in the target protocol can block or falsely validate the work. | Keep the Saga backend `inline`; use direct Codex children and root-owned acceptance gates. |
-| The active child-spawn surface does not expose model, effort, named-profile, sandbox overrides, or readback | A requested child may run with a host-selected model and write-capable inherited permissions. | Use parent `workspace-write` for source units when supported, treat child settings as preferences, apply KTD14 pre/post snapshots, keep root verification authoritative, and require U3/U4 proof before claiming pinned-profile behavior. |
+| Verified Workflows is used to accept itself | A defect in the target protocol can falsely validate later work. | Bootstrap U4 inline, require the pause and capability gate, and keep root diff/test/severity plus formal code review authoritative for U5-U8. |
+| The active child-spawn surface does not expose model, effort, named-profile, sandbox overrides, or readback | A requested child may run with a host-selected model and write-capable inherited permissions. | Finish U4 inline, record `diagnostic` when only hook evidence exists, and stop before U5-U8 model-pinned delegation unless explicit named selection plus attestation becomes available. |
 | Pre-existing user work overlaps a unit's declared files | A child could overwrite or accidentally claim unrelated work as plan output. | Intersect the unit file set with the preflight dirty-path snapshot; pause on ambiguous ownership or use an explicitly approved isolated worktree; never rewrite user changes. |
 | Ultra causes recursive or generic delegation | Unbounded cost and untrusted gate evidence. | Root-only policy, `max_depth=1` proof, no Ultra in leaf profiles, role/class receipts required for workflow claims. |
 | Profiles are installed but the role/class is not selected | Verified Workflows is reported but not run. | U4 role/lens/model/profile receipt and inline fallback; simulated probe never counts. |
@@ -714,9 +765,9 @@ The rejected alternatives either preserve stale assumptions or produce unverifia
 Completion is evidence-based rather than version-based.
 
 - The JSON port manifest and generated classification cover exactly 156 focused source files under the four named pathspecs plus every Codex plan-base-to-execution-base drift path, with one explicit source treatment, one explicit Codex preservation treatment, a matching runbook digest, and no unresolved stage-appropriate row.
-- U1-U9 execute with Saga `orchestration_mode=inline`; native child tasks are attributable by U-ID, and no Verified Workflows receipt or score is required to implement or accept the workflow itself.
+- U1-U4 execute with Saga `orchestration_mode=inline`; U4A-U4E have separate focused evidence and commits. The run pauses before U5, and U5-U8 begin only from the reviewed Workflow Structure plus an `attested` named-profile capability.
 - All 25 logical role IDs remain addressable: every agent-lens has complete independence/default/allowed-class and equivalence evidence, every deterministic validator has a command/evidence contract and no model fields, and installed readback accounts for exactly five managed profiles without touching unrelated profiles.
-- Installed readback proves review-high, test-medium, and scan-low policies plus one inline fallback. Subagent vehicle claims additionally require matching live role/class/lens/profile receipts; otherwise the durable capability outcome is `inline-only` and no generic child is counted as Verified Workflows.
+- Installed readback proves review-high, test-medium, and scan-low policies plus one inline fallback. Subagent vehicle claims additionally require matching live role/class/lens/profile receipts; otherwise the durable capability outcome is `diagnostic`, `inline-only`, or `auth-unavailable`, and no generic child is counted as Verified Workflows.
 - Active inventory exposes only `verified-workflows:run` and `verified-workflows:appsec-audit`; new state and receipts contain only canonical vocabulary, while legacy Team Execution ticks, roots, refs, and receipts remain readable without byte changes.
 - Outcome integration proves zero state transitions to `dispatched` without a matching launch acknowledgement and zero duplicate launches on replay.
 - Hook fixtures and live smoke prove trusted, idempotent, non-mutating SessionStart and subagent receipt behavior alongside existing hooks.
@@ -737,7 +788,7 @@ The plan modernizes the Codex adapter and imports only behavior that fits the ve
 - No activation of `agy`, redis-channel remote gate transport, or the Claude `codex:delegate` external-engine row.
 - No recursive Ultra leaf delegation and no claim that generic subagents satisfy Verified Workflows role evidence.
 - No active Team Execution package, skill, state write, receipt write, agent marker, or Saga write vocabulary after cutover; the old name remains only in upstream lineage, centralized readers, migration fixtures, and historical evidence.
-- No use of Verified Workflows as the implementation backend or acceptance authority for this plan; its profiles, receipts, gates, and advisory logic remain U3/U4/U7/U8 systems under test.
+- No use of Verified Workflows to implement U4 or as acceptance authority for any unit. After the U4 pause, it may coordinate U5-U8 bounded work while the root and formal code-review gate remain authoritative.
 - No required peer-to-peer child messaging; the root owns follow-up and adjudication.
 - No permanent bootstrap-agent bundle solely to execute U1-U9.
 - No automatic Git fetch/fast-forward, commit, push, PR, merge, deploy, provider registration, or credential mutation from hooks or this plan-only turn.
@@ -783,4 +834,4 @@ The plan combines live repository/runtime evidence with current official Codex d
 
 ## Recommended Next Step
 
-Round-three `saga:doc-review` passed after all actionable P0-P3 findings were fixed in place. Await explicit operator approval; after approval, reconcile pre-existing edits that overlap U1, freeze the approved execution base, and enter `saga:work` at U1 with Saga backend `inline` and the Codex-native subagent strategy above. Neither legacy Team Execution nor Verified Workflows may implement or accept any U1-U9 unit.
+Review this material amendment with `saga:doc-review`. After approval, resume `saga:work` at U4A in the current root thread using `gpt-5.6-sol` / `xhigh`, complete U4A-U4E sequentially with focused checks and atomic commits, write the U5-U8 Workflow Structure, refresh named-profile capability proof, and pause. Do not start U5 until the operator confirms the handoff and U4E reports `attested`; Verified Workflows never accepts its own output.

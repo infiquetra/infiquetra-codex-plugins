@@ -1,5 +1,7 @@
 # Doc Review Round 3: Codex Plugin Model, Execution, and Upstream Modernization Plan
 
+Superseded by `docs/reviews/2026-07-11-codex-plugin-model-execution-modernization-plan-doc-review-r4.md` after the U4 inline/workflow-handoff amendment.
+
 All actionable P0-P3 findings were fixed in place, and the materially amended plan is ready for operator approval.
 
 ## Applied Fixes
