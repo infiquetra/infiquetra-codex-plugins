@@ -337,6 +337,22 @@ def test_task_token_estimate_exceeding_context_window_halts(registry: Any) -> No
     assert "truncate" in resolution.halt
 
 
+@pytest.mark.parametrize("token_estimate", [-1, 10**1000])
+def test_invalid_task_token_estimates_fail_closed_without_overflow(
+    registry: Any, token_estimate: int
+) -> None:
+    with pytest.raises(REG.RegistryError, match="token estimate|finite cost"):
+        R.resolve(
+            {
+                "engine": "agy/gemini-3.1-pro-high",
+                "role_kind": "worker",
+                "task_context": {"context": "x", "token_estimate": token_estimate},
+            },
+            mode="dispatch",
+            registry=registry,
+        )
+
+
 def test_preflight_available_when_cli_and_config_present() -> None:
     result = R.preflight(
         "codex",

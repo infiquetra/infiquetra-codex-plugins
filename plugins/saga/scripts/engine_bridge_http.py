@@ -88,9 +88,15 @@ def runner(
 
         getenv = os.environ.get
 
-    if isinstance(timeout, bool) or not isinstance(timeout, int | float) or not math.isfinite(timeout):
+    if isinstance(timeout, bool) or not isinstance(timeout, int | float):
         raise ValueError("HTTP bridge timeout must be a finite number")
-    bounded_timeout = min(max(float(timeout), MIN_TIMEOUT_SECONDS), MAX_TIMEOUT_SECONDS)
+    try:
+        timeout_number = float(timeout)
+    except OverflowError as exc:
+        raise ValueError("HTTP bridge timeout must be a finite number") from exc
+    if not math.isfinite(timeout_number):
+        raise ValueError("HTTP bridge timeout must be a finite number")
+    bounded_timeout = min(max(timeout_number, MIN_TIMEOUT_SECONDS), MAX_TIMEOUT_SECONDS)
 
     def _run(invocation: dict[str, Any]) -> dict[str, Any]:
         assert urlopen is not None

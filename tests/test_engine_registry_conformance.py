@@ -160,6 +160,14 @@ def test_registry_rejects_nonfinite_costs() -> None:
         C.Registry.from_dict(data)
 
 
+def test_registry_rejects_oversized_integer_costs_without_overflow() -> None:
+    data = _registry_data()
+    data["engines"][0]["cost_per_token"]["input_usd"] = 10**1000
+
+    with pytest.raises(C.RegistryError, match="finite"):
+        C.Registry.from_dict(data)
+
+
 def test_file_auth_preflight_rejects_partial_credentials() -> None:
     registry = C.Registry.load(REGISTRY_PATH)
     entry = registry.by_key("agy/gemini-3.5-flash-high")

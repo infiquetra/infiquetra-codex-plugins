@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import hashlib
+import math
 import os
 import shutil
 import sys
@@ -729,7 +730,13 @@ def _resolution_from_entry(
 def _estimated_input_cost(entry: EngineEntry, token_estimate: int | None) -> float | None:
     if token_estimate is None:
         return None
-    return float(token_estimate) * float(entry.cost_per_token["input_usd"])
+    try:
+        estimate = float(token_estimate) * float(entry.cost_per_token["input_usd"])
+    except OverflowError as exc:
+        raise RegistryError("task token estimate is too large for finite cost calculation") from exc
+    if not math.isfinite(estimate):
+        raise RegistryError("task token estimate is too large for finite cost calculation")
+    return estimate
 
 
 def _load_release_dates(path: Path = DEFAULT_MODEL_RELEASES) -> dict[str, Any]:
@@ -852,6 +859,8 @@ def _token_estimate(task_context: Mapping[str, Any]) -> int | None:
         value = task_context[key]
         if isinstance(value, bool) or not isinstance(value, int):
             raise RegistryError(f"task_context[{key!r}] must be an integer token estimate")
+        if value < 0:
+            raise RegistryError(f"task_context[{key!r}] must be a non-negative token estimate")
         return int(value)
     return None
 

@@ -91,9 +91,13 @@ def _require_number(data: dict[str, Any], field: str, where: str) -> float:
     value = _require_field(data, field, where)
     if isinstance(value, bool) or not isinstance(value, int | float):
         raise RegistryError(f"{where}: {field} {value!r} is not a number")
-    if not math.isfinite(float(value)) or value < 0:
+    try:
+        number = float(value)
+    except OverflowError as exc:
+        raise RegistryError(f"{where}: {field} must be finite and non-negative") from exc
+    if not math.isfinite(number) or number < 0:
         raise RegistryError(f"{where}: {field} must be finite and non-negative")
-    return float(value)
+    return number
 
 
 def _parse_date(value: Any, where: str) -> date:

@@ -167,6 +167,11 @@ def test_extract_tokens_normalizes_oversized_integer() -> None:
     assert BRIDGE._extract_tokens(raw) == 0.0
 
 
+def test_http_runner_rejects_oversized_timeout_without_overflow() -> None:
+    with pytest.raises(ValueError, match="finite number"):
+        BRIDGE.runner(timeout=10**1000)
+
+
 def _capturing_urlopen(body: bytes, *, status: int = 200):
     captured: dict[str, Any] = {}
 
