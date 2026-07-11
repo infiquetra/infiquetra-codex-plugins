@@ -948,7 +948,7 @@
       "unit": "U5",
       "kind": "check",
       "artifact_path": "docs/validation/codex-plugin-modernization-u5.json",
-      "artifact_sha256": "be78d621d13580e56f5cbe3a140548abde7737b375cca4913dfbf792c7e28a77",
+      "artifact_sha256": "53d05508f8b34bce4d9f5d084a7f81f23d90dd746556aedc62690988df6f47b5",
       "argv": [
         "PYTHONPATH=.",
         "uv",
@@ -970,8 +970,8 @@
       ],
       "cwd": ".",
       "exit_code": 0,
-      "recorded_at": "2026-07-11T16:24:13Z",
-      "repo_head": "f56ee8b4bfce4b71ba610d945fa6c6e9d230feab",
+      "recorded_at": "2026-07-11T16:31:13Z",
+      "repo_head": "a5685bee222470bbdb0d04b65c30ff43b0f2b6da",
       "target_paths": [
         "plugins/saga/hooks/hooks.json",
         "plugins/saga/hooks/session_context.py",
@@ -1026,7 +1026,7 @@
         "tests/test_saga_session_context.py",
         "tests/test_verified_workflow_readiness.py"
       ],
-      "target_tree_sha256": "7657581c32d38a6adc3e27465393fd0c097f8228ca86e61f0f17e963c5234409"
+      "target_tree_sha256": "f270745443dc720ee044f9f72de94449ca3146f2ab5751992760b7c724d351c6"
     },
     {
       "evidence_id": "u6-validation",
