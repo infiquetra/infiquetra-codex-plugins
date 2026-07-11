@@ -322,7 +322,7 @@
     {
       "classification": "lineage-documentation",
       "path": "docs/portability/codex-saga-07517-drift-classification.md",
-      "sha256": "4e1f812d20c1ae62ed50eda54ac3d203f0efdbec09617f9e470b14d3312541a5",
+      "sha256": "206b466cd62d9ebcae688be45fda14eff32b1e638dbf21259acb8c3879a80946",
       "tokens": [
         "team-execution"
       ]
@@ -338,7 +338,7 @@
     {
       "classification": "lineage-documentation",
       "path": "docs/portability/ports/2026-07-10-saga-07517.json",
-      "sha256": "fc2d95fcd7027ad8f6c1c0d13396ae8b67c88a25507a7b80c9dbcaf12409410d",
+      "sha256": "6e4d21c6ab6a8cf850b2bf7c593e270c5a658f227bacc7dce63484101d43dae8",
       "tokens": [
         "Team Execution",
         "team-execution"
@@ -470,7 +470,7 @@
     {
       "classification": "migration-documentation",
       "path": "docs/validation/codex-plugin-modernization-u7.json",
-      "sha256": "6f15e15727ba6cc7ef51e8f9bc4af187bbef6a527c78e16f54b05ef9bcd09141",
+      "sha256": "80dd7b6ce8098783abea8d54b0ce92aa674ecbf29741a5bc05fc352db3bfea93",
       "tokens": [
         "team-execution"
       ]
