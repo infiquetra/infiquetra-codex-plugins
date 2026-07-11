@@ -1033,7 +1033,7 @@
       "unit": "U6",
       "kind": "check",
       "artifact_path": "docs/validation/codex-plugin-modernization-u6.json",
-      "artifact_sha256": "495440504261de675850887d69fabb956cc0ce66c7e92c029522834e87da2a89",
+      "artifact_sha256": "3ef8ca23d943ffc964c8c45ec03c7670ee1e145acdf736626dad17378957c941",
       "argv": [
         "PYTHONPATH=.",
         "uv",
@@ -1062,8 +1062,8 @@
       ],
       "cwd": ".",
       "exit_code": 0,
-      "recorded_at": "2026-07-11T11:11:27Z",
-      "repo_head": "c070c8a83f403b3a09f23e15a8d67ea4eb9f6191",
+      "recorded_at": "2026-07-11T11:56:11Z",
+      "repo_head": "2a96fd51c55ea108fdfa00f593eb7ac5a7bf56d4",
       "target_paths": [
         "plugins/fleet-core/scripts/fleet_commons/bridge_receipt.py",
         "plugins/fleet-core/scripts/fleet_commons/tier_resolver.py",
@@ -1103,7 +1103,7 @@
         "tests/test_outcome_completion.py",
         "tests/test_workflow_emitter.py"
       ],
-      "target_tree_sha256": "db68ae1891b4b940bc7ba6384f170a3501f0f84d5b4ff411351c098f656a6a00"
+      "target_tree_sha256": "ba6c4838741c3464965d6fc1fddbcd120055e6acad7881c0928689bace51ec04"
     }
   ],
   "port_id": "2026-07-10-saga-07517",

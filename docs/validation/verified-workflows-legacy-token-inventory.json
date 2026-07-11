@@ -364,7 +364,7 @@
     {
       "classification": "lineage-documentation",
       "path": "docs/portability/ports/2026-07-10-saga-07517.json",
-      "sha256": "37bdc00dfe3159500aa37e5aac6d008e292421d8fea5985cfcb8935c36097324",
+      "sha256": "0f12d095bae828dfbff84a71cbe16ff7743dc3ac1a72e1aff91400f88f030c46",
       "tokens": [
         "Team Execution",
         "team-execution"
@@ -833,7 +833,7 @@
     {
       "classification": "temporary-saga-writer",
       "path": "plugins/saga/scripts/execution_spec.py",
-      "sha256": "109d4d89214cb469eb27c71be6791e605ab13713585d64a4a20acfe3a0c74a92",
+      "sha256": "e28d46d2ab80ecec05dd9fd4091c54c6b8341c46ef15f1952edda6882e5ff969",
       "tokens": [
         "## Team Structure",
         "team-execution"
@@ -962,7 +962,7 @@
     {
       "classification": "migration-fixture",
       "path": "plugins/saga/tests/test_verify_panel_robustness.py",
-      "sha256": "300a4dca55cfeec7701c11c460faeaeb55c873ebf6be982d17081aad4dc63450",
+      "sha256": "93c85f3344117f2f6e989e06af884f743609324e0e95328739f0cd316fc481f2",
       "tokens": [
         "team-execution"
       ]
@@ -1259,7 +1259,7 @@
     {
       "classification": "migration-fixture",
       "path": "tests/test_workflow_emitter.py",
-      "sha256": "ba540d4c3345c3fe8a093d48a3935f40dd29852adb3eecc7882281d2531076c2",
+      "sha256": "bcc2776d59103b8d5985a8ff5a556381c6230e9fed5e120a8f6b3b6aac3e322e",
       "tokens": [
         "team-execution"
       ]
