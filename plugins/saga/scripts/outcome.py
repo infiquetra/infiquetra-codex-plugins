@@ -35,6 +35,7 @@ import base64
 import hashlib
 import importlib.util
 import json
+import math
 import os
 import re
 import secrets
@@ -186,6 +187,14 @@ def reconcile_dispatch_ack(
     intent_created_at = float(intents[-1].get("at", 0.0) or 0.0)
     receipt_fields: dict[str, str]
     if ack_kind == "launched":
+        if (
+            not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,159}", intent_run_identity)
+            or not math.isfinite(intent_created_at)
+            or intent_created_at <= 0
+        ):
+            raise OutcomeError(
+                "dispatch intent lacks fresh run authority; reconcile it as a handoff or restart"
+            )
         receipt_fields = _load_launch_receipt(
             Path(repo_root),
             ref,
@@ -356,7 +365,11 @@ def _peek_launch_receipt_identity(repo_root: Path, ref: str) -> tuple[str, float
     issued_at = receipt.get("issued_at")
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,159}", run_identity):
         raise OutcomeError("launch receipt run_identity is missing or unsafe")
-    if isinstance(issued_at, bool) or not isinstance(issued_at, (int, float)):
+    if (
+        isinstance(issued_at, bool)
+        or not isinstance(issued_at, (int, float))
+        or not math.isfinite(float(issued_at))
+    ):
         raise OutcomeError("launch receipt issued_at is missing or invalid")
     if not 0 <= time.time() - float(issued_at) <= MAX_LAUNCH_RECEIPT_AGE_SECONDS:
         raise OutcomeError("launch receipt is outside the freshness window")
@@ -398,7 +411,11 @@ def _validate_launch_receipt_content(
         if receipt.get(key) != value:
             raise OutcomeError(f"launch receipt {key} does not match the dispatch intent")
     issued_at = receipt.get("issued_at")
-    if isinstance(issued_at, bool) or not isinstance(issued_at, (int, float)):
+    if (
+        isinstance(issued_at, bool)
+        or not isinstance(issued_at, (int, float))
+        or not math.isfinite(float(issued_at))
+    ):
         raise OutcomeError("launch receipt issued_at is missing or invalid")
     current_time = time.time()
     if (
@@ -1587,6 +1604,7 @@ def _validate_import_dispatch_ledger(
                 )
                 or isinstance(raw.get("at"), bool)
                 or not isinstance(raw.get("at"), (int, float))
+                or not math.isfinite(float(raw["at"]))
             ):
                 raise OutcomeError("dispatch intent is duplicate or incomplete")
             intents[intent_id] = raw

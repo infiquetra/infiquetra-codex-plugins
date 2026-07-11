@@ -220,6 +220,42 @@ def test_expired_launch_receipt_is_rejected(repo: Path) -> None:
     assert "stale" in result.halted[0]["reason"]
 
 
+@pytest.mark.parametrize("timestamp", [float("nan"), float("inf"), float("-inf")])
+def test_nonfinite_receipt_and_import_times_are_rejected(repo: Path, timestamp: float) -> None:
+    OUTCOME.start(repo, "nonfinite", "U5", nodes=[{"subplot_id": "leaf", "title": "leaf"}])
+
+    def invalid(req: Any) -> dict[str, str]:
+        acknowledgement = runtime_ack(req)
+        acknowledgement["dispatch_ack_ref"] = _launch_receipt(
+            repo,
+            outcome_id=req.outcome_id,
+            subplot_id=req.subplot_id,
+            backend=req.backend,
+            leaf_saga_id=acknowledgement["leaf_saga_id"],
+            run_identity=req.run_identity,
+            issued_at=timestamp,
+        )
+        return acknowledgement
+
+    result = OUTCOME.advance(repo, "nonfinite", dispatcher=invalid)
+    assert result.dispatched == []
+    assert "issued_at" in result.halted[0]["reason"]
+
+    intent = next(
+        record
+        for record in OUTCOME.outcome_store.read_ledger(OUTCOME._store(repo, "nonfinite"))
+        if record.get("phase") == "intent"
+    )
+    imported = dict(intent, at=timestamp)
+    with pytest.raises(OUTCOME.OutcomeError, match="incomplete"):
+        OUTCOME._validate_import_dispatch_ledger(
+            repo,
+            OUTCOME.load_spec(repo, "nonfinite"),
+            [imported],
+            {},
+        )
+
+
 def test_self_consistent_workspace_receipt_cannot_authorize_launch(repo: Path) -> None:
     OUTCOME.start(repo, "workspace-forge", "U5", nodes=[{"subplot_id": "leaf", "title": "leaf"}])
 

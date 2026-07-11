@@ -150,4 +150,14 @@ def test_user_state_root_rejects_symlink_and_requires_repo_identity(
     (candidate / ".repo-identity.json").write_text(
         json.dumps(marker, sort_keys=True) + "\n", encoding="utf-8"
     )
+    (candidate / ".repo-identity.json").chmod(0o600)
     assert validate(repo, ref).status == "ready"
+
+    candidate.chmod(0o777)
+    assert "owner-controlled" in validate(repo, ref).reason
+    candidate.chmod(0o700)
+    (candidate / ".repo-identity.json").chmod(0o666)
+    assert "identity proof" in validate(repo, ref).reason
+    (candidate / ".repo-identity.json").chmod(0o600)
+    monkeypatch.setattr(M.os, "getuid", lambda: 2**31 - 1)
+    assert "owner-controlled" in validate(repo, ref).reason

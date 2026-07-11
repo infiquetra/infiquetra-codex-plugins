@@ -293,6 +293,20 @@ def _resolve_user_root(repo_root: Path, ref: str, legacy: Any) -> Any:
         return legacy.ReadinessResult(
             "blocked", "canonical user-state root does not exist", f"create {expected}"
         )
+    try:
+        root_metadata = candidate.stat()
+    except OSError:
+        return legacy.ReadinessResult(
+            "blocked",
+            "canonical user-state root could not be inspected",
+            "repair the canonical user-state directory",
+        )
+    if root_metadata.st_uid != os.getuid() or root_metadata.st_mode & 0o022:
+        return legacy.ReadinessResult(
+            "blocked",
+            "canonical user-state root is not owner-controlled",
+            "use a current-user-owned directory without group/world write access",
+        )
     home = Path.home()
     try:
         relative = candidate.relative_to(home)
@@ -320,7 +334,12 @@ def _resolve_user_root(repo_root: Path, ref: str, legacy: Any) -> Any:
         )
     try:
         metadata = os.fstat(fd)
-        if not stat.S_ISREG(metadata.st_mode) or metadata.st_size > 4096:
+        if (
+            not stat.S_ISREG(metadata.st_mode)
+            or metadata.st_size > 4096
+            or metadata.st_uid != os.getuid()
+            or metadata.st_mode & 0o022
+        ):
             raise ValueError("identity marker must be a bounded regular file")
         content = os.read(fd, metadata.st_size + 1)
     except (OSError, ValueError):
