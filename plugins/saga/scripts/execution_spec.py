@@ -71,7 +71,7 @@ _CHEAP_MODELS = _tier_palette.CHEAP_MODELS
 # refute-N pass rules (KTD3 / KTD5). A finding survives unless refuted per this rule:
 # majority => >= ceil(N/2) verifiers refute; unanimous => all N refute.
 PASS_RULES = ("majority", "unanimous")
-ENGINE_INTENTS = _workflow_emitter.ENGINE_INTENTS
+ENGINE_INTENTS = _tier_palette.ENGINE_INTENTS
 _JS_IDENTIFIER = re.compile(r"^[A-Za-z_$][A-Za-z0-9_$.-]*$")
 _JS_RESERVED = frozenset(
     {

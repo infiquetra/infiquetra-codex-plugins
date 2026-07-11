@@ -19,6 +19,7 @@ import importlib.util
 import io
 import json
 import os
+import socket
 import sys
 import urllib.error
 from pathlib import Path
@@ -383,6 +384,40 @@ def test_dispatch_adapter_contract_greens_on_conformant_runner() -> None:
         urlopen=_capturing_urlopen(_chat_body("real work")), getenv={"OLLAMA_API_KEY": "t"}.get
     )
     assert_adapter_conformant(runner, invocation)  # must not raise
+
+
+@pytest.mark.parametrize(
+    "address",
+    ["127.0.0.1", "10.0.0.1", "169.254.169.254", "::1", "fc00::1"],
+)
+def test_live_bridge_rejects_provider_dns_that_resolves_private(address: str) -> None:
+    invocation = D._build_invocation(_http_resolution(OLLAMA_ROW), model=None)
+
+    result = BRIDGE.runner(
+        urlopen=_capturing_urlopen(_chat_body("must not run")),
+        getenv={"OLLAMA_API_KEY": "secret"}.get,
+        resolver=lambda *_args, **_kwargs: [
+            (socket.AF_INET6 if ":" in address else socket.AF_INET, 0, 0, "", (address, 443))
+        ],
+    )(invocation)
+
+    assert result["status"] == "error"
+    assert "non-public" in result["note"]
+
+
+def test_live_bridge_allows_only_public_dns_answers() -> None:
+    invocation = D._build_invocation(_http_resolution(OLLAMA_ROW), model=None)
+    urlopen = _capturing_urlopen(_chat_body("ok"))
+
+    result = BRIDGE.runner(
+        urlopen=urlopen,
+        getenv={"OLLAMA_API_KEY": "secret"}.get,
+        resolver=lambda *_args, **_kwargs: [
+            (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("8.8.8.8", 443))
+        ],
+    )(invocation)
+
+    assert result["status"] == "ok"
 
 
 def test_dispatch_adapter_contract_reds_on_dead_runner() -> None:

@@ -83,6 +83,26 @@ def test_spend_authority_malformed_fails_loud(tmp_path: Path) -> None:
     with pytest.raises(SA.SpendAuthorityError, match="silent_ceiling"):
         SA.load_spend_authority(tmp_path)
 
+    path = tmp_path / ".codex" / "saga" / "spend-authority.json"
+    path.write_text(
+        json.dumps(
+            {
+                "silent_ceiling": {"model": "sonnet", "effort": "high"},
+                "unexpected": True,
+            }
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(SA.SpendAuthorityError, match="exactly"):
+        SA.load_spend_authority(tmp_path)
+
+    path.write_text(
+        json.dumps({"silent_ceiling": {"model": 1, "effort": "high"}}),
+        encoding="utf-8",
+    )
+    with pytest.raises(SA.SpendAuthorityError, match="strings"):
+        SA.load_spend_authority(tmp_path)
+
 
 def test_spend_authority_above_matches_palette_ordering() -> None:
     """Exhaustive grid pins the matrix to Fleet Core's two-axis ordering."""

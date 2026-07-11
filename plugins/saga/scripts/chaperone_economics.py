@@ -482,8 +482,8 @@ def _validate_cost_class(value: str) -> CostClass:
 def _validate_non_negative_int(value: int, name: str) -> int:
     if isinstance(value, bool) or not isinstance(value, int):
         raise ChaperonePolicyError(f"{name} must be an integer")
-    if value < 0:
-        raise ChaperonePolicyError(f"{name} must be >= 0")
+    if value < 0 or not math.isfinite(value):
+        raise ChaperonePolicyError(f"{name} must be finite and >= 0")
     return value
 
 
@@ -496,8 +496,8 @@ def _validate_optional_non_negative_int(value: int | None, name: str) -> int | N
 def _validate_non_negative_float(value: float, name: str) -> float:
     if isinstance(value, bool) or not isinstance(value, int | float):
         raise ChaperonePolicyError(f"{name} must be a number")
-    if value < 0:
-        raise ChaperonePolicyError(f"{name} must be >= 0")
+    if value < 0 or not math.isfinite(value):
+        raise ChaperonePolicyError(f"{name} must be finite and >= 0")
     return float(value)
 
 

@@ -167,7 +167,7 @@ the operator asks for a cross-engine pass or the artifact clearly warrants one.
 Before offering an external-engine second opinion for document review, run
 `python3 plugins/saga/scripts/engine_offer.py offer --stage doc-review --repo-root . --attended`.
 If the helper reports `prompt_required`, `/doc-review` owns the operator prompt and persists the
-preference with `engine_offer.py remember`. The offer is advisory only; Codex still verifies every
+preference with `engine_preference.py`. The offer is advisory only; Codex still verifies every
 finding and owns the readiness verdict.
 
 ## Safe In-Place Fixes

@@ -37,6 +37,7 @@ def _load(name: str, path: Path) -> ModuleType:
 
 
 E = _load("engine_offer", HELPER_SCRIPT)
+P = _load("engine_preference", SCRIPT_DIR / "engine_preference.py")
 
 
 def _complete_economics(**overrides: object) -> dict[str, object]:
@@ -72,6 +73,10 @@ def test_intent_tier_resolution_uses_existing_model_effort_vocabulary() -> None:
     assert judgment.effort in execution_spec.EFFORTS
     assert mechanical.model in execution_spec.MODELS
     assert mechanical.effort in execution_spec.EFFORTS
+    assert execution_spec.ENGINE_INTENTS == E._tier_palette.ENGINE_INTENTS
+    assert E.OFFERABLE_ENGINE_INTENTS == tuple(
+        intent for intent in execution_spec.ENGINE_INTENTS if intent != "divergence"
+    )
 
 
 def test_offload_offer_includes_cost_delta_preview_when_estimates_are_complete() -> None:
@@ -146,7 +151,7 @@ def test_unsupported_stage_fails_loudly() -> None:
 
 
 def test_unattended_silent_reuse(tmp_path: Path) -> None:
-    E.save_preference(
+    P.save_preference(
         tmp_path,
         "work",
         E.Preference(intent="offload", model="sonnet", effort="medium"),
@@ -164,7 +169,7 @@ def test_attended_prompt_once_then_persisted_preference_suppresses_prompt(tmp_pa
     assert first.prompt_required is True
     assert first.choices[0] == "second-opinion"
 
-    E.save_preference(tmp_path, "ideate", E.Preference(intent="none"))
+    P.save_preference(tmp_path, "ideate", E.Preference(intent="none"))
     second = E.resolve_offer("ideate", repo_root=tmp_path, attended=True)
 
     assert second.intent == "none"
@@ -173,7 +178,7 @@ def test_attended_prompt_once_then_persisted_preference_suppresses_prompt(tmp_pa
 
 
 def test_none_roundtrip_suppresses_future_offers(tmp_path: Path) -> None:
-    saved_path = E.save_preference(tmp_path, "doc-review", E.Preference(intent="none"))
+    saved_path = P.save_preference(tmp_path, "doc-review", E.Preference(intent="none"))
 
     raw = json.loads(saved_path.read_text())
     assert raw["stages"]["doc-review"] == {"intent": "none"}
@@ -195,12 +200,12 @@ def test_unknown_work_shape_defaults_to_no_offer() -> None:
 
 
 def test_saving_same_stage_preference_twice_leaves_valid_json(tmp_path: Path) -> None:
-    first_path = E.save_preference(
+    first_path = P.save_preference(
         tmp_path,
         "work",
         E.Preference(intent="offload", model="sonnet", effort="medium"),
     )
-    second_path = E.save_preference(tmp_path, "work", E.Preference(intent="none"))
+    second_path = P.save_preference(tmp_path, "work", E.Preference(intent="none"))
 
     assert second_path == first_path
     raw = json.loads(second_path.read_text(encoding="utf-8"))
@@ -254,7 +259,7 @@ def test_malformed_preferences_fail_loudly(tmp_path: Path) -> None:
         E.load_preferences(tmp_path)
 
 
-def test_cli_offer_and_remember_roundtrip(
+def test_cli_offer_and_explicit_preference_mutator_roundtrip(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     assert (
@@ -275,9 +280,8 @@ def test_cli_offer_and_remember_roundtrip(
     assert offer["intent"] == "offload"
 
     assert (
-        E.main(
+        P.main(
             [
-                "remember",
                 "--stage",
                 "work",
                 "--repo-root",
@@ -357,7 +361,7 @@ def test_invalid_surface_intent_defaults_fail_loudly(tmp_path: Path) -> None:
     defaults_path = tmp_path / "surface_intent_defaults.yaml"
     defaults_path.write_text("version: 1\ndefaults: []\n", encoding="utf-8")
 
-    with pytest.raises(E.EngineOfferError, match="'defaults' must be an object"):
+    with pytest.raises(E.EngineOfferError, match="not closed"):
         E.resolve_offer("work", defaults_path=defaults_path)
 
 
@@ -369,13 +373,56 @@ def test_surface_defaults_have_no_stage_shape_hardcoding_in_helper() -> None:
     assert "_default_preference_for_shape" not in helper
 
 
+def test_engine_offer_is_read_only_and_mutation_is_separate() -> None:
+    helper = HELPER_SCRIPT.read_text(encoding="utf-8")
+
+    assert "save_preference" not in helper
+    assert "os.replace" not in helper
+    assert "remember" not in helper
+    assert (SCRIPT_DIR / "engine_preference.py").is_file()
+
+
+@pytest.mark.parametrize(
+    "economics",
+    [
+        {"estimated_external_cost_usd": float("nan")},
+        {"estimated_external_cost_usd": float("inf")},
+        {"unknown": 1},
+    ],
+)
+def test_economics_schema_rejects_nonfinite_and_unknown_values(
+    economics: dict[str, object],
+) -> None:
+    with pytest.raises(E.EngineOfferError):
+        E.resolve_offer("work", unit_shape="mechanical", economics=economics)
+
+
+def test_preferences_and_surface_defaults_are_closed_schemas(tmp_path: Path) -> None:
+    prefs_path = tmp_path / ".codex" / "saga" / "engine-prefs.json"
+    prefs_path.parent.mkdir(parents=True)
+    prefs_path.write_text(
+        json.dumps({"version": 1, "stages": {}, "unexpected": True}),
+        encoding="utf-8",
+    )
+    with pytest.raises(E.EngineOfferError, match="not closed"):
+        E.load_preferences(tmp_path)
+
+    defaults = tmp_path / "defaults.yaml"
+    defaults.write_text(
+        "version: 1\ndefaults: {}\nstage_shape_defaults: {}\nunexpected: true\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(E.EngineOfferError, match="not closed"):
+        E.load_surface_intent_defaults(defaults)
+
+
 def test_drift_guard_stage_skills_reference_shared_engine_offer_helper() -> None:
     for stage, path in STAGE_SKILLS.items():
         text = path.read_text(encoding="utf-8")
         expected = f"engine_offer.py offer --stage {stage}"
         assert expected in text, f"{path} must call the shared engine_offer helper"
         if "engine-prefs.json" in text:
-            assert "engine_offer.py" in text, f"{path} must not hand-roll engine preferences"
+            assert "engine_preference.py" in text, f"{path} must use the explicit preference mutator"
 
 
 def test_engine_preference_file_is_gitignored() -> None:

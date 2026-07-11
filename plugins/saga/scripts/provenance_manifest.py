@@ -34,6 +34,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, fields
 from enum import StrEnum
+import math
 from typing import Any
 
 SCHEMA_VERSION = "saga.manifest.v1"
@@ -631,7 +632,10 @@ def _optional_number(value: Any, field_name: str) -> float | None:
         return None
     if isinstance(value, bool) or not isinstance(value, int | float):
         raise ManifestError(f"economics.{field_name} must be a number")
-    return float(value)
+    normalized = float(value)
+    if not math.isfinite(normalized):
+        raise ManifestError(f"economics.{field_name} must be finite")
+    return normalized
 
 
 def _no_verdict_surface() -> list[str]:

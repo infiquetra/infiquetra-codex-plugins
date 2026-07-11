@@ -59,6 +59,7 @@ STATUS_MALFORMED = "malformed"
 UrlOpen = Callable[..., Any]
 GetEnv = Callable[[str], str | None]
 Clock = Callable[[], float]
+Resolver = Callable[..., list[tuple[Any, ...]]]
 
 
 class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
@@ -74,6 +75,7 @@ def runner(
     getenv: GetEnv | None = None,
     clock: Clock = time.monotonic,
     timeout: float = 120.0,
+    resolver: Resolver | None = None,
 ) -> Runner:
     """Return the live urllib-backed :data:`Runner` for HTTP-transport dispatch.
 
@@ -81,8 +83,11 @@ def runner(
     real environment is touched. ``getenv`` defaults to ``os.environ.get`` (imported lazily so the
     default binds at call time, keeping the seam honest for tests that monkeypatch the environment).
     """
-    if urlopen is None:
+    live_urlopen = urlopen is None
+    if live_urlopen:
         urlopen = urllib.request.build_opener(_NoRedirectHandler()).open
+    if resolver is None and live_urlopen:
+        resolver = socket.getaddrinfo
     if getenv is None:
         import os
 
@@ -106,6 +111,7 @@ def runner(
             getenv=getenv,
             clock=clock,
             timeout=bounded_timeout,
+            resolver=resolver,
         )
 
     return _run
@@ -118,6 +124,7 @@ def _invoke(
     getenv: GetEnv,
     clock: Clock,
     timeout: float,
+    resolver: Resolver | None,
 ) -> dict[str, Any]:
     """Build and send one chat/completions request; return the Runner-contract result.
 
@@ -137,6 +144,10 @@ def _invoke(
         return _failure(STATUS_ERROR, url_error)
     if not model or not isinstance(task, str):
         return _failure(STATUS_ERROR, "http invocation missing base_url, model, or task payload")
+    if resolver is not None:
+        resolution_error = _resolved_host_error(base_url, resolver)
+        if resolution_error:
+            return _failure(STATUS_ERROR, resolution_error)
 
     url = base_url.rstrip("/") + "/chat/completions"
     body = json.dumps({"model": model, "messages": [{"role": "user", "content": task}]}).encode(
@@ -271,6 +282,28 @@ def _base_url_error(base_url: str) -> str | None:
         return None
     if not address.is_global:
         return "http invocation base_url cannot target a non-public address"
+    return None
+
+
+def _resolved_host_error(base_url: str, resolver: Resolver) -> str | None:
+    """Fail closed when a reviewed hostname resolves outside the public Internet."""
+    host = urlsplit(base_url).hostname
+    assert host is not None
+    try:
+        answers = resolver(host, 443, type=socket.SOCK_STREAM)
+    except OSError:
+        return "http invocation provider hostname could not be resolved"
+    addresses: set[ipaddress.IPv4Address | ipaddress.IPv6Address] = set()
+    for answer in answers:
+        try:
+            sockaddr = answer[4]
+            addresses.add(ipaddress.ip_address(sockaddr[0]))
+        except (IndexError, TypeError, ValueError):
+            return "http invocation provider hostname resolution was malformed"
+    if not addresses:
+        return "http invocation provider hostname resolved to no addresses"
+    if any(not address.is_global for address in addresses):
+        return "http invocation provider hostname resolved to a non-public address"
     return None
 
 

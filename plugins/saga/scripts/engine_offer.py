@@ -6,8 +6,7 @@ from __future__ import annotations
 import argparse
 import importlib
 import json
-import os
-import tempfile
+import math
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Literal, cast
@@ -16,12 +15,15 @@ import chaperone_economics as ce
 import yaml
 
 STAGES = ("ideate", "brainstorm", "work", "doc-review", "code-review")
-INTENTS = ("none", "offload", "second-opinion")
 UNIT_SHAPES = ("unknown", "mechanical", "judgment")
 _fleet_commons_shim = cast(Any, importlib.import_module("fleet_commons_shim"))
 _tier_palette = _fleet_commons_shim.load("tier_palette")
 MODELS: tuple[str, ...] = _tier_palette.MODELS
 EFFORTS: tuple[str, ...] = _tier_palette.EFFORTS
+OFFERABLE_ENGINE_INTENTS = tuple(
+    intent for intent in _tier_palette.ENGINE_INTENTS if intent != "divergence"
+)
+INTENTS = ("none", *OFFERABLE_ENGINE_INTENTS)
 
 PREFS_VERSION = 1
 PREFS_PATH = Path(".codex") / "saga" / "engine-prefs.json"
@@ -223,7 +225,9 @@ def load_surface_intent_defaults(
             f"{defaults_path}: malformed surface intent defaults: {exc}"
         ) from exc
 
-    if not isinstance(raw, dict) or raw.get("version") != 1:
+    if not isinstance(raw, dict) or set(raw) != {"version", "defaults", "stage_shape_defaults"}:
+        raise EngineOfferError(f"{defaults_path}: surface intent default fields are not closed")
+    if raw.get("version") != 1:
         raise EngineOfferError(f"{defaults_path}: expected surface intent defaults version 1")
 
     shape_preferences = _parse_shape_preferences(raw.get("defaults"), defaults_path)
@@ -248,7 +252,9 @@ def load_preferences(repo_root: Path | str) -> EnginePreferences:
     except OSError as exc:
         raise EngineOfferError(f"{prefs_path}: cannot read preferences: {exc}") from exc
 
-    if not isinstance(raw, dict) or raw.get("version") != PREFS_VERSION:
+    if not isinstance(raw, dict) or set(raw) != {"version", "stages"}:
+        raise EngineOfferError(f"{prefs_path}: preference fields are not closed")
+    if raw.get("version") != PREFS_VERSION:
         raise EngineOfferError(f"{prefs_path}: expected version {PREFS_VERSION}")
     raw_stages = raw.get("stages", {})
     if not isinstance(raw_stages, dict):
@@ -259,6 +265,7 @@ def load_preferences(repo_root: Path | str) -> EnginePreferences:
         _validate_stage(stage)
         if not isinstance(data, dict):
             raise EngineOfferError(f"{prefs_path}: preference for {stage!r} must be an object")
+        _validate_preference_keys(data, prefs_path, f"preference for {stage!r}")
         intent = data.get("intent")
         model = data.get("model")
         effort = data.get("effort")
@@ -276,32 +283,6 @@ def load_preferences(repo_root: Path | str) -> EnginePreferences:
             effort=effort,
         )
     return EnginePreferences(stages=stages)
-
-
-def save_preference(repo_root: Path | str, stage: str, preference: Preference) -> Path:
-    """Persist one stage preference through an atomic local file replace."""
-    _validate_stage(stage)
-    prefs = load_preferences(repo_root)
-    prefs.stages[stage] = preference
-    prefs_path = _prefs_path(repo_root)
-    prefs_path.parent.mkdir(parents=True, exist_ok=True)
-    payload = json.dumps(prefs.to_json(), indent=2, sort_keys=True) + "\n"
-
-    fd, tmp_name = tempfile.mkstemp(
-        prefix=f".{prefs_path.name}.",
-        suffix=".tmp",
-        dir=str(prefs_path.parent),
-        text=True,
-    )
-    tmp_path = Path(tmp_name)
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as handle:
-            handle.write(payload)
-        os.replace(tmp_path, prefs_path)
-    finally:
-        if tmp_path.exists():
-            tmp_path.unlink()
-    return prefs_path
 
 
 def _offer_from_preference(
@@ -343,6 +324,19 @@ def _cost_delta_preview(preference: Preference, economics: dict[str, Any] | None
         return None
     if not isinstance(economics, dict):
         raise EngineOfferError("economics must be an object")
+    allowed = {
+        "engine_id",
+        "cost_class",
+        "estimated_external_cost_usd",
+        "provider_budget_ceiling_usd",
+        "prior_provider_spend_usd",
+        "codex_inline_tokens_estimate",
+        "chaperone_tokens_estimate",
+        "inline_fallback",
+    }
+    unknown = sorted(set(economics) - allowed)
+    if unknown:
+        raise EngineOfferError(f"economics has unknown keys: {', '.join(unknown)}")
 
     cost_class = _optional_string(economics.get("cost_class"), "cost_class") or "metered"
     _validate_cost_class(cost_class)
@@ -406,8 +400,8 @@ def _optional_non_negative_float(value: Any, name: str) -> float | None:
         return None
     if isinstance(value, bool) or not isinstance(value, int | float):
         raise EngineOfferError(f"{name} must be a number")
-    if value < 0:
-        raise EngineOfferError(f"{name} must be >= 0")
+    if value < 0 or not math.isfinite(value):
+        raise EngineOfferError(f"{name} must be finite and >= 0")
     return float(value)
 
 
@@ -424,6 +418,8 @@ def _optional_non_negative_int(value: Any, name: str) -> int | None:
 def _parse_shape_preferences(raw: Any, path: Path) -> dict[str, Preference]:
     if not isinstance(raw, dict):
         raise EngineOfferError(f"{path}: 'defaults' must be an object")
+    if set(raw) != set(UNIT_SHAPES):
+        raise EngineOfferError(f"{path}: default shape fields are not closed")
 
     preferences: dict[str, Preference] = {}
     for shape in UNIT_SHAPES:
@@ -450,6 +446,7 @@ def _parse_stage_shape_defaults(raw: Any, path: Path) -> dict[str, UnitShape]:
 
 
 def _preference_from_mapping(data: dict[str, Any], path: Path, where: str) -> Preference:
+    _validate_preference_keys(data, path, where)
     intent = data.get("intent")
     model = data.get("model")
     effort = data.get("effort")
@@ -460,6 +457,13 @@ def _preference_from_mapping(data: dict[str, Any], path: Path, where: str) -> Pr
     if effort is not None and not isinstance(effort, str):
         raise EngineOfferError(f"{path}: {where} effort must be a string")
     return Preference(intent=cast(Intent, intent), model=model, effort=effort)
+
+
+def _validate_preference_keys(data: dict[str, Any], path: Path, where: str) -> None:
+    intent = data.get("intent")
+    expected = {"intent"} if intent == "none" else {"intent", "model", "effort"}
+    if set(data) != expected:
+        raise EngineOfferError(f"{path}: {where} fields are not closed")
 
 
 def _validate_stage(stage: str) -> None:
@@ -504,12 +508,6 @@ def _build_parser() -> argparse.ArgumentParser:
     offer.add_argument("--chaperone-tokens-estimate", type=int)
     offer.add_argument("--inline-fallback")
 
-    remember = subparsers.add_parser("remember", help="persist a selected stage preference")
-    remember.add_argument("--stage", required=True, choices=STAGES)
-    remember.add_argument("--repo-root", default=".")
-    remember.add_argument("--intent", required=True, choices=INTENTS)
-    remember.add_argument("--model", choices=MODELS)
-    remember.add_argument("--effort", choices=EFFORTS)
     return parser
 
 
@@ -530,10 +528,6 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(offer.to_json(), sort_keys=True))
             return 0
 
-        preference = Preference(intent=args.intent, model=args.model, effort=args.effort)
-        path = save_preference(args.repo_root, args.stage, preference)
-        print(json.dumps({"saved": str(path), "stage": args.stage, **preference.to_json()}))
-        return 0
     except EngineOfferError as exc:
         parser.error(str(exc))
     return 2

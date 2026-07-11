@@ -52,11 +52,13 @@ def _authority_path(root: Path | None = None) -> Path:
 
 
 def _validate_ceiling(tier: object, where: str) -> Tier:
-    if not isinstance(tier, dict) or "model" not in tier or "effort" not in tier:
+    if not isinstance(tier, dict) or set(tier) != {"model", "effort"}:
         raise SpendAuthorityError(
             f"{where}: silent_ceiling must be {{'model', 'effort'}}, got {tier!r}"
         )
-    model, effort = str(tier["model"]), str(tier["effort"])
+    model, effort = tier["model"], tier["effort"]
+    if not isinstance(model, str) or not isinstance(effort, str):
+        raise SpendAuthorityError(f"{where}: model and effort must be strings")
     if model not in MODELS:
         raise SpendAuthorityError(f"{where}: model {model!r} not in {MODELS}")
     if effort not in EFFORTS:
@@ -78,9 +80,9 @@ def load_spend_authority(root: Path | None = None) -> Tier:
         data = json.loads(path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError) as exc:
         raise SpendAuthorityError(f"{path}: not valid JSON ({exc})") from exc
-    if not isinstance(data, dict) or "silent_ceiling" not in data:
+    if not isinstance(data, dict) or set(data) != {"silent_ceiling"}:
         raise SpendAuthorityError(
-            f"{path}: top level must be an object with a 'silent_ceiling' tier"
+            f"{path}: top level must contain exactly a 'silent_ceiling' tier"
         )
     return _validate_ceiling(data["silent_ceiling"], f"{path}[silent_ceiling]")
 

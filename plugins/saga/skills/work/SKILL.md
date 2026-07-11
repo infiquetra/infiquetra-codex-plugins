@@ -78,7 +78,7 @@ Before offering external-engine help for a work unit, run
 `python3 plugins/saga/scripts/engine_offer.py offer --stage work --repo-root . --attended`.
 Pass explicit unit shape or fingerprint text when available so mechanical or scaffold work can
 default to offload while judgment work stays advisory. If the helper reports `prompt_required`,
-`/work` owns the operator prompt and persists the preference with `engine_offer.py remember`. The
+`/work` owns the operator prompt and persists the preference with `engine_preference.py`. The
 offer never dispatches by itself, replaces the backend choice, or satisfies a gate.
 
 ---

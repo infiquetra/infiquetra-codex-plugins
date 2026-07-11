@@ -74,7 +74,7 @@ and worktrees. (The one exception is the saga `--review-paths` value — see Pha
 Before offering an external-engine second opinion for code review, run
 `python3 plugins/saga/scripts/engine_offer.py offer --stage code-review --repo-root . --attended`.
 If the helper reports `prompt_required`, `/code-review` owns the operator prompt and persists the
-preference with `engine_offer.py remember`. The offer is advisory only; `/code-review` still
+preference with `engine_preference.py`. The offer is advisory only; `/code-review` still
 verifies every finding and owns the merge-readiness verdict.
 
 ---

@@ -239,6 +239,12 @@ def test_missing_metered_estimates_halt_without_exception() -> None:
     }
 
 
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+def test_offload_economics_rejects_nonfinite_numbers(value: float) -> None:
+    with pytest.raises(C.ChaperonePolicyError, match="finite"):
+        _offload_input(estimated_external_cost_usd=value)
+
+
 def test_offload_economics_rejects_negative_estimates() -> None:
     with pytest.raises(C.ChaperonePolicyError, match="estimated_external_cost_usd"):
         _offload_input(estimated_external_cost_usd=-0.01)

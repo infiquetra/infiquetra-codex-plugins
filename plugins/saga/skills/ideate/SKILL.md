@@ -43,7 +43,7 @@ choices in the reply text. Never silently skip a gate question. Ask one question
 Before offering an external-engine lane for ideation, run
 `python3 plugins/saga/scripts/engine_offer.py offer --stage ideate --repo-root . --attended`.
 If the helper reports `prompt_required`, this skill owns the operator prompt and persists the
-selected preference with `engine_offer.py remember`. The offer is advisory only; it never
+selected preference with `engine_preference.py`. The offer is advisory only; it never
 dispatches, scores, or gates ideas.
 
 ## Focus hint

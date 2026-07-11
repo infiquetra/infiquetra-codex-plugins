@@ -48,7 +48,7 @@ your reply text instead ("Which? A) ... B) ... C) ...").
 Before offering an external-engine lane for brainstorming, run
 `python3 plugins/saga/scripts/engine_offer.py offer --stage brainstorm --repo-root . --attended`.
 If the helper reports `prompt_required`, this skill owns the operator prompt and persists the
-selected preference with `engine_offer.py remember`. The offer is advisory only; it never
+selected preference with `engine_preference.py`. The offer is advisory only; it never
 dispatches, decides scope, or gates requirements.
 
 ## Topic

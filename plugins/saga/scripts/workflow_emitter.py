@@ -8,9 +8,12 @@ activate Claude Workflow, or grant external-engine output gate authority.
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
+import importlib
 from typing import Any
 
-ENGINE_INTENTS = ("offload", "second-opinion", "divergence")
+_fleet_commons_shim = importlib.import_module("fleet_commons_shim")
+_tier_palette = _fleet_commons_shim.load("tier_palette")
+ENGINE_INTENTS: tuple[str, ...] = _tier_palette.ENGINE_INTENTS
 
 JS_VERIFIER_PROMPT_HELPER = r'''function __verifierPrompt(
   basePrompt,

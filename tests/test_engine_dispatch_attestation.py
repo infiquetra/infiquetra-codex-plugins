@@ -206,6 +206,21 @@ def test_satisfy_gate_refuses_proof_integrity_manifest() -> None:
         D.satisfy_gate(verified, manifest, reconciliation=_reconciliation(verified))
 
 
+def test_historical_advisory_fixture_loads_verified_by_claude_exactly() -> None:
+    historical = {
+        "engine_id": "agy",
+        "variant": "gemini-test",
+        "evidence": "legacy external finding",
+        "provenance": {"status": "ok"},
+        "verified_by_claude": True,
+    }
+
+    loaded = D.AdvisoryEvidence(**historical)
+
+    assert loaded.verified_by_claude is True
+    assert dataclasses.asdict(loaded)["verified_by_claude"] is True
+
+
 def test_satisfy_gate_refuses_proof_integrity_evidence_without_manifest() -> None:
     evidence = D.AdvisoryEvidence(
         engine_id="agy",

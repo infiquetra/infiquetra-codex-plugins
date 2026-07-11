@@ -159,6 +159,33 @@ def test_legacy_v1_values_remain_exact() -> None:
     assert pm.Disposition.FELL_BACK_TO_CLAUDE.value == "fell-back-to-claude"
 
 
+def test_historical_v1_manifest_fixture_loads_exact_legacy_names() -> None:
+    historical = {
+        "schema": "saga.manifest.v1",
+        "execution_id": "legacy-exec-1",
+        "saga_ref": "legacy-saga-1",
+        "attribution": {
+            "kind": "team-execution",
+            "identity": "legacy/reviewer",
+            "effort": "high",
+            "protocol": "legacy",
+        },
+        "disposition": "fell-back-to-claude",
+        "disposition_note": "",
+        "created_at": "2026-06-01T00:00:00Z",
+        "output_completeness": None,
+        "claim_provenance": None,
+    }
+
+    loaded = pm.Manifest.from_dict(historical)
+
+    assert loaded.schema == "saga.manifest.v1"
+    assert loaded.attribution.kind is pm.ProducerKind.TEAM_EXECUTION
+    assert loaded.attribution.kind.value == "team-execution"
+    assert loaded.disposition is pm.Disposition.FELL_BACK_TO_CLAUDE
+    assert loaded.disposition.value == "fell-back-to-claude"
+
+
 def test_manifest_envelope_requires_attribution_and_disposition() -> None:
     """Envelope invalid without R2 attribution and R18 disposition fields."""
     good = _manifest().to_dict()
