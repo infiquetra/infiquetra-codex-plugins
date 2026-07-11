@@ -7,6 +7,7 @@ import hashlib
 import json
 from argparse import Namespace
 from pathlib import Path
+from unittest.mock import patch
 
 from scripts import port_contract as contract
 
@@ -275,9 +276,17 @@ def test_evidence_can_bind_the_exact_current_target_tree() -> None:
 
 def test_evidence_commit_must_be_retained_by_durable_ref() -> None:
     manifest = load_manifest()
-    manifest["evidence"][0]["repo_head"] = contract.resolve_ref(ROOT, "HEAD")
+    repo_head = manifest["evidence"][0]["repo_head"]
+    evidence_head = contract.resolve_ref(ROOT, contract.CODEX_EVIDENCE_REF)
+    real_is_ancestor = contract.is_ancestor
 
-    errors = contract.validate_manifest(ROOT, manifest, stage="classification")
+    def fake_is_ancestor(repo: Path, base: str, target: str) -> bool:
+        if base == repo_head and target == evidence_head:
+            return False
+        return real_is_ancestor(repo, base, target)
+
+    with patch.object(contract, "is_ancestor", side_effect=fake_is_ancestor):
+        errors = contract.validate_manifest(ROOT, manifest, stage="classification")
 
     assert any("repo_head is not retained by codex.evidence_ref" in error for error in errors)
 
