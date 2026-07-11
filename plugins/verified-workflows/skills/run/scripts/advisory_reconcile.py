@@ -11,8 +11,10 @@ from pathlib import Path
 from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "scripts"))
 
 import consensus_advisory as consensus
+import protected_store
 
 MAX_FINDINGS_PER_SIDE = 256
 MAX_TEXT_BYTES = 4096
@@ -42,7 +44,7 @@ def build_advisory_record(
     codex_findings: Iterable[consensus.Finding],
     external_findings: Iterable[consensus.Finding],
     *,
-    evidence_ref: str | None,
+    source_evidence_ref: str | None,
 ) -> dict[str, Any]:
     """Return structural convergence only; raw finding text never enters gate arithmetic."""
 
@@ -57,10 +59,12 @@ def build_advisory_record(
         "conflicting": [conflict.key for conflict in report.conflicting],
     }
     return {
-        "schema_version": SCHEMA_VERSION,
+        "schema_version": 1,
+        "record_type": "advisory",
+        "advisory_schema": SCHEMA_VERSION,
         "seat_type": "external-second-opinion",
         "gate_authority": "none",
-        "evidence_ref": evidence_ref,
+        "source_evidence_ref": source_evidence_ref,
         "projection": projection,
         "rendered_sha256": hashlib.sha256(rendered.encode("utf-8")).hexdigest(),
     }
@@ -70,3 +74,8 @@ def canonical_bytes(record: dict[str, Any]) -> bytes:
     """Canonical bytes suitable for a protected evidence record."""
 
     return (json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
+
+
+def persist_advisory_record(plugin_data: Path, record: dict[str, Any]) -> str:
+    """Persist a structural advisory record in the root-owned protected store."""
+    return protected_store.persist_protected_record(plugin_data, record)

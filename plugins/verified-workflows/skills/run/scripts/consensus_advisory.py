@@ -46,15 +46,12 @@ class ReviewerResult:
 
 
 @dataclass(frozen=True)
-class ConsensusResult:
-    """Gate decision using only gated seats plus advisory reporting metadata."""
+class PanelSummary:
+    """Participant metadata only; the canonical gate evaluator owns every verdict."""
 
-    accepted: bool
     gated_reviewers: tuple[str, ...]
     advisory_reviewers: tuple[str, ...]
     absent_advisory_reviewers: tuple[str, ...]
-    blocking_reviewers: tuple[str, ...]
-    rerun_reviewers: tuple[str, ...]
 
 
 @dataclass(frozen=True)
@@ -76,13 +73,11 @@ class ConvergenceReport:
     conflicting: tuple[FindingConflict, ...]
 
 
-def calculate_consensus(results: Iterable[ReviewerResult]) -> ConsensusResult:
-    """Calculate Verified Workflows consensus while excluding advisory seats from gates."""
+def summarize_panel(results: Iterable[ReviewerResult]) -> PanelSummary:
+    """Summarize panel attendance without calculating a score or gate decision."""
     gated_reviewers: list[str] = []
     advisory_reviewers: list[str] = []
     absent_advisory_reviewers: list[str] = []
-    blocking_reviewers: list[str] = []
-    rerun_reviewers: list[str] = []
 
     for result in results:
         _validate_result(result)
@@ -93,26 +88,15 @@ def calculate_consensus(results: Iterable[ReviewerResult]) -> ConsensusResult:
                 advisory_reviewers.append(result.name)
             continue
 
-        if result.score is None:
-            raise ValueError(f"gated reviewer {result.name!r} must provide a score")
         gated_reviewers.append(result.name)
-        has_blocking_dimension = any(score < 7.0 for score in result.dimension_scores.values())
-        if result.score < 7.0 or has_blocking_dimension:
-            blocking_reviewers.append(result.name)
-        if result.score < 9.0 or has_blocking_dimension:
-            rerun_reviewers.append(result.name)
 
     if not gated_reviewers:
         raise ValueError("at least one gated reviewer result is required")
 
-    accepted = not blocking_reviewers and not rerun_reviewers
-    return ConsensusResult(
-        accepted=accepted,
+    return PanelSummary(
         gated_reviewers=tuple(gated_reviewers),
         advisory_reviewers=tuple(advisory_reviewers),
         absent_advisory_reviewers=tuple(absent_advisory_reviewers),
-        blocking_reviewers=tuple(blocking_reviewers),
-        rerun_reviewers=tuple(rerun_reviewers),
     )
 
 
@@ -207,7 +191,7 @@ def _unique_by_key(findings: Iterable[Finding], *, label: str) -> dict[str, Find
 
 def _render_key_list(title: str, keys: tuple[str, ...]) -> list[str]:
     lines = [title, ""]
-    lines.extend(f"- `{key}`" for key in keys)
+    lines.extend(f"- `{_markdown(key)}`" for key in keys)
     if not keys:
         lines.append("- none")
     lines.append("")
@@ -216,7 +200,9 @@ def _render_key_list(title: str, keys: tuple[str, ...]) -> list[str]:
 
 def _render_finding_list(title: str, findings: tuple[Finding, ...]) -> list[str]:
     lines = [title, ""]
-    lines.extend(f"- `{finding.key}`: {finding.summary}" for finding in findings)
+    lines.extend(
+        f"- `{_markdown(finding.key)}`: {_markdown(finding.summary)}" for finding in findings
+    )
     if not findings:
         lines.append("- none")
     lines.append("")
@@ -227,10 +213,18 @@ def _render_conflict_list(conflicts: tuple[FindingConflict, ...]) -> list[str]:
     lines = ["### Conflicting", ""]
     for conflict in conflicts:
         lines.append(
-            f"- `{conflict.key}`: Codex={conflict.codex.summary}; "
-            f"external={conflict.external.summary}"
+            f"- `{_markdown(conflict.key)}`: Codex={_markdown(conflict.codex.summary)}; "
+            f"external={_markdown(conflict.external.summary)}"
         )
     if not conflicts:
         lines.append("- none")
     lines.append("")
     return lines
+
+
+def _markdown(value: str) -> str:
+    """Render untrusted finding text as inert single-line Markdown text."""
+    normalized = " ".join(value.splitlines())
+    for character in ("\\", "`", "[", "]", "<", ">"):
+        normalized = normalized.replace(character, "\\" + character)
+    return normalized

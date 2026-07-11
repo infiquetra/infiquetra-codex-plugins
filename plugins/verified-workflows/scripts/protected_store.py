@@ -71,6 +71,7 @@ SECRET_VALUE = re.compile(
     r"\b(?:password|passwd|pwd|cookie|set-cookie)\s*[:=]\s*\S{4,})"
 )
 RECORD_KINDS = {
+    "advisory",
     "workflow-run",
     "intent",
     "hook-trust",

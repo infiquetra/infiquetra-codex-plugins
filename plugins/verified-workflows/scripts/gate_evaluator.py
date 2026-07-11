@@ -97,6 +97,50 @@ def _receipt_ref(value: object, where: str) -> str:
     return value
 
 
+def _load_advisory_record(plugin_data: Path, reference: str) -> dict[str, Any]:
+    try:
+        record, _content = receipts.load_protected_record(plugin_data, reference, "advisory")
+    except (receipts.DispatchReceiptError, OSError) as exc:
+        raise GateEvaluationError(f"protected advisory evidence is invalid: {exc}") from exc
+    value = _closed(
+        record,
+        {
+            "schema_version",
+            "record_type",
+            "advisory_schema",
+            "seat_type",
+            "gate_authority",
+            "source_evidence_ref",
+            "projection",
+            "rendered_sha256",
+        },
+        "protected advisory record",
+    )
+    if (
+        value["schema_version"] != 1
+        or value["record_type"] != "advisory"
+        or value["advisory_schema"] != "verified-workflows.advisory.v1"
+        or value["seat_type"] not in ADVISORY_SEATS
+        or value["gate_authority"] != "none"
+    ):
+        raise GateEvaluationError("protected advisory record identity is invalid")
+    _safe_ref(value["source_evidence_ref"], "advisory source evidence", nullable=True)
+    projection = _closed(
+        value["projection"],
+        {"converged", "codex_only", "external_only", "conflicting"},
+        "protected advisory projection",
+    )
+    for bucket, keys in projection.items():
+        if not isinstance(keys, list) or len(keys) > 256:
+            raise GateEvaluationError(f"protected advisory projection.{bucket} is invalid")
+        for key in keys:
+            _safe_ref(key, f"protected advisory projection.{bucket}")
+    digest = value["rendered_sha256"]
+    if not isinstance(digest, str) or not receipts.HEX64.fullmatch(digest):
+        raise GateEvaluationError("protected advisory rendered digest is invalid")
+    return value
+
+
 def _finding(raw: object, step_id: str) -> dict[str, Any]:
     value = _closed(
         raw,
@@ -538,6 +582,7 @@ def evaluate_gate(
         for step in terminal_steps
     ):
         raise GateEvaluationError("terminal workflow evidence does not bind the current subject")
+    advisory_refs: set[str] = set()
     for raw_seat in advisory:
         seat = _closed(
             raw_seat,
@@ -546,7 +591,15 @@ def evaluate_gate(
         )
         if seat["seat_type"] not in ADVISORY_SEATS or seat["gate_authority"] != "none":
             raise GateEvaluationError("advisory seat type or authority is invalid")
-        _safe_ref(seat["evidence_ref"], "advisory seat.evidence_ref", nullable=True)
+        evidence_ref = seat["evidence_ref"]
+        if evidence_ref is None:
+            continue
+        if not isinstance(evidence_ref, str) or evidence_ref in advisory_refs:
+            raise GateEvaluationError("advisory evidence references must be unique")
+        advisory_refs.add(evidence_ref)
+        record = _load_advisory_record(plugin_data, evidence_ref)
+        if record["seat_type"] != seat["seat_type"]:
+            raise GateEvaluationError("advisory seat does not bind its protected evidence")
     hard_blockers.sort(key=lambda item: (item["step_id"], item["reason"]))
     remediation.sort(key=lambda item: (item["step_id"], item["reason"]))
     warnings.sort(key=lambda item: (item["step_id"], item["reason"]))
