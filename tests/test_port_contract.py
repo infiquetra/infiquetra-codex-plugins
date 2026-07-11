@@ -202,6 +202,7 @@ def test_verified_state_without_evidence_is_rejected() -> None:
     manifest = load_manifest()
     row = manifest["source"]["rows"][0]
     row["state"] = "verified"
+    row["evidence_refs"] = []
 
     errors = contract.validate_manifest(ROOT, manifest, stage="classification")
 
@@ -303,14 +304,14 @@ def test_release_evidence_kind_must_match_release_slot() -> None:
     assert any("release_evidence.review must reference `review` evidence" in error for error in errors)
 
 
-def test_completed_u2_unit_passes_while_cutover_remains_closed() -> None:
+def test_completed_u2_unit_and_final_cutover_pass() -> None:
     manifest = load_manifest()
 
     unit_errors = contract.validate_manifest(ROOT, manifest, stage="unit", unit="U2")
     cutover_errors = contract.validate_manifest(ROOT, manifest, stage="cutover")
 
     assert unit_errors == []
-    assert any("cutover requires" in error for error in cutover_errors)
+    assert cutover_errors == []
 
 
 def test_renderer_is_byte_current() -> None:
