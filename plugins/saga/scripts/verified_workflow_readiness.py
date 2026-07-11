@@ -4,8 +4,11 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import importlib.util
 import json
+import os
+import stat
 import sys
 from pathlib import Path
 from typing import Any
@@ -64,6 +67,10 @@ def validate_verified_workflow_ready(
                 result.resolved_ref,
             )
         return result
+
+    provenance_conflict = _provenance_conflict(repo_root, legacy)
+    if provenance_conflict is not None:
+        return provenance_conflict
 
     ref = orchestration_ref.strip()
     if not ref:
@@ -146,6 +153,39 @@ def _repair_hint(plan_path: str) -> str:
     return "add or link a canonical ## Workflow Structure receipt"
 
 
+def _provenance_conflict(repo_root: Path, legacy: Any) -> Any | None:
+    pairs = (
+        (
+            repo_root / WORKFLOW_COMPAT.emit(WORKFLOW_COMPAT.REPO_STATE_ROOT),
+            repo_root / WORKFLOW_COMPAT.legacy_values(WORKFLOW_COMPAT.REPO_STATE_ROOT)[0],
+            "repository workflow state roots",
+        ),
+        (
+            repo_root / WORKFLOW_COMPAT.emit(WORKFLOW_COMPAT.REPO_CONFIG_FILE),
+            repo_root / WORKFLOW_COMPAT.legacy_values(WORKFLOW_COMPAT.REPO_CONFIG_FILE)[0],
+            "repository workflow config files",
+        ),
+        (
+            Path(
+                f"{WORKFLOW_COMPAT.emit(WORKFLOW_COMPAT.USER_STATE_ROOT)}{repo_root.name}/"
+            ).expanduser(),
+            Path(
+                f"{WORKFLOW_COMPAT.legacy_values(WORKFLOW_COMPAT.USER_STATE_ROOT)[0]}"
+                f"{repo_root.name}/"
+            ).expanduser(),
+            "user workflow state roots",
+        ),
+    )
+    for canonical, old, label in pairs:
+        if canonical.exists() and old.exists():
+            return legacy.ReadinessResult(
+                "blocked",
+                f"canonical and legacy {label} both exist",
+                "resolve the mixed-provenance conflict explicitly before execution",
+            )
+    return None
+
+
 def _containment_error(repo_root: Path, candidate: Path, legacy: Any) -> Any | None:
     try:
         candidate.resolve().relative_to(repo_root.resolve())
@@ -218,18 +258,62 @@ def _resolve_user_root(repo_root: Path, ref: str, legacy: Any) -> Any:
         return legacy.ReadinessResult(
             "blocked", "user-local fallback does not match this repository", f"use {expected}"
         )
-    legacy_expected = (
-        f"{WORKFLOW_COMPAT.legacy_values(WORKFLOW_COMPAT.USER_STATE_ROOT)[0]}{repo_root.name}/"
-    )
-    if Path(legacy_expected).expanduser().exists():
-        return legacy.ReadinessResult(
-            "blocked",
-            "canonical and legacy user workflow roots both exist",
-            "resolve the mixed-root conflict explicitly before execution",
-        )
-    if not Path(expected).expanduser().is_dir():
+    candidate = Path(expected).expanduser()
+    if not candidate.is_dir():
         return legacy.ReadinessResult(
             "blocked", "canonical user-state root does not exist", f"create {expected}"
+        )
+    home = Path.home()
+    try:
+        relative = candidate.relative_to(home)
+    except ValueError:
+        return legacy.ReadinessResult(
+            "blocked", "canonical user-state root escapes the user home", f"use {expected}"
+        )
+    current = home
+    for part in relative.parts:
+        current = current / part
+        if current.is_symlink():
+            return legacy.ReadinessResult(
+                "blocked",
+                "canonical user-state root contains a symlink",
+                "use a regular canonical user-state directory",
+            )
+    identity = candidate / ".repo-identity.json"
+    try:
+        fd = os.open(identity, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+    except OSError:
+        return legacy.ReadinessResult(
+            "blocked",
+            "canonical user-state root lacks repository identity proof",
+            "write the bounded .repo-identity.json marker for this repository",
+        )
+    try:
+        metadata = os.fstat(fd)
+        if not stat.S_ISREG(metadata.st_mode) or metadata.st_size > 4096:
+            raise ValueError("identity marker must be a bounded regular file")
+        content = os.read(fd, metadata.st_size + 1)
+    except (OSError, ValueError):
+        return legacy.ReadinessResult(
+            "blocked",
+            "canonical user-state repository identity proof is invalid",
+            "replace .repo-identity.json with a bounded regular marker",
+        )
+    finally:
+        os.close(fd)
+    try:
+        marker = json.loads(content)
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        marker = None
+    expected_marker = {
+        "schema": "verified-workflows.repo-identity.v1",
+        "repo_root_sha256": hashlib.sha256(repo_root.resolve().as_posix().encode()).hexdigest(),
+    }
+    if marker != expected_marker:
+        return legacy.ReadinessResult(
+            "blocked",
+            "canonical user-state repository identity proof does not match",
+            "regenerate .repo-identity.json for this resolved repository",
         )
     return legacy.ReadinessResult(
         "ready", "canonical user-state root resolved", "Verified Workflows may execute", expected

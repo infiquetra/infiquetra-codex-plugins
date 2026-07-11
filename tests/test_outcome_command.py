@@ -12,6 +12,8 @@ with no real git repo; repo_root is a tmp dir that holds the branch-local spec.
 
 from __future__ import annotations
 
+import copy
+import hashlib
 import importlib.util
 import json
 import shutil
@@ -66,10 +68,32 @@ def _recorder():
 
 
 def _runtime_ack(req: Any) -> dict[str, str]:
+    leaf_saga_id = f"leaf-{req.subplot_id}"
+    receipt_path = (
+        req.repo_root
+        / ".codex/verified-workflows/dispatch-receipts"
+        / f"{req.outcome_id}-{req.subplot_id}.json"
+    )
+    receipt_path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "schema": "saga.outcome-dispatch-launch.v1",
+        "producer_kind": "verified-workflow",
+        "run_identity": f"run-{req.outcome_id}",
+        "outcome_id": req.outcome_id,
+        "subplot_id": req.subplot_id,
+        "backend": req.backend,
+        "dispatch_intent_id": req.dispatch_intent_id,
+        "leaf_saga_id": leaf_saga_id,
+    }
+    content = (json.dumps(payload, sort_keys=True) + "\n").encode()
+    receipt_path.write_bytes(content)
     return {
         "ack_kind": "launched",
-        "dispatch_ack_ref": f"protected:{req.dispatch_intent_id}",
-        "leaf_saga_id": f"leaf-{req.subplot_id}",
+        "dispatch_ack_ref": (
+            f"{receipt_path.relative_to(req.repo_root).as_posix()}"
+            f"#sha256={hashlib.sha256(content).hexdigest()}"
+        ),
+        "leaf_saga_id": leaf_saga_id,
         "producer_kind": "verified-workflow",
         "run_identity": f"run-{req.outcome_id}",
         "dispatch_intent_id": req.dispatch_intent_id,
@@ -304,6 +328,46 @@ def test_export_import_roundtrips_across_repos(
     assert len(STORE.read_ledger(dest_store)) == ledger_before
 
 
+@pytest.mark.parametrize("mutation", ["producer", "missing-receipt", "orphan", "backend"])
+def test_import_rejects_unverified_dispatch_chains_before_writes(
+    repo: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mutation: str,
+) -> None:
+    M.start(repo, "untrusted", "Untrusted bundle")
+    M.advance(repo, "untrusted", dispatcher=_runtime_ack)
+    bundle = copy.deepcopy(M.export_bundle(repo, "untrusted"))
+    acknowledgement = next(
+        record for record in bundle["dispatch_ledger"] if record.get("phase") == "ack"
+    )
+    if mutation == "producer":
+        acknowledgement["producer_kind"] = "forged"
+    elif mutation == "missing-receipt":
+        bundle["dispatch_receipts"] = {}
+    elif mutation == "orphan":
+        bundle["dispatch_ledger"] = [
+            acknowledgement,
+            *[record for record in bundle["dispatch_ledger"] if record is not acknowledgement],
+        ]
+    else:
+        acknowledgement["backend"] = "manual"
+
+    dest = tmp_path / f"dest-{mutation}"
+    dest.mkdir()
+    common = dest / ".git"
+    common.mkdir()
+    monkeypatch.setattr(
+        M.outcome_store.subprocess,
+        "run",
+        lambda args, **kw: SimpleNamespace(returncode=0, stdout=f"{common}\n", stderr=""),
+    )
+    with pytest.raises(M.OutcomeError):
+        M.import_bundle(dest, bundle)
+    assert not M.spec_path(dest, "untrusted").exists()
+    assert not (dest / ".codex/verified-workflows/dispatch-receipts").exists()
+
+
 # --------------------------------------------------------------------------- graph + CLI
 
 
@@ -322,8 +386,8 @@ def test_cli_start_advance_status(repo: Path, capsys: pytest.CaptureFixture[str]
     assert M.main(["--repo-root", str(repo), "advance", "ship-x"]) == 0
     gated = json.loads(capsys.readouterr().out)
     assert gated["dispatched"] == [] and gated["gated"] == ["design"]
-    # Approve, then production advance records only the compatibility reservation; it cannot claim
-    # launch without a skill/runtime acknowledgement.
+    # Approve, then production advance records a v2 intent only; it cannot claim launch without a
+    # skill/runtime acknowledgement.
     assert M.main(["--repo-root", str(repo), "approve", "ship-x"]) == 0
     capsys.readouterr()
     assert M.main(["--repo-root", str(repo), "advance", "ship-x"]) == 0
@@ -331,7 +395,7 @@ def test_cli_start_advance_status(repo: Path, capsys: pytest.CaptureFixture[str]
     assert out["dispatched"] == []
     assert M.main(["--repo-root", str(repo), "status", "ship-x"]) == 0
     st = json.loads(capsys.readouterr().out)
-    assert st["states"]["design"] == "legacy-unverified"
+    assert st["states"]["design"] == "intent-created"
 
 
 def test_cli_missing_outcome_errors(repo: Path, capsys: pytest.CaptureFixture[str]) -> None:

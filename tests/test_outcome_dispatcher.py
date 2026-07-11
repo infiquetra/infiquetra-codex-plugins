@@ -7,6 +7,7 @@ team_emitter wiring (R5) and integration with the U3 reconcile loop.
 
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 import sys
@@ -64,10 +65,32 @@ def _write_team_ref(repo_root: Path) -> str:
 
 
 def _launch_ack(req: Any) -> dict[str, str]:
+    leaf_saga_id = f"leaf-{req.outcome_id}-{req.subplot_id}"
+    receipt_path = (
+        req.repo_root
+        / ".codex/verified-workflows/dispatch-receipts"
+        / f"{req.outcome_id}-{req.subplot_id}.json"
+    )
+    receipt_path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "schema": "saga.outcome-dispatch-launch.v1",
+        "producer_kind": "verified-workflow",
+        "run_identity": f"run-{req.outcome_id}",
+        "outcome_id": req.outcome_id,
+        "subplot_id": req.subplot_id,
+        "backend": req.backend,
+        "dispatch_intent_id": req.dispatch_intent_id,
+        "leaf_saga_id": leaf_saga_id,
+    }
+    content = (json.dumps(payload, sort_keys=True) + "\n").encode()
+    receipt_path.write_bytes(content)
     return {
         "ack_kind": "launched",
-        "dispatch_ack_ref": f"protected:{req.dispatch_intent_id}",
-        "leaf_saga_id": f"leaf-{req.outcome_id}-{req.subplot_id}",
+        "dispatch_ack_ref": (
+            f"{receipt_path.relative_to(req.repo_root).as_posix()}"
+            f"#sha256={hashlib.sha256(content).hexdigest()}"
+        ),
+        "leaf_saga_id": leaf_saga_id,
         "producer_kind": "verified-workflow",
         "run_identity": f"run-{req.outcome_id}",
         "dispatch_intent_id": req.dispatch_intent_id,
@@ -150,13 +173,12 @@ def test_custom_available_set(tmp_path: Path) -> None:
 # --------------------------------------------------------------------------- make_dispatcher adapter
 
 
-def test_make_dispatcher_returns_only_compatibility_reservation(tmp_path: Path) -> None:
+def test_make_dispatcher_returns_typed_prepared_reservation(tmp_path: Path) -> None:
     disp = D.make_dispatcher()
     ref = _write_team_ref(tmp_path)
-    assert (
-        disp(_req("verified-workflow", orchestration_ref=ref, repo_root=tmp_path))
-        == "leaf-ship-x-build"
-    )
+    result = disp(_req("verified-workflow", orchestration_ref=ref, repo_root=tmp_path))
+    assert result["status"] == "prepared"
+    assert result["proposed_leaf_saga_id"] == "leaf-ship-x-build"
 
 
 def test_make_dispatcher_raises_halt_with_receipt() -> None:

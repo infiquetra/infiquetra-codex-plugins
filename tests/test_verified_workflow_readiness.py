@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
 import importlib.util
+import json
 from pathlib import Path
 
 import pytest
@@ -80,3 +82,51 @@ def test_canonical_state_root_blocks_mixed_legacy_root(tmp_path: Path) -> None:
     result = validate(tmp_path, ".codex/verified-workflows/run/")
     assert result.status == "blocked"
     assert "both exist" in result.reason
+
+
+@pytest.mark.parametrize("conflict", ["state", "config"])
+def test_plan_ref_blocks_mixed_provenance_before_fast_path(tmp_path: Path, conflict: str) -> None:
+    write_plan(tmp_path)
+    if conflict == "state":
+        (tmp_path / ".codex/verified-workflows").mkdir(parents=True)
+        (tmp_path / ".codex/team-execution").mkdir(parents=True)
+    else:
+        (tmp_path / ".verified-workflows.json").write_text("{}\n", encoding="utf-8")
+        (tmp_path / ".team-execution.json").write_text("{}\n", encoding="utf-8")
+    result = validate(tmp_path, "docs/plans/x.md#workflow-structure")
+    assert result.status == "blocked"
+    assert "both exist" in result.reason
+
+
+def test_user_state_root_rejects_symlink_and_requires_repo_identity(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    home = tmp_path / "home"
+    repo = tmp_path / "workspace/repo"
+    repo.mkdir(parents=True)
+    monkeypatch.setenv("HOME", str(home))
+    state_parent = home / ".codex/verified-workflows/state"
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    state_parent.mkdir(parents=True)
+    (state_parent / repo.name).symlink_to(outside, target_is_directory=True)
+    ref = f"~/.codex/verified-workflows/state/{repo.name}/"
+    result = validate(repo, ref)
+    assert result.status == "blocked"
+    assert "symlink" in result.reason
+
+    (state_parent / repo.name).unlink()
+    candidate = state_parent / repo.name
+    candidate.mkdir()
+    result = validate(repo, ref)
+    assert result.status == "blocked"
+    assert "identity proof" in result.reason
+
+    marker = {
+        "schema": "verified-workflows.repo-identity.v1",
+        "repo_root_sha256": hashlib.sha256(repo.resolve().as_posix().encode()).hexdigest(),
+    }
+    (candidate / ".repo-identity.json").write_text(
+        json.dumps(marker, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    assert validate(repo, ref).status == "ready"

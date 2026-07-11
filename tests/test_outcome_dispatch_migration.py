@@ -45,9 +45,20 @@ def repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 def runtime_ack(req: Any, *, kind: str = "launched") -> dict[str, str]:
     leaf = f"real-{req.outcome_id}-{req.subplot_id}" if kind == "launched" else ""
+    ref = (
+        _launch_receipt(
+            req.repo_root,
+            outcome_id=req.outcome_id,
+            subplot_id=req.subplot_id,
+            backend=req.backend,
+            leaf_saga_id=leaf,
+        )
+        if kind == "launched"
+        else f"operator:run-{req.outcome_id}"
+    )
     return {
         "ack_kind": kind,
-        "dispatch_ack_ref": f"protected:{req.dispatch_intent_id}",
+        "dispatch_ack_ref": ref,
         "leaf_saga_id": leaf,
         "producer_kind": "verified-workflow",
         "run_identity": f"run-{req.outcome_id}",
@@ -72,6 +83,64 @@ def test_launch_ack_is_required_for_dispatched_state(repo: Path) -> None:
     assert launched.status["states"]["leaf"] == "dispatched"
 
 
+@pytest.mark.parametrize("mutation", ["digest", "stale", "leaf", "run"])
+def test_live_dispatch_rejects_unverified_launch_receipts(repo: Path, mutation: str) -> None:
+    outcome_id = f"live-{mutation}"
+    OUTCOME.start(repo, outcome_id, "U5", nodes=[{"subplot_id": "leaf", "title": "leaf"}])
+
+    request: dict[str, Any] = {}
+
+    def forged(req: Any) -> dict[str, str]:
+        request["value"] = req
+        acknowledgement = runtime_ack(req)
+        if mutation == "digest":
+            acknowledgement["dispatch_ack_ref"] = (
+                f"{acknowledgement['dispatch_ack_ref'].rsplit('=', 1)[0]}={'0' * 64}"
+            )
+        elif mutation == "stale":
+            acknowledgement["dispatch_ack_ref"] = _launch_receipt(
+                repo,
+                outcome_id="previous-run",
+                subplot_id=req.subplot_id,
+                backend=req.backend,
+                leaf_saga_id=acknowledgement["leaf_saga_id"],
+            )
+        elif mutation == "leaf":
+            acknowledgement["leaf_saga_id"] = "forged-leaf"
+        else:
+            acknowledgement["run_identity"] = "run-forged"
+        return acknowledgement
+
+    rejected = OUTCOME.advance(repo, outcome_id, dispatcher=forged)
+    assert rejected.dispatched == []
+    assert (
+        rejected.halted[0]["reason"].startswith("invalid dispatch launch receipt")
+        or rejected.halted[0]["reason"]
+        == "dispatch acknowledgement conflicts with its launch receipt"
+    )
+    assert rejected.status["states"]["leaf"] == "intent-created"
+
+    retried = OUTCOME.advance(
+        repo,
+        outcome_id,
+        dispatcher=lambda _req: pytest.fail("unacknowledged intent must not relaunch"),
+    )
+    assert retried.dispatched == []
+    assert "already exists" in retried.halted[0]["reason"]
+
+    valid = runtime_ack(request["value"])
+    OUTCOME.reconcile_dispatch_ack(
+        OUTCOME._store(repo, outcome_id),
+        repo_root=repo,
+        outcome_id=outcome_id,
+        subplot_id="leaf",
+        ack_kind="launched",
+        dispatch_ack_ref=valid["dispatch_ack_ref"],
+        leaf_saga_id=valid["leaf_saga_id"],
+    )
+    assert OUTCOME.status(repo, outcome_id)["states"]["leaf"] == "dispatched"
+
+
 def test_manual_ack_settles_without_liveness(repo: Path) -> None:
     OUTCOME.start(repo, "u5c", "U5", nodes=[{"subplot_id": "leaf", "title": "leaf"}])
     result = OUTCOME.advance(
@@ -91,7 +160,7 @@ def _launch_receipt(
     leaf_saga_id: str,
 ) -> str:
     path = repo / ".codex/verified-workflows/dispatch-receipts/launch.json"
-    path.parent.mkdir(parents=True)
+    path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "schema": "saga.outcome-dispatch-launch.v1",
         "producer_kind": "verified-workflow",
@@ -206,20 +275,32 @@ def test_concurrent_manual_reconciliation_appends_one_ack(repo: Path) -> None:
     assert len(acknowledgements) == 1
 
 
-def test_replay_reuses_the_same_dispatch_idempotency_key(repo: Path) -> None:
+def test_unacknowledged_launch_is_not_reinvoked_automatically(repo: Path) -> None:
     OUTCOME.start(repo, "replay", "U5", nodes=[{"subplot_id": "leaf", "title": "leaf"}])
     seen: list[str] = []
+    launch: dict[str, str] = {}
 
-    def invalid_then_valid(req: Any) -> dict[str, str]:
+    def launch_with_lost_ack(req: Any) -> dict[str, str]:
         seen.append(req.dispatch_intent_id)
-        if len(seen) == 1:
-            return {"ack_kind": "launched"}
-        return runtime_ack(req)
+        launch.update(runtime_ack(req))
+        return {"ack_kind": "launched"}
 
-    first = OUTCOME.advance(repo, "replay", dispatcher=invalid_then_valid)
-    second = OUTCOME.advance(repo, "replay", dispatcher=invalid_then_valid)
-    assert first.dispatched == [] and second.dispatched == ["leaf"]
-    assert seen == ["dispatch-intent:replay:leaf"] * 2
+    first = OUTCOME.advance(repo, "replay", dispatcher=launch_with_lost_ack)
+    second = OUTCOME.advance(repo, "replay", dispatcher=launch_with_lost_ack)
+    assert first.dispatched == [] and second.dispatched == []
+    assert "already exists" in second.halted[0]["reason"]
+    assert seen == ["dispatch-intent:replay:leaf"]
+
+    OUTCOME.reconcile_dispatch_ack(
+        OUTCOME._store(repo, "replay"),
+        repo_root=repo,
+        outcome_id="replay",
+        subplot_id="leaf",
+        ack_kind="launched",
+        dispatch_ack_ref=launch["dispatch_ack_ref"],
+        leaf_saga_id=launch["leaf_saga_id"],
+    )
+    assert OUTCOME.status(repo, "replay")["states"]["leaf"] == "dispatched"
     assert OUTCOME.outcome_store.replay_pending(OUTCOME._store(repo, "replay")) == []
 
 

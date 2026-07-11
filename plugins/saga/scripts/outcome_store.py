@@ -508,13 +508,23 @@ def reduce_dispatch_ledger(store: Store) -> dict[str, dict[str, Any]]:
             continue
         kind = record.get("kind")
         phase = record.get("phase")
-        if kind == "dispatch" and phase == "commit":
+        if kind == "dispatch" and phase == "halt":
+            current = reduced.get(subplot_id)
+            if current is None or current.get("state") not in {"dispatched", "handed-off"}:
+                reduced[subplot_id] = {
+                    "state": current.get("state", "ready") if current else "ready",
+                    "record": current.get("record", record) if current else record,
+                    "settled": bool(current and current.get("settled")),
+                    "halted": True,
+                }
+        elif kind == "dispatch" and phase == "commit":
             current = reduced.get(subplot_id)
             if current is None or current.get("state") not in {"dispatched", "handed-off"}:
                 reduced[subplot_id] = {
                     "state": "legacy-unverified",
                     "record": record,
                     "settled": True,
+                    "halted": False,
                 }
         elif kind == "outcome.dispatch.v2" and phase == "intent":
             current = reduced.get(subplot_id)
@@ -525,6 +535,7 @@ def reduce_dispatch_ledger(store: Store) -> dict[str, dict[str, Any]]:
                     # A legacy commit still prevents automatic relaunch while append-only
                     # reconciliation is awaiting its typed acknowledgement.
                     "settled": bool(current and current.get("settled")),
+                    "halted": False,
                 }
         elif (
             kind == "outcome.dispatch.v2"
@@ -535,6 +546,7 @@ def reduce_dispatch_ledger(store: Store) -> dict[str, dict[str, Any]]:
                 "state": ("dispatched" if record.get("ack_kind") == "launched" else "handed-off"),
                 "record": record,
                 "settled": True,
+                "halted": False,
             }
     return reduced
 
@@ -547,6 +559,7 @@ def replay_pending(store: Store) -> list[dict[str, Any]]:
     safe because the effect itself dedups on the same key (completion-event idempotency / GitHub
     state), so replay never double-applies.
     """
+    reduced_dispatch = reduce_dispatch_ledger(store)
     committed: set[str] = set()
     intents: dict[str, dict[str, Any]] = {}
     for rec in read_ledger(store):
@@ -560,6 +573,10 @@ def replay_pending(store: Store) -> list[dict[str, Any]]:
             and rec.get("ack_kind") in {"launched", "handed-off"}
         ):
             committed.add(key)
+        elif phase == "intent" and rec.get("kind") == "outcome.dispatch.v2":
+            reduced = reduced_dispatch.get(str(rec.get("subplot_id", "")), {})
+            if reduced.get("state") == "intent-created" and not reduced.get("settled"):
+                intents.setdefault(key, rec)
         elif phase == "intent":
             intents.setdefault(key, rec)
     return [rec for key, rec in intents.items() if key not in committed]

@@ -13,6 +13,7 @@ always a fake recording callable — no real ``gh`` ever fires.
 
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 import os
@@ -513,6 +514,42 @@ def _git_repo(tmp_path: Path) -> Path:
     return repo
 
 
+def _runtime_ack(req: Any) -> dict[str, str]:
+    leaf_saga_id = f"l-{req.subplot_id}"
+    receipt_path = (
+        req.repo_root
+        / ".codex/verified-workflows/dispatch-receipts"
+        / f"{req.outcome_id}-{req.subplot_id}.json"
+    )
+    receipt_path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "schema": "saga.outcome-dispatch-launch.v1",
+        "producer_kind": "verified-workflow",
+        "run_identity": f"run-{req.outcome_id}",
+        "outcome_id": req.outcome_id,
+        "subplot_id": req.subplot_id,
+        "backend": req.backend,
+        "dispatch_intent_id": req.dispatch_intent_id,
+        "leaf_saga_id": leaf_saga_id,
+    }
+    content = (json.dumps(payload, sort_keys=True) + "\n").encode()
+    receipt_path.write_bytes(content)
+    return {
+        "ack_kind": "launched",
+        "dispatch_ack_ref": (
+            f"{receipt_path.relative_to(req.repo_root).as_posix()}"
+            f"#sha256={hashlib.sha256(content).hexdigest()}"
+        ),
+        "leaf_saga_id": leaf_saga_id,
+        "producer_kind": "verified-workflow",
+        "run_identity": f"run-{req.outcome_id}",
+        "dispatch_intent_id": req.dispatch_intent_id,
+        "outcome_id": req.outcome_id,
+        "subplot_id": req.subplot_id,
+        "backend": req.backend,
+    }
+
+
 def test_advance_autonomous_drives_board_sync(tmp_path: Path) -> None:
     """KTD8: the REAL advance(autonomous=True) entrypoint drives reconcile_board → the
     certificate → the injected board_writer, surfacing records in AdvanceResult.board_synced.
@@ -560,17 +597,7 @@ def test_advance_threads_project_to_reconcile_board_for_nondefault_project(tmp_p
             board_writer=writer,
             project=project,
             attending=False,
-            dispatcher=lambda req: {
-                "ack_kind": "launched",
-                "dispatch_ack_ref": "test:leaf1",
-                "leaf_saga_id": "l-leaf1",
-                "producer_kind": "verified-workflow",
-                "run_identity": "run-o",
-                "dispatch_intent_id": req.dispatch_intent_id,
-                "outcome_id": req.outcome_id,
-                "subplot_id": req.subplot_id,
-                "backend": req.backend,
-            },
+            dispatcher=_runtime_ack,
         )
 
         sf_records = [r for r in result.board_synced if r.get("op_kind") == "set-field-status"]

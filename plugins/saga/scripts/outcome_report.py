@@ -72,19 +72,11 @@ def _halted_subplots(store: Any) -> set[str]:
     ``halt``, so a halted-then-recovered subplot is NOT reported as an ambiguity forever. We walk the
     ledger in order and keep, per subplot, the phase of its most recent ``dispatch`` record.
     """
-    latest: dict[str, str] = {}
-    for rec in outcome_store.read_ledger(store):
-        sid = str(rec.get("subplot_id", ""))
-        if not sid:
-            continue
-        if rec.get("kind") == "dispatch" and rec.get("phase") in ("halt", "commit"):
-            latest[sid] = str(rec.get("phase"))
-        elif rec.get("kind") == "outcome.dispatch.v2" and rec.get("phase") in {
-            "intent",
-            "ack",
-        }:
-            latest[sid] = str(rec.get("phase"))
-    return {sid for sid, phase in latest.items() if phase == "halt"}
+    return {
+        sid
+        for sid, reduced in outcome_store.reduce_dispatch_ledger(store).items()
+        if reduced.get("halted")
+    }
 
 
 def consolidate(spec: Any, store: Any) -> list[AttentionItem]:

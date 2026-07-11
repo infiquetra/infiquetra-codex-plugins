@@ -31,8 +31,9 @@ offline with no real git repo, no backend, and no wall clock; no I/O at import.
 
 from __future__ import annotations
 
-import importlib.util
+import base64
 import hashlib
+import importlib.util
 import json
 import os
 import re
@@ -154,14 +155,19 @@ def reconcile_dispatch_ack(
     if not intents:
         if not legacy:
             raise OutcomeError("no dispatch intent or legacy commit exists to reconcile")
+        legacy_backend = str(legacy[-1].get("backend", "manual"))
+        canonical_backend = (
+            "verified-workflow" if legacy_backend == "team-execution" else legacy_backend
+        )
         migrated_intent = {
             "phase": "intent",
             "kind": "outcome.dispatch.v2",
             "key": intent_id,
             "dispatch_intent_id": intent_id,
             "subplot_id": subplot_id,
-            "backend": str(legacy[-1].get("backend", "manual")),
+            "backend": canonical_backend,
             "migration_from_key": str(legacy[-1].get("key", "")),
+            "migration_from_backend": legacy_backend,
         }
         outcome_store.append_ledger_once(store, migrated_intent)
         intents = [migrated_intent]
@@ -212,6 +218,19 @@ def _load_launch_receipt(
 ) -> dict[str, str]:
     """Load one digest-bound, no-follow launch receipt from the ignored protected root."""
 
+    content, expected_sha256 = _read_launch_receipt(repo_root, ref)
+    return _validate_launch_receipt_content(
+        content,
+        expected_sha256=expected_sha256,
+        outcome_id=outcome_id,
+        subplot_id=subplot_id,
+        backend=backend,
+        dispatch_intent_id=dispatch_intent_id,
+        leaf_saga_id=leaf_saga_id,
+    )
+
+
+def _read_launch_receipt(repo_root: Path, ref: str) -> tuple[bytes, str]:
     path_text, marker, expected_sha256 = ref.partition("#sha256=")
     if not marker or not re.fullmatch(r"[0-9a-f]{64}", expected_sha256):
         raise OutcomeError("launch receipt ref must end with #sha256=<64 lowercase hex>")
@@ -247,6 +266,19 @@ def _load_launch_receipt(
         content = os.read(fd, metadata.st_size + 1)
     finally:
         os.close(fd)
+    return content, expected_sha256
+
+
+def _validate_launch_receipt_content(
+    content: bytes,
+    *,
+    expected_sha256: str,
+    outcome_id: str,
+    subplot_id: str,
+    backend: str,
+    dispatch_intent_id: str,
+    leaf_saga_id: str,
+) -> dict[str, str]:
     actual_sha256 = hashlib.sha256(content).hexdigest()
     if actual_sha256 != expected_sha256:
         raise OutcomeError("launch receipt digest does not match")
@@ -1093,7 +1125,7 @@ def _reconcile_once(
                 halted.append(receipt)
                 continue
         intent_id = f"dispatch-intent:{spec.outcome_id}:{sid}"
-        outcome_store.append_ledger_once(
+        intent_created = outcome_store.append_ledger_once(
             store,
             {
                 "phase": "intent",
@@ -1104,6 +1136,20 @@ def _reconcile_once(
                 "backend": resolved_backend,
             },
         )
+        if not intent_created:
+            outcome_store.release_lease(store, f"dispatch-{sid}", holder)
+            halted.append(
+                {
+                    "kind": "halt",
+                    "subplot_id": sid,
+                    "backend": resolved_backend,
+                    "reason": (
+                        "dispatch intent already exists without an acknowledgement; "
+                        "reconcile launch evidence or an operator handoff before retrying"
+                    ),
+                }
+            )
+            continue
         request = DispatchRequest(
             outcome_id=spec.outcome_id,
             subplot_id=sid,
@@ -1132,6 +1178,9 @@ def _reconcile_once(
             _append_ledger_once(store, {"phase": "degrade", "key": key, **degrade_receipt})
             degraded.append(degrade_receipt)
         if isinstance(acknowledgement, dict):
+            if acknowledgement.get("status") == "prepared":
+                outcome_store.release_lease(store, f"dispatch-{sid}", holder)
+                continue
             ack_kind = acknowledgement.get("ack_kind")
             ack_ref = str(acknowledgement.get("dispatch_ack_ref", "")).strip()
             leaf_saga_id = str(acknowledgement.get("leaf_saga_id", "")).strip()
@@ -1154,6 +1203,10 @@ def _reconcile_once(
                 or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,159}", run_identity)
                 or (ack_kind == "launched" and not leaf_saga_id)
                 or (ack_kind == "handed-off" and leaf_saga_id)
+                or (
+                    ack_kind == "handed-off"
+                    and not re.fullmatch(r"operator:[A-Za-z0-9][A-Za-z0-9._:@/-]{0,159}", ack_ref)
+                )
             ):
                 outcome_store.release_lease(store, f"dispatch-{sid}", holder)
                 halted.append(
@@ -1165,6 +1218,43 @@ def _reconcile_once(
                     }
                 )
                 continue
+            receipt_fields: dict[str, str] = {}
+            if ack_kind == "launched":
+                try:
+                    receipt_fields = _load_launch_receipt(
+                        Path(repo_root),
+                        ack_ref,
+                        outcome_id=spec.outcome_id,
+                        subplot_id=sid,
+                        backend=resolved_backend,
+                        dispatch_intent_id=intent_id,
+                        leaf_saga_id=leaf_saga_id,
+                    )
+                except OutcomeError as exc:
+                    outcome_store.release_lease(store, f"dispatch-{sid}", holder)
+                    halted.append(
+                        {
+                            "kind": "halt",
+                            "subplot_id": sid,
+                            "backend": resolved_backend,
+                            "reason": f"invalid dispatch launch receipt: {exc}",
+                        }
+                    )
+                    continue
+                if (
+                    receipt_fields["producer_kind"] != producer_kind
+                    or receipt_fields["run_identity"] != run_identity
+                ):
+                    outcome_store.release_lease(store, f"dispatch-{sid}", holder)
+                    halted.append(
+                        {
+                            "kind": "halt",
+                            "subplot_id": sid,
+                            "backend": resolved_backend,
+                            "reason": "dispatch acknowledgement conflicts with its launch receipt",
+                        }
+                    )
+                    continue
             record = {
                 "phase": "ack",
                 "kind": "outcome.dispatch.v2",
@@ -1177,6 +1267,7 @@ def _reconcile_once(
                 "producer_kind": producer_kind,
                 "run_identity": run_identity,
                 "at": now(),
+                **receipt_fields,
             }
             if orchestration_ref:
                 record["orchestration_ref"] = orchestration_ref
@@ -1244,15 +1335,27 @@ def export_bundle(
     for node in spec.nodes:
         for ev in outcome_store.read_completion_events(store, node.subplot_id):
             events.append(ev.to_dict())
+    dispatch_ledger = [
+        record
+        for record in outcome_store.read_ledger(store)
+        if record.get("kind") in {"dispatch", "outcome.dispatch.v2"}
+    ]
+    dispatch_receipts: dict[str, str] = {}
+    for record in dispatch_ledger:
+        if (
+            record.get("kind") == "outcome.dispatch.v2"
+            and record.get("phase") == "ack"
+            and record.get("ack_kind") == "launched"
+        ):
+            ref = str(record.get("dispatch_ack_ref", ""))
+            content, _digest = _read_launch_receipt(repo_root, ref)
+            dispatch_receipts[ref] = base64.b64encode(content).decode("ascii")
     return {
         "schema": "outcome-bundle/1",
         "spec": spec.to_dict(),
         "completion_events": events,
-        "dispatch_ledger": [
-            r
-            for r in outcome_store.read_ledger(store)
-            if r.get("kind") in {"dispatch", "outcome.dispatch.v2"}
-        ],
+        "dispatch_ledger": dispatch_ledger,
+        "dispatch_receipts": dispatch_receipts,
     }
 
 
@@ -1269,20 +1372,178 @@ def import_bundle(
         raise OutcomeError(f"unrecognized bundle schema {bundle.get('schema')!r}")
     spec = outcome_spec.OutcomeSpec.from_dict(bundle["spec"])
     spec.validate()
+    records = bundle.get("dispatch_ledger", [])
+    receipt_writes = _validate_import_dispatch_ledger(
+        repo_root,
+        spec,
+        records,
+        bundle.get("dispatch_receipts", {}),
+    )
+    raw_events = bundle.get("completion_events", [])
+    if not isinstance(raw_events, list) or len(raw_events) > 10000:
+        raise OutcomeError("completion_events must be a bounded list")
+    completion_events = [outcome_store.CompletionEvent.from_dict(event) for event in raw_events]
+    for path, content in receipt_writes:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        temporary = path.with_suffix(path.suffix + ".import.tmp")
+        temporary.write_bytes(content)
+        os.replace(temporary, path)
     save_spec(repo_root, spec)
     store = _store(repo_root, spec.outcome_id, runner=runner)
-    for ev_dict in bundle.get("completion_events", []):
-        outcome_store.write_completion_event(
-            store, outcome_store.CompletionEvent.from_dict(ev_dict)
-        )
+    for event in completion_events:
+        outcome_store.write_completion_event(store, event)
     existing = {(str(r.get("phase")), str(r.get("key"))) for r in outcome_store.read_ledger(store)}
-    for rec in bundle.get("dispatch_ledger", []):
+    for rec in records:
         ident = (str(rec.get("phase")), str(rec.get("key")))
         if ident in existing:
             continue  # already present -> skip so re-import does not grow the ledger
         outcome_store.append_ledger(store, rec)
         existing.add(ident)
     return spec
+
+
+def _validate_import_dispatch_ledger(
+    repo_root: Path,
+    spec: outcome_spec.OutcomeSpec,
+    records: object,
+    receipt_payloads: object,
+) -> list[tuple[Path, bytes]]:
+    """Validate portable dispatch authority before import performs any writes."""
+
+    if not isinstance(records, list) or len(records) > 10000:
+        raise OutcomeError("dispatch_ledger must be a bounded list")
+    if not isinstance(receipt_payloads, dict) or len(receipt_payloads) > len(records):
+        raise OutcomeError("dispatch_receipts must be a bounded object")
+    subplot_ids = {node.subplot_id for node in spec.nodes}
+    intents: dict[str, dict[str, Any]] = {}
+    used_receipts: set[str] = set()
+    writes: list[tuple[Path, bytes]] = []
+    seen: set[tuple[str, str]] = set()
+    canonical_root = repo_root / ".codex/verified-workflows/dispatch-receipts"
+
+    for raw in records:
+        if not isinstance(raw, dict):
+            raise OutcomeError("dispatch_ledger records must be objects")
+        kind = raw.get("kind")
+        phase = raw.get("phase")
+        key = str(raw.get("key", ""))
+        subplot_id = str(raw.get("subplot_id", ""))
+        if subplot_id not in subplot_ids or not key or (str(phase), key) in seen:
+            raise OutcomeError("dispatch_ledger contains an invalid or duplicate record")
+        seen.add((str(phase), key))
+        if kind == "dispatch":
+            if phase not in {"commit", "halt"}:
+                raise OutcomeError("legacy dispatch record has an invalid phase")
+            continue
+        if kind != "outcome.dispatch.v2" or phase not in {"intent", "ack"}:
+            raise OutcomeError("dispatch_ledger contains an unsupported record")
+        allowed = {
+            "phase",
+            "kind",
+            "key",
+            "dispatch_intent_id",
+            "subplot_id",
+            "backend",
+            "migration_from_key",
+            "migration_from_backend",
+        }
+        if phase == "ack":
+            allowed = {
+                "phase",
+                "kind",
+                "key",
+                "dispatch_intent_id",
+                "subplot_id",
+                "backend",
+                "ack_kind",
+                "dispatch_ack_ref",
+                "producer_kind",
+                "run_identity",
+                "receipt_sha256",
+                "leaf_saga_id",
+                "orchestration_ref",
+                "at",
+            }
+        if not set(raw).issubset(allowed):
+            raise OutcomeError("dispatch record contains unrecognized fields")
+        intent_id = f"dispatch-intent:{spec.outcome_id}:{subplot_id}"
+        if key != intent_id or raw.get("dispatch_intent_id") != intent_id:
+            raise OutcomeError("dispatch record does not bind the outcome intent")
+        if phase == "intent":
+            if intent_id in intents or raw.get("backend") not in outcome_spec.NODE_BACKENDS:
+                raise OutcomeError("dispatch intent is duplicate or incomplete")
+            intents[intent_id] = raw
+            continue
+        intent = intents.get(intent_id)
+        if intent is None or raw.get("backend") != intent.get("backend"):
+            raise OutcomeError("dispatch acknowledgement is orphaned or backend-mismatched")
+        ack_kind = raw.get("ack_kind")
+        ref = str(raw.get("dispatch_ack_ref", ""))
+        if ack_kind == "handed-off":
+            if raw.get("leaf_saga_id") or not re.fullmatch(
+                r"operator:[A-Za-z0-9][A-Za-z0-9._:@/-]{0,159}", ref
+            ):
+                raise OutcomeError("imported handoff acknowledgement is invalid")
+            producer = str(raw.get("producer_kind", ""))
+            run_identity = str(raw.get("run_identity", ""))
+            if not (
+                (producer == "operator" and run_identity == ref)
+                or (
+                    producer == _workflow_compat.emit(_workflow_compat.PRODUCER_KIND)
+                    and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,159}", run_identity)
+                )
+            ):
+                raise OutcomeError("imported handoff provenance is invalid")
+            continue
+        if ack_kind != "launched" or not str(raw.get("leaf_saga_id", "")):
+            raise OutcomeError("imported launch acknowledgement is invalid")
+        encoded = receipt_payloads.get(ref)
+        if not isinstance(encoded, str):
+            raise OutcomeError("imported launch acknowledgement lacks its receipt payload")
+        try:
+            content = base64.b64decode(encoded, validate=True)
+        except (ValueError, TypeError) as exc:
+            raise OutcomeError("imported launch receipt payload is not valid base64") from exc
+        path_text, marker, expected_sha256 = ref.partition("#sha256=")
+        relative = Path(path_text)
+        if (
+            not marker
+            or not re.fullmatch(r"[0-9a-f]{64}", expected_sha256)
+            or relative.is_absolute()
+            or ".." in relative.parts
+        ):
+            raise OutcomeError("imported launch receipt reference is invalid")
+        candidate = repo_root / relative
+        try:
+            candidate.resolve().relative_to(canonical_root.resolve())
+        except (OSError, ValueError) as exc:
+            raise OutcomeError("imported launch receipt escapes the canonical root") from exc
+        fields = _validate_launch_receipt_content(
+            content,
+            expected_sha256=expected_sha256,
+            outcome_id=spec.outcome_id,
+            subplot_id=subplot_id,
+            backend=str(intent["backend"]),
+            dispatch_intent_id=intent_id,
+            leaf_saga_id=str(raw["leaf_saga_id"]),
+        )
+        if any(raw.get(field) != value for field, value in fields.items()):
+            raise OutcomeError("imported launch acknowledgement conflicts with its receipt")
+        current = repo_root
+        for part in relative.parts:
+            current = current / part
+            if current.is_symlink():
+                raise OutcomeError("imported launch receipt path contains a symlink")
+        if candidate.exists():
+            existing, _digest = _read_launch_receipt(repo_root, ref)
+            if existing != content:
+                raise OutcomeError("imported launch receipt conflicts with existing evidence")
+        else:
+            writes.append((candidate, content))
+        used_receipts.add(ref)
+    if set(receipt_payloads) != used_receipts:
+        raise OutcomeError("dispatch_receipts contains unreferenced payloads")
+    return writes
 
 
 # ---------------------------------------------------------------------------

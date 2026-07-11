@@ -99,7 +99,7 @@ def test_source_workflow_is_excluded_even_if_flagged_available(
         workflow_available=True,
     )
     assert result["downgraded"] is True
-    assert result["to"] == "team-execution"
+    assert result["to"] == "verified-workflow"
     assert result["source_backend_excluded"] is True
     assert result["note"]
 
@@ -113,7 +113,7 @@ def test_off_host_downgrades_with_a_one_line_note(lifecycle: ModuleType) -> None
     assert result["downgraded"] is True
     assert result["from"] == "cc-workflows-ultracode"
     # Recompiled DOWN to a host-portable tier (not the dynamic-workflow tier).
-    assert result["to"] == "team-execution"
+    assert result["to"] == "verified-workflow"
     assert result["to"] != "cc-workflows-ultracode"
     # The downgrade is SURFACED: a non-empty, single-line note.
     assert result["note"]
@@ -143,16 +143,15 @@ def test_inline_fallback_is_honored_when_requested(lifecycle: ModuleType) -> Non
     assert result["to"] == "inline"
 
 
-def test_team_execution_tier_is_host_portable_no_downgrade(lifecycle: ModuleType) -> None:
-    """team-execution runs on any host, so an off-host resume of a team-execution plan is
-    NOT a downgrade — it runs as authored."""
+def test_legacy_team_execution_tier_normalizes_without_downgrade(lifecycle: ModuleType) -> None:
+    """A legacy team-execution reader value normalizes to the host-portable canonical mode."""
     result = lifecycle.recheck_orchestration_capability(
         orchestration_mode="team-execution",
         workflow_available=False,
     )
     assert result["downgraded"] is False
-    assert result["to"] == "team-execution"
-    assert result["note"] == ""
+    assert result["to"] == "verified-workflow"
+    assert "normalized to verified-workflow" in result["note"]
 
 
 def test_inline_tier_off_host_is_a_noop(lifecycle: ModuleType) -> None:
@@ -204,7 +203,7 @@ def test_recheck_cli_emits_json(lifecycle: ModuleType, capsys: pytest.CaptureFix
     assert rc == 0
     payload = json.loads(capsys.readouterr().out)
     assert payload["downgraded"] is True
-    assert payload["to"] == "team-execution"
+    assert payload["to"] == "verified-workflow"
 
 
 # ---------------------------------------------------------------------------
@@ -356,13 +355,13 @@ def test_normal_save_with_active_codex_mode_succeeds(
             "--id",
             "happy-codex-mode",
             "--orchestration-mode",
-            "team-execution",
+            "verified-workflow",
         ]
     )
     assert rc == 0
     restored = saga_mod.restore(tmp_path, "task-happy-codex-mode")
     assert restored is not None
-    assert restored.orchestration_mode == "team-execution"
+    assert restored.orchestration_mode == "verified-workflow"
     assert restored.orchestration_operator_choice == ""
     assert restored.orchestration_downgrade == ""
 
@@ -382,7 +381,7 @@ def test_mode_operator_choice_mismatch_requires_downgrade(
             "--orchestration-mode",
             "inline",
             "--orchestration-operator-choice",
-            "team-execution",
+            "verified-workflow",
         ]
     )
     assert rc == 2
@@ -413,7 +412,7 @@ def test_mode_operator_choice_mismatch_with_downgrade_succeeds(
     assert rc == 0
     restored = saga_mod.restore(tmp_path, "task-mismatch-downgraded")
     assert restored is not None
-    assert restored.orchestration_operator_choice == "team-execution"
+    assert restored.orchestration_operator_choice == "verified-workflow"
     assert restored.orchestration_downgrade == note
 
 
@@ -435,7 +434,7 @@ def test_prior_team_execution_can_persist_explicit_inline_downgrade(
                 "--phase-status",
                 "pending",
                 "--orchestration-mode",
-                "team-execution",
+                "verified-workflow",
             ]
         )
         == 0
@@ -454,7 +453,7 @@ def test_prior_team_execution_can_persist_explicit_inline_downgrade(
             "--orchestration-mode",
             "inline",
             "--orchestration-operator-choice",
-            "team-execution",
+            "verified-workflow",
             "--orchestration-downgrade",
             note,
         ]
@@ -465,7 +464,7 @@ def test_prior_team_execution_can_persist_explicit_inline_downgrade(
     assert restored is not None
     assert restored.lifecycle_phase == "work"
     assert restored.orchestration_mode == "inline"
-    assert restored.orchestration_operator_choice == "team-execution"
+    assert restored.orchestration_operator_choice == "verified-workflow"
     assert restored.orchestration_downgrade == note
 
 
@@ -474,7 +473,7 @@ def test_explicit_degrade_with_downgrade_note_succeeds(
 ) -> None:
     saga_mod = _load("saga.py")
     monkeypatch.chdir(tmp_path)
-    note = "cc-workflows-ultracode is source-only in Codex; degraded to team-execution."
+    note = "cc-workflows-ultracode is source-only in Codex; degraded to verified-workflow."
     rc = saga_mod.main(
         [
             "save",
@@ -483,7 +482,7 @@ def test_explicit_degrade_with_downgrade_note_succeeds(
             "--id",
             "explicit-degrade",
             "--orchestration-mode",
-            "team-execution",
+            "verified-workflow",
             "--orchestration-downgrade",
             note,
         ]
@@ -491,7 +490,7 @@ def test_explicit_degrade_with_downgrade_note_succeeds(
     assert rc == 0
     restored = saga_mod.restore(tmp_path, "task-explicit-degrade")
     assert restored is not None
-    assert restored.orchestration_mode == "team-execution"
+    assert restored.orchestration_mode == "verified-workflow"
     assert restored.orchestration_downgrade == note
 
 

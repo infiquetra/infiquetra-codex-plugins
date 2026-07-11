@@ -264,7 +264,7 @@ def repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 def test_advance_harvester_unlocks_dependents_in_one_tick(repo: Path) -> None:
     # End-to-end: advance(harvester=production_harvester) harvests a merged PR BEFORE the frontier read,
-    # so design's completion unlocks build and build dispatches in the SAME advance.
+    # so design's completion unlocks build and creates its dispatch intent in the SAME advance.
     OUTCOME.start(
         repo,
         "ship-x",
@@ -288,7 +288,8 @@ def test_advance_harvester_unlocks_dependents_in_one_tick(repo: Path) -> None:
         harvester=OUTCOME.production_harvester(repo, github_runner=gh),
     )
     assert result.harvested == ["design"]  # merged PR materialized
-    assert result.dispatched == ["build"]  # unlocked + dispatched the same tick
+    assert result.dispatched == []
+    assert result.status["states"]["build"] == "intent-created"
 
 
 def test_production_harvester_child_outcome_recurses(repo: Path) -> None:

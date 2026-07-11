@@ -211,7 +211,7 @@ directory (**NOT** `docs/reviews/` = readiness, **NOT** `docs/code-reviews/` = c
 
 **Operator-choice.** On a scope-expansion or scrap-and-rethink verdict, **OFFER** routing the accepted
 changes through an execution backend per `../../references/operator-choice.md` (the plugin-root
-decision contract). There are exactly three active Codex backends — `inline | manual | team-execution`.
+decision contract). There are exactly three active Codex workflow modes — `inline | manual | verified-workflow`.
 Read the work shape, recommend the cheapest-correct backend and pre-select it,
 but surface the alternatives so escalation is one step. Use `manual` when automation is unsafe or
 unavailable. Never offer source-only workflow backends in Codex. The offer is never auto-run.

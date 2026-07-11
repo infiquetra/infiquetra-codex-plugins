@@ -7,10 +7,18 @@ import json
 from pathlib import Path
 
 PATH = Path(__file__).parents[1] / "plugins/saga/hooks/session_context.py"
+HOOKS_PATH = PATH.with_name("hooks.json")
 spec = importlib.util.spec_from_file_location("saga_session_context", PATH)
 assert spec and spec.loader
 M = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(M)
+
+
+def test_hook_manifest_uses_supported_quoted_plugin_root() -> None:
+    manifest = json.loads(HOOKS_PATH.read_text(encoding="utf-8"))
+    command = manifest["hooks"]["SessionStart"][0]["hooks"][0]["command"]
+    assert command == 'python3 "$PLUGIN_ROOT/hooks/session_context.py"'
+    assert "CODEX_PLUGIN_ROOT" not in command
 
 
 def write_state(root: Path, saga_id: str, next_step: str = "dangerous instructions") -> Path:

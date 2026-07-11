@@ -167,7 +167,7 @@ broad, and gather **evidence** for every result:
 
 **Operator-choice for large/parallel verification.** When several risk classes warrant independent,
 parallel verification, **OFFER** a backend per `../../references/operator-choice.md` (`inline` /
-`team-execution`) — never auto-spawn. Parallel verification uses **generic
+`verified-workflow`) — never auto-spawn. Parallel verification uses **generic
 `Explore` / `Task` agents** (this plugin has no `agents/` dir — do not reference named `ce-*` agents).
 
 ---

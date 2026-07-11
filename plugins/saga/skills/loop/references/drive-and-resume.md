@@ -41,9 +41,9 @@ work phase — `/work` owns the round-N loop, the test gates, the code-review ca
 confirmation. `/loop` does not interleave with `/work`'s internal loop; it waits for `/work` to
 complete its phase, then ticks and routes onward. There is **no competing driver** inside a phase.
 
-### When /loop authors a team-execution handoff (router-level sweep ONLY)
+### When /loop authors a Verified Workflows handoff (router-level sweep ONLY)
 
-`/loop` offers an execution backend and may author a team-execution handoff **only** for a `/loop`-OWNED
+`/loop` offers a workflow mode and may author a Verified Workflows handoff **only** for a `/loop`-OWNED
 router-level offload — a broad fan-out where `/loop` itself is the driver, not a single routed command.
 The canonical case is a **multi-issue sweep** (the same routing operation applied across many threads).
 In that case:
@@ -59,12 +59,12 @@ Recommend the cheapest-correct backend, surface the alternatives, confirm, and r
 backend choice entirely to the destination command (which makes its own offer); `/loop` does not
 instruct it.
 
-### Serial Team Execution or explicit downgrade is the cross-host fallback
+### Serial Verified Workflows or explicit downgrade is the cross-host fallback
 
-When Team Execution delegation is unavailable or backpressured, Drive uses **serial Team Execution**
-with the selected roles and validators. If Team Execution itself is unsafe or impossible, Drive halts
+When Verified Workflows delegation is unavailable or backpressured, Drive uses **serial Verified Workflows**
+with the selected roles and validators. If Verified Workflows itself is unsafe or impossible, Drive halts
 for repair or records an explicit downgrade before using `loop`'s own agent-sequential phase-walk. The
-phase-walk always works on any host, but it must not silently preserve Team Execution metadata.
+phase-walk always works on any host, but it must not silently preserve Verified Workflows metadata.
 
 ---
 
@@ -126,7 +126,7 @@ delegated.
 
 ### Resuming into a mid-flight /loop-owned offload
 
-If the restored saga has `orchestration_ref` set, the thread is mid-flight inside a team-execution handoff `/loop`
+If the restored saga has `orchestration_ref` set, the thread is mid-flight inside a Verified Workflows handoff `/loop`
 authored (a router-level offload). **REPORT** it — name the `orchestration_mode` + `orchestration_ref`
 and let the operator decide — rather than blindly re-dispatching. Read `orchestration_ref` via
 `restore` (the full envelope), not via the `scan` candidate (which carries only the orchestration

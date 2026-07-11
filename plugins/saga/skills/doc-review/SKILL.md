@@ -87,7 +87,7 @@ to drive a build. Normal readiness review is still the right gate for single doc
 issues, and strategy.
 
 The probe is a fresh-context cold-builder simulation. Do not run it inline in the same context that
-authored or remediated the spec. Prefer `team-execution` delegated mode when it can provide a clean
+authored or remediated the spec. Prefer `verified-workflow` delegated mode when it can provide a clean
 review context; otherwise tell the operator that a new session is required for the probe to be valid.
 
 Probe inputs are profile-owned. For the service-implementation profile, pass only:

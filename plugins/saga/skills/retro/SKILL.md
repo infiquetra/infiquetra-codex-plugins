@@ -107,8 +107,8 @@ presentation format; the gate itself is:
   carries an **EXPLICIT warning in the diff header**:
   > **WARNING: this changes your GLOBAL Codex config and affects ALL projects, not just this repo.**
 
-**Never auto-launch** a destructive self-edit or an execution backend. A backend (team-execution /
-team-execution) for a big refactor is **offered** per `../../references/operator-choice.md`, never
+**Never auto-launch** a destructive self-edit or an execution backend. A workflow mode
+(`verified-workflow`) for a big refactor is **offered** per `../../references/operator-choice.md`, never
 started without the operator's pick.
 
 ---
@@ -269,7 +269,7 @@ The passes neither source had, all gated (`references/retro-passes.md`):
   the journal-rule + staleness + contradiction sweeps.
 
 A **big multi-file refactor** surfaced by any pass → **OFFER** a backend per
-`../../references/operator-choice.md` (`inline`, `manual`, or `team-execution`). **Never auto-run** it.
+`../../references/operator-choice.md` (`inline`, `manual`, or `verified-workflow`). **Never auto-run** it.
 
 ---
 

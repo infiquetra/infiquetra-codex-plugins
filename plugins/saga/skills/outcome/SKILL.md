@@ -30,11 +30,20 @@ python3 plugins/saga/scripts/outcome.py project <id>
 python3 plugins/saga/scripts/outcome.py graph <id>
 python3 plugins/saga/scripts/outcome.py advance <id>
 python3 plugins/saga/scripts/outcome.py advance <id> --autonomous [--project <slug>]
+python3 plugins/saga/scripts/outcome.py reconcile-dispatch <id> <subplot-id> --ack-kind launched --dispatch-ack-ref <receipt-ref> --leaf-saga-id <saga-id>
+python3 plugins/saga/scripts/outcome.py reconcile-dispatch <id> <subplot-id> --ack-kind handed-off --dispatch-ack-ref operator:<reference>
 python3 plugins/saga/scripts/outcome.py attend <id> <subplot-id>
 python3 plugins/saga/scripts/outcome.py reconcile <id> [--resolve <drift-id> --action <accept-board|re-assert|hold>]
 python3 plugins/saga/scripts/outcome.py export <id>
 python3 plugins/saga/scripts/outcome.py import <bundle>
 ```
+
+`advance` creates a durable v2 dispatch intent and may return `intent-created`; it never treats the
+prepared leaf reservation as a launch. The root must launch through the selected skill/runtime,
+then use `reconcile-dispatch` with its digest-bound launch receipt. If an intent already exists
+without an acknowledgement, do not launch it again automatically: reconcile the existing receipt
+or record an operator-confirmed handoff. This fail-closed recovery prevents crash replay from
+duplicating leaf side effects.
 
 `start --from-parent-issue <owner>/<repo>#<N>` seeds the DAG directly from a GitHub issue's
 direct sub-issues instead of the two-node design/build starter: one node per sub-issue (`kind` from a

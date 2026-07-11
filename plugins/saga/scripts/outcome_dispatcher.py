@@ -172,14 +172,16 @@ def dispatch(req: Any, *, available: Sequence[str] = DEFAULT_AVAILABLE) -> dict[
     return result
 
 
-def make_dispatcher(*, available: Sequence[str] = DEFAULT_AVAILABLE) -> Callable[[Any], str]:
+def make_dispatcher(
+    *, available: Sequence[str] = DEFAULT_AVAILABLE
+) -> Callable[[Any], dict[str, Any]]:
     """Return the record-only production adapter; it never fabricates launch truth."""
 
-    def _dispatch(req: Any) -> str:
+    def _dispatch(req: Any) -> dict[str, Any]:
         result = dispatch(req, available=available)
         if result["status"] == "halt":
             raise BackendHaltError(HaltReceipt(**_receipt_kwargs(result["receipt"])))
-        return str(result["proposed_leaf_saga_id"])
+        return result
 
     return _dispatch
 

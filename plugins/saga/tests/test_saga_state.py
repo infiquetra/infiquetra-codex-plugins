@@ -70,8 +70,12 @@ def test_goal_continuation_requires_stable_goal_identifier() -> None:
     "changes, message",
     [
         ({"continuation_mode": "goal", "continuation_ref": ""}, "stable continuation_ref"),
+        (
+            {"continuation_mode": "goal", "continuation_ref": "goal-123"},
+            "successful Goal tool result",
+        ),
         ({"continuation_mode": "turn", "continuation_ref": "goal-123"}, "must not carry"),
-        ({"identity_mode": "logical-role-attested"}, "protected Verified Workflows"),
+        ({"identity_mode": "logical-role-attested"}, "protected role-result adapter"),
     ],
 )
 def test_save_rejects_unbacked_continuation_or_identity(
@@ -81,6 +85,34 @@ def test_save_rejects_unbacked_continuation_or_identity(
     candidate = saga._replace(candidate, **changes)
     with pytest.raises(ValueError, match=message):
         saga.save(tmp_path, candidate, runner=quiet_git_runner)
+
+
+def test_save_binds_new_goal_only_from_supplied_tool_result(tmp_path: Path) -> None:
+    candidate = saga.Saga(saga_id="task-goal-save", kind="task", id="goal-save")
+    saga.save(
+        tmp_path,
+        candidate,
+        runner=quiet_git_runner,
+        goal_result={"goal_id": "goal-123"},
+    )
+    restored = saga.restore(tmp_path, "task-goal-save")
+    assert restored is not None
+    assert (restored.continuation_mode, restored.continuation_ref) == ("goal", "goal-123")
+
+
+@pytest.mark.parametrize("flag", ["--continuation-mode", "--continuation-ref", "--identity-mode"])
+def test_generic_save_cli_rejects_attestation_flags(tmp_path: Path, flag: str) -> None:
+    script = Path(__file__).parents[1] / "scripts" / "saga.py"
+    value = "goal" if flag == "--continuation-mode" else "claim"
+    result = subprocess.run(
+        [sys.executable, str(script), "save", "--kind", "task", "--id", "claim", flag, value],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode != 0
+    assert "unrecognized arguments" in result.stderr
 
 
 def test_cli_rejects_source_only_backend(tmp_path: Path) -> None:

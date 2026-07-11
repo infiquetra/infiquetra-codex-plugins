@@ -664,6 +664,7 @@ def save(
     now: datetime | None = None,
     runner: Callable[..., Any] = subprocess.run,
     explicit_scalars: set[str] | None = None,
+    goal_result: Any = None,
 ) -> dict[str, Any]:
     """Persist a new immutable tick + refresh the derived index.
 
@@ -674,6 +675,16 @@ def save(
     """
     moment = now or _utc_now()
     prior = restore(root, saga.saga_id)
+    goal_bound = False
+    if goal_result is not None:
+        requested = (saga.continuation_mode, saga.continuation_ref)
+        saga = bind_goal_continuation(saga, goal_result)
+        goal_bound = saga.continuation_mode == "goal"
+        if requested[0] == "goal" and requested != (
+            saga.continuation_mode,
+            saga.continuation_ref,
+        ):
+            raise ValueError("Goal result does not match the requested continuation binding")
     merged = _merge(prior, saga, moment, explicit_scalars=explicit_scalars)
     merged = _replace(
         merged,
@@ -687,7 +698,7 @@ def save(
         if merged.orchestration_operator_choice == "team-execution"
         else merged.orchestration_operator_choice,
     )
-    _validate_orchestration_state(root, merged)
+    _validate_orchestration_state(root, merged, prior=prior, goal_bound=goal_bound)
 
     git = current_git_state(root, runner=runner)
     # ``branch`` refreshes from live git on EVERY save (issue #480), not just the first, so a
@@ -732,9 +743,25 @@ def save(
     }
 
 
-def _validate_orchestration_state(root: Path, saga: Saga) -> None:
+def _validate_orchestration_state(
+    root: Path,
+    saga: Saga,
+    *,
+    prior: Saga | None = None,
+    goal_bound: bool = False,
+) -> None:
     if saga.continuation_mode == "goal" and not saga.continuation_ref.strip():
         raise ValueError("goal continuation requires a stable continuation_ref")
+    if (
+        saga.continuation_mode == "goal"
+        and not goal_bound
+        and not (
+            prior is not None
+            and prior.continuation_mode == "goal"
+            and prior.continuation_ref == saga.continuation_ref
+        )
+    ):
+        raise ValueError("new goal continuation requires a successful Goal tool result")
     if saga.continuation_mode == "turn" and saga.continuation_ref.strip():
         raise ValueError("turn continuation must not carry a continuation_ref")
     original_mode = saga.orchestration_mode
@@ -745,14 +772,10 @@ def _validate_orchestration_state(root: Path, saga: Saga) -> None:
         else saga.orchestration_operator_choice
     )
     if saga.identity_mode == "logical-role-attested":
-        protected_ref = saga.orchestration_ref.strip()
-        if canonical_mode != "verified-workflow" or not (
-            protected_ref.startswith(".codex/verified-workflows/")
-            or protected_ref.startswith("~/.codex/verified-workflows/state/")
-        ):
-            raise ValueError(
-                "logical-role-attested identity requires a protected Verified Workflows receipt root"
-            )
+        raise ValueError(
+            "logical-role-attested identity requires a protected role-result adapter; "
+            "generic Saga save cannot assert it"
+        )
     if operator_choice and operator_choice != canonical_mode and not saga.orchestration_downgrade:
         raise ValueError(
             "orchestration_operator_choice differs from orchestration_mode without "
@@ -1311,9 +1334,9 @@ def _build_save_saga(args: argparse.Namespace) -> Saga:
         orchestration_recommended=args.orchestration_recommended,
         orchestration_operator_choice=args.orchestration_operator_choice,
         orchestration_downgrade=args.orchestration_downgrade,
-        continuation_mode=args.continuation_mode,
-        continuation_ref=args.continuation_ref,
-        identity_mode=args.identity_mode,
+        continuation_mode="turn",
+        continuation_ref="",
+        identity_mode="generic",
         issue_ref=args.issue_ref,
         destination=args.destination,
         round=args.round or 0,
@@ -1374,11 +1397,6 @@ def _add_save_parser(sub: Any) -> None:
         default="",
     )
     p.add_argument("--orchestration-downgrade", default="")
-    p.add_argument("--continuation-mode", choices=("turn", "goal"), default="turn")
-    p.add_argument("--continuation-ref", default="")
-    p.add_argument(
-        "--identity-mode", choices=("generic", "logical-role-attested"), default="generic"
-    )
     p.add_argument("--issue-ref", default="")
     p.add_argument("--next-step", default="")
     p.add_argument("--plan-path", default="")
