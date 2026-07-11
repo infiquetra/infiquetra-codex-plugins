@@ -57,6 +57,26 @@ def test_valid_receipts_round_trip(transport: str, runner: dict) -> None:
     assert value["runner"] == runner
 
 
+def test_invocation_digest_is_canonical_and_receipt_validates_shape() -> None:
+    first = {"model": "m", "task": "review", "effort": "high"}
+    second = {"effort": "high", "task": "review", "model": "m"}
+    digest = receipt.digest_invocation(first)
+
+    assert digest == receipt.digest_invocation(second)
+    value = receipt.emit_receipt(
+        engine_id="agy",
+        variant="v",
+        transport="cli",
+        wall_time_s=0.1,
+        bytes_produced=1,
+        runner={"pid": 1, "argv": ["agy"], "exit_code": 0},
+        invocation_sha256=digest,
+    )
+    assert receipt.validate_receipt(value) == []
+    value["invocation_sha256"] = "A" * 64
+    assert any("invocation_sha256" in error for error in receipt.validate_receipt(value))
+
+
 def test_wrong_transport_shape_and_malformed_optional_attestation_fail() -> None:
     value = receipt.emit_receipt(
         engine_id="engine",

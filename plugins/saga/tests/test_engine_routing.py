@@ -430,7 +430,12 @@ def _resolution(
     )
 
 
-def _receipt(output: str, *, variant: str = "gemini-3.1-pro-high") -> dict[str, Any]:
+def _receipt(
+    output: str,
+    invocation: dict[str, Any],
+    *,
+    variant: str = "gemini-3.1-pro-high",
+) -> dict[str, Any]:
     attestation = D._bridge_receipt.output_attestation.emit_attestation(
         artifact="evidence.txt",
         content=output,
@@ -444,6 +449,7 @@ def _receipt(output: str, *, variant: str = "gemini-3.1-pro-high") -> dict[str, 
         runner={"pid": 123, "argv": ["agy", "delegate"], "exit_code": 0},
         receipt_emitter="agy-delegate",
         run_id="test-run-1",
+        invocation_sha256=D._bridge_receipt.digest_invocation(invocation),
         external_tokens=1,
         output_attestation=attestation,
     )
@@ -550,7 +556,7 @@ def test_dispatch_returns_advisory_evidence_without_tree_mutation_surface() -> N
         return {
             "status": "ok",
             "output": output,
-            "receipt": _receipt(output),
+            "receipt": _receipt(output, invocation),
         }
 
     evidence = D.dispatch(_resolution(payload=payload), runner=runner)
@@ -567,23 +573,40 @@ def test_dispatch_returns_advisory_evidence_without_tree_mutation_surface() -> N
 
 
 def test_dispatch_rejects_receipt_from_a_different_engine_variant() -> None:
-    receipt = _receipt("external finding")
-    receipt["variant"] = "gemini-3.5-flash-high"
-
     with pytest.raises(D.DispatchError, match="receipt variant mismatch"):
         D.dispatch(
             _resolution(),
-            runner=lambda _invocation: {
-                "status": "ok",
-                "output": "external finding",
-                "receipt": receipt,
-            },
+            runner=lambda invocation: _mismatched_receipt_result(invocation),
         )
+
+
+def test_dispatch_rejects_receipt_bound_to_a_different_invocation() -> None:
+    def runner(invocation: dict[str, Any]) -> dict[str, Any]:
+        altered = dict(invocation)
+        altered["task"] = "different task"
+        return {
+            "status": "ok",
+            "output": "external finding",
+            "receipt": _receipt("external finding", altered),
+        }
+
+    with pytest.raises(D.DispatchError, match="receipt invocation_sha256 mismatch"):
+        D.dispatch(_resolution(), runner=runner)
+
+
+def _mismatched_receipt_result(invocation: dict[str, Any]) -> dict[str, Any]:
+    receipt = _receipt("external finding", invocation)
+    receipt["variant"] = "gemini-3.5-flash-high"
+    return {"status": "ok", "output": "external finding", "receipt": receipt}
 
 
 def _ok_runner(_invocation: dict[str, Any]) -> dict[str, Any]:
     output = "external finding"
-    return {"status": "ok", "output": output, "receipt": _receipt(output)}
+    return {
+        "status": "ok",
+        "output": output,
+        "receipt": _receipt(output, _invocation),
+    }
 
 
 def _store(tmp_path: Path) -> Any:
@@ -840,7 +863,11 @@ def test_dispatch_agy_sandboxed_mutate_passes_patch_only_to_runner() -> None:
 
     def runner(inv: dict[str, Any]) -> dict[str, Any]:
         seen.update(inv)
-        return {"status": "ok", "output": "diff", "receipt": _receipt("diff", variant="v")}
+        return {
+            "status": "ok",
+            "output": "diff",
+            "receipt": _receipt("diff", inv, variant="v"),
+        }
 
     evidence = D.dispatch(
         _resolution(engine_id="agy", variant="v"),
@@ -886,7 +913,7 @@ def _metric_runner(**metrics: Any):
         return {
             "status": "ok",
             "output": "the diff",
-            "receipt": _receipt("the diff"),
+            "receipt": _receipt("the diff", _invocation),
             **metrics,
         }
 
@@ -932,6 +959,22 @@ def test_agy_delegation_writes_engine_and_delegation_facts(tmp_path: Path) -> No
     assert facts[1]["evidence"].startswith("sha256:")
     assert facts[1]["engine"] == "agy"
     assert RL.verify_chain(ledger).ok
+
+
+def test_advisory_metrics_reject_negative_and_nonfinite_values(tmp_path: Path) -> None:
+    ledger = RL.RunLedger(path=tmp_path / "run-facts.jsonl")
+    D.dispatch(
+        _resolution(),
+        runner=_metric_runner(cost=-1, latency_seconds=float("nan"), tokens=float("inf")),
+        ledger=ledger,
+        subplot_id="s1",
+        at="t",
+    )
+
+    fact = RL.read_facts(ledger)[0]
+    assert fact["cost"] == 0.0
+    assert fact["latency_seconds"] == 0.0
+    assert fact["tokens"] == 0.0
 
 
 def test_native_codex_is_rejected_as_external_dispatch() -> None:

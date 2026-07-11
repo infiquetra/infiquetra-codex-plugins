@@ -7,7 +7,9 @@ shapes are rejected by validation.
 
 from __future__ import annotations
 
+import hashlib
 import importlib.util
+import json
 import math
 import re
 import sys
@@ -45,7 +47,13 @@ TRANSPORT_CLI = "cli"
 TRANSPORT_HTTP = "http"
 TRANSPORTS = (TRANSPORT_CLI, TRANSPORT_HTTP)
 COMMON_FIELDS = ("schema", "engine_id", "variant", "transport", "wall_time_s", "bytes_produced")
-OPTIONAL_FIELDS = ("receipt_emitter", "run_id", "external_tokens", "output_attestation")
+OPTIONAL_FIELDS = (
+    "receipt_emitter",
+    "run_id",
+    "invocation_sha256",
+    "external_tokens",
+    "output_attestation",
+)
 RECEIPT_FIELDS = frozenset({*COMMON_FIELDS, "runner", *OPTIONAL_FIELDS})
 RUNNER_FIELDS: dict[str, tuple[str, ...]] = {
     TRANSPORT_CLI: ("pid", "argv", "exit_code"),
@@ -91,6 +99,7 @@ def emit_receipt(
     runner: dict[str, Any],
     receipt_emitter: str = "",
     run_id: str = "",
+    invocation_sha256: str = "",
     external_tokens: int | float | None = None,
     output_attestation: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
@@ -109,11 +118,20 @@ def emit_receipt(
         receipt["receipt_emitter"] = receipt_emitter
     if run_id:
         receipt["run_id"] = run_id
+    if invocation_sha256:
+        receipt["invocation_sha256"] = invocation_sha256
     if external_tokens is not None:
         receipt["external_tokens"] = external_tokens
     if output_attestation is not None:
         receipt["output_attestation"] = dict(output_attestation)
     return receipt
+
+
+def digest_invocation(invocation: dict[str, Any]) -> str:
+    """Return the canonical digest a bridge receipt uses to bind its secret-free invocation."""
+
+    body = json.dumps(invocation, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(body.encode("utf-8")).hexdigest()
 
 
 def _non_empty_string(value: Any, field: str, errors: list[str]) -> None:
@@ -223,6 +241,12 @@ def validate_receipt(receipt: dict[str, Any]) -> list[str]:
     for field in ("receipt_emitter", "run_id"):
         if field in receipt:
             _non_empty_string(receipt[field], field, errors)
+    invocation_digest = receipt.get("invocation_sha256")
+    if invocation_digest is not None and (
+        not isinstance(invocation_digest, str)
+        or not re.fullmatch(r"[0-9a-f]{64}", invocation_digest)
+    ):
+        errors.append("invocation_sha256 must be a 64-character lowercase hex string")
     external_tokens = receipt.get("external_tokens")
     if external_tokens is not None and (
         not _is_finite_number(external_tokens)

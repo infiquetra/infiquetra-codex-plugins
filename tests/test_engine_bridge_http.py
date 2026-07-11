@@ -145,6 +145,7 @@ class FakeHttpRunner:
             runner={"url": url, "status_code": 200, "model": invocation["model"]},
             receipt_emitter="http-bridge",
             run_id=f"fake-http:{len(self.requests)}",
+            invocation_sha256=BR.digest_invocation(invocation),
             external_tokens=float(self.tokens),
             output_attestation=BRIDGE._output_attestation.emit_attestation(
                 artifact="evidence",

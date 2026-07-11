@@ -194,6 +194,7 @@ def _invoke(
         runner={"url": url, "status_code": status_code, "model": model},
         receipt_emitter="http-bridge",
         run_id=f"http:{engine_id}:{variant}:{started:.9f}",
+        invocation_sha256=_bridge_receipt.digest_invocation(invocation),
         external_tokens=tokens,
         output_attestation=_output_attestation.emit_attestation(
             artifact="evidence",

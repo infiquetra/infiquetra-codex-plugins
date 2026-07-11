@@ -55,7 +55,9 @@ def _unit(unit_id: str, *, pass_rule: str, iterate: bool, n: int = 3) -> dict:
 
 
 def _script(units: list[dict]) -> str:
-    spec = es.ExecutionSpec.from_dict({"name": "t", "units": units})
+    spec = es.ExecutionSpec.from_dict(
+        {"name": "t", "subject_sha": "a" * 40, "units": units}
+    )
     return es.emit_workflow_script(spec)
 
 
@@ -64,9 +66,10 @@ def _script(units: list[dict]) -> str:
 
 def test_one_shot_panel_recomputes_majority_over_reporters() -> None:
     js = _script([_unit("U1", pass_rule="majority", iterate=False)])
-    # reporters = verdicts that are non-null AND carry a usable .refuted array.
+    # Reporters must pass the seat, depth, subject, and structured-array binding predicate.
     assert (
-        "const U1_reported = U1_verdicts.filter((v) => v != null && Array.isArray(v.refuted))" in js
+        "const U1_reported = U1_verdicts.filter((v, i) => "
+        "U1_valid_verifier_verdict(v, i))" in js
     )
     # threshold recomputed over the reporter count, never the baked n.
     assert "const U1_threshold = Math.max(1, Math.ceil(U1_reported.length / 2))" in js
@@ -81,7 +84,9 @@ def test_unanimous_threshold_is_all_reporters_not_all_n() -> None:
 
 def test_iterate_singleton_recomputes_over_reporters() -> None:
     js = _script([_unit("U2", pass_rule="majority", iterate=True)])
-    assert "const reported = verdicts.filter((v) => v != null && Array.isArray(v.refuted))" in js
+    assert (
+        "const reported = verdicts.filter((v, i) => valid_verifier_verdict(v, i))" in js
+    )
     assert "const threshold = Math.max(1, Math.ceil(reported.length / 2))" in js
     assert "if (!refuted) {" in js  # loop consumer: break when not refuted
 

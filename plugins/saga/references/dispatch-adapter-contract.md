@@ -45,11 +45,10 @@ provider preflight, read credentials, or perform network I/O.
 ## `bridge_receipt.v1` — proof of execution
 
 Canonical home: `plugins/fleet-core/scripts/fleet_commons/bridge_receipt.py` (fleet-commons — the
-established cross-plugin shared-primitive mechanism, `{#fleet-commons-mechanism-463}`). Vendored
-byte-identical into `plugins/agy/scripts/fleet_commons_shim.py`, covered by the existing
-vendored-copy drift guard. A cross-plugin import from saga into fleet-core/agy at runtime would
-break at install time (`{#marketplace-install-layout-no-import-path}`) — that is why the vendored
-shim exists rather than a direct import.
+established cross-plugin shared-primitive mechanism, `{#fleet-commons-mechanism-463}`). Saga loads
+that canonical implementation through its install-safe `fleet_commons_shim.py`. The agy emitter is
+external to this adapter repository and must emit the same schema; conformance keeps it unavailable
+unless its receipt includes every required proof field.
 
 Schema:
 
@@ -62,6 +61,7 @@ Schema:
     "wall_time_s": float,
     "bytes_produced": int,
     "runner": {...},  # transport-discriminated, see below
+    "invocation_sha256": str,  # canonical digest of the complete secret-free invocation
 }
 ```
 

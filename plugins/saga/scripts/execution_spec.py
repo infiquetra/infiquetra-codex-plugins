@@ -499,6 +499,8 @@ class ExecutionSpec:
     units: list[Unit]
     # The repo the emitted workflow operates on (the harness `REPO` constant).
     repo: str = ""
+    # Root-authored tracked subject for refute-N verification. Never derive it from agent output.
+    subject_sha: str = ""
     revision: int = 1
     revision_note: str = ""
 
@@ -585,6 +587,7 @@ class ExecutionSpec:
             description=str(data.get("description", "")),
             units=[Unit.from_dict(u) for u in data["units"]],
             repo=str(data.get("repo", "")),
+            subject_sha=str(data.get("subject_sha", "")),
             revision=revision,
             revision_note=str(data.get("revision_note", "")),
         )
@@ -594,6 +597,7 @@ class ExecutionSpec:
             "name": self.name,
             "description": self.description,
             "repo": self.repo,
+            "subject_sha": self.subject_sha,
             "revision": self.revision,
             "revision_note": self.revision_note,
             "units": [u.to_dict() for u in self.units],
@@ -627,6 +631,7 @@ def revise_spec_tiers(
         description=spec.description,
         units=units,
         repo=spec.repo,
+        subject_sha=spec.subject_sha,
         revision=spec.revision + 1,
         revision_note=reason.strip(),
     )
@@ -752,6 +757,7 @@ def _emit_panel_reconciliation(
     name_prefix: str,
     indent: str,
     *,
+    subject_sha: str,
     direct_throw: bool,
 ) -> None:
     """Emit a refute-N panel's verdict-collection + consensus-recompute block (R5).
@@ -792,17 +798,15 @@ def _emit_panel_reconciliation(
     identities_var = f"{name_prefix}verifier_identities"
     fallback_depth_var = f"{name_prefix}expected_fallback_depth"
 
+    lines.append(f"{indent}const {expected_sha_var} = {_js_string(subject_sha)}")
     lines.append(
-        f'{indent}const {expected_sha_var} = {result_var} != null && '
-        f'typeof {result_var} === "object" && '
-        f'typeof {result_var}.examined_sha === "string" && '
-        f'/^[0-9a-f]{{40}}$/.test({result_var}.examined_sha) '
-        f"? {result_var}.examined_sha : null"
+        f"{indent}if ({result_var} == null || typeof {result_var} !== \"object\" || "
+        f"{result_var}.examined_sha !== {expected_sha_var} || "
+        f"{result_var}.workspace_clean !== true) {{"
     )
-    lines.append(f"{indent}if ({expected_sha_var} == null) {{")
     lines.append(
         f'{indent}  throw new Error("verifier-subject-unbound: Unit {unit.unit_id} '
-        'did not return a valid examined_sha")'
+        'did not bind its result to the root-authored subject_sha")'
     )
     lines.append(f"{indent}}}")
     identities = [f"{unit.unit_id}-verifier-{seat}" for seat in range(1, n + 1)]
@@ -833,7 +837,7 @@ def _emit_panel_reconciliation(
         f"Array.isArray(v.refuted) && Array.isArray(v.upheld) && "
         f"v.verifier_identity === {identities_var}[i] && "
         f"v.fallback_depth === {fallback_depth_var} && "
-        f"v.examined_sha === {expected_sha_var}"
+        f"v.examined_sha === {expected_sha_var} && v.workspace_clean === true"
     )
     lines.append(
         f"{indent}const {reported_var} = {verdicts_var}.filter((v, i) => "
@@ -911,10 +915,16 @@ def _agent_schema_js(unit: Unit) -> str | None:
     required = list(unit.returns)
     if unit.verify is not None and "examined_sha" not in required:
         required.append("examined_sha")
+    if unit.verify is not None and "workspace_clean" not in required:
+        required.append("workspace_clean")
     schema: dict[str, Any] = {
         "type": "object",
         "properties": {
-            key: ({"type": "string", "pattern": "^[0-9a-f]{40}$"} if key == "examined_sha" else {})
+            key: (
+                {"type": "string", "pattern": "^[0-9a-f]{40}$"}
+                if key == "examined_sha"
+                else ({"type": "boolean"} if key == "workspace_clean" else {})
+            )
             for key in required
         },
         "required": required,
@@ -955,7 +965,15 @@ def _emit_thunk(lines: list[str], spec: ExecutionSpec, unit: Unit) -> None:
         lines.append("        { " + ", ".join(opts) + " },")
         lines.append("      )")
         lines.append(f"      {_emit_gate_call(unit, 'result')}")
-        _emit_panel_reconciliation(lines, unit, "result", "", "      ", direct_throw=False)
+        _emit_panel_reconciliation(
+            lines,
+            unit,
+            "result",
+            "",
+            "      ",
+            subject_sha=spec.subject_sha,
+            direct_throw=False,
+        )
         lines.append("    }")
         lines.append("    return result")
         lines.append("  },")
@@ -990,12 +1008,20 @@ def _emit_verify_loop_singleton(
     lines.append("    { " + ", ".join(opts) + " },")
     lines.append("  )")
     lines.append(f"  {_emit_gate_call(unit, var)}")
-    _emit_panel_reconciliation(lines, unit, var, "", "  ", direct_throw=False)
+    _emit_panel_reconciliation(
+        lines,
+        unit,
+        var,
+        "",
+        "  ",
+        subject_sha=spec.subject_sha,
+        direct_throw=False,
+    )
     lines.append("}")
     lines.append("")
 
 
-def _emit_verify_panel(lines: list[str], unit: Unit, var: str) -> None:
+def _emit_verify_panel(lines: list[str], spec: ExecutionSpec, unit: Unit, var: str) -> None:
     """Append a refute-N judge-panel + pass-rule reconciliation for ``unit`` to ``lines``.
 
     Renders a ``parallel([...])`` of ``unit.verify.n`` verifier ``agent()`` calls over the
@@ -1018,7 +1044,15 @@ def _emit_verify_panel(lines: list[str], unit: Unit, var: str) -> None:
     lines.append(
         f"// panel-level: refuted when >= threshold of the REPORTING verifiers refute (of {n}))"
     )
-    _emit_panel_reconciliation(lines, unit, var, f"{var}_", "", direct_throw=True)
+    _emit_panel_reconciliation(
+        lines,
+        unit,
+        var,
+        f"{var}_",
+        "",
+        subject_sha=spec.subject_sha,
+        direct_throw=True,
+    )
 
 
 def _agent_prompt(spec: ExecutionSpec, unit: Unit) -> str:
@@ -1042,8 +1076,9 @@ def _agent_prompt(spec: ExecutionSpec, unit: Unit) -> str:
         parts.append("Return a structured result with keys: " + ", ".join(unit.returns) + ".")
     if unit.verify is not None:
         parts.append(
-            "Return examined_sha as the 40-character lowercase SHA for the tracked subject "
-            "this result describes; verifier seats will fail closed unless they inspect that same SHA."
+            f"Return examined_sha exactly as the root-authored tracked subject {spec.subject_sha}; "
+            "also return workspace_clean=true only after git status --porcelain is empty. This "
+            "legacy emitter fails closed on dirty or untracked content."
         )
     return "\n\n".join(p for p in parts if p)
 
@@ -1060,6 +1095,14 @@ def emit_workflow_script(spec: ExecutionSpec) -> str:
     records the path as the saga ``orchestration_ref``).
     """
     spec.validate()
+    if any(unit.verify is not None for unit in spec.units):
+        if len(spec.subject_sha) != 40 or any(
+            char not in "0123456789abcdef" for char in spec.subject_sha
+        ):
+            raise SpecError(
+                "workflow specs with verifier panels require a root-authored 40-character "
+                "lowercase subject_sha"
+            )
 
     lines: list[str] = []
     lines.append("// ===========================================================================")
@@ -1142,7 +1185,7 @@ def emit_workflow_script(spec: ExecutionSpec) -> str:
                 lines.append(_emit_gate_call(unit, var))
                 lines.append("")
                 if unit.verify is not None:
-                    _emit_verify_panel(lines, unit, var)
+                    _emit_verify_panel(lines, spec, unit, var)
             continue
 
         # A layer of >1 ready unit -> one parallel() wave of thunks. The wave's results
@@ -1163,7 +1206,7 @@ def emit_workflow_script(spec: ExecutionSpec) -> str:
         for unit in layer_units:
             assert unit is not None
             if unit.verify is not None and not unit.verify.iterate_to_consensus:
-                _emit_verify_panel(lines, unit, _var(unit.unit_id))
+                _emit_verify_panel(lines, spec, unit, _var(unit.unit_id))
 
     return "\n".join(lines)
 

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import hashlib
+import math
 import sys
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -228,6 +229,7 @@ def _receipt_binding_errors(
         "engine_id": resolution.engine_id,
         "variant": resolution.variant,
         "transport": expected_transport,
+        "invocation_sha256": _bridge_receipt.digest_invocation(invocation),
     }
     for field, value in expected.items():
         if receipt.get(field) != value:
@@ -248,10 +250,13 @@ def _receipt_binding_errors(
 
 
 def _num(value: Any) -> float:
-    """A numeric metric from a runner result, or ``0.0`` when absent/non-numeric (bool excluded)."""
+    """A finite non-negative metric, or ``0.0`` when absent or malformed."""
     if isinstance(value, bool):
         return 0.0
-    return float(value) if isinstance(value, (int, float)) else 0.0
+    if not isinstance(value, (int, float)):
+        return 0.0
+    number = float(value)
+    return number if math.isfinite(number) and number >= 0 else 0.0
 
 
 def _evidence_pointer(evidence: AdvisoryEvidence) -> str:
