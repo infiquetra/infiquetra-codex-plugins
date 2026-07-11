@@ -93,7 +93,7 @@ def test_target_fixture_identity_is_read_only_and_released() -> None:
 
     assert proof["mode"] == "target-fixture"
     assert proof["workflow_plugin"] == "verified-workflows"
-    assert proof["workflow_version"] == "1.0.0+codex.20260711134424"
+    assert proof["workflow_version"] == "1.0.0+codex.20260711153644"
     assert proof["workflow_skills"] == ["appsec-audit", "run"]
     assert proof["publication_status"] == "released"
     assert proof["legacy_workflow_marketplace_listed"] is False

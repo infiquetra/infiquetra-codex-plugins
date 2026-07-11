@@ -40,6 +40,39 @@ def plugin_data(tmp_path: Path) -> Path:
     return data
 
 
+def test_workflow_run_cli_generates_fresh_identity(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    data = plugin_data(tmp_path)
+    workspace = workspace_repo(data)
+    plan_path = tmp_path / "plan.md"
+    plan_path.write_text(fixtures.plan(fixtures.row("security")))
+    monkeypatch.chdir(workspace.parent)
+
+    assert R.main(
+        [
+            "workflow-run",
+            "--plugin-data",
+            str(data),
+            "--agents-dir",
+            str(PLUGIN_ROOT / "agents"),
+            "--plan",
+            str(plan_path),
+            "--workspace-root",
+            workspace.name,
+        ]
+    ) == 0
+
+    output = json.loads(capsys.readouterr().out)
+    record, _content = R._load_workflow_run_record(
+        data, output["record_ref"], workspace_root=workspace
+    )
+    assert len(record["run_nonce"]) == 32
+    assert dt.datetime.fromisoformat(record["created_at"].replace("Z", "+00:00"))
+
+
 def installed_hooks(data: Path) -> tuple[Path, Path]:
     codex_home = data.parent / "codex-home"
     hooks = codex_home / "plugins" / "verified-workflows" / "hooks"

@@ -284,7 +284,7 @@
           "skill_path": "plugins/verified-workflows/skills/appsec-audit/SKILL.md"
         }
       ],
-      "version": "1.0.0+codex.20260711134424"
+      "version": "1.0.0+codex.20260711153644"
     }
   },
   "saga_routing": {

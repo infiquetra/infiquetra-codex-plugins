@@ -151,7 +151,7 @@ TARGET_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
     if name != "team-execution"
 }
 TARGET_EXPECTED_PLUGINS["verified-workflows"] = {
-    "version": "1.0.0+codex.20260711134424",
+    "version": "1.0.0+codex.20260711153644",
     "skills": ("run", "appsec-audit"),
 }
 CURRENT_ONLY_LEGACY_PLUGINS = {

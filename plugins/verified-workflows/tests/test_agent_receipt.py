@@ -165,6 +165,28 @@ def test_plugin_data_symlink_is_rejected(tmp_path: Path) -> None:
         A.persist_event(receipt, data)
 
 
+def test_missing_plugin_data_is_created_private(tmp_path: Path) -> None:
+    home, data = setup_home(tmp_path)
+    data.rmdir()
+    receipt = A.normalize_event(payload(), codex_home=home)
+
+    A.persist_event(receipt, data)
+
+    assert stat.S_IMODE(data.stat().st_mode) == 0o700
+    assert raw_path(data, receipt).is_file()
+
+
+def test_missing_plugin_data_parent_is_not_created(tmp_path: Path) -> None:
+    home, _data = setup_home(tmp_path)
+    data = tmp_path / "missing-parent" / "plugin-data"
+    receipt = A.normalize_event(payload(), codex_home=home)
+
+    with pytest.raises(A.AgentReceiptError, match="unreadable"):
+        A.persist_event(receipt, data)
+
+    assert not data.parent.exists()
+
+
 def test_unsafe_plugin_data_mode_is_rejected(tmp_path: Path) -> None:
     home, data = setup_home(tmp_path)
     data.chmod(0o777)

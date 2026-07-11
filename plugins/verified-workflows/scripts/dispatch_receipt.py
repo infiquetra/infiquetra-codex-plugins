@@ -316,6 +316,8 @@ def main(argv: list[str] | None = None) -> int:
         )
     args = parser.parse_args(argv)
     try:
+        if hasattr(args, "workspace_root") and args.workspace_root is not None:
+            args.workspace_root = args.workspace_root.resolve()
         plugin_data = args.plugin_data
         if plugin_data is None:
             raw = os.environ.get("PLUGIN_DATA")
@@ -347,6 +349,8 @@ def main(argv: list[str] | None = None) -> int:
                 plugin_data,
                 workflow,
                 workspace_root=args.workspace_root,
+                created_at=_timestamp_now(),
+                nonce=secrets.token_hex(16),
             )
             output = {"schema_version": 1, "record_ref": record_ref}
         elif args.mode == "subject":

@@ -295,8 +295,19 @@ def _open_plugin_data(plugin_data: Path) -> int:
         raise AgentReceiptError("PLUGIN_DATA must be absolute")
     descriptor = os.open(plugin_data.anchor, _directory_flags())
     try:
-        for part in plugin_data.parts[1:]:
-            next_fd = os.open(part, _directory_flags(), dir_fd=descriptor)
+        parts = plugin_data.parts[1:]
+        for index, part in enumerate(parts):
+            try:
+                next_fd = os.open(part, _directory_flags(), dir_fd=descriptor)
+            except FileNotFoundError:
+                if index != len(parts) - 1:
+                    raise
+                try:
+                    os.mkdir(part, 0o700, dir_fd=descriptor)
+                    os.fsync(descriptor)
+                except FileExistsError:
+                    pass
+                next_fd = os.open(part, _directory_flags(), dir_fd=descriptor)
             os.close(descriptor)
             descriptor = next_fd
     except OSError as exc:
