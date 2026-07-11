@@ -123,7 +123,7 @@ def test_user_state_root_rejects_symlink_and_requires_repo_identity(
     assert "identity proof" in result.reason
 
     marker = {
-        "schema": "verified-workflows.repo-identity.v1",
+        "schema": "saga.workflow-repo-identity.v1",
         "repo_root_sha256": hashlib.sha256(repo.resolve().as_posix().encode()).hexdigest(),
     }
     (candidate / ".repo-identity.json").write_text(

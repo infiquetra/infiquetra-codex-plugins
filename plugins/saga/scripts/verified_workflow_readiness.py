@@ -306,7 +306,7 @@ def _resolve_user_root(repo_root: Path, ref: str, legacy: Any) -> Any:
     except (UnicodeDecodeError, json.JSONDecodeError):
         marker = None
     expected_marker = {
-        "schema": "verified-workflows.repo-identity.v1",
+        "schema": "saga.workflow-repo-identity.v1",
         "repo_root_sha256": hashlib.sha256(repo_root.resolve().as_posix().encode()).hexdigest(),
     }
     if marker != expected_marker:
