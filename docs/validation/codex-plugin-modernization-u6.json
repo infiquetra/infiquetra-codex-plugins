@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "unit": "U6",
-  "recorded_at": "2026-07-11T16:24:13Z",
-  "repo_head": "f56ee8b4bfce4b71ba610d945fa6c6e9d230feab",
-  "target_tree_sha256": "cc0a35ead169b0987980a803f7bd671c27a55e663bedacfa4f7adef7f42fe340",
+  "recorded_at": "2026-07-11T16:44:01Z",
+  "repo_head": "823bb6c5a9352db76bc561772d7a1de51d910cbc",
+  "target_tree_sha256": "103230422c43dc2e725730872ff8d8aff86310cc1ac4a3cb15098e518f9f7072",
   "claim": "codex-safe-host-neutral-correctness-and-external-engine-substrate",
   "checks": [
     {
       "name": "u6-focused-suite",
       "argv": ["PYTHONPATH=.", "uv", "run", "pytest", "-q", "plugins/fleet-core/tests/test_bridge_receipt.py", "plugins/fleet-core/tests/test_tier_resolver.py", "plugins/saga/tests/test_board_progression.py", "plugins/saga/tests/test_outcome_from_objective.py", "plugins/saga/tests/test_execution_spec_tiers.py", "plugins/saga/tests/test_verify_panel_robustness.py", "plugins/saga/tests/test_engine_routing.py", "plugins/saga/tests/test_outcome_board_sync.py", "plugins/verified-workflows/tests/test_workflow_dispatch.py", "tests/test_workflow_emitter.py", "tests/test_outcome_completion.py", "tests/test_outcome_command.py", "tests/test_outcome_integration.py", "tests/test_outcome_merge_queue.py", "tests/test_engine_bridge_http.py", "tests/test_engine_registry_conformance.py", "tests/test_engine_registry_cli.py", "tests/test_engine_registry_lint.py", "tests/test_bridge_receipt_drift.py", "tests/test_u6_branch_coverage.py", "tests/test_port_contract.py"],
       "exit_code": 0,
-      "summary": "513 passed"
+      "summary": "514 passed"
     },
     {
       "name": "u5-overlap-regression",
