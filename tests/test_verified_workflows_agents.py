@@ -12,7 +12,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 TARGET_ROOT = ROOT / "plugins" / "verified-workflows"
-LEGACY_AGENTS = ROOT / "plugins" / "team-execution" / "agents"
+LEGACY_TREE = "66b23ca83b6ce3b29871954c63a6554c39bfd72e"
 RENDERER_PATH = TARGET_ROOT / "scripts" / "render_codex_agents.py"
 SYNC_PATH = TARGET_ROOT / "scripts" / "sync_codex_agents.py"
 
@@ -96,17 +96,30 @@ def _adapt_source_behavior(source: str) -> str:
 def test_all_25_current_role_behaviors_are_digest_bound_and_preserved() -> None:
     registry = R.load_role_registry()
     by_id = {role.role_id: role for role in registry.roles}
-    source_files = sorted(LEGACY_AGENTS.glob("*.toml"))
+    listing = subprocess.run(
+        ["git", "ls-tree", "-r", "--name-only", LEGACY_TREE, "agents"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.splitlines()
+    source_paths = sorted(path for path in listing if path.endswith(".toml"))
 
-    assert len(source_files) == 25
-    assert {path.stem for path in source_files} == set(by_id)
-    for path in source_files:
-        source = tomllib.loads(path.read_text(encoding="utf-8"))["developer_instructions"]
-        target = (TARGET_ROOT / "roles" / f"{path.stem}.md").read_text(encoding="utf-8")
+    assert len(source_paths) == 25
+    assert {Path(path).stem for path in source_paths} == set(by_id)
+    for source_path in source_paths:
+        source_text = subprocess.run(
+            ["git", "show", f"{LEGACY_TREE}:{source_path}"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout
+        role_id = Path(source_path).stem
+        source = tomllib.loads(source_text)["developer_instructions"]
+        target = (TARGET_ROOT / "roles" / f"{role_id}.md").read_text(encoding="utf-8")
         target_body = target.split("\n---\n", 1)[1].lstrip("\n")
-        assert hashlib.sha256(source.encode()).hexdigest() == by_id[
-            path.stem
-        ].source_behavior_sha256
+        assert hashlib.sha256(source.encode()).hexdigest() == by_id[role_id].source_behavior_sha256
         assert target_body.startswith(_adapt_source_behavior(source).rstrip("\n"))
 
 

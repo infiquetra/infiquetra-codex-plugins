@@ -4,6 +4,7 @@ import copy
 import hashlib
 import json
 import shutil
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -20,7 +21,6 @@ from scripts.validate_codex_plugins import (
     REQUIRED_LEGACY_STATE_ROOTS,
     TARGET_EXPECTED_PLUGINS,
     compare_inventory,
-    deterministic_tree_digest,
     expected_legacy_workflow_classification,
     legacy_workflow_file_facts,
     validate_legacy_workflow_token_allowlist,
@@ -125,12 +125,8 @@ def test_target_fixture_validates_without_active_cutover():
     assert validate_repository(REPO_ROOT, mode="target-fixture") == []
 
 
-def test_cutover_is_blocked_until_u8_release_evidence_exists():
-    errors = validate_repository(REPO_ROOT, mode="cutover")
-
-    assert any("port contract (cutover)" in error for error in errors)
-    assert any("cutover requires" in error for error in errors)
-    assert any("unexpected=['team-execution']" in error for error in errors)
+def test_cutover_validation_passes_after_u8_release_evidence():
+    assert validate_repository(REPO_ROOT, mode="cutover") == []
 
 
 def test_current_and_target_fixture_run_classification_port_gate():
@@ -141,12 +137,12 @@ def test_current_and_target_fixture_run_classification_port_gate():
     assert errors == []
 
 
-def test_expected_plugin_set_is_current_pre_cutover_inventory():
+def test_expected_plugin_set_is_current_post_cutover_inventory():
     assert set(EXPECTED_PLUGINS) == {
         "saga",
         "deploy",
         "mission-control",
-        "team-execution",
+        "verified-workflows",
         "discord-identity-assets",
         "home-lab-ops",
         "python-toolkit",
@@ -155,7 +151,7 @@ def test_expected_plugin_set_is_current_pre_cutover_inventory():
         "fleet-core",
     }
     assert EXPECTED_PLUGINS is CURRENT_EXPECTED_PLUGINS
-    assert EXPECTED_PLUGINS is not TARGET_EXPECTED_PLUGINS
+    assert EXPECTED_PLUGINS is TARGET_EXPECTED_PLUGINS
 
 
 def test_legacy_plugin_set_remains_only_for_migration_checks():
@@ -188,7 +184,7 @@ def test_target_plugin_set_describes_saga_family_cutover():
         "discord-identity-assets",
     )
     assert TARGET_EXPECTED_PLUGINS["verified-workflows"] == {
-        "version": "1.0.0",
+        "version": "1.0.0+codex.20260711134424",
         "skills": ("run", "appsec-audit"),
     }
     assert "team-execution" not in TARGET_EXPECTED_PLUGINS
@@ -212,7 +208,7 @@ def test_target_fixture_requires_namespace_proof():
         ],
         "schema_version": "2.0",
         "removed_plugins": ["blueprint-reviewer", "sdlc-manager", "team-execution"],
-        "unpublished_plugins": ["verified-workflows"],
+        "unpublished_plugins": [],
         "legacy_readable_plugins": ["team-execution"],
         "required_namespace_proof": [
             "saga:plan",
@@ -248,7 +244,7 @@ def test_target_fixture_requires_discord_identity_assets_mutation_gate():
         ],
         "schema_version": "2.0",
         "removed_plugins": ["blueprint-reviewer", "sdlc-manager", "team-execution"],
-        "unpublished_plugins": ["verified-workflows"],
+        "unpublished_plugins": [],
         "legacy_readable_plugins": ["team-execution"],
         "required_namespace_proof": [
             "saga:plan",
@@ -274,15 +270,15 @@ def test_target_fixture_rejects_duplicate_plugin_entries():
         "plugins": [
             {
                 "name": "verified-workflows",
-                "version": "1.0.0",
-                "publication_status": "unpublished",
+                "version": "1.0.0+codex.20260711134424",
+                "publication_status": "released",
                 "skills": ["run", "appsec-audit"],
                 "forbidden_active_dirs": [".claude-plugin", "commands"],
             },
             {
                 "name": "verified-workflows",
-                "version": "1.0.0",
-                "publication_status": "unpublished",
+                "version": "1.0.0+codex.20260711134424",
+                "publication_status": "released",
                 "skills": ["run", "appsec-audit"],
                 "forbidden_active_dirs": [".claude-plugin", "commands"],
             },
@@ -332,16 +328,16 @@ def test_target_fixture_rejects_legacy_root_in_canonical_state_set():
     )
 
 
-def test_legacy_team_execution_tree_matches_u9_frozen_digest():
-    errors: list[str] = []
-
-    digest = deterministic_tree_digest(REPO_ROOT / "plugins" / "team-execution", errors)
-
-    assert errors == []
-    assert digest == (
-        52,
-        "ee3486b96fc07308d089d0cabf09a218ecd3008369c5adb2444e70719c1e8c0e",
+def test_legacy_team_execution_tree_remains_git_addressable_after_cutover():
+    result = subprocess.run(
+        ["git", "cat-file", "-e", "66b23ca83b6ce3b29871954c63a6554c39bfd72e^{tree}"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
     )
+
+    assert result.returncode == 0
     assert REQUIRED_LEGACY_STATE_ROOTS == {".codex/team-execution/"}
 
 
@@ -388,7 +384,7 @@ def test_verified_workflows_project_agents_reject_stale_profile_bytes(
     tmp_path: Path,
 ) -> None:
     root = tmp_path / "repo"
-    shutil.copytree(REPO_ROOT / ".codex", root / ".codex")
+    shutil.copytree(REPO_ROOT / ".codex" / "agents", root / ".codex" / "agents")
     (root / "plugins" / "verified-workflows").mkdir(parents=True)
     shutil.copytree(
         REPO_ROOT / "plugins" / "verified-workflows" / "agents",
@@ -692,7 +688,7 @@ def test_legacy_inventory_rejects_changes_to_known_saga_writer(tmp_path):
     writer.write_text('MODE = "team-execution"\n', encoding="utf-8")
     write_legacy_workflow_inventory(
         tmp_path,
-        {"plugins/saga/scripts/outcome.py": "temporary-saga-writer"},
+        {"plugins/saga/scripts/outcome.py": "legacy-parser"},
     )
     clean: list[str] = []
     validate_legacy_workflow_token_allowlist(

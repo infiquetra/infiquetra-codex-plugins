@@ -1,11 +1,11 @@
 {
   "schema_version": "2.0",
   "mode": "target-fixture",
-  "description": "Saga-family target inventory used before active marketplace cutover.",
+  "description": "Saga-family active inventory after the Verified Workflows cutover.",
   "plugins": [
     {
       "name": "saga",
-      "version": "0.65.0",
+      "version": "0.75.17+codex.20260711134423",
       "skills": [
         "office-hours",
         "ideate",
@@ -72,8 +72,8 @@
     },
     {
       "name": "verified-workflows",
-      "version": "1.0.0",
-      "publication_status": "unpublished",
+      "version": "1.0.0+codex.20260711134424",
+      "publication_status": "released",
       "skills": [
         "run",
         "appsec-audit"
@@ -152,7 +152,7 @@
     },
     {
       "name": "fleet-core",
-      "version": "0.5.0",
+      "version": "0.8.4+codex.20260711134422",
       "skills": [],
       "library": true,
       "forbidden_active_dirs": [
@@ -167,9 +167,7 @@
     "sdlc-manager",
     "team-execution"
   ],
-  "unpublished_plugins": [
-    "verified-workflows"
-  ],
+  "unpublished_plugins": [],
   "legacy_readable_plugins": [
     "team-execution"
   ],
@@ -187,10 +185,9 @@
   "legacy_readable_state_roots": [
     ".codex/team-execution/"
   ],
-  "development_lock": {
-    "active_workflow_plugin": "team-execution",
-    "unpublished_workflow_plugin": "verified-workflows",
-    "marketplace_sha256": "42803919b39b720599b9692bfdcd95bcfe8c31b06ebb2c976aacaa890fdfea8a",
+  "cutover_lock": {
+    "active_workflow_plugin": "verified-workflows",
+    "retired_workflow_plugin": "team-execution",
     "legacy_source_file_count": 52,
     "legacy_source_tree_sha256": "ee3486b96fc07308d089d0cabf09a218ecd3008369c5adb2444e70719c1e8c0e"
   },

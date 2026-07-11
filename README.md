@@ -7,19 +7,20 @@ Codex-ready plugin surface, currently:
 
 | Plugin | Version | Status |
 |---|---:|---|
-| `saga` | 0.65.0 | active |
+| `saga` | 0.75.17 | active |
 | `deploy` | 0.1.1 | active |
 | `mission-control` | 2.3.0 | active |
-| `team-execution` | 2.3.0 | active |
-| `fleet-core` | 0.5.0 | active (library) |
+| `verified-workflows` | 1.0.0 | active |
+| `fleet-core` | 0.8.4 | active (library) |
 | `discord-identity-assets` | 0.2.0 | proof port |
 | `home-lab-ops` | 1.0.0 | baseline |
 | `python-toolkit` | 1.0.0 | baseline |
 | `unifi` | 1.1.0 | baseline |
 | `test-suite` | 2.0.0 | proof port |
 
-`mission-control` replaces the prior SDLC surface, and Saga-family review flows
-replace the prior document-review surface. Exact migration rows live in
+`mission-control` replaces the prior SDLC surface, Saga-family review flows replace the prior
+document-review surface, and Verified Workflows replaces the retired Team Execution package.
+Exact migration rows live in
 `docs/portability/saga-family-capability-map.md` and
 `docs/portability/saga-family-known-use-inventory.md`.
 

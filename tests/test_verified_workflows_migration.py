@@ -13,11 +13,7 @@ import pytest
 
 from scripts import build_legacy_workflow_inventory, materialize_verified_workflows
 from scripts.validate_codex_plugins import (
-    LEGACY_TEAM_EXECUTION_FILE_COUNT,
-    LEGACY_TEAM_EXECUTION_TREE_SHA256,
-    STAGED_MARKETPLACE_SHA256,
     WORKFLOW_COMPAT,
-    deterministic_tree_digest,
     validate_repository,
     validate_saga_workflow_independence,
     validate_verified_workflows_canonical_surface,
@@ -25,7 +21,6 @@ from scripts.validate_codex_plugins import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
-LEGACY_ROOT = ROOT / "plugins" / "team-execution"
 TARGET_ROOT = ROOT / "plugins" / "verified-workflows"
 FIXTURE = ROOT / "docs" / "validation" / "saga-family-target-inventory.json"
 MARKETPLACE = ROOT / ".agents" / "plugins" / "marketplace.json"
@@ -62,35 +57,28 @@ def test_current_marketplace_and_target_fixture_expose_exactly_one_workflow_iden
     fixture = json.loads(FIXTURE.read_text(encoding="utf-8"))
     targets = {entry["name"]: entry for entry in fixture["plugins"]}
 
-    assert active & {"team-execution", "verified-workflows"} == {"team-execution"}
+    assert active & {"team-execution", "verified-workflows"} == {"verified-workflows"}
     assert set(targets) & {"team-execution", "verified-workflows"} == {
         "verified-workflows"
     }
     target = targets["verified-workflows"]
-    assert target["version"] == "1.0.0"
-    assert target["publication_status"] == "unpublished"
+    assert target["version"] == "1.0.0+codex.20260711134424"
+    assert target["publication_status"] == "released"
     assert set(target["skills"]) == {"run", "appsec-audit"}
-    assert fixture["unpublished_plugins"] == ["verified-workflows"]
+    assert fixture["unpublished_plugins"] == []
     assert fixture["legacy_readable_plugins"] == ["team-execution"]
 
 
-def test_staged_marketplace_and_legacy_source_are_byte_stable() -> None:
-    assert hashlib.sha256(MARKETPLACE.read_bytes()).hexdigest() == STAGED_MARKETPLACE_SHA256
-    errors: list[str] = []
-    assert deterministic_tree_digest(LEGACY_ROOT, errors) == (
-        LEGACY_TEAM_EXECUTION_FILE_COUNT,
-        LEGACY_TEAM_EXECUTION_TREE_SHA256,
-    )
-    assert errors == []
-
+def test_retired_source_is_absent_but_frozen_tree_remains_git_addressable() -> None:
+    assert not (ROOT / "plugins" / "team-execution").exists()
     result = subprocess.run(
-        ["git", "rev-parse", "HEAD:plugins/team-execution"],
+        ["git", "cat-file", "-e", "66b23ca83b6ce3b29871954c63a6554c39bfd72e^{tree}"],
         cwd=ROOT,
         capture_output=True,
         text=True,
-        check=True,
+        check=False,
     )
-    assert result.stdout.strip() == "66b23ca83b6ce3b29871954c63a6554c39bfd72e"
+    assert result.returncode == 0
 
 
 def test_legacy_token_inventory_is_exact_digest_bound_and_current() -> None:
@@ -100,9 +88,7 @@ def test_legacy_token_inventory_is_exact_digest_bound_and_current() -> None:
     assert LEGACY_TOKEN_INVENTORY.read_text(encoding="utf-8") == expected
     payload = json.loads(expected)
     entries = {entry["path"]: entry for entry in payload["entries"]}
-    assert entries["plugins/saga/scripts/outcome.py"]["classification"] == (
-        "temporary-saga-writer"
-    )
+    assert entries["plugins/saga/scripts/outcome.py"]["classification"] == "legacy-parser"
     assert entries[
         "docs/plans/2026-06-30-team-execution-saga-orchestration-repair-plan.md"
     ]["classification"] == "historical-evidence"
@@ -116,7 +102,7 @@ def test_legacy_token_inventory_is_exact_digest_bound_and_current() -> None:
         assert "Team Execution" in entries[title_only_history]["tokens"]
     assert sum(
         entry["classification"] == "historical-evidence" for entry in entries.values()
-    ) == 45
+    ) == 47
     assert all(len(entry["sha256"]) == 64 for entry in entries.values())
 
 
@@ -126,7 +112,7 @@ def test_target_manifest_skills_and_u4_runtime_surfaces_are_complete() -> None:
     )
 
     assert manifest["name"] == "verified-workflows"
-    assert manifest["version"] == "1.0.0"
+    assert manifest["version"] == "1.0.0+codex.20260711134424"
     assert manifest["author"]["name"] == "Infiquetra"
     assert manifest["skills"] == "./skills/"
     assert set(path.name for path in (TARGET_ROOT / "skills").iterdir() if path.is_dir()) == {
@@ -138,9 +124,18 @@ def test_target_manifest_skills_and_u4_runtime_surfaces_are_complete() -> None:
         assert f"name: {skill}" in body
         assert "TODO" not in body
     target_appsec = TARGET_ROOT / "skills" / "appsec-audit" / "SKILL.md"
-    legacy_appsec = LEGACY_ROOT / "skills" / "appsec-audit" / "SKILL.md"
     appsec_contract = target_appsec.read_text(encoding="utf-8")
-    legacy_contract = legacy_appsec.read_text(encoding="utf-8")
+    legacy_contract = subprocess.run(
+        [
+            "git",
+            "show",
+            "66b23ca83b6ce3b29871954c63a6554c39bfd72e:skills/appsec-audit/SKILL.md",
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
     target_body = appsec_contract.split("\n---\n", 1)[1]
     legacy_body = legacy_contract.split("\n---\n", 1)[1]
     assert target_body == legacy_body
@@ -176,6 +171,7 @@ def test_target_manifest_skills_and_u4_runtime_surfaces_are_complete() -> None:
         "named_child_attestation.py",
         "protocol_probe.py",
         "protected_store.py",
+        "raw_hook_maintenance.py",
         "workflow_records.py",
         "workflow_dispatch.py",
         "workspace_evidence.py",

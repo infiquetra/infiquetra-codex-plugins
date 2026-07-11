@@ -118,7 +118,7 @@ def test_recommend_backend_excludes_source_workflow() -> None:
         capture_output=True,
     )
     payload = json.loads(result.stdout)
-    assert payload["recommended"] == "team-execution"
+    assert payload["recommended"] == "verified-workflow"
     assert payload["alternatives"] == ["inline", "manual"]
     assert payload["source_workflow_excluded"] is True
     assert "source-workflow-fanout" in payload["unsupported_source_backends"]

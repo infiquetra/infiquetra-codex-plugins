@@ -133,6 +133,6 @@ and [worker-manifest.md](references/worker-manifest.md) for root-owned result at
   content-addressed records, never arbitrary paths.
 - Do not overlap a no-write audit interval with another root, test, or Git writer.
 - A child cannot widen scope, authorize mutation, merge, deploy, or declare completion.
-- Do not install this unpublished package, trust its hooks, or mutate the real Codex profile before
-  the U8 cutover gates.
+- Install or update this package only through the validated marketplace/cachebuster flow; never edit
+  installed cache snapshots as maintained source.
 - Verified Workflows receipts and scores cannot approve changes to their own implementation.

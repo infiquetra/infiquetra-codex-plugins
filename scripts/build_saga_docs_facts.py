@@ -18,7 +18,7 @@ from scripts.validate_codex_plugins import (  # noqa: E402
     TARGET_EXPECTED_PLUGINS,
 )
 
-CURRENT_SAGA_FAMILY_PLUGINS = ("saga", "mission-control", "team-execution", "deploy")
+CURRENT_SAGA_FAMILY_PLUGINS = ("saga", "mission-control", "verified-workflows", "deploy")
 TARGET_SAGA_FAMILY_PLUGINS = ("saga", "mission-control", "verified-workflows", "deploy")
 SAGA_FAMILY_PLUGINS = CURRENT_SAGA_FAMILY_PLUGINS
 
@@ -110,9 +110,9 @@ OWNER_BOUNDARIES = {
         "owns": "GitHub issues, prepared issue drafts, comments, labels, milestones, project boards, project fields, rollout, and flow metrics",
         "does_not_own": "Saga lifecycle phase authority or deployment tags",
     },
-    "team-execution": {
-        "owns": "reviewer consensus, selected validators, delegated or serial evidence, and guarded nonprod automation evidence",
-        "does_not_own": "final mutation approval, scope decisions, or deployment ownership",
+    "verified-workflows": {
+        "owns": "root-owned workflow DAGs, logical role execution, selected validators, barriers, and receipt-backed gate evidence",
+        "does_not_own": "final mutation approval, lifecycle authority, scope expansion, or deployment ownership",
     },
     "deploy": {
         "owns": "tag promotion, rollback, hotfix, deployment status, release-note previews, and deployment guardrails",
@@ -120,13 +120,7 @@ OWNER_BOUNDARIES = {
     },
 }
 
-TARGET_OWNER_BOUNDARIES = {
-    key: value for key, value in OWNER_BOUNDARIES.items() if key != "team-execution"
-}
-TARGET_OWNER_BOUNDARIES["verified-workflows"] = {
-    "owns": "root-owned workflow DAGs, logical role execution, selected validators, barriers, and receipt-backed gate evidence",
-    "does_not_own": "final mutation approval, lifecycle authority, scope expansion, or deployment ownership",
-}
+TARGET_OWNER_BOUNDARIES = dict(OWNER_BOUNDARIES)
 
 REQUIRED_DOCS = (
     "docs/saga/README.md",

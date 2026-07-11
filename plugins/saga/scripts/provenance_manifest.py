@@ -49,6 +49,8 @@ class ProducerKind(StrEnum):
     """Who produced the delegated output (R2)."""
 
     EXTERNAL_ENGINE = "external-engine"
+    VERIFIED_WORKFLOW = "verified-workflow"
+    # Read-only compatibility value for historical manifests.
     TEAM_EXECUTION = "team-execution"
     CC_WORKFLOWS = "cc-workflows"
 

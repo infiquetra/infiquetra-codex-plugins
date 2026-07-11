@@ -294,9 +294,8 @@ def test_external_engine_marker_is_advisory_only() -> None:
         "authority=advisory-only dispatch_owner=codex-root" in inline
     )
 
-    team = mod.recompile_for_tier(spec, "team-execution")
-    assert "## External Engine Intents" in team
-    assert '"capability": "code-generation"' in team
+    with pytest.raises(mod.SpecError, match="approved ## Workflow Structure"):
+        mod.recompile_for_tier(spec, "verified-workflow")
 
 
 # ---------------------------------------------------------------------------

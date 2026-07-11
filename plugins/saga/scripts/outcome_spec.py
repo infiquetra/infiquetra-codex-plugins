@@ -78,7 +78,7 @@ TERMINAL_STATES = frozenset({"done", "failed", "rejected", "stalled"})
 SUCCESS_STATES = frozenset({"done"})
 
 # The full executor menu (R6). ``cc-workflows-ultracode`` and ``goal``/``fork`` are
-# host-dependent (degrade may drop them, KTD9); ``team-execution`` and ``inline`` always run.
+# host-dependent (degrade may drop them, KTD9); Verified Workflows and inline always run.
 NODE_BACKENDS = (
     "inline",
     "verified-workflow",

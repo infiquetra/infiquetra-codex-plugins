@@ -2,11 +2,11 @@
 
 All notable changes to this plugin are documented here.
 
-## [1.0.0] - Unreleased
+## [1.0.0] - 2026-07-11
 
 ### Added
 
-- Establish the unpublished Verified Workflows Codex package identity.
+- Establish the active Verified Workflows Codex package identity.
 - Add `run` and `appsec-audit` skill surfaces.
 - Define the root-owned workflow DAG and compatibility boundaries.
 - Preserve 25 logical jobs as versioned agent lenses with closed selection, independence,
@@ -50,4 +50,4 @@ All notable changes to this plugin are documented here.
 - Adapt behavior from the upstream `team-execution` lineage without claiming byte parity.
 - Read exact legacy vocabulary through fleet-core and write only canonical Verified Workflows
   vocabulary.
-- Keep Team Execution `2.3.0` as the sole active marketplace package until U8 cutover proof.
+- Retire Team Execution `2.3.0` after isolated install, migration, rollback, and fresh-session proof.

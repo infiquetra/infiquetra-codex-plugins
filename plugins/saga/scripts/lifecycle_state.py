@@ -52,7 +52,7 @@ def destination_includes_deploy(destination: str) -> bool:
     return normalize_destination(destination) == "nonprod-deploy"
 
 
-def should_offer_team_execution(
+def should_offer_verified_workflow(
     *,
     file_count: int,
     phase_count: int,
@@ -62,7 +62,7 @@ def should_offer_team_execution(
     deployment_sensitive: bool,
     has_code_surface: bool = True,
 ) -> bool:
-    """Decide whether the loop should offer team-execution."""
+    """Decide whether the loop should offer Verified Workflows."""
 
     code_shaped = any(
         (
@@ -74,6 +74,10 @@ def should_offer_team_execution(
         )
     )
     return (code_shaped and has_code_surface) or cross_repo
+
+
+# Source-compatible Python alias; canonical serialized values remain verified-workflow.
+should_offer_team_execution = should_offer_verified_workflow
 
 
 def should_prompt_for_issue(*, has_issue: bool, is_trivial: bool, user_declined: bool) -> bool:
@@ -107,13 +111,13 @@ def recommend_execution_backend(
     """Recommend a Codex execution backend, mirroring operator-choice.md section 3.
 
     Codex exposes three Saga backends: ``inline``, ``manual``, and
-    ``team-execution``. The source-only workflow backend is deliberately not
+    ``verified-workflow``. The source-only workflow backend is deliberately not
     reachable in this port.
 
     DELIBERATE DIVERGENCE from operator-choice section 3.1: that section frames
     the consensus signal as a **PLUS** on top of a size/risk trigger. Here a
     ``needs_consensus`` signal is **sufficient on its own** (``or
-    needs_consensus``) — a small-but-contested job is a team-execution job even
+    needs_consensus``) — a small-but-contested job is a verified-workflow job even
     without a size/risk trigger, which is the more useful behavior for a real
     caller. This is intentional, not a transcription error.
 
@@ -122,7 +126,7 @@ def recommend_execution_backend(
     """
 
     team = (
-        should_offer_team_execution(
+        should_offer_verified_workflow(
             file_count=file_count,
             phase_count=phase_count,
             has_security=has_security,
@@ -173,7 +177,7 @@ def recheck_orchestration_capability(
     *,
     orchestration_mode: str,
     workflow_available: bool = False,
-    fallback_mode: str = "team-execution",
+    fallback_mode: str = "verified-workflow",
 ) -> dict[str, object]:
     """Recheck a stored orchestration tier against Codex capabilities."""
 
@@ -248,8 +252,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     recheck.add_argument("--orchestration-mode", default="inline")
     recheck.add_argument("--no-workflow", action="store_true")
-    recheck.add_argument("--fallback-mode", default="team-execution")
-
+    recheck.add_argument("--fallback-mode", default="verified-workflow")
     return parser
 
 

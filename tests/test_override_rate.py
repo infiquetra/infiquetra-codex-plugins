@@ -549,8 +549,8 @@ def test_real_saga_save_feeds_override_rate_reader(
 
     # The override decision's operator_choice is explicit, not inferred from mode.
     override_rec = next(r for r in records if r.recommended == "inline")
-    assert override_rec.operator_choice == "team-execution"
-    assert override_rec.actual_mode == "team-execution"
+    assert override_rec.operator_choice == "verified-workflow"
+    assert override_rec.actual_mode == "verified-workflow"
 
 
 def test_real_saga_save_without_operator_choice_is_excluded(

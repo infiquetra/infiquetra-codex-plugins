@@ -227,7 +227,6 @@ def test_all_consumer_shims_load_the_new_catalog_and_palette() -> None:
     repo = _FLEET_CORE.parents[1]
     shim_paths = (
         repo / "plugins/saga/scripts/fleet_commons_shim.py",
-        repo / "plugins/team-execution/scripts/fleet_commons_shim.py",
         repo / "plugins/verified-workflows/scripts/fleet_commons_shim.py",
         repo / "plugins/mission-control/scripts/fleet_commons_shim.py",
         repo / "plugins/unifi/skills/unifi-network/scripts/fleet_commons_shim.py",

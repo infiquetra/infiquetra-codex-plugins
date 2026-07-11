@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
-"""Structured execution-spec + Claude Code workflow-script emitter (R9 keystone).
+"""Structured execution-spec + source-workflow and inline emitters (R9 keystone).
 
-`/plan` authors ONE structured execution-spec and emits from it **either** a runnable
-Claude Code workflow script (this module) **or** the team-execution markdown protocol
-(``team_emitter.py``, U11). Saga stores only an ``orchestration_ref`` pointer; it never
-vendors backend machinery (R9, KTD6). The governance difference is *which emitter runs*,
-not the authoring.
+Codex retains this source-compatible execution-spec reader for legacy workflow artifacts and
+inline recompilation. Canonical Verified Workflows plans are authored as ``## Workflow Structure``
+tables and consumed by the separate plugin; Saga does not synthesize those role/profile bindings.
 
 The spec is the single source of truth: units carry a per-unit ``{model, effort}`` tier
 (R2(b)), a return contract, dependency barriers, escalations, and -- for fan-out units --
@@ -480,7 +478,7 @@ class Unit:
     # A pilot unit_id that gates this fan-out (run one first). Same-tier required (R3).
     pilot: str = ""
     # An optional refute-N judge-panel over this unit's output (KTD5). Absent => no panel;
-    # an absent field round-trips unchanged so team_emitter / existing specs are untouched.
+    # an absent field round-trips unchanged so existing specs are untouched.
     verify: Verify | None = None
     # External-engine selection is an advisory dispatch intent, never a native-child selector.
     engine: str | None = None
@@ -559,7 +557,7 @@ class Unit:
             "pilot": self.pilot,
         }
         # Only emit verify when present so an absent panel round-trips unchanged --
-        # team_emitter and existing specs never gain a new key (R5).
+        # Existing specs never gain a new key (R5).
         if self.verify is not None:
             out["verify"] = self.verify.to_dict()
         if self.engine is not None:
@@ -576,7 +574,7 @@ class ExecutionSpec:
     """The structured execution-spec `/plan` authors and the emitters consume.
 
     One spec, two emitters (R9 / KTD6): ``emit_workflow_script`` (this module) and the
-    team-execution markdown emitter (U11). Saga stores only an ``orchestration_ref``
+    legacy orchestration emitters. Saga stores only an ``orchestration_ref``
     pointer to the emitted artifact.
     """
 
@@ -866,7 +864,7 @@ def _emit_panel_reconciliation(
     a null verdict, or one lacking a usable ``.refuted`` array, is a runtime-missing verifier,
     NOT an N/A vote. Excluding it (rather than fabricating a non-refuting vote) keeps a degraded
     panel from silently passing a unit its reporting verifiers would refute, and matches
-    team-execution's dimension-exclusion semantics.
+    the legacy review protocol's dimension-exclusion semantics.
     """
     panel = unit.verify
     assert panel is not None
@@ -1404,67 +1402,27 @@ def emit_inline_baseline(spec: ExecutionSpec) -> str:
 # emitter can render the correct floor for a given (possibly downgraded) tier without a
 # cross-module import at module scope (the scripts load standalone in tests).
 _WORKFLOW_TIER = "cc-workflows-ultracode"
-_TEAM_TIER = "team-execution"
 _INLINE_TIER = "inline"
-
-
-def _emit_team_structure(spec: ExecutionSpec) -> str:
-    """Lazily load ``team_emitter`` and emit the team-execution ``## Team Structure`` markdown.
-
-    Imported by path (not at module scope) so ``execution_spec`` stays importable standalone in
-    tests and there is no import cycle with ``team_emitter`` (which lazily loads this module).
-    """
-    import importlib.util
-
-    path = Path(__file__).parent / "team_emitter.py"
-    loaded = importlib.util.spec_from_file_location("team_emitter", path)
-    assert loaded is not None and loaded.loader is not None
-    module = importlib.util.module_from_spec(loaded)
-    loaded.loader.exec_module(module)
-    rendered = module.emit_team_structure(spec)  # type: ignore[no-any-return]
-    records = [
-        record
-        for unit in spec.units
-        if (
-            record := _workflow_emitter.external_engine_record(
-                unit_id=unit.unit_id,
-                engine=unit.engine,
-                capability=unit.capability,
-                intent=unit.engine_intent,
-            )
-        )
-        is not None
-    ]
-    if not records:
-        return rendered
-    lines = [rendered.rstrip(), "", "## External Engine Intents", ""]
-    lines.append(
-        "These structured handoffs require Codex-root advisory dispatch; native workers remain "
-        "the completion authority."
-    )
-    for record in records:
-        lines.append(f"- `{json.dumps(record, sort_keys=True)}`")
-    return "\n".join(lines) + "\n"
 
 
 def recompile_for_tier(spec: ExecutionSpec, orchestration_mode: str) -> str:
     """Re-emit the spec for a (possibly downgraded) orchestration tier (R11 recompile).
 
-    ONLY the orchestration tier changes -- every unit survives in every emitter. The inline and
-    workflow emitters additionally render each unit's ``{model, effort}`` tier verbatim;
-    ``team-execution`` re-emits the ``team_emitter`` ``## Team Structure`` markdown protocol (the R5
-    third leg of the by-mode dispatcher seam), which renders the team roles/units but not the
-    per-unit ``{model, effort}`` (the team-execution protocol selects models per its own roster).
-    ``cc-workflows-ultracode`` re-emits the dynamic ``.workflow.js`` harness; ``inline`` or any
+    ONLY the orchestration tier changes -- every unit survives in every supported emitter. The
+    inline and source-workflow emitters render each unit's ``{model, effort}`` tier verbatim.
+    ``cc-workflows-ultracode`` re-emits the legacy dynamic ``.workflow.js`` harness; ``inline`` or any
     unknown floor re-emits the inline/serial baseline, the always-runnable floor. This is the
     function an off-host resume calls after ``recheck_orchestration_capability`` decides the new
     tier: it never errors and always returns a runnable artifact (AE3).
     """
     spec.validate()
+    if orchestration_mode == "verified-workflow":
+        raise SpecError(
+            "verified-workflow requires an approved ## Workflow Structure; "
+            "Saga cannot synthesize role/profile bindings from a legacy execution spec"
+        )
     if orchestration_mode == _WORKFLOW_TIER:
         return emit_workflow_script(spec)
-    if orchestration_mode == _TEAM_TIER:
-        return _emit_team_structure(spec)
     # The inline floor and any other/unknown tier emit the host-independent serial baseline --
     # never an empty or un-runnable artifact.
     return emit_inline_baseline(spec)

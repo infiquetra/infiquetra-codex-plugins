@@ -5,7 +5,7 @@ One JSON file per delegated invocation at
 ``<git-common-dir>/saga-manifests/<saga-id>/<execution-id>.json``, resolved through the same
 ``resolve_common_dir()`` ``outcome_store.py`` uses for the outcome cache — the only candidate
 that satisfies R19 for delegations that never emit a ``CompletionEvent`` (agy runs during plain
-``/work``, team-execution outside an outcome). Rejected carriers (KTD1): ``CompletionEvent.payload``
+``/work`` and Verified Workflows outside an outcome). Rejected carriers (KTD1): ``CompletionEvent.payload``
 alone (outcome leaves only), a saga tick pointer (per-checkout, git-ignored, worktree-local).
 
 This module also owns the typed ``manifest_ref`` pointer helper for the outcome-leaf case: a

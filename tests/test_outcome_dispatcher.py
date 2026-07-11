@@ -1,8 +1,8 @@
 """Tests for the OutcomeOrchestrator dispatcher seam (U4).
 
 Pins R5 (single dispatcher seam, HALT-not-degrade receipt), R6 (verified-workflow is the first real
-backend), and R23 (a backend that cannot run halts visibly, never a silent substitute) — plus the
-team_emitter wiring (R5) and integration with the U3 reconcile loop.
+backend), and R23 (a backend that cannot run halts visibly, never a silent substitute), plus
+integration with the U3 reconcile loop.
 """
 
 from __future__ import annotations
@@ -34,7 +34,6 @@ def _load(name: str) -> ModuleType:
 
 
 D = _load("outcome_dispatcher")
-ES = _load("execution_spec")
 OUTCOME = _load("outcome")
 STORE = _load("outcome_store")
 
@@ -196,33 +195,6 @@ def test_make_dispatcher_raises_halt_with_receipt() -> None:
         disp(_req("fork"))
     assert exc.value.receipt.backend == "fork"
     assert exc.value.receipt.subplot_id == "build"
-
-
-# --------------------------------------------------------------------------- team_emitter wiring (R5)
-
-
-def _execution_spec_dict() -> dict[str, Any]:
-    return {
-        "name": "leaf-plan",
-        "description": "a leaf plan",
-        "repo": "/tmp/repo",
-        "units": [
-            {"unit_id": "U1", "label": "preflight", "tier": {"model": "haiku", "effort": "low"}},
-            {
-                "unit_id": "U2",
-                "label": "build",
-                "tier": {"model": "sonnet", "effort": "high"},
-                "depends_on": ["U1"],
-            },
-        ],
-    }
-
-
-def test_team_execution_artifact_wires_team_emitter() -> None:
-    spec = ES.ExecutionSpec.from_dict(_execution_spec_dict())
-    art = D.team_execution_artifact(spec)
-    assert "Team Structure" in art  # produced through recompile_for_tier's team_emitter leg (R5)
-    assert "U1" in art and "U2" in art  # units preserved (by unit id)
 
 
 # --------------------------------------------------------------------------- integration with advance

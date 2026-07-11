@@ -8,11 +8,9 @@ Scans all saga envelopes and surfaces:
   (``orchestration_recommended``).  Only sagas where *both* fields are non-empty
   are counted — ``""`` means "no recommendation recorded" and is excluded.
 * **over_tier** — cases where the operator escalated to a richer backend than
-  the recommendation (``inline`` → ``team-execution`` or
-  ``cc-workflows-ultracode``; ``team-execution`` → ``cc-workflows-ultracode``).
+  the recommendation (for example ``inline`` to ``verified-workflow``).
 * **under_tier** — cases where the operator de-escalated to a cheaper backend
-  (``cc-workflows-ultracode`` → ``team-execution`` or ``inline``;
-  ``team-execution`` → ``inline``).
+  (for example ``verified-workflow`` to ``inline``).
 * **budget_exhaustion** — sagas that recorded a non-empty
   ``orchestration_downgrade`` note; each note is a capability-portable
   off-host degradation event (U12 / R11).
@@ -49,6 +47,8 @@ from typing import Any
 _TIER_ORDER: dict[str, int] = {
     "inline": 0,
     "manual": 1,
+    "verified-workflow": 2,
+    # Read-only compatibility rank for historical Saga values.
     "team-execution": 2,
     "cc-workflows-ultracode": 3,
 }

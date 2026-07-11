@@ -76,9 +76,9 @@ LEGACY_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
     },
 }
 
-CURRENT_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
+PRE_CUTOVER_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
     "saga": {
-        "version": "0.65.0",
+        "version": "0.75.17+codex.20260711134423",
         "skills": (
             "office-hours",
             "ideate",
@@ -135,7 +135,7 @@ CURRENT_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
         "skills": ("discord-identity-assets",),
     },
     "fleet-core": {
-        "version": "0.5.0",
+        "version": "0.8.4+codex.20260711134422",
         "skills": (),
         "library": True,
     },
@@ -145,23 +145,21 @@ CURRENT_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
     "test-suite": LEGACY_EXPECTED_PLUGINS["test-suite"],
 }
 
-# U9 stages this source package without publishing it in the active marketplace. U8 replaces the
-# legacy package atomically; until then current and target inventories must remain distinct.
 TARGET_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
     name: spec
-    for name, spec in CURRENT_EXPECTED_PLUGINS.items()
+    for name, spec in PRE_CUTOVER_EXPECTED_PLUGINS.items()
     if name != "team-execution"
 }
 TARGET_EXPECTED_PLUGINS["verified-workflows"] = {
-    "version": "1.0.0",
+    "version": "1.0.0+codex.20260711134424",
     "skills": ("run", "appsec-audit"),
 }
-UNPUBLISHED_TARGET_PLUGINS = {
-    "verified-workflows": TARGET_EXPECTED_PLUGINS["verified-workflows"],
-}
 CURRENT_ONLY_LEGACY_PLUGINS = {
-    "team-execution": CURRENT_EXPECTED_PLUGINS["team-execution"],
+    "team-execution": PRE_CUTOVER_EXPECTED_PLUGINS["team-execution"],
 }
+
+# U8 completed the source and marketplace cutover; current and target inventories now agree.
+CURRENT_EXPECTED_PLUGINS = TARGET_EXPECTED_PLUGINS
 
 # Backward-compatible name for current-mode tests and callers.
 EXPECTED_PLUGINS = CURRENT_EXPECTED_PLUGINS
@@ -229,7 +227,7 @@ REQUIRED_STATE_ROOTS = {
 REQUIRED_LEGACY_STATE_ROOTS = set(
     WORKFLOW_COMPAT.legacy_values(WORKFLOW_COMPAT.REPO_STATE_ROOT)
 )
-REQUIRED_UNPUBLISHED_PLUGINS = {"verified-workflows"}
+REQUIRED_UNPUBLISHED_PLUGINS: set[str] = set()
 REQUIRED_LEGACY_READ_PLUGINS = {"team-execution"}
 TARGET_REMOVED_PLUGINS = OLD_ACTIVE_PLUGINS | {"team-execution"}
 REQUIRED_MIGRATION_REPLACEMENTS = {
@@ -278,7 +276,7 @@ STAGED_MARKETPLACE_SHA256 = (
     "42803919b39b720599b9692bfdcd95bcfe8c31b06ebb2c976aacaa890fdfea8a"
 )
 LEGACY_WORKFLOW_HISTORICAL_INVENTORY_SHA256 = (
-    "8835892d01e2608ae835e9bfc7079eadc33a3fdb6d080963ec4e4cc4a1111b0a"
+    "a741e6f3ac8b4243b1b2cdf34dd3166fb91a7be5edb048285f4d896c1d16dc58"
 )
 LEGACY_WORKFLOW_INVENTORY = Path(
     "docs/validation/verified-workflows-legacy-token-inventory.json"
@@ -299,11 +297,11 @@ LEGACY_WORKFLOW_EXACT_CLASSIFICATIONS = {
     Path(".agents/plugins/marketplace.json"): "temporary-active-marketplace",
     Path(".gitignore"): "legacy-readable-state-root",
     Path("AGENTS.md"): "current-pre-cutover-inventory",
-    Path("README.md"): "current-pre-cutover-inventory",
-    Path("pyproject.toml"): "temporary-legacy-test-path",
+    Path("README.md"): "migration-documentation",
+    Path("pyproject.toml"): "migration-fixture",
     Path("docs/validation.md"): "migration-documentation",
     Path("docs/validation/codex-runtime-capability-snapshot.json"): "historical-evidence",
-    Path("docs/validation/saga-family-codex-proof.md"): "current-install-proof",
+    Path("docs/validation/saga-family-codex-proof.md"): "migration-documentation",
     Path("docs/validation/saga-family-target-inventory.json"): "legacy-read-metadata",
     Path("plugins/fleet-core/CHANGELOG.md"): "lineage-documentation",
     Path("plugins/fleet-core/PORTABILITY.md"): "lineage-documentation",
@@ -314,7 +312,7 @@ LEGACY_WORKFLOW_EXACT_CLASSIFICATIONS = {
     Path("plugins/fleet-core/scripts/fleet_commons/workflow_compat.py"): "compat-registry",
     Path("plugins/saga/CHANGELOG.md"): "lineage-documentation",
     Path("plugins/saga/PORTABILITY.md"): "lineage-documentation",
-    Path("plugins/saga/README.md"): "temporary-saga-instructions",
+    Path("plugins/saga/README.md"): "migration-documentation",
     Path("plugins/verified-workflows/README.md"): "migration-documentation",
     Path("plugins/verified-workflows/PORTABILITY.md"): "lineage-documentation",
     Path("plugins/verified-workflows/CHANGELOG.md"): "lineage-documentation",
@@ -322,8 +320,8 @@ LEGACY_WORKFLOW_EXACT_CLASSIFICATIONS = {
     Path("scripts/build_saga_docs_facts.py"): "current-target-projection",
     Path("scripts/capture_codex_runtime_capabilities.py"): "historical-evidence",
     Path("scripts/port_contract.py"): "frozen-source-contract",
-    Path("scripts/prove_codex_plugin_profile.py"): "current-install-proof",
-    Path("scripts/render_saga_docs_assets.py"): "current-doc-renderer",
+    Path("scripts/prove_codex_plugin_profile.py"): "migration-documentation",
+    Path("scripts/render_saga_docs_assets.py"): "migration-documentation",
 }
 LEGACY_WORKFLOW_HISTORICAL_DOC_PARTS = {
     "brainstorms",
@@ -504,13 +502,10 @@ def validate_repository(root: Path, mode: str = "current") -> list[str]:
     if mode == "current":
         expected_plugins = CURRENT_EXPECTED_PLUGINS
         validate_marketplace(root, expected_plugins, errors)
-        validate_plugins(
-            root,
-            expected_plugins,
-            errors,
-            optional_plugins=UNPUBLISHED_TARGET_PLUGINS,
-        )
-        validate_staged_workflow_identity(root, errors)
+        validate_plugins(root, expected_plugins, errors)
+        validate_verified_workflows_canonical_surface(root, errors)
+        validate_saga_workflow_independence(root, errors)
+        validate_legacy_workflow_token_allowlist(root, errors, mode="cutover")
         validate_cutover_evidence(root, errors)
     elif mode == "cutover":
         expected_plugins = TARGET_EXPECTED_PLUGINS
@@ -527,9 +522,9 @@ def validate_repository(root: Path, mode: str = "current") -> list[str]:
             root,
             expected_plugins,
             errors,
-            optional_plugins=CURRENT_ONLY_LEGACY_PLUGINS,
         )
-        validate_staged_workflow_identity(root, errors)
+        validate_verified_workflows_canonical_surface(root, errors)
+        validate_saga_workflow_independence(root, errors)
 
     validate_matrix(root, mode, errors)
     validate_provenance(root, expected_plugins, errors)
@@ -676,7 +671,7 @@ def expected_legacy_workflow_classification(path: Path) -> str | None:
     """Return the required classification for one inventoried legacy-token path."""
 
     if path == Path("docs/work-sessions/2026-07-11-u5-saga-resume.md"):
-        return "current-pre-cutover-documentation"
+        return "historical-evidence"
     if path in LEGACY_WORKFLOW_EXACT_CLASSIFICATIONS:
         return LEGACY_WORKFLOW_EXACT_CLASSIFICATIONS[path]
     if path.parts[:2] == ("plugins", "team-execution"):
@@ -692,11 +687,11 @@ def expected_legacy_workflow_classification(path: Path) -> str | None:
         if path.parts[:3] == ("plugins", "saga", "tests"):
             return "migration-fixture"
         if path in LEGACY_WORKFLOW_SAGA_WRITERS:
-            return "temporary-saga-writer"
+            return "legacy-parser"
         if path in LEGACY_WORKFLOW_SAGA_READERS:
             return "temporary-saga-reader"
         if path in LEGACY_WORKFLOW_SAGA_INSTRUCTIONS:
-            return "temporary-saga-instructions"
+            return "legacy-parser"
         return None
     if path.parts[:3] == ("plugins", "fleet-core", "tests"):
         return "compatibility-fixture"
@@ -710,9 +705,9 @@ def expected_legacy_workflow_classification(path: Path) -> str | None:
         if path.parts[:2] == ("docs", "cutover"):
             return "migration-documentation"
         if path.parts[:2] in {("docs", "saga"), ("docs", "baseline")}:
-            return "current-pre-cutover-documentation"
+            return "migration-documentation"
         if path.parts[:2] == ("docs", "validation"):
-            return "current-pre-cutover-documentation"
+            return "historical-evidence"
     return None
 
 
@@ -1770,8 +1765,8 @@ def validate_target_fixture_payload(
             errors.append(
                 f"{path}: {plugin_name} version must be {expected['version']}"
             )
-        if plugin_name == "verified-workflows" and entry.get("publication_status") != "unpublished":
-            errors.append(f"{path}: verified-workflows must be marked unpublished before U8")
+        if plugin_name == "verified-workflows" and entry.get("publication_status") != "released":
+            errors.append(f"{path}: verified-workflows must be marked released after U8")
         skills = entry.get("skills")
         if not isinstance(skills, list) or not all(isinstance(skill, str) for skill in skills):
             errors.append(f"{path}: {plugin_name} skills must be a list of strings")

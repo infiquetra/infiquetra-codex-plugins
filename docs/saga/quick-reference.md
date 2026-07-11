@@ -18,7 +18,7 @@ Keep this page open when choosing a Saga family command.
 | "Review the implementation" | `saga:code-review` |
 | "Does it actually work?" | `saga:qa` |
 | "Create an SDLC issue draft" | `saga:handoff` then `mission-control:issues` |
-| "Escalate to reviewers/validators" | `team-execution:team-execution` |
+| "Escalate to reviewers/validators" | `verified-workflows:run` |
 | "Promote or inspect a release" | `deploy:deploy`, `deploy:deploy-status`, or `deploy:deploy-notes` |
 
 ## Maturity Routing
@@ -39,7 +39,7 @@ Keep this page open when choosing a Saga family command.
 | Plan execution | Run `saga:doc-review` before `saga:work`; unresolved P0/P1 blocks execution. |
 | GitHub mutation | Use `mission-control`; Saga handoff context is not authority. |
 | Deployment mutation | Use `deploy`; Saga only records deployment intent. |
-| Reviewer protocol | Use `team-execution`; reviewers collect evidence but do not authorize mutation. |
+| Reviewer protocol | Use `verified-workflows`; reviewers collect evidence but do not authorize mutation. |
 | Local Saga cache | `.codex/saga/` helps resume but loses to git, GitHub, deployment state, and journal records. |
 
 ## Visuals

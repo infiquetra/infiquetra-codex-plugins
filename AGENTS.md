@@ -4,7 +4,7 @@
 
 `infiquetra-codex-plugins` is the Codex-native adapter repo for selected Infiquetra
 plugins. It is **not** a full mirror of `infiquetra-claude-plugins`; it carries the
-Codex-ready plugin surface (`saga`, `deploy`, `mission-control`, `team-execution`,
+Codex-ready plugin surface (`saga`, `deploy`, `mission-control`, `verified-workflows`,
 `fleet-core`, `discord-identity-assets`, `home-lab-ops`, `python-toolkit`, `unifi`,
 `test-suite`). `mission-control` replaces
 the prior SDLC surface and the Saga family replaces the prior document-review surface.

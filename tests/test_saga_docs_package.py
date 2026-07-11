@@ -34,7 +34,7 @@ def test_required_docs_and_visual_assets_exist() -> None:
 def test_command_catalog_covers_saga_family_skills() -> None:
     facts = load_facts()
     text = (DOCS_ROOT / "command-catalog.md").read_text(encoding="utf-8")
-    for plugin in ("saga", "mission-control", "team-execution", "deploy"):
+    for plugin in ("saga", "mission-control", "verified-workflows", "deploy"):
         for skill in CURRENT_EXPECTED_PLUGINS[plugin]["skills"]:
             assert f"{plugin}:{skill}" in text
             assert any(row["name"] == skill for row in facts["plugins"][plugin]["skills"])
@@ -50,7 +50,9 @@ def test_target_fixture_facts_project_verified_workflows_without_changing_curren
         "deploy",
     }
     assert "team-execution" not in facts["plugins"]
-    assert facts["plugins"]["verified-workflows"]["version"] == "1.0.0"
+    assert facts["plugins"]["verified-workflows"]["version"] == (
+        "1.0.0+codex.20260711134424"
+    )
     assert {
         row["namespace"] for row in facts["plugins"]["verified-workflows"]["skills"]
     } == {
@@ -101,7 +103,7 @@ def test_entrypoint_readmes_link_saga_family_guide() -> None:
         REPO_ROOT / "README.md": "docs/saga/README.md",
         REPO_ROOT / "plugins" / "saga" / "README.md": "../../docs/saga/README.md",
         REPO_ROOT / "plugins" / "mission-control" / "README.md": "../../docs/saga/README.md",
-        REPO_ROOT / "plugins" / "team-execution" / "README.md": "../../docs/saga/README.md",
+        REPO_ROOT / "plugins" / "verified-workflows" / "README.md": "../../docs/saga/README.md",
         REPO_ROOT / "plugins" / "deploy" / "README.md": "../../docs/saga/README.md",
     }
     for path, link in entrypoints.items():

@@ -2,14 +2,13 @@
 """OutcomeOrchestrator dispatcher seam — route a leaf to its backend (U4).
 
 This is the **single dispatcher seam** every subplot routes through (R5). It is the outcome-layer
-counterpart to ``execution_spec.recompile_for_tier`` (the by-mode emitter fork, now extended with the
-``team_emitter`` third leg): given a leaf and its chosen backend, it either **dispatches** — minting a
+counterpart to ``execution_spec.recompile_for_tier``: given a leaf and its chosen backend, it either **dispatches** — minting a
 leaf saga id and a ``/resume`` return channel (the R9 bidirectional envelope's re-entry token out) —
 or, when the backend cannot actually run, emits a **visible HALT-not-degrade receipt** (R5/R23) rather
 than silently substituting a lesser backend.
 
-U4 made **team-execution the first real backend** (R6); **U9 completes the menu** (R6): ``resolve_available``
-exposes the full host-conditional set (the always-available floor inline / team-execution / manual + the
+Verified Workflows is the first real backend (R6); ``resolve_available`` exposes the full
+host-conditional set (the always-available floor inline / verified-workflow / manual plus the
 host-dependent fork / subagent / cc-workflows-ultracode / goal), and ``degrade_decision`` is the
 **presence-conditional degrade policy** (R23/AE1) — an unavailable backend HALTs when the operator is
 attending / the leaf is guarantee-bearing / it already side-effected, else degrades **one rung** down the
@@ -23,7 +22,7 @@ owns the HALT/degrade decision via ``degrade_decision``); it still raises ``Back
 restricted/unit caller, which the reconcile loop records as a HALT.
 
 House pattern (mirrors the other ``outcome_*`` modules): pure functions over explicit values, the
-``team_emitter`` wiring loaded lazily by path, no I/O at import.
+no I/O at import.
 """
 
 from __future__ import annotations
@@ -39,7 +38,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import outcome_spec  # noqa: E402  (after the sys.path shim, by design)
 
-# The always-available floor (R6): the agent can always run inline, emit a team-execution artifact, or
+# The always-available floor (R6): the agent can always run inline, use a verified workflow, or
 # hand a leaf to the operator (manual). The host-dependent backends (fork / subagent /
 # cc-workflows-ultracode / goal) are only available when the host advertises them (KTD9) — the
 # coordinator is a Python script that cannot itself probe the Claude Code host, so they stay OFF by
@@ -49,7 +48,7 @@ HOST_DEPENDENT: frozenset[str] = frozenset()
 DEFAULT_AVAILABLE: tuple[str, ...] = ALWAYS_AVAILABLE
 
 # The capability ladder degrade walks DOWN (R23): most-capable dynamic workflows -> review-gated
-# team-execution -> the always-runnable inline floor. A backend NOT on this ladder
+# verified-workflow -> the always-runnable inline floor. A backend NOT on this ladder
 # (fork/subagent/goal/manual) has no defined lower rung, so an unavailable one HALTs rather than
 # silently substituting (R5). Mirrors lifecycle_state.ORCHESTRATION_TIERS.
 DEGRADE_LADDER: tuple[str, ...] = ("verified-workflow", "inline")
@@ -213,30 +212,6 @@ def _load_verified_workflow_readiness() -> Any:
 
 
 # ---------------------------------------------------------------------------
-# team-execution artifact (R5 — wiring the existing team_emitter)
-# ---------------------------------------------------------------------------
-
-
-def team_execution_artifact(execution_spec_obj: Any) -> str:
-    """Emit the team-execution ``## Team Structure`` markdown for a leaf's execution spec (R5).
-
-    Delegates to ``execution_spec.recompile_for_tier(spec, "team-execution")`` — the by-mode
-    dispatcher seam whose third leg is now ``team_emitter`` — so the team-execution backend's runnable
-    artifact is produced through the single seam, not reinvented here. Lazily loaded by path so this
-    module is importable standalone.
-    """
-    import importlib.util
-
-    path = Path(__file__).resolve().parent / "execution_spec.py"
-    loaded = importlib.util.spec_from_file_location("execution_spec", path)
-    assert loaded is not None and loaded.loader is not None
-    module = importlib.util.module_from_spec(loaded)
-    sys.modules.setdefault("execution_spec", module)
-    loaded.loader.exec_module(module)
-    return str(module.recompile_for_tier(execution_spec_obj, "team-execution"))
-
-
-# ---------------------------------------------------------------------------
 # Full backend menu + the presence-conditional degrade decision (U9 — R6/R23/AE1)
 # ---------------------------------------------------------------------------
 
@@ -246,7 +221,7 @@ def resolve_available(
 ) -> tuple[str, ...]:
     """The runnable backend set for this host (R6), ordered by the spec's ``NODE_BACKENDS`` vocabulary.
 
-    ``ALWAYS_AVAILABLE`` (inline / team-execution / manual) is unconditional. ``host_capable`` enables
+    ``ALWAYS_AVAILABLE`` (inline / verified-workflow / manual) is unconditional. ``host_capable`` enables
     the forked-context backends (``fork`` / ``subagent`` / ``goal``); ``workflow_available`` additionally
     enables ``cc-workflows-ultracode``. The conservative default (both False) is the always-available
     floor — the coordinator never claims a host-dependent backend it cannot verify.
@@ -376,7 +351,7 @@ def recommend_outcome_backend(
 
     Source Workflow and fork are classified but not activated in Codex. Broad
     fanout, adversarial confidence, and cheap-fork signals all converge on the
-    active delegated backend (`team-execution`) with an explicit unsupported
+    active delegated backend (`verified-workflow`) with an explicit unsupported
     backend receipt.
     """
 
@@ -404,7 +379,7 @@ def recommend_outcome_backend(
     if frontier_width > _FRONTIER_BUDGET_THRESHOLD and leaf_signals.get("broad_independent_fanout"):
         rec["budget_note"] = (
             f"frontier width {frontier_width} exceeds Codex fanout budget; "
-            "using team-execution/manual paths"
+            "using verified-workflow/manual paths"
         )
     return rec
 

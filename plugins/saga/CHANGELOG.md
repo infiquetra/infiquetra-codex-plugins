@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.75.17 - 2026-07-11
+
+### Changed
+
+- Replace active Team Execution writes with canonical Verified Workflows workflow, receipt, state,
+  and orchestration vocabulary while keeping historical values readable.
+- Add Codex 5.6 execution-class selection, named-profile receipts, root-owned Workflow Structure
+  dispatch, outcome acknowledgements, external-engine transport/model/effort enforcement, trust,
+  economics, liveness, attestation, onboarding, and typed advisory reconciliation.
+- Preserve persisted `saga.manifest.v1` lineage names while translating operator-facing labels to
+  Codex terminology.
+
 ## 0.65.0 - 2026-07-10
 
 ### Changed

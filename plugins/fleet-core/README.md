@@ -2,7 +2,7 @@
 
 Fleet-commons library plugin: the canonical home for cross-plugin shared primitives and the
 canonical copy of the vendored resolution shim. **Scripts-only** — no skills, commands, or
-agents. Consumer plugins (`saga`, `team-execution`, `verified-workflows`, `mission-control`, `unifi`) vendor a
+agents. Consumer plugins (`saga`, `verified-workflows`, `mission-control`, `unifi`) vendor a
 byte-identical copy of `fleet_commons_shim.py` and load the shared modules through it.
 
 ## What lives here
@@ -45,9 +45,9 @@ New Codex profiles select one of `review-max`, `review-high`, `test-medium`, `sc
 `fable`/`opus`/`sonnet`/`haiku` vocabulary and mappings remain only so existing consumers stay
 green until their planned migration. See `references/tier-palette.md`.
 
-`team-execution` is the byte-stable, marketplace-active legacy consumer during U9 development.
-The unpublished `verified-workflows` source is its staged successor. Both load one compatibility
-registry, but only Team Execution is active until U8 atomically replaces it.
+`verified-workflows` is the active workflow consumer. Historical Team Execution values remain
+readable through one compatibility registry, but the retired package is no longer published or
+installed alongside it.
 
 ## Tests
 

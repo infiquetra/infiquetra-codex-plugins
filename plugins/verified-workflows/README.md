@@ -2,8 +2,8 @@
 
 Codex-native, root-owned workflow orchestration for Infiquetra work.
 
-> Development status: `1.0.0` is an unpublished target package. The active marketplace continues
-> to expose `team-execution` `2.3.0` until the U8 transactional cutover and runtime proof pass.
+> Release status: `1.0.0` is the active workflow package. Historical Team Execution vocabulary is
+> read-only compatibility data; the retired package is not co-installed.
 
 ## Skills
 

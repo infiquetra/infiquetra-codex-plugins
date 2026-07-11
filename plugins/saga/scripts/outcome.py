@@ -14,7 +14,7 @@ Two invariants this module enforces structurally:
   off to a backend via an injected ``dispatcher`` and records it) and *harvests* (reads completion
   events). It never runs a leaf's work in the advance process — so a coordinator failure can never
   collapse the whole DAG into one inline context. The default dispatcher is record-only; real
-  backends (team-execution, workflows, ``/goal``, …) arrive in U4/U9 as dispatcher implementations.
+  backends arrive through explicit dispatcher implementations.
 * **Status is derived on read** (R17/R29). There is no operator-writable status field. A node's live
   state is *computed* every call from the committed spec + completion events + dispatch records —
   never read from a stored scalar — so the cockpit physically cannot drift.
@@ -100,17 +100,16 @@ class DispatchRequest:
 def _default_dispatcher(req: DispatchRequest) -> str:
     """Record-only dispatch: mint a stable leaf saga id, run NOTHING (R3).
 
-    Real execution backends (team-execution, cc-workflows-ultracode, ``/goal``, fork, subagent,
-    manual) are dispatcher implementations that arrive in U4/U9. The skeleton just allocates the
+    Real execution backends are dispatcher implementations. The skeleton just allocates the
     handoff address; the leaf is executed by its own native saga, never here.
     """
-    if req.backend == "team-execution" and not req.orchestration_ref.strip():
+    if req.backend == "verified-workflow" and not req.orchestration_ref.strip():
         raise outcome_dispatcher.BackendHaltError(
             outcome_dispatcher.HaltReceipt(
                 outcome_id=req.outcome_id,
                 subplot_id=req.subplot_id,
                 backend=req.backend,
-                reason="missing orchestration_ref for team-execution dispatch",
+                reason="missing orchestration_ref for verified-workflow dispatch",
                 available=outcome_dispatcher.DEFAULT_AVAILABLE,
             )
         )
@@ -1246,10 +1245,10 @@ def _reconcile_once(
         key = f"dispatch:{sid}"
         orchestration_ref = (
             _team_execution_orchestration_ref(node)
-            if resolved_backend in {"team-execution", "verified-workflow"}
+            if resolved_backend == "verified-workflow"
             else ""
         )
-        if resolved_backend in {"team-execution", "verified-workflow"}:
+        if resolved_backend == "verified-workflow":
             orchestration_ref, ref_halt = _validate_team_execution_orchestration_ref(
                 Path(repo_root),
                 outcome_id=spec.outcome_id,

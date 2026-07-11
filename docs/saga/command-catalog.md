@@ -18,7 +18,7 @@ Each command keeps its plugin namespace. Generic names such as `plan` and `work`
 | `saga:plan` | Decide HOW to build settled requirements. | issue, requirements, repo evidence | `docs/plans/`, `.codex/saga/` | local ignored state | `saga:doc-review` |
 | `saga:doc-review` | Check implementation readiness. | plan, requirements, strategy, issue docs | `docs/reviews/` when needed | safe in-place doc fixes only | `saga:work` if no P0/P1 |
 | `saga:work` | Execute a reviewed plan to PR-ready. | plan, review, saga state, repo | code/docs/tests, `docs/work-sessions/`, `.codex/saga/` | git commits and PR actions only with confirmation | `saga:code-review`, then `saga:qa` |
-| `saga:outcome` | Coordinate a durable outcome DAG. | outcome spec, store, receipts, backend capability | `docs/outcomes/`, `.codex/saga/`, status cards | preview/propose only unless explicitly approved | native Saga leaf routes or `team-execution` |
+| `saga:outcome` | Coordinate a durable outcome DAG. | outcome spec, store, receipts, backend capability | `docs/outcomes/`, `.codex/saga/`, status cards | preview/propose only unless explicitly approved | native Saga leaf routes or `verified-workflows` |
 | `saga:code-review` | Review implementation at PR boundary. | merge-base diff, plan, review context | `docs/reviews/` | none | `saga:work` for fixes or `saga:qa` |
 | `saga:qa` | Gather acceptance evidence after shipped or PR-ready work. | work session, PR/merge state, app/repo evidence | QA artifact | none | `saga:handoff` or `saga:retro` |
 | `saga:investigate` | Diagnose bugs and root causes off-chain. | failure evidence, repo, logs | investigation report | optional trivial fix only when gated | `saga:work`, `saga:handoff`, or `saga:brainstorm` |
@@ -45,14 +45,14 @@ Mission Control owns SDLC mutation. It uses preview or dry-run behavior before w
 | `mission-control:milestones` | Objective milestone create/list/link/progress. | GitHub milestones | milestones after confirmation |
 | `mission-control:rollout` | SDLC rollout status and deployment to repos. | repo config, labels, templates | labels/templates/tracking after confirmation |
 
-## Team Execution Commands
+## Verified Workflows Commands
 
-Team Execution owns reviewer and validator protocol.
+Verified Workflows owns reviewer and validator protocol.
 
 | Command | Purpose | Reads | Writes or mutates |
 |---|---|---|---|
-| `team-execution:team-execution` | Plan and run reviewer consensus, selected validators, evidence capture, and guarded nonprod automation. | plan, repo, validator context | evidence and state; mutation requires main-thread confirmation |
-| `team-execution:appsec-audit` | Audit URL and input trust boundaries. | app code and trust-boundary context | security findings |
+| `verified-workflows:run` | Plan and run reviewer consensus, selected validators, evidence capture, and guarded nonprod automation. | plan, repo, validator context | evidence and state; mutation requires root confirmation |
+| `verified-workflows:appsec-audit` | Audit URL and input trust boundaries. | app code and trust-boundary context | security findings |
 
 ## Deploy Commands
 
