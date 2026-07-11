@@ -2,7 +2,7 @@
 
 - Target: branch `work/verified-workflows-modernization` vs merge-base `fbd4001`
   (`origin/main`, fetched)
-- Reviewed revision: `9b01e3d63a704c23e03523449bd014f753389845`
+- Reviewed revision: `3e88f2a5022146b25f5705adce64c57ef314b707`
 - Diff: 364 files, +63,622 / -7,791
 - Mode: interactive consolidation of the U5-U8 Verified Workflow review rounds
 - Blocked status: **NOT blocked** — no unresolved P0/P1 findings
@@ -68,3 +68,9 @@ COMPLETION: 9/9 DONE, 0 PARTIAL, 0 NOT-DONE, 0 CHANGED, 0 UNVERIFIABLE.
   downstream shipping gates. The live provider smoke remains credential-gated and was not required for
   this local cutover.
 - Excluded worktree change: `.serena/project.yml` is user-owned, uncommitted, and not part of the branch.
+
+## Final re-gate
+
+The final inventory-count guard was corrected at `3e88f2a`. Revalidation passed with 2,102 tests,
+all three repository validator modes, the cutover-stage port contract, generated Saga facts/assets,
+the legacy-token inventory check, and `git diff --check`. The verdict remains **PASS**.
