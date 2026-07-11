@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "unit": "U6",
-  "recorded_at": "2026-07-11T14:13:00Z",
-  "repo_head": "8d1e5c8379024dc43ad9408fcefb2b2ecf972a72",
+  "recorded_at": "2026-07-11T14:14:50Z",
+  "repo_head": "c2d21b81a6cda35e81bb1385e9b610fc6939c1b1",
   "target_tree_sha256": "6d2c7dddec327989f16263be8a5b3cf7dfd9a7a879ddc560662bc79b8ae9f6b1",
   "claim": "codex-safe-host-neutral-correctness-and-external-engine-substrate",
   "checks": [

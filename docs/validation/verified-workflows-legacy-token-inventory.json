@@ -329,7 +329,7 @@
     {
       "classification": "lineage-documentation",
       "path": "docs/portability/ports/2026-07-10-saga-07517.json",
-      "sha256": "572b8e2f09f5dbbb33d35d6b7653081efaaab5bb2016a032ed82261ddd6f476c",
+      "sha256": "0e6d545650527da1507918f0c43002d8f76469f2ddf9c095dcd3e2f934af1950",
       "tokens": [
         "Team Execution",
         "team-execution"
@@ -453,7 +453,7 @@
     {
       "classification": "migration-documentation",
       "path": "docs/validation/codex-plugin-modernization-u7.json",
-      "sha256": "b6fb1d2d1cd2d20c505939defa67ba350f12fc55195448a431705d4f447d3ef8",
+      "sha256": "cb54dfb074b0ba01ae53291d43681d2cf02b78bae39ae1da121e6a2269506df6",
       "tokens": [
         "team-execution"
       ]

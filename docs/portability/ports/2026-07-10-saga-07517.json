@@ -948,7 +948,7 @@
       "unit": "U5",
       "kind": "check",
       "artifact_path": "docs/validation/codex-plugin-modernization-u5.json",
-      "artifact_sha256": "40d2a6077c7e4f03612d462962745c092dc96fd3a7d0efb510307ca72bfd64fb",
+      "artifact_sha256": "8512fdfd95f5928ff68c4d0b8bc2d81ff70f84a0bef78eb0221b8e969d97a363",
       "argv": [
         "PYTHONPATH=.",
         "uv",
@@ -970,8 +970,8 @@
       ],
       "cwd": ".",
       "exit_code": 0,
-      "recorded_at": "2026-07-11T14:13:00Z",
-      "repo_head": "8d1e5c8379024dc43ad9408fcefb2b2ecf972a72",
+      "recorded_at": "2026-07-11T14:14:50Z",
+      "repo_head": "c2d21b81a6cda35e81bb1385e9b610fc6939c1b1",
       "target_paths": [
         "plugins/saga/hooks/hooks.json",
         "plugins/saga/hooks/session_context.py",
@@ -1026,14 +1026,14 @@
         "tests/test_saga_session_context.py",
         "tests/test_verified_workflow_readiness.py"
       ],
-      "target_tree_sha256": "1a25a8bfef8e7aefc3ceb9052ccbcbb16e04fba6ffbbeccfd602967c124c1f88"
+      "target_tree_sha256": "b248738a6a5d5d6a25570dcd152c1be4fc8a9f8aafb86a14cdbbe02b2d2ee2a9"
     },
     {
       "evidence_id": "u6-validation",
       "unit": "U6",
       "kind": "check",
       "artifact_path": "docs/validation/codex-plugin-modernization-u6.json",
-      "artifact_sha256": "f390c5148350e2b673e3f6687d67f67cf76678dea652fcf595cfc18aa84f9868",
+      "artifact_sha256": "93ef93d2316c381a736d5e762919adb0ea7fee723ebe2b0b85390e948f9a523c",
       "argv": [
         "PYTHONPATH=.",
         "uv",
@@ -1064,8 +1064,8 @@
       ],
       "cwd": ".",
       "exit_code": 0,
-      "recorded_at": "2026-07-11T14:13:00Z",
-      "repo_head": "8d1e5c8379024dc43ad9408fcefb2b2ecf972a72",
+      "recorded_at": "2026-07-11T14:14:50Z",
+      "repo_head": "c2d21b81a6cda35e81bb1385e9b610fc6939c1b1",
       "target_paths": [
         "plugins/fleet-core/scripts/fleet_commons/bridge_receipt.py",
         "plugins/fleet-core/scripts/fleet_commons/tier_resolver.py",
@@ -1114,7 +1114,7 @@
       "unit": "U7",
       "kind": "check",
       "artifact_path": "docs/validation/codex-plugin-modernization-u7.json",
-      "artifact_sha256": "b6fb1d2d1cd2d20c505939defa67ba350f12fc55195448a431705d4f447d3ef8",
+      "artifact_sha256": "cb54dfb074b0ba01ae53291d43681d2cf02b78bae39ae1da121e6a2269506df6",
       "argv": [
         "python3",
         "-m",
@@ -1140,8 +1140,8 @@
       ],
       "cwd": ".",
       "exit_code": 0,
-      "recorded_at": "2026-07-11T14:13:00Z",
-      "repo_head": "8d1e5c8379024dc43ad9408fcefb2b2ecf972a72",
+      "recorded_at": "2026-07-11T14:14:50Z",
+      "repo_head": "c2d21b81a6cda35e81bb1385e9b610fc6939c1b1",
       "target_paths": [
         "plugins/fleet-core/scripts/fleet_commons/tier_palette.py",
         "plugins/saga/references/effort-policy.yaml",

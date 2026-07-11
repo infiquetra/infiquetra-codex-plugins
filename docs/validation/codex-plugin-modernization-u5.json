@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "unit": "U5",
-  "recorded_at": "2026-07-11T14:13:00Z",
-  "repo_head": "8d1e5c8379024dc43ad9408fcefb2b2ecf972a72",
-  "target_tree_sha256": "1a25a8bfef8e7aefc3ceb9052ccbcbb16e04fba6ffbbeccfd602967c124c1f88",
+  "recorded_at": "2026-07-11T14:14:50Z",
+  "repo_head": "c2d21b81a6cda35e81bb1385e9b610fc6939c1b1",
+  "target_tree_sha256": "b248738a6a5d5d6a25570dcd152c1be4fc8a9f8aafb86a14cdbbe02b2d2ee2a9",
   "claim": "saga-canonical-workflow-dispatch-and-continuation-boundary",
   "checks": [
     {
