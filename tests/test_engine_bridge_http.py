@@ -161,6 +161,12 @@ class FakeHttpRunner:
         }
 
 
+def test_extract_tokens_normalizes_oversized_integer() -> None:
+    raw = json.dumps({"usage": {"total_tokens": 10**1000}}).encode("utf-8")
+
+    assert BRIDGE._extract_tokens(raw) == 0.0
+
+
 def _capturing_urlopen(body: bytes, *, status: int = 200):
     captured: dict[str, Any] = {}
 

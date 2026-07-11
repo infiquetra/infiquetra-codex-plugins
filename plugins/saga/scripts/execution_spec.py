@@ -38,6 +38,7 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import json
+import re
 import sys
 from dataclasses import dataclass, field, replace
 from pathlib import Path
@@ -71,6 +72,57 @@ _CHEAP_MODELS = _tier_palette.CHEAP_MODELS
 # majority => >= ceil(N/2) verifiers refute; unanimous => all N refute.
 PASS_RULES = ("majority", "unanimous")
 ENGINE_INTENTS = _workflow_emitter.ENGINE_INTENTS
+_JS_IDENTIFIER = re.compile(r"^[A-Za-z_$][A-Za-z0-9_$.-]*$")
+_JS_RESERVED = frozenset(
+    {
+        "await",
+        "break",
+        "case",
+        "catch",
+        "class",
+        "const",
+        "continue",
+        "debugger",
+        "default",
+        "delete",
+        "do",
+        "else",
+        "enum",
+        "export",
+        "extends",
+        "false",
+        "finally",
+        "for",
+        "function",
+        "if",
+        "implements",
+        "import",
+        "in",
+        "instanceof",
+        "interface",
+        "let",
+        "new",
+        "null",
+        "package",
+        "private",
+        "protected",
+        "public",
+        "return",
+        "static",
+        "super",
+        "switch",
+        "this",
+        "throw",
+        "true",
+        "try",
+        "typeof",
+        "var",
+        "void",
+        "while",
+        "with",
+        "yield",
+    }
+)
 
 # Hard upper bound on a verify panel's verifier count. N above this FAILS validate/emit --
 # the bound directly guards the rate-limit overcorrection (R3: the 22/23-judges panel that
@@ -408,6 +460,10 @@ class Unit:
     def validate(self, where: str) -> None:
         if not self.unit_id:
             raise SpecError(f"{where}: a unit needs a non-empty unit_id")
+        if not _JS_IDENTIFIER.fullmatch(self.unit_id) or _js_var(self.unit_id) in _JS_RESERVED:
+            raise SpecError(
+                f"{where}: unit_id must map to a non-reserved JavaScript identifier"
+            )
         self.tier.validate(f"unit {self.unit_id}")
         if self.verify is not None:
             self.verify.validate(f"unit {self.unit_id}")
@@ -704,6 +760,12 @@ def _js_string(value: str) -> str:
     return json.dumps(value)
 
 
+def _js_comment(value: str) -> str:
+    """Collapse dynamic text to one inert JavaScript line-comment payload."""
+
+    return " ".join(str(value).replace("\u2028", " ").replace("\u2029", " ").splitlines())
+
+
 def _js_var(unit_id: str) -> str:
     """Sanitize a unit_id into a JS identifier used as the emitted result var.
 
@@ -822,7 +884,7 @@ def _emit_panel_reconciliation(
         )
         verifier_input = (
             "input: { "
-            f"unit_result: {result_var}, verifier_identity: {identities_var}[{index}], "
+            f"verifier_identity: {identities_var}[{index}], "
             f"fallback_depth: {fallback_depth_var}, expected_examined_sha: {expected_sha_var} "
             "}"
         )
@@ -891,10 +953,17 @@ def _emit_panel_reconciliation(
         lines.append(f"{indent}if ({refuted_var}) {{")
         lines.append(f"{indent}  {throw_line}")
         lines.append(f"{indent}}}")
+        lines.append(
+            f'{indent}throw new Error("verifier-root-attestation-required: Unit '
+            f'{_js_comment(unit.unit_id)} advisory panel cannot auto-satisfy a gate")'
+        )
         lines.append("")
     else:
         lines.append(f"{indent}if (!{refuted_var}) {{")
-        lines.append(f"{indent}  break")
+        lines.append(
+            f'{indent}  throw new Error("verifier-root-attestation-required: Unit '
+            f'{_js_comment(unit.unit_id)} advisory panel cannot auto-satisfy a gate")'
+        )
         lines.append(f"{indent}}}")
         lines.append(f"{indent}if (iter === {panel.max_iterations}) {{")
         lines.append(f"{indent}  {throw_line}")
@@ -1103,10 +1172,18 @@ def emit_workflow_script(spec: ExecutionSpec) -> str:
                 "workflow specs with verifier panels require a root-authored 40-character "
                 "lowercase subject_sha"
             )
+        if (
+            not spec.repo
+            or any(ord(character) < 32 for character in spec.repo)
+            or ".." in Path(spec.repo).parts
+        ):
+            raise SpecError(
+                "workflow specs with verifier panels require a control-free contained repo path"
+            )
 
     lines: list[str] = []
     lines.append("// ===========================================================================")
-    lines.append(f"// {spec.name} -- emitted Claude Code workflow harness.")
+    lines.append(f"// {_js_comment(spec.name)} -- emitted Claude Code workflow harness.")
     lines.append("// AUTO-EMITTED from a structured execution-spec by execution_spec.py.")
     lines.append("// CONTROL FLOW ONLY -- every agent reads the plan as its authoritative spec.")
     lines.append("// Per-unit {model, effort} tiers (R2(b)); R3 pilot/fan-out same-tier +")
@@ -1151,20 +1228,24 @@ def emit_workflow_script(spec: ExecutionSpec) -> str:
     _var = _js_var
 
     def _emit_unit_header(unit: Unit) -> None:
-        lines.append(f"// ---- {unit.unit_id}: {unit.label} ----")
+        lines.append(
+            f"// ---- {_js_comment(unit.unit_id)}: {_js_comment(unit.label)} ----"
+        )
         marker = _workflow_emitter.external_engine_marker(
             engine=unit.engine,
             capability=unit.capability,
             intent=unit.engine_intent,
         )
         if marker is not None:
-            lines.append(f"// external-engine intent: {marker}")
+            lines.append(f"// external-engine intent: {_js_comment(marker)}")
         if unit.depends_on:
-            lines.append(f"// depends_on: {', '.join(unit.depends_on)} (barrier)")
+            lines.append(
+                f"// depends_on: {_js_comment(', '.join(unit.depends_on))} (barrier)"
+            )
         if unit.pilot:
-            lines.append(f"// pilot: {unit.pilot} (R3 same-tier gate)")
+            lines.append(f"// pilot: {_js_comment(unit.pilot)} (R3 same-tier gate)")
         if unit.escalation:
-            lines.append(f"// escalation: {unit.escalation}")
+            lines.append(f"// escalation: {_js_comment(unit.escalation)}")
 
     for layer in dependency_layers(spec):
         layer_units = [spec.unit_by_id(uid) for uid in layer]

@@ -89,15 +89,14 @@ def _comment_idempotency_marker(key: str) -> str:
 
 
 def _comment_marker_in(body: str) -> str:
-    match = _COMMENT_IDEMPOTENCY_RE.search(body)
-    return match.group(0) if match else ""
+    matches = list(_COMMENT_IDEMPOTENCY_RE.finditer(body))
+    return matches[0].group(0) if len(matches) == 1 else ""
 
 
 def _append_comment_marker(body: str, key: str) -> str:
     marker = _comment_idempotency_marker(key)
-    if marker in body:
-        return body
-    return f"{body.rstrip()}\n\n{marker}" if body.strip() else marker
+    visible = _COMMENT_IDEMPOTENCY_RE.sub("", body).strip()
+    return f"{visible}\n\n{marker}" if visible else marker
 
 
 # ---------------------------------------------------------------------------

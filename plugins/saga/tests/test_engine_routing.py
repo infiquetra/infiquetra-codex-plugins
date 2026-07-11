@@ -965,7 +965,7 @@ def test_advisory_metrics_reject_negative_and_nonfinite_values(tmp_path: Path) -
     ledger = RL.RunLedger(path=tmp_path / "run-facts.jsonl")
     D.dispatch(
         _resolution(),
-        runner=_metric_runner(cost=-1, latency_seconds=float("nan"), tokens=float("inf")),
+        runner=_metric_runner(cost=-1, latency_seconds=10**10000, tokens=float("inf")),
         ledger=ledger,
         subplot_id="s1",
         at="t",

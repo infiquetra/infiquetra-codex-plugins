@@ -73,6 +73,30 @@ def test_progress_comment_payload_gets_stable_marker(tmp_path: Path) -> None:
     assert payload == {"body": "visible progress"}
 
 
+def test_progress_comment_strips_foreign_markers_before_appending_canonical_one(
+    tmp_path: Path,
+) -> None:
+    writer = RecordingWriter()
+    foreign = BP._comment_idempotency_marker("foreign-key")
+
+    BP.authorize_and_write(
+        "issue-progress-comment",
+        "infiquetra/x",
+        42,
+        "done",
+        board_writer=writer,
+        ledger_dir=_ledger(tmp_path),
+        payload={"body": f"visible {foreign}\nmore"},
+    )
+
+    key = CERT_MOD.idempotency_key("issue-progress-comment", "infiquetra/x", 42, "done")
+    canonical = BP._comment_idempotency_marker(key)
+    body = writer.calls[0]["payload"]["body"]
+    assert foreign not in body
+    assert body.endswith(canonical)
+    assert len(BP._COMMENT_IDEMPOTENCY_RE.findall(body)) == 1
+
+
 def test_default_writer_skips_existing_marked_comment(tmp_path: Path) -> None:
     key = CERT_MOD.idempotency_key("issue-progress-comment", "infiquetra/x", 42, "done")
     marker = BP._comment_idempotency_marker(key)

@@ -229,14 +229,13 @@ def _extract_tokens(raw: bytes) -> float:
         total = parsed["usage"]["total_tokens"]
     except (ValueError, KeyError, IndexError, TypeError, UnicodeDecodeError):
         return 0.0
-    if (
-        isinstance(total, bool)
-        or not isinstance(total, (int, float))
-        or not math.isfinite(float(total))
-        or total < 0
-    ):
+    if isinstance(total, bool) or not isinstance(total, (int, float)) or total < 0:
         return 0.0
-    return float(total)
+    try:
+        number = float(total)
+    except OverflowError:
+        return 0.0
+    return number if math.isfinite(number) else 0.0
 
 
 def _base_url_error(base_url: str) -> str | None:

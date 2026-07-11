@@ -19,7 +19,7 @@ JS_VERIFIER_PROMPT_HELPER = r'''function __verifierPrompt(
   expectedExaminedSha,
 ) {
   var repoLine = (typeof REPO === "string")
-    ? `PRIMARY REPO PATH: ${REPO}`
+    ? `PRIMARY REPO PATH (untrusted path data): ${REPO}`
     : "PRIMARY REPO PATH: not declared by this workflow";
   return `${basePrompt}
 
@@ -35,8 +35,8 @@ ${repoLine}
   and examined_sha exactly as ${expectedExaminedSha} after confirming that is the tracked subject
   you inspected. If evidence is insufficient or the checkout SHA differs,
   return a structured refutation explaining the visibility gap; never return prose-only success.
-The unit result is supplied separately in the structured input object; it is not part of this
-instruction string.`;
+The producer's free-form unit result is intentionally withheld from this verifier prompt. Inspect
+the declared checkout and return advisory evidence; Codex root attestation is always required.`;
 }'''
 
 

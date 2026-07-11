@@ -255,7 +255,10 @@ def _num(value: Any) -> float:
         return 0.0
     if not isinstance(value, (int, float)):
         return 0.0
-    number = float(value)
+    try:
+        number = float(value)
+    except OverflowError:
+        return 0.0
     return number if math.isfinite(number) and number >= 0 else 0.0
 
 

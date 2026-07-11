@@ -56,7 +56,7 @@ def _unit(unit_id: str, *, pass_rule: str, iterate: bool, n: int = 3) -> dict:
 
 def _script(units: list[dict]) -> str:
     spec = es.ExecutionSpec.from_dict(
-        {"name": "t", "subject_sha": "a" * 40, "units": units}
+        {"name": "t", "repo": "/tmp/repo", "subject_sha": "a" * 40, "units": units}
     )
     return es.emit_workflow_script(spec)
 
@@ -88,7 +88,9 @@ def test_iterate_singleton_recomputes_over_reporters() -> None:
         "const reported = verdicts.filter((v, i) => valid_verifier_verdict(v, i))" in js
     )
     assert "const threshold = Math.max(1, Math.ceil(reported.length / 2))" in js
-    assert "if (!refuted) {" in js  # loop consumer: break when not refuted
+    assert "if (!refuted) {" in js
+    assert "verifier-root-attestation-required: Unit U2" in js
+    assert "break" not in js
 
 
 def test_parallel_wave_thunks_each_recompute() -> None:
