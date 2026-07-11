@@ -81,6 +81,54 @@ def test_cli_rejects_source_only_backend(tmp_path: Path) -> None:
     assert "invalid choice" in result.stderr
 
 
+def test_explicit_default_scalar_replaces_prior_value(tmp_path: Path) -> None:
+    """A supplied default must not inherit the previous tick's non-default."""
+
+    initial = saga.Saga(
+        saga_id="task-default-scalar",
+        kind="task",
+        id="default-scalar",
+        destination="merge",
+        phase_status="complete",
+    )
+    saga.save(tmp_path, initial, runner=quiet_git_runner)
+
+    args = saga.parse_args(
+        [
+            "save",
+            "--kind",
+            "task",
+            "--id",
+            "default-scalar",
+            "--destination=plan-only",
+            "--phase-status",
+            "pending",
+        ]
+    )
+    saga.save(
+        tmp_path,
+        saga._build_save_saga(args),
+        explicit_scalars=saga._explicit_save_scalars(
+            [
+                "save",
+                "--kind",
+                "task",
+                "--id",
+                "default-scalar",
+                "--destination=plan-only",
+                "--phase-status",
+                "pending",
+            ]
+        ),
+        runner=quiet_git_runner,
+    )
+
+    restored = saga.restore(tmp_path, "task-default-scalar")
+    assert restored is not None
+    assert restored.destination == "plan-only"
+    assert restored.phase_status == "pending"
+
+
 def test_cli_rejects_complete_team_execution_without_ref(tmp_path: Path) -> None:
     script = Path(__file__).parents[1] / "scripts" / "saga.py"
     result = subprocess.run(

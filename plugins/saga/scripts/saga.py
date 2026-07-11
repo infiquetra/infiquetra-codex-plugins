@@ -1370,12 +1370,36 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
 
 def _explicit_save_scalars(argv: Sequence[str]) -> set[str]:
+    """Return persisted scalar fields deliberately supplied to ``save``.
+
+    ``argparse`` fills omitted optional scalar flags with their defaults.  The
+    append-only merge deliberately carries those defaults forward, but a caller
+    must still be able to deliberately set a field *to* its default (for
+    example ``--destination plan-only`` after a prior ``merge`` tick).  Keep
+    this derived from the save parser so newly added persisted scalar options do
+    not silently recreate that regression.
+    """
     explicit: set[str] = set()
     if not argv or argv[0] != "save":
         return explicit
+
+    parser = argparse.ArgumentParser(add_help=False)
+    sub = parser.add_subparsers(dest="command")
+    _add_save_parser(sub)
+    save_parser = sub.choices["save"]
+    saga_fields = {field.name for field in fields(Saga)}
+    sticky_identity = {"saga_id", "kind", "id", "schema_version", "created_at", "updated_at"}
+    list_fields = set(_LIST_FIELDS)
+    option_to_field = {
+        option: action.dest
+        for action in save_parser._actions
+        if action.dest in saga_fields - sticky_identity - list_fields
+        for option in action.option_strings
+    }
     for token in argv[1:]:
-        if token == "--orchestration-mode" or token.startswith("--orchestration-mode="):
-            explicit.add("orchestration_mode")
+        option = token.split("=", 1)[0]
+        if option in option_to_field:
+            explicit.add(option_to_field[option])
     return explicit
 
 
