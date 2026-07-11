@@ -364,6 +364,54 @@ def test_legacy_commit_reconciles_append_only_with_digest_bound_launch(repo: Pat
     assert OUTCOME.outcome_store.replay_pending(store) == []
 
 
+def test_authorityless_v2_ack_reconciles_append_only(repo: Path) -> None:
+    OUTCOME.start(repo, "old-v2", "U5", nodes=[{"subplot_id": "leaf", "title": "leaf"}])
+    OUTCOME.advance(repo, "old-v2", dispatcher=lambda _req: {"status": "prepared"})
+    store = OUTCOME._store(repo, "old-v2")
+    intent = next(
+        record
+        for record in OUTCOME.outcome_store.read_ledger(store)
+        if record.get("phase") == "intent"
+    )
+    OUTCOME.outcome_store.append_ledger(
+        store,
+        {
+            "phase": "ack",
+            "kind": "outcome.dispatch.v2",
+            "key": intent["key"],
+            "dispatch_intent_id": intent["dispatch_intent_id"],
+            "subplot_id": "leaf",
+            "backend": "inline",
+            "ack_kind": "launched",
+            "dispatch_ack_ref": "legacy:unverified",
+            "leaf_saga_id": "old-leaf",
+        },
+    )
+    assert OUTCOME.status(repo, "old-v2")["states"]["leaf"] == "legacy-unverified"
+    before = list(OUTCOME.outcome_store.read_ledger(store))
+    ref = _launch_receipt(
+        repo,
+        outcome_id="old-v2",
+        subplot_id="leaf",
+        backend="inline",
+        leaf_saga_id="real-leaf",
+        run_identity=intent["run_identity"],
+        issued_at=max(intent["at"], OUTCOME.time.time()),
+    )
+    record = OUTCOME.reconcile_dispatch_ack(
+        store,
+        repo_root=repo,
+        outcome_id="old-v2",
+        subplot_id="leaf",
+        ack_kind="launched",
+        dispatch_ack_ref=ref,
+        leaf_saga_id="real-leaf",
+    )
+    assert record["phase"] == "authority-ack"
+    assert OUTCOME.outcome_store.read_ledger(store)[: len(before)] == before
+    assert OUTCOME.status(repo, "old-v2")["states"]["leaf"] == "dispatched"
+
+
 @pytest.mark.parametrize("mutation", ["digest", "leaf", "path"])
 def test_launch_reconciliation_rejects_forged_or_escaping_receipt(
     repo: Path, mutation: str

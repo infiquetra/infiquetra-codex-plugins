@@ -31,7 +31,6 @@ offline with no real git repo, no backend, and no wall clock; no I/O at import.
 
 from __future__ import annotations
 
-import base64
 import hashlib
 import importlib.util
 import json
@@ -157,6 +156,18 @@ def reconcile_dispatch_ack(
         and rec.get("phase") == "commit"
         and rec.get("subplot_id") == subplot_id
     ]
+    prior_acks = [
+        rec
+        for rec in records
+        if rec.get("kind") == "outcome.dispatch.v2"
+        and rec.get("phase") in {"ack", "authority-ack"}
+        and rec.get("key") == intent_id
+    ]
+    if any(
+        rec.get("receipt_authority") in {"owner-user-state-v1", "operator-confirmed-v1"}
+        for rec in prior_acks
+    ):
+        raise OutcomeError("dispatch intent is already authoritatively acknowledged")
     if not intents:
         if not legacy:
             raise OutcomeError("no dispatch intent or legacy commit exists to reconcile")
@@ -211,7 +222,7 @@ def reconcile_dispatch_ack(
             raise OutcomeError("handed-off acknowledgement requires a bounded operator reference")
         receipt_fields = {"producer_kind": "operator", "run_identity": ref}
     record = {
-        "phase": "ack",
+        "phase": "authority-ack" if prior_acks else "ack",
         "kind": "outcome.dispatch.v2",
         "key": intent_id,
         "dispatch_intent_id": intent_id,
@@ -1460,28 +1471,26 @@ def export_bundle(
     for node in spec.nodes:
         for ev in outcome_store.read_completion_events(store, node.subplot_id):
             events.append(ev.to_dict())
-    dispatch_ledger = [
+    all_dispatch_records = [
         record
         for record in outcome_store.read_ledger(store)
         if record.get("kind") in {"dispatch", "outcome.dispatch.v2"}
     ]
-    dispatch_receipts: dict[str, str] = {}
-    for record in dispatch_ledger:
-        if (
-            record.get("kind") == "outcome.dispatch.v2"
-            and record.get("phase") == "ack"
-            and record.get("ack_kind") == "launched"
-            and record.get("receipt_authority") == "owner-user-state-v1"
-        ):
-            ref = str(record.get("dispatch_ack_ref", ""))
-            content, _digest = _read_launch_receipt(repo_root, ref)
-            dispatch_receipts[ref] = base64.b64encode(content).decode("ascii")
+    dispatch_ledger = [
+        record
+        for record in all_dispatch_records
+        if record.get("phase") not in {"ack", "authority-ack"}
+    ]
+    dispatch_audit = [
+        record for record in all_dispatch_records if record.get("phase") in {"ack", "authority-ack"}
+    ]
     return {
         "schema": "outcome-bundle/1",
         "spec": spec.to_dict(),
         "completion_events": events,
         "dispatch_ledger": dispatch_ledger,
-        "dispatch_receipts": dispatch_receipts,
+        "dispatch_audit": dispatch_audit,
+        "dispatch_receipts": {},
     }
 
 
@@ -1505,6 +1514,18 @@ def import_bundle(
         records,
         bundle.get("dispatch_receipts", {}),
     )
+    dispatch_audit = bundle.get("dispatch_audit", [])
+    if (
+        not isinstance(dispatch_audit, list)
+        or len(dispatch_audit) > 10000
+        or any(
+            not isinstance(record, dict)
+            or record.get("kind") != "outcome.dispatch.v2"
+            or record.get("phase") not in {"ack", "authority-ack"}
+            for record in dispatch_audit
+        )
+    ):
+        raise OutcomeError("dispatch_audit must contain bounded non-authoritative acknowledgements")
     raw_events = bundle.get("completion_events", [])
     if not isinstance(raw_events, list) or len(raw_events) > 10000:
         raise OutcomeError("completion_events must be a bounded list")
@@ -1558,7 +1579,7 @@ def _validate_import_dispatch_ledger(
             if phase not in {"commit", "halt"}:
                 raise OutcomeError("legacy dispatch record has an invalid phase")
             continue
-        if kind != "outcome.dispatch.v2" or phase not in {"intent", "ack"}:
+        if kind != "outcome.dispatch.v2" or phase not in {"intent", "ack", "authority-ack"}:
             raise OutcomeError("dispatch_ledger contains an unsupported record")
         allowed = {
             "phase",
@@ -1572,7 +1593,7 @@ def _validate_import_dispatch_ledger(
             "migration_from_key",
             "migration_from_backend",
         }
-        if phase == "ack":
+        if phase in {"ack", "authority-ack"}:
             allowed = {
                 "phase",
                 "kind",

@@ -170,26 +170,31 @@ def _repair_hint(plan_path: str) -> str:
 
 
 def _provenance_conflict(repo_root: Path, legacy: Any) -> Any | None:
+    canonical_roots = (
+        repo_root / WORKFLOW_COMPAT.emit(WORKFLOW_COMPAT.REPO_STATE_ROOT),
+        Path(
+            f"{WORKFLOW_COMPAT.emit(WORKFLOW_COMPAT.USER_STATE_ROOT)}{repo_root.name}/"
+        ).expanduser(),
+    )
+    legacy_roots = (
+        repo_root / WORKFLOW_COMPAT.legacy_values(WORKFLOW_COMPAT.REPO_STATE_ROOT)[0],
+        Path(
+            f"{WORKFLOW_COMPAT.legacy_values(WORKFLOW_COMPAT.USER_STATE_ROOT)[0]}{repo_root.name}/"
+        ).expanduser(),
+    )
+    if any(path.exists() for path in canonical_roots) and any(
+        path.exists() for path in legacy_roots
+    ):
+        return legacy.ReadinessResult(
+            "blocked",
+            "canonical and legacy workflow state roots both exist across protected locations",
+            "resolve the mixed-provenance conflict explicitly before execution",
+        )
     pairs = (
-        (
-            repo_root / WORKFLOW_COMPAT.emit(WORKFLOW_COMPAT.REPO_STATE_ROOT),
-            repo_root / WORKFLOW_COMPAT.legacy_values(WORKFLOW_COMPAT.REPO_STATE_ROOT)[0],
-            "repository workflow state roots",
-        ),
         (
             repo_root / WORKFLOW_COMPAT.emit(WORKFLOW_COMPAT.REPO_CONFIG_FILE),
             repo_root / WORKFLOW_COMPAT.legacy_values(WORKFLOW_COMPAT.REPO_CONFIG_FILE)[0],
             "repository workflow config files",
-        ),
-        (
-            Path(
-                f"{WORKFLOW_COMPAT.emit(WORKFLOW_COMPAT.USER_STATE_ROOT)}{repo_root.name}/"
-            ).expanduser(),
-            Path(
-                f"{WORKFLOW_COMPAT.legacy_values(WORKFLOW_COMPAT.USER_STATE_ROOT)[0]}"
-                f"{repo_root.name}/"
-            ).expanduser(),
-            "user workflow state roots",
         ),
     )
     for canonical, old, label in pairs:

@@ -539,7 +539,7 @@ def reduce_dispatch_ledger(store: Store) -> dict[str, dict[str, Any]]:
                 }
         elif (
             kind == "outcome.dispatch.v2"
-            and phase == "ack"
+            and phase in {"ack", "authority-ack"}
             and (
                 (
                     record.get("ack_kind") == "launched"
@@ -557,7 +557,7 @@ def reduce_dispatch_ledger(store: Store) -> dict[str, dict[str, Any]]:
                 "settled": True,
                 "halted": False,
             }
-        elif kind == "outcome.dispatch.v2" and phase == "ack":
+        elif kind == "outcome.dispatch.v2" and phase in {"ack", "authority-ack"}:
             reduced[subplot_id] = {
                 "state": "legacy-unverified",
                 "record": record,
@@ -585,7 +585,7 @@ def replay_pending(store: Store) -> list[dict[str, Any]]:
         phase = rec.get("phase")
         if phase == "commit":
             committed.add(key)
-        elif phase == "ack" and rec.get("kind") == "outcome.dispatch.v2":
+        elif phase in {"ack", "authority-ack"} and rec.get("kind") == "outcome.dispatch.v2":
             reduced = reduced_dispatch.get(str(rec.get("subplot_id", "")), {})
             if reduced.get("settled"):
                 committed.add(key)

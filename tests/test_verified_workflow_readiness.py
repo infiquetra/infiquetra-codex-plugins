@@ -84,6 +84,25 @@ def test_canonical_state_root_blocks_mixed_legacy_root(tmp_path: Path) -> None:
     assert "both exist" in result.reason
 
 
+@pytest.mark.parametrize("canonical_location", ["repo", "user"])
+def test_cross_location_mixed_roots_are_blocked(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    canonical_location: str,
+) -> None:
+    home = tmp_path / "home"
+    monkeypatch.setenv("HOME", str(home))
+    if canonical_location == "repo":
+        (tmp_path / ".codex/verified-workflows/run").mkdir(parents=True)
+        (home / ".codex/team-execution/state" / tmp_path.name).mkdir(parents=True)
+    else:
+        (home / ".codex/verified-workflows/state" / tmp_path.name).mkdir(parents=True)
+        (tmp_path / ".codex/team-execution/run").mkdir(parents=True)
+    result = validate(tmp_path, "docs/plans/x.md#workflow-structure")
+    assert result.status == "blocked"
+    assert "across protected locations" in result.reason
+
+
 @pytest.mark.parametrize("conflict", ["state", "config"])
 def test_plan_ref_blocks_mixed_provenance_before_fast_path(tmp_path: Path, conflict: str) -> None:
     write_plan(tmp_path)

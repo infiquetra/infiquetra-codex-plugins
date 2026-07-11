@@ -311,6 +311,7 @@ def test_export_import_roundtrips_across_repos(
     assert bundle["schema"] == "outcome-bundle/1"
     assert any(e["subplot_id"] == "design" for e in bundle["completion_events"])
     assert any(r.get("subplot_id") == "build" for r in bundle["dispatch_ledger"])
+    assert any(r.get("subplot_id") == "build" for r in bundle["dispatch_audit"])
 
     # import into a DIFFERENT repo (fresh common dir)
     dest = tmp_path / "dest"
@@ -322,16 +323,7 @@ def test_export_import_roundtrips_across_repos(
         "run",
         lambda args, **kw: SimpleNamespace(returncode=0, stdout=str(common2) + "\n", stderr=""),
     )
-    with pytest.raises(M.OutcomeError, match="not portable"):
-        M.import_bundle(dest, bundle)
-    assert not M.spec_path(dest, "ship-x").exists()
-
-    portable = copy.deepcopy(bundle)
-    portable["dispatch_ledger"] = [
-        record for record in portable["dispatch_ledger"] if record.get("phase") != "ack"
-    ]
-    portable["dispatch_receipts"] = {}
-    spec = M.import_bundle(dest, portable)
+    spec = M.import_bundle(dest, bundle)
     assert spec.outcome_id == "ship-x"
     # Completion and intents are portable, but launch authority must be reconciled locally.
     st = M.status(dest, "ship-x")
@@ -340,7 +332,7 @@ def test_export_import_roundtrips_across_repos(
     # re-import is idempotent: the dispatch ledger does not grow on a second import
     dest_store = STORE.Store.for_outcome("ship-x", dest)
     ledger_before = len(STORE.read_ledger(dest_store))
-    M.import_bundle(dest, portable)
+    M.import_bundle(dest, bundle)
     assert len(STORE.read_ledger(dest_store)) == ledger_before
 
 
@@ -354,9 +346,8 @@ def test_import_rejects_unverified_dispatch_chains_before_writes(
     M.start(repo, "untrusted", "Untrusted bundle")
     M.advance(repo, "untrusted", dispatcher=_runtime_ack)
     bundle = copy.deepcopy(M.export_bundle(repo, "untrusted"))
-    acknowledgement = next(
-        record for record in bundle["dispatch_ledger"] if record.get("phase") == "ack"
-    )
+    acknowledgement = copy.deepcopy(bundle["dispatch_audit"][0])
+    bundle["dispatch_ledger"].append(acknowledgement)
     if mutation == "producer":
         acknowledgement["producer_kind"] = "forged"
     elif mutation == "missing-receipt":
