@@ -35,8 +35,11 @@ Therefore:
 - a prompt or `task_name` may request a class but cannot attest selection;
 - an installed TOML proves configuration bytes, not that a child used the profile;
 - generic subagent output remains generic evidence;
-- profile selection requires the parent launch plus matching child role/model/effort/sandbox
+- profile selection requires the parent launch plus matching host-issued child role/model/effort
   readback;
+- current V2 reapplies the parent permission profile after role selection, so a profile cannot
+  narrow a more-powerful parent; enforce read-only and write-capable work through separate
+  permission-homogeneous parent tasks and verify effective permission independently;
 - gate-authoritative named workflow evidence additionally requires a receipt joining logical role,
   selected profile, active hook-reported model, installed-profile digest, child identity, and result
   vehicle;

@@ -48,7 +48,8 @@ def test_operator_choice_requires_configured_named_child_selection_and_readback(
     assert 'tool_namespace="agents"' in body
     assert "agent_type=<runtime_agent_name>" in body
     assert 'fork_turns="none"' in body
-    assert "child role/model/effort/sandbox" in body
+    assert "permission-homogeneous parent tasks" in body
+    assert "host-issued child role/model/effort" in body
     assert "generic subagent output remains generic evidence" in body
 
 

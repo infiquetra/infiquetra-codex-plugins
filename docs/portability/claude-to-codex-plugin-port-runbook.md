@@ -82,10 +82,13 @@ them. For Sol/Terra MultiAgent V2, first verify whether metadata was hidden by c
 classifying the capability unavailable. The verified bootstrap uses
 `hide_spawn_agent_metadata=false` and a non-reserved `tool_namespace="agents"`; setting only the
 first field under reserved `collaboration` can be rejected by the backend. Custom-agent files may
-configure model, effort, and sandbox, but named-profile work must dispatch `agent_type` with
-`fork_turns=none` or a positive bounded value and verify the child role/model/effort/sandbox. Omitted
-or `all` is a full-history fork that inherits the parent agent type, model, and effort. Goal is
-continuation only. Claude Workflow and fork are not active leaf backends.
+configure model, effort, and sandbox intent, but current V2 reapplies the live parent permission
+profile after role selection. Named-profile work must dispatch `agent_type` with `fork_turns=none`
+or a positive bounded value, verify child role/model/effort from host-issued rollout context, and
+verify effective permission separately. Use a permission-homogeneous parent when a boundary matters:
+read-only children beneath read-only, write-capable testers beneath workspace-write. Omitted or `all`
+is a full-history fork that inherits the parent agent type, model, and effort. Goal is continuation
+only. Claude Workflow and fork are not active leaf backends.
 
 Choose a Codex surface only when the runtime supports the required behavior:
 

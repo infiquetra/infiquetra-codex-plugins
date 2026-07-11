@@ -34,21 +34,35 @@ The differential runtime proof used a Sol/high root and dispatched `agent_type =
 `fork_turns = "none"` through the `agents` namespace. The child receipt recorded
 `agent_role = "scan_low"`, model `gpt-5.6-luna`, effort `low`, and read-only sandbox. A separate
 Luna/V1 control selected `review_high` and produced Sol/high/read-only. This proves that named TOML
-profiles apply model, effort, instructions, and sandbox; it does not remove the separate requirement
+profiles apply model, effort, and instructions; it does not remove the separate requirement
 to bind the planned role, installed-profile digest, child identity, observed turn context, and
 structured result before granting workflow evidence authority.
+
+The read-only result did **not** prove that the profile narrowed the sandbox because that parent was
+also read-only. A later workspace-powerful parent spawned `review_max`; its host-issued child
+`turn_context` correctly recorded Sol/max but inherited the parent's permission profile instead of
+the TOML's `sandbox_mode = "read-only"`. Installed-tag and current-main source explain the result:
+V2 applies the role and then calls `apply_spawn_agent_runtime_overrides`, which copies the live
+parent permission profile onto the child. Until that ordering changes, permissions must be enforced
+by a permission-homogeneous parent task. Read-only scanner/reviewer/monitor profiles run beneath a
+read-only parent; `test_medium` runs beneath workspace-write. A profile sandbox field remains the
+declared policy and future-compatible configuration, not present runtime enforcement.
 
 **Generalizable rule:** Do not infer a Codex capability is absent from one model-visible tool
 schema. Check model-selected tool versions, schema-hiding configuration, reserved namespaces, fork
 semantics, and a differential child `turn_context`. For current Sol/Terra V2 named-profile dispatch,
-require the two-setting namespace bootstrap, `agent_type`, a non-full-history fork, and runtime
-readback. Fail closed instead of substituting a generic child when any part is missing.
+require the two-setting namespace bootstrap, `agent_type`, a non-full-history fork, and host-issued
+runtime readback. Verify model and effort from the child rollout, never child self-report. Verify the
+effective permission profile separately and use a permission-homogeneous parent because current V2
+overwrites the role's sandbox with the parent turn permission. Fail closed instead of substituting a
+generic child when any part is missing.
 
 Sources: [custom-agent documentation](https://learn.chatgpt.com/docs/agent-configuration/subagents#custom-agents),
 [V2 defaults](https://github.com/openai/codex/blob/44918ea10c0f99151c6710411b4322c2f5c96bea/codex-rs/core/src/config/mod.rs#L1144-L1179),
 [spawn schema hiding](https://github.com/openai/codex/blob/44918ea10c0f99151c6710411b4322c2f5c96bea/codex-rs/core/src/tools/handlers/multi_agents_spec.rs#L595-L642),
 [namespace wiring](https://github.com/openai/codex/blob/44918ea10c0f99151c6710411b4322c2f5c96bea/codex-rs/core/src/tools/spec_plan.rs#L786-L815),
-and [V2 role/fork application](https://github.com/openai/codex/blob/44918ea10c0f99151c6710411b4322c2f5c96bea/codex-rs/core/src/tools/handlers/multi_agents_v2/spawn.rs#L40-L85).
+and [V2 role/fork application](https://github.com/openai/codex/blob/44918ea10c0f99151c6710411b4322c2f5c96bea/codex-rs/core/src/tools/handlers/multi_agents_v2/spawn.rs#L40-L85),
+including [parent permission reapplication](https://github.com/openai/codex/blob/44918ea10c0f99151c6710411b4322c2f5c96bea/codex-rs/core/src/tools/handlers/multi_agents_common.rs#L150-L167).
 
 ## 2026-07-06: Force Structured Agent Output With A Schema; Never Gate-Parse Prose
 

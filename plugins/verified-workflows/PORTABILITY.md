@@ -56,8 +56,11 @@ installed-hook readback, launch, schema-valid result,
 mutation-audit, and root-verification evidence. A named-child claim additionally requires the
 minimal start/stop pair and exact role, lens, profile, model, and child bindings. The evidence is an
 auditable root-accountability diagnostic, not same-user cryptographic or host-issued attestation,
-so it always blocks the gate. Expected effort and configured sandbox come from the profile digest;
-current hooks observe neither directly. Gate evaluation requires all base reviewers plus one
+so it always blocks the gate. Expected effort and configured sandbox intent come from the profile
+digest; current hooks observe neither directly, and current V2 reapplies the live parent permission
+profile after role selection. Read-only profiles therefore run beneath a read-only parent and
+`test_medium` beneath workspace-write; host-issued child rollout proves effective permission.
+Gate evaluation requires all base reviewers plus one
 required validator, opens typed protected evidence, requires exact workflow step coverage and
 dependency chronology, rejects self-acceptance, stays severity first, and caps remediation at three
 cycles with escalation. Resolutions cannot remove a finding until a later affected-role receipt
@@ -75,8 +78,9 @@ ceilings inside each leaf.
 
 The tracked U4 proof is a sanitized non-mutating characterization. It records `diagnostic` because
 the configured snapshot exposes named selection but the committed artifact intentionally carries no
-live child transcript or receipt. Root-owned fresh-task evidence separately proves the selector and
-child model/effort/sandbox boundary needed to start U5. It does not install or trust the unpublished
+live child transcript or receipt. Root-owned fresh-task evidence separately proves the selector,
+child model/effort, and parent-inherited effective permission boundary needed to start U5. It does
+not install or trust the unpublished
 plugin or grant its candidate receipt chain gate authority. A separate isolated envelope proves
 installed-byte equality only; U8 alone publishes, installs into the real profile, trusts hooks, and
 performs the complete cutover receipt and rollback proof.

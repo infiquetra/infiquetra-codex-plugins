@@ -10,7 +10,7 @@
     "classification_path": "docs/portability/codex-saga-07517-drift-classification.md",
     "plan": {
       "path": "docs/plans/2026-07-10-codex-plugin-model-execution-modernization-plan.md",
-      "sha256": "1205cbf45590e8b7cdbe19ea5f7032c0ad2fec39a48e0989b7baef356ccac200"
+      "sha256": "e6e555fd2872b7a2442ebdc6af05b5542cc6ac85ca3a73454edfc910794b0c9d"
     },
     "reviews": [
       {
@@ -20,7 +20,7 @@
     ],
     "runbook": {
       "path": "docs/portability/claude-to-codex-plugin-port-runbook.md",
-      "sha256": "321c19f3ee35d43ec1f817da123c4f69a5321dc2e0df34306ea55632792f8a63",
+      "sha256": "8dc16667009b745a1d0f8e8f45e0542a5a5744dc40cc16e16930648509d24678",
       "version": 3
     }
   },

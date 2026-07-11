@@ -14,7 +14,9 @@ reviewed five-profile design.
 - Enabled expanded V2 spawn metadata under the non-reserved `agents` namespace in repository and
   user Codex configuration.
 - Proved from a fresh saved-config task that a Sol/xhigh parent dispatching `scan_low` with
-  `fork_turns=none` produced a Luna/low, read-only child with `agent_role=scan_low`.
+  `fork_turns=none` produced a Luna/low, read-only child with `agent_role=scan_low`. Later source and
+  rollout inspection established that read-only came from the read-only parent: current V2
+  reapplies parent permission after role selection. Permission-homogeneous parent tasks are required.
 - Corrected the runtime snapshot, runbook v3, Saga operator-choice guidance, Verified Workflows
   protocol, proof classifications, port contract, tests, and engineering journal.
 - Preserved the distinction between runtime profile selection and gate-authoritative workflow

@@ -77,7 +77,11 @@ Use `agent_type=<runtime_agent_name>` with `fork_turns=none` or a positive bound
 default `fork_turns=all` inherits the parent agent type, model, and effort and rejects those
 overrides. Setting only `hide_spawn_agent_metadata=false` under the reserved `collaboration`
 namespace is rejected by the backend. A saved-config fresh-task proof selected `scan_low` from a
-Sol/xhigh parent and recorded a Luna/low, read-only child.
+Sol/xhigh parent and recorded a Luna/low, read-only child. That parent was also read-only. Current V2
+reapplies the live parent permission profile after role selection, so the TOML sandbox cannot narrow
+a more-powerful parent. Run scanner/reviewer/monitor profiles beneath a fresh read-only parent and
+`test_medium` beneath workspace-write, then verify the host-issued child rollout rather than child
+self-report.
 
 Validate the deterministic source bundle:
 

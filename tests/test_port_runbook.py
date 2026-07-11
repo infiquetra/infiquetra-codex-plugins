@@ -99,7 +99,8 @@ def test_runbook_requires_v2_named_profile_bootstrap_and_non_full_fork() -> None
         "`agent_type`",
         "`fork_turns=none`",
         "full-history fork",
-        "child role/model/effort/sandbox",
+        "permission-homogeneous parent",
+        "host-issued rollout context",
     ):
         assert required in text
 

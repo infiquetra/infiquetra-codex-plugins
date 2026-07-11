@@ -20,6 +20,13 @@ The root dispatches a fresh named child with `agent_type = <runtime_agent_name>`
 turn count is allowed when explicitly justified; omitted or `all` is forbidden for profile-selected
 work because full-history forks inherit the parent agent type, model, and effort.
 
+Current V2 also reapplies the live parent permission profile after applying the named role. The five
+profile TOMLs remain correct for role/model/effort/instruction selection, but their `sandbox_mode`
+cannot narrow a more-powerful parent. Workflow dispatch therefore groups attempts by permission:
+read-only scanner/reviewer/monitor children run under a fresh read-only parent, while
+`test_medium` runs under workspace-write. Host-issued child rollout context, not child prose, proves
+model, effort, role, and effective permission. A parent/child permission mismatch blocks authority.
+
 The runtime bootstrap is a prerequisite, not an assumption. Installation/cutover must verify the
 effective config in an isolated task and then a fresh real task, prove a differential parent/child
 model and effort, and stop rather than substitute a generic child if `agent_type` is absent or the

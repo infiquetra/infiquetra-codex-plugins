@@ -62,8 +62,11 @@ bounded evidence only. Peer messaging is optional and never required.
    Before model-pinned work, require the active spawn schema to expose `agent_type`; Sol/Terra V2
    normally needs `hide_spawn_agent_metadata=false` plus a non-reserved `tool_namespace="agents"`
    in effective Codex config and a fresh task after that config changes. Dispatch with
-   `agent_type=<runtime_agent_name>` and `fork_turns="none"` by default, then verify the child receipt
-   reports the planned role, model, effort, and permission boundary. Task names and prompt text are
+   `agent_type=<runtime_agent_name>` and `fork_turns="none"` by default. Current V2 reapplies the
+   live parent permission profile after role selection, so place read-only profiles beneath a fresh
+   read-only parent and `test_medium` beneath workspace-write. Verify host-issued child rollout
+   context reports the planned role, model, effort, and effective permission boundary; never accept
+   child self-report as that receipt. Task names and prompt text are
    not selection. Missing selector or mismatched readback degrades preferred independence inline and
    blocks required independence.
 7. Give every `run`, `follow-up`, or `revalidate` attempt a fresh execution context. Use follow-up

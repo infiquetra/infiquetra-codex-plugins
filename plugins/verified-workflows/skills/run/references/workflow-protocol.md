@@ -57,7 +57,9 @@ Model and effort are requested by the approved execution-class row, mapped runti
 exact installed profile digest. They become observed runtime facts only after Codex reports the named
 selection and child turn context. Sol/Terra MultiAgent V2 must expose spawn metadata through a
 non-reserved namespace; dispatch uses `agent_type` and a non-full-history `fork_turns`, normally
-`none`. Missing or mismatched runtime proof degrades preferred work inline and blocks required
+`none`. Current V2 reapplies the live parent permission profile after role selection, so each child
+runs beneath a permission-homogeneous parent and host-issued rollout context proves the effective
+boundary. Missing or mismatched runtime proof degrades preferred work inline and blocks required
 independence. An ambient Claude-style session tier file cannot change an
 emitted Codex intent or an in-flight remediation chain. To change class, close or abandon the
 current chain and approve a new workflow run; receipts and findings from different workflow digests
