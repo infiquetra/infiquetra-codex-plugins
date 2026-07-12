@@ -237,7 +237,8 @@ class ActionApproval:
             raise ContractError("route must be a non-empty object")
         if self.sensitivity not in SENSITIVITY:
             raise ContractError(f"sensitivity must be one of {sorted(SENSITIVITY)}")
-        _string(self.base_revision, field_name="base_revision")
+        if not re.fullmatch(r"[0-9a-f]{40}", self.base_revision):
+            raise ContractError("base_revision must be a full commit SHA")
         _string(self.cost_class, field_name="cost_class")
         if not isinstance(self.egress, Mapping):
             raise ContractError("egress must be an object")

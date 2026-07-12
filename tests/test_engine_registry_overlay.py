@@ -17,6 +17,7 @@ OVERLAY = importlib.import_module("engine_overlay")
 COMPOSE = importlib.import_module("engine_registry_overlay")
 ONBOARDING = importlib.import_module("engine_onboarding")
 PROMOTION = importlib.import_module("engine_promotion")
+EXECUTION_SPEC = importlib.import_module("execution_spec")
 
 
 def _row() -> dict[str, object]:
@@ -87,6 +88,17 @@ def test_pin_and_deprecation_transforms_preserve_onboarded_engines() -> None:
     )
 
     assert all(item.engines == (row,) for item in transformed)
+
+
+def test_execution_spec_uses_repo_overlay_provider(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    OVERLAY.save_overlay(tmp_path, OVERLAY.EngineOverlay(engines=[_row()]))
+    monkeypatch.chdir(tmp_path)
+
+    EXECUTION_SPEC._validate_external_engine_selector(
+        "unit[overlay]", "fixture/chat", None, "offload"
+    )
 
 
 def test_promotion_emits_diff_and_finalizes_only_after_identical_readback(

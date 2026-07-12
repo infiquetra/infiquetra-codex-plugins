@@ -18,10 +18,44 @@ import external_action_runtime as runtime  # noqa: E402
 import external_action_store as store  # noqa: E402
 import reconcile  # noqa: E402
 
+_receipt = runtime.fleet_commons_shim.load("bridge_receipt")
+_attestation = runtime.fleet_commons_shim.load("output_attestation")
+
 
 def _available(preview: runtime.Preview, detail: dict[str, Any]) -> runtime.ExecutionOutcome:
+    evidence = "fixture"
+    route = dict(preview.candidate_approval.route)
+    receipt = _receipt.emit_receipt(
+        engine_id=str(route["engine_id"]),
+        variant=str(route["variant"]),
+        transport="cli",
+        wall_time_s=0.0,
+        bytes_produced=len(evidence),
+        runner={"pid": 1, "argv": ["fixture"], "exit_code": 0},
+        receipt_emitter="agy-delegate",
+        run_id="cli:fixture:1",
+        invocation_sha256=_receipt.digest_invocation({"fixture": True}),
+        output_attestation=_attestation.emit_attestation(artifact="evidence", content=evidence),
+    )
     artifact = preview.store.root / "evidence-fixture.json"
-    artifact.write_text(json.dumps({"evidence": "fixture"}) + "\n", encoding="utf-8")
+    artifact.write_text(
+        json.dumps(
+            {
+                "schema": "external_action_evidence.v1",
+                "action_id": preview.request.action_id,
+                "engine_id": route["engine_id"],
+                "variant": route["variant"],
+                "intent": preview.request.intent,
+                "evidence": evidence,
+                "findings": detail.get("findings", []),
+                "evidence_digest": reconcile.evidence_digest(evidence),
+                "runner_receipt": receipt,
+            },
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     artifact_sha256 = hashlib.sha256(artifact.read_bytes()).hexdigest()
     return runtime.ExecutionOutcome(
         "available",

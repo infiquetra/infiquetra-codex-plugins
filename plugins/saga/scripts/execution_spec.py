@@ -288,6 +288,12 @@ def _engine_registry_module() -> Any:
     return module
 
 
+def _load_runtime_registry(registry_path: Path) -> Any:
+    from engine_registry_overlay import load_runtime_registry
+
+    return load_runtime_registry(registry_path, Path.cwd())
+
+
 def _validate_external_engine_selector(
     where: str,
     engine: str | None,
@@ -305,7 +311,7 @@ def _validate_external_engine_selector(
     registry_module = _engine_registry_module()
     registry_path = Path(__file__).resolve().parent.parent / "references" / "engine-registry.yaml"
     try:
-        registry = registry_module.Registry.load(registry_path)
+        registry = _load_runtime_registry(registry_path)
         if engine is not None:
             registry.by_key(engine)
         elif capability not in registry.capabilities:
@@ -429,7 +435,7 @@ class AdvisoryPanelRequest:
         registry_module = _engine_registry_module()
         registry_path = Path(__file__).resolve().parent.parent / "references" / "engine-registry.yaml"
         try:
-            registry = registry_module.Registry.load(registry_path)
+            registry = _load_runtime_registry(registry_path)
             registry_module.validate_panel_role(self.role, registry=registry)
         except registry_module.RegistryError as exc:
             raise SpecError(f"{where}: invalid advisory panel role: {exc}") from exc

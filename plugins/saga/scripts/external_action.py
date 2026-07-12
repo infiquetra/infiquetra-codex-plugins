@@ -15,6 +15,31 @@ import external_action_store
 
 def main(argv: list[str] | None = None) -> int:
     raw_args = sys.argv[1:] if argv is None else argv
+    if raw_args and raw_args[0] == "probe":
+        print(
+            json.dumps(
+                {
+                    "schema": "saga.external-action.probe.v1",
+                    "operations": [
+                        name
+                        for name in (
+                            "prepare_bundle",
+                            "approve_bundle",
+                            "execute_bundle",
+                            "load_action",
+                            "interrupt_action",
+                            "retry_action",
+                            "adjudicate_artifact",
+                            "adjudicate_opinion",
+                            "consume",
+                        )
+                        if callable(getattr(external_action_lifecycle, name, None))
+                    ],
+                },
+                sort_keys=True,
+            )
+        )
+        return 0
     if raw_args and raw_args[0] == "bundle":
         bundle_parser = argparse.ArgumentParser(description="Inspect an editable stage action bundle")
         bundle_parser.add_argument("bundle")

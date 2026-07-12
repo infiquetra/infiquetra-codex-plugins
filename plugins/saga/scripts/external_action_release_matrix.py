@@ -26,6 +26,7 @@ import external_action_policy as action_policy  # noqa: E402
 import external_action_status as status_module  # noqa: E402
 import external_action_store as store_module  # noqa: E402
 import reconcile  # noqa: E402
+import engine_registry_overlay  # noqa: E402
 from engine_registry import EngineEntry, Registry  # noqa: E402
 
 SCHEMA_VERSION = 1
@@ -58,7 +59,7 @@ def prerequisites(registry: Registry) -> dict[str, Any]:
 
 
 def run_matrix(*, repo_root: Path, registry_path: Path = DEFAULT_REGISTRY) -> dict[str, Any]:
-    registry = Registry.load(registry_path)
+    registry = engine_registry_overlay.load_runtime_registry(registry_path, repo_root)
     checks = prerequisites(registry)
     if not all((checks["claude_cli"], checks["agy_cli"], checks["ollama_key_available"])):
         raise ReleaseMatrixError("live provider prerequisites are incomplete")
@@ -171,6 +172,7 @@ def run_matrix(*, repo_root: Path, registry_path: Path = DEFAULT_REGISTRY) -> di
                     status_module.render(status).encode("utf-8")
                 ).hexdigest(),
                 "action_record_sha256": _directory_digest(preview.store.root),
+                "action_record_ref": preview.store.root.relative_to(repo_root).as_posix(),
             }
         )
 
@@ -178,6 +180,7 @@ def run_matrix(*, repo_root: Path, registry_path: Path = DEFAULT_REGISTRY) -> di
         "schema_version": SCHEMA_VERSION,
         "recorded_at": recorded_at,
         "source_head": source_head,
+        "source_tree": _git(repo_root, "rev-parse", f"{source_head}^{{tree}}"),
         "source_worktree_sha256": _workspace_digest(repo_root),
         "status": "passed",
         "prerequisites": checks,
@@ -192,7 +195,7 @@ def run_matrix(*, repo_root: Path, registry_path: Path = DEFAULT_REGISTRY) -> di
         },
     }
     proof["content_sha256"] = _sha256_json(proof)
-    validate_proof(proof)
+    validate_proof(proof, repo_root=repo_root)
     return proof
 
 
@@ -235,56 +238,158 @@ def _complete_receipt(events: tuple[dict[str, Any], ...]) -> dict[str, Any]:
 def _rollback_drill(repo_root: Path, base_revision: str) -> dict[str, Any]:
     source = repo_root / "plugins" / "saga"
     with tempfile.TemporaryDirectory(prefix="saga-isolated-install-") as directory:
-        codex_home = Path(directory) / "codex-home"
-        installed = codex_home / "plugins" / "saga"
-        installed.mkdir(parents=True)
-        (installed / "prior-state.json").write_text(
-            json.dumps({"version": "prior", "base_revision": base_revision}) + "\n",
+        root = Path(directory)
+        codex_home = root / "codex-home"
+        codex_home.mkdir()
+        marketplace = root / "marketplace"
+        marketplace_manifest = marketplace / ".agents" / "plugins" / "marketplace.json"
+        marketplace_manifest.parent.mkdir(parents=True)
+        plugin_source = marketplace / "plugins" / "saga"
+        shutil.copytree(source, plugin_source)
+        fleet_source = marketplace / "plugins" / "fleet-core"
+        shutil.copytree(repo_root / "plugins" / "fleet-core", fleet_source)
+        marketplace_manifest.write_text(
+            json.dumps(
+                {
+                    "name": "isolated-external-action",
+                    "interface": {"displayName": "Isolated External Action"},
+                    "plugins": [
+                        {
+                            "name": "fleet-core",
+                            "source": {"source": "local", "path": "./plugins/fleet-core"},
+                            "policy": {
+                                "installation": "AVAILABLE",
+                                "authentication": "ON_INSTALL",
+                            },
+                            "category": "Developer Tools",
+                        },
+                        {
+                            "name": "saga",
+                            "source": {"source": "local", "path": "./plugins/saga"},
+                            "policy": {
+                                "installation": "AVAILABLE",
+                                "authentication": "ON_INSTALL",
+                            },
+                            "category": "Developer Tools",
+                        }
+                    ],
+                },
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n",
             encoding="utf-8",
         )
-        prior_digest = _directory_digest(installed)
-        backup = codex_home / "plugins" / "saga.rollback"
-        installed.rename(backup)
-        shutil.copytree(source, installed)
-        candidate_digest = _directory_digest(installed)
+        env = {"PATH": os.environ.get("PATH", ""), "CODEX_HOME": str(codex_home)}
+        prior_list = _codex_json(env, "plugin", "list", "--json")
+        add_marketplace = _codex_json(
+            env, "plugin", "marketplace", "add", str(marketplace), "--json"
+        )
+        fleet_install = _codex_json(
+            env, "plugin", "add", "fleet-core@isolated-external-action", "--json"
+        )
+        fleet_root = Path(str(fleet_install.get("installedPath") or "")).resolve(strict=False)
+        if not fleet_root.is_relative_to(codex_home.resolve()) or not fleet_root.is_dir():
+            raise ReleaseMatrixError("isolated fleet-core install path is missing or escaped")
+        env["FLEET_COMMONS_ROOT"] = str(fleet_root)
+        install = _codex_json(
+            env, "plugin", "add", "saga@isolated-external-action", "--json"
+        )
+        installed_list = _codex_json(env, "plugin", "list", "--json")
+        installed_root = Path(str(install.get("installedPath") or "")).resolve(strict=False)
+        if not installed_root.is_relative_to(codex_home.resolve()) or not installed_root.is_dir():
+            raise ReleaseMatrixError("isolated Codex install path is missing or escaped")
+        candidate_digest = _directory_digest(installed_root)
         probe = subprocess.run(
             [
                 sys.executable,
                 "-I",
                 "-c",
                 (
-                    "import json,sys; sys.path.insert(0,sys.argv[1]); "
-                    "import external_action_runtime as r, external_action_lifecycle as l; "
-                    "print(json.dumps({'prepare':callable(r.prepare),'retry':callable(r.retry),"
-                    "'execute_bundle':callable(l.execute_bundle)}))"
+                    "import sys; sys.path.insert(0, sys.argv[1]); "
+                    "import external_action; raise SystemExit(external_action.main(['probe']))"
                 ),
-                str(installed / "scripts"),
+                str(installed_root / "scripts"),
             ],
             check=True,
             capture_output=True,
             text=True,
-            env={"PATH": os.environ.get("PATH", "")},
+            env=env,
         )
         readback = json.loads(probe.stdout)
-        shutil.rmtree(installed)
-        backup.rename(installed)
-        restored_digest = _directory_digest(installed)
+        remove = _codex_json(
+            env, "plugin", "remove", "saga@isolated-external-action", "--json"
+        )
+        fleet_remove = _codex_json(
+            env, "plugin", "remove", "fleet-core@isolated-external-action", "--json"
+        )
+        remove_marketplace = _codex_json(
+            env,
+            "plugin",
+            "marketplace",
+            "remove",
+            "isolated-external-action",
+            "--json",
+        )
+        restored_list = _codex_json(env, "plugin", "list", "--json")
+        required_operations = {
+            "prepare_bundle",
+            "approve_bundle",
+            "execute_bundle",
+            "load_action",
+            "interrupt_action",
+            "retry_action",
+            "adjudicate_artifact",
+            "adjudicate_opinion",
+            "consume",
+        }
+        fresh_session_passed = (
+            readback.get("schema") == "saga.external-action.probe.v1"
+            and set(readback.get("operations", [])) == required_operations
+            and "saga" in json.dumps(installed_list)
+        )
+        restored = json.dumps(restored_list, sort_keys=True) == json.dumps(
+            prior_list, sort_keys=True
+        ) and not installed_root.exists()
         passed = (
-            all(readback.values())
-            and candidate_digest != prior_digest
-            and restored_digest == prior_digest
+            bool(add_marketplace)
+            and bool(install)
+            and bool(fleet_install)
+            and bool(remove)
+            and bool(fleet_remove)
+            and bool(remove_marketplace)
+            and fresh_session_passed
+            and restored
         )
         return {
             "passed": passed,
             "base_revision": base_revision,
-            "prior_installed": True,
+            "prior_installed": False,
             "candidate_installed": True,
-            "fresh_session_passed": all(readback.values()),
-            "restored": restored_digest == prior_digest,
-            "prior_digest": prior_digest,
+            "fresh_session_passed": fresh_session_passed,
+            "restored": restored,
+            "prior_digest": _sha256_json(prior_list),
             "candidate_digest": candidate_digest,
-            "restored_digest": restored_digest,
+            "restored_digest": _sha256_json(restored_list),
+            "marketplace_add_sha256": _sha256_json(add_marketplace),
+            "install_receipt_sha256": _sha256_json(install),
+            "fleet_install_sha256": _sha256_json(fleet_install),
+            "remove_receipt_sha256": _sha256_json(remove),
+            "fleet_remove_sha256": _sha256_json(fleet_remove),
+            "marketplace_remove_sha256": _sha256_json(remove_marketplace),
+            "fresh_session_sha256": hashlib.sha256(probe.stdout.encode("utf-8")).hexdigest(),
         }
+
+
+def _codex_json(env: dict[str, str], *args: str) -> Any:
+    process = subprocess.run(
+        ["codex", *args],
+        check=True,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    return json.loads(process.stdout)
 
 
 def _workspace_digest(root: Path) -> str:
@@ -321,7 +426,12 @@ def _sha256_json(value: Any) -> str:
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
-def validate_proof(proof: dict[str, Any]) -> None:
+def validate_proof(
+    proof: dict[str, Any],
+    *,
+    repo_root: Path | None = None,
+    expected_ref: str | None = None,
+) -> None:
     """Independently recompute the release proof's closed semantic claims."""
     expected_hash = proof.get("content_sha256")
     unhashed = dict(proof)
@@ -330,6 +440,16 @@ def validate_proof(proof: dict[str, Any]) -> None:
         raise ReleaseMatrixError("release proof content_sha256 is invalid")
     if proof.get("status") != "passed" or proof.get("schema_version") != SCHEMA_VERSION:
         raise ReleaseMatrixError("release proof status or schema is invalid")
+    if repo_root is not None:
+        source_head = str(proof.get("source_head") or "")
+        try:
+            source_tree = _git(repo_root, "rev-parse", f"{source_head}^{{tree}}")
+        except subprocess.SubprocessError as exc:
+            raise ReleaseMatrixError("release proof source_head is unavailable") from exc
+        if proof.get("source_tree") != source_tree:
+            raise ReleaseMatrixError("release proof source tree is invalid")
+        if expected_ref is not None and _git(repo_root, "rev-parse", expected_ref) != source_head:
+            raise ReleaseMatrixError("release proof source_head differs from expected evidence ref")
     expected_providers = sorted({item[2] for item in ASSIGNMENTS})
     if proof.get("providers") != expected_providers:
         raise ReleaseMatrixError("release proof provider set is invalid")
@@ -360,18 +480,39 @@ def validate_proof(proof: dict[str, Any]) -> None:
             value = observed.get(field)
             if not isinstance(value, str) or len(value) != 64:
                 raise ReleaseMatrixError(f"release proof {stage}.{field} is invalid")
+        if repo_root is not None:
+            record_ref = observed.get("action_record_ref")
+            if not isinstance(record_ref, str):
+                raise ReleaseMatrixError(f"release proof {stage}.action_record_ref is invalid")
+            record_root = (repo_root / record_ref).resolve(strict=False)
+            if not record_root.is_relative_to((repo_root / ".git" / "saga-external-actions").resolve()):
+                raise ReleaseMatrixError(f"release proof {stage} action record escapes protected root")
+            if not record_root.is_dir() or _directory_digest(record_root) != observed["action_record_sha256"]:
+                raise ReleaseMatrixError(f"release proof {stage} action record digest is invalid")
     rollback = proof.get("rollback_drill")
     if not isinstance(rollback, dict) or not all(
         rollback.get(field) is True
         for field in (
             "passed",
-            "prior_installed",
             "candidate_installed",
             "fresh_session_passed",
             "restored",
         )
     ):
         raise ReleaseMatrixError("release proof rollback drill is incomplete")
+    if rollback.get("prior_installed") is not False:
+        raise ReleaseMatrixError("release proof isolated install did not start clean")
+    for field in (
+        "marketplace_add_sha256",
+        "install_receipt_sha256",
+        "fleet_install_sha256",
+        "remove_receipt_sha256",
+        "fleet_remove_sha256",
+        "marketplace_remove_sha256",
+        "fresh_session_sha256",
+    ):
+        if not isinstance(rollback.get(field), str) or len(rollback[field]) != 64:
+            raise ReleaseMatrixError(f"release proof rollback {field} is invalid")
     if proof.get("sanitization") != {
         "credentials": False,
         "prompts_or_transcripts": False,
@@ -388,16 +529,18 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", default=str(DEFAULT_OUTPUT))
     parser.add_argument("--check", action="store_true")
     parser.add_argument("--verify", action="store_true")
+    parser.add_argument("--expected-ref")
     parser.add_argument("--attended", action="store_true")
     args = parser.parse_args(argv)
-    registry = Registry.load(args.registry)
+    repo_root = Path(args.repo_root).resolve()
+    registry = engine_registry_overlay.load_runtime_registry(args.registry, repo_root)
     if args.check:
         print(json.dumps(prerequisites(registry), indent=2, sort_keys=True))
         return 0
     if args.verify:
         try:
             proof = json.loads(Path(args.output).read_text(encoding="utf-8"))
-            validate_proof(proof)
+            validate_proof(proof, repo_root=repo_root, expected_ref=args.expected_ref)
         except (OSError, ValueError, ReleaseMatrixError) as exc:
             print(f"external action release proof invalid: {exc}", file=sys.stderr)
             return 1

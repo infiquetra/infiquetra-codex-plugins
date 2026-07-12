@@ -191,6 +191,47 @@ def execute_bundle(
     return StageRun(outcomes=outcomes, paused_action_id=paused, status_cards=cards)
 
 
+def load_action(
+    *, repo_root: Path, saga_id: str, run_id: str, action_id: str
+) -> runtime.Preview:
+    return runtime.load_preview(
+        repo_root=repo_root,
+        saga_id=saga_id,
+        run_id=run_id,
+        action_id=action_id,
+    )
+
+
+def interrupt_action(
+    preview: runtime.Preview,
+    *,
+    at: str,
+    rationale: str,
+    termination_proof: Mapping[str, Any] | None = None,
+) -> None:
+    runtime.interrupt(
+        preview.store,
+        at=at,
+        rationale=rationale,
+        termination_proof=termination_proof,
+    )
+
+
+def retry_action(
+    preview: runtime.Preview,
+    *,
+    repo_root: Path,
+    new_run_id: str,
+    created_at: str,
+) -> runtime.Preview:
+    return runtime.retry(
+        preview,
+        repo_root=repo_root,
+        new_run_id=new_run_id,
+        created_at=created_at,
+    )
+
+
 def adjudicate_artifact(
     preview: runtime.Preview,
     *,

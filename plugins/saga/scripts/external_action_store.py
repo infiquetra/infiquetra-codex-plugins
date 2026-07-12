@@ -28,6 +28,7 @@ class ActionStoreError(ValueError):
 @dataclass(frozen=True, slots=True)
 class Store:
     root: Path
+    repo_root: Path | None = None
 
     @classmethod
     def for_action(
@@ -42,7 +43,10 @@ class Store:
         for name, value in (("saga_id", saga_id), ("run_id", run_id), ("action_id", action_id)):
             contract.require_id(value, field_name=name)
         common = outcome_store.resolve_common_dir(repo_root, runner=runner)
-        return cls(common / ACTION_NAMESPACE / saga_id / run_id / action_id)
+        return cls(
+            common / ACTION_NAMESPACE / saga_id / run_id / action_id,
+            Path(repo_root).resolve(),
+        )
 
     @property
     def request_path(self) -> Path:
@@ -70,6 +74,7 @@ class Store:
 
     def ensure(self) -> Store:
         self.root.mkdir(parents=True, exist_ok=True)
+        os.chmod(self.root, 0o700)
         return self
 
 
@@ -94,6 +99,7 @@ def _atomic_write(path: Path, text: str) -> None:
             handle.flush()
             os.fsync(handle.fileno())
         os.replace(temporary, path)
+        os.chmod(path, 0o600)
     finally:
         temporary.unlink(missing_ok=True)
 
@@ -118,6 +124,7 @@ def _write_once(path: Path, payload: Mapping[str, Any]) -> Path:
 def _locked(store: Store) -> Iterator[None]:
     store.ensure()
     with store.lock_path.open("a+", encoding="utf-8") as handle:
+        os.chmod(store.lock_path, 0o600)
         fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
         try:
             yield
@@ -284,6 +291,7 @@ def append_event(
             handle.write(contract.canonical_json(new_record) + "\n")
             handle.flush()
             os.fsync(handle.fileno())
+        os.chmod(store.events_path, 0o600)
         return new_record
 
 

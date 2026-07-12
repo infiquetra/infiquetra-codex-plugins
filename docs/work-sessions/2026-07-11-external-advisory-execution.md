@@ -129,3 +129,14 @@ rather than retroactively represented as protected workflow evidence.
 - A final replacement workflow run is used because earlier reviewer/pytest commands changed ignored cache files outside the prior protected subject. Remaining commands disable bytecode and pytest cache writes so the final subject chain remains auditable.
 - Remediated attended matrix passed under protected U8 intent with proof content SHA-256 `40d905b4e2d7409f0622d76a0af26da6edfe6fb23870143543dcab7c86289b65`.
 - The proof now includes closed per-stage evidence fields, semantic hash verification, an isolated candidate install, a fresh-interpreter runtime API readback, and restoration to the captured prior installed-state digest.
+
+## Review round 2 remediation
+
+- Final review round remained blocked on symbolic `HEAD`, retry lineage forks, retry without termination proof, executor-asserted evidence validity, overlay-only providers bypassing public validation, and self-attested/simulated cutover proof.
+- Preparation now resolves symbolic refs to a full commit SHA and derives dirty overlap from repository state; execution rechecks overlap before claim and launch.
+- Retry lineage now permits one atomic successor per predecessor. Launched interruption requires a termination receipt before retry, and durable load/interrupt/retry operations are exposed through the lifecycle boundary.
+- The runtime now parses a closed `external_action_evidence.v1` artifact, recomputes its evidence and file digests, validates the bridge receipt, and binds action, intent, engine, and variant to persisted approval. Raw provider evidence is no longer duplicated in `events.jsonl`; status reads the protected artifact by reference.
+- Public execution-spec validation and release routing now use the repo-aware composed registry so overlay-only providers remain selectable.
+- Release proof now records the committed Git tree and dereferenceable action-store paths. Verification recomputes the tree and each action-record directory digest and can require the evidence tag to resolve to `source_head`.
+- The rollback drill now creates a temporary local marketplace, installs `fleet-core` and `saga` through the real Codex plugin CLI under an isolated `CODEX_HOME`, proves fresh `codex plugin list` discovery plus the installed public lifecycle probe, removes both plugins and the marketplace, and verifies restoration to the initial plugin-list state.
+- Deterministic remediation evidence: `129 passed`; Ruff passed; scoped mypy passed apart from the repository's known PyYAML stub dependency, handled with the existing local ignore convention.

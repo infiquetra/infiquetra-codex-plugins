@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import sys
+import json
 from pathlib import Path
 from typing import Any
 
@@ -30,11 +31,12 @@ def project(snapshot: store_module.Snapshot) -> dict[str, Any]:
     receipt = complete_detail.get("runner_receipt")
     receipt_errors: list[str] = []
     if isinstance(receipt, dict):
+        evidence_text = _evidence_text(complete_detail.get("evidence_ref"))
         receipt_errors.extend(_receipt.validate_receipt(receipt))
         receipt_errors.extend(
             bridge_signatures.validate_receipt_signature(
                 receipt,
-                evidence_text=str(complete_detail.get("evidence") or ""),
+                evidence_text=evidence_text,
             )
         )
     adjudication = next(
@@ -89,6 +91,17 @@ def project(snapshot: store_module.Snapshot) -> dict[str, Any]:
         "last_event_at": last["at"] if last else None,
         "last_detail": dict(last.get("detail", {})) if last else {},
     }
+
+
+def _evidence_text(reference: Any) -> str:
+    if not isinstance(reference, str):
+        return ""
+    try:
+        artifact = json.loads(Path(reference).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return ""
+    evidence = artifact.get("evidence") if isinstance(artifact, dict) else None
+    return evidence if isinstance(evidence, str) else ""
 
 
 def _value(value: Any) -> str:

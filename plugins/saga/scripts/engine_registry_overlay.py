@@ -4,10 +4,11 @@
 from __future__ import annotations
 
 from copy import deepcopy
+import subprocess
 from pathlib import Path
 from typing import Any
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 from engine_overlay import EngineOverlay, EngineOverlayError, load_overlay
 from engine_registry import Registry, RegistryError
@@ -46,6 +47,27 @@ def load_composed_registry(
     return Registry.from_dict(
         compose_mapping(canonical_mapping(registry_path), load_overlay(repo_root))
     )
+
+
+def load_runtime_registry(
+    registry_path: Path | str,
+    repo_root: Path | str | None = None,
+) -> Registry:
+    """Use one composed-registry boundary for public runtime consumers."""
+    root = Path(repo_root).resolve() if repo_root is not None else _discover_repo_root()
+    if root is None:
+        return Registry.load(registry_path)
+    return load_composed_registry(registry_path, root)
+
+
+def _discover_repo_root() -> Path | None:
+    process = subprocess.run(
+        ["git", "rev-parse", "--show-toplevel"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    return Path(process.stdout.strip()).resolve() if process.returncode == 0 else None
 
 
 def _row_key(row: Any, *, source: str) -> str:

@@ -15,6 +15,8 @@ import external_action_policy as policy  # noqa: E402
 import external_action_runtime as runtime  # noqa: E402
 import external_action_store as store_module  # noqa: E402
 
+_attestation = runtime.fleet_commons_shim.load("output_attestation")
+
 
 def template() -> policy.ActionTemplate:
     return policy.ActionTemplate.from_mapping(
@@ -45,8 +47,41 @@ def preview(tmp_path: Path) -> runtime.Preview:
 
 
 def available(prepared: runtime.Preview, detail: dict | None = None) -> runtime.ExecutionOutcome:
+    evidence = "fixture"
+    route = dict(prepared.candidate_approval.route)
+    receipt = runtime._receipt.emit_receipt(
+        engine_id=str(route["engine_id"]),
+        variant=str(route["variant"]),
+        transport="cli",
+        wall_time_s=0.0,
+        bytes_produced=len(evidence.encode("utf-8")),
+        runner={"pid": 1, "argv": ["fixture"], "exit_code": 0},
+        receipt_emitter="agy-delegate",
+        run_id="cli:fixture:1",
+        invocation_sha256=runtime._receipt.digest_invocation({"fixture": True}),
+        output_attestation=_attestation.emit_attestation(
+            artifact="evidence", content=evidence
+        ),
+    )
     artifact = prepared.store.root / "evidence-fixture.json"
-    artifact.write_text(json.dumps({"evidence": "fixture"}) + "\n", encoding="utf-8")
+    artifact.write_text(
+        json.dumps(
+            {
+                "schema": "external_action_evidence.v1",
+                "action_id": prepared.request.action_id,
+                "engine_id": route["engine_id"],
+                "variant": route["variant"],
+                "intent": prepared.request.intent,
+                "evidence": evidence,
+                "findings": [],
+                "evidence_digest": runtime.reconcile.evidence_digest(evidence),
+                "runner_receipt": receipt,
+            },
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     artifact_sha256 = hashlib.sha256(artifact.read_bytes()).hexdigest()
     return runtime.ExecutionOutcome(
         "available",
@@ -115,6 +150,27 @@ def test_interrupted_attempt_retries_with_fresh_identity(tmp_path: Path) -> None
     assert retried.request.attempt == 2
     assert retried.request.predecessor_request_sha256 == prepared.request.request_sha256
     assert retried.store.root != prepared.store.root
+    with pytest.raises(runtime.RuntimeError, match="successor already exists"):
+        runtime.retry(
+            prepared, repo_root=tmp_path, new_run_id="run-3", created_at="retry-2"
+        )
+
+
+def test_launched_interruption_requires_termination_proof(tmp_path: Path) -> None:
+    prepared = preview(tmp_path)
+    runtime.approve(prepared, operator="operator", approved_at="approved")
+    store_module.append_event(prepared.store, event_id="claim-1", event="claim", at="claim")
+    store_module.append_event(prepared.store, event_id="launch-1", event="launch", at="launch")
+
+    with pytest.raises(runtime.RuntimeError, match="termination proof"):
+        runtime.interrupt(prepared.store, at="interrupt", rationale="lost coordinator")
+    runtime.interrupt(
+        prepared.store,
+        at="interrupt",
+        rationale="provider process group terminated",
+        termination_proof={"terminated": True, "receipt_sha256": "a" * 64},
+    )
+    assert store_module.read_snapshot(prepared.store).state.value == "interrupted"
 
 
 def test_unvalidated_available_evidence_is_rejected(tmp_path: Path) -> None:
@@ -126,6 +182,30 @@ def test_unvalidated_available_evidence_is_rejected(tmp_path: Path) -> None:
         return runtime.ExecutionOutcome("available", "arbitrary-ref")
 
     assert runtime.execute(prepared.store, executor=spoofed, at="run").status == "invalid-evidence"
+
+
+def test_symbolic_head_is_resolved_before_approval(tmp_path: Path) -> None:
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "config", "user.name", "Test"], cwd=tmp_path, check=True)
+    (tmp_path / "tracked.txt").write_text("one\n", encoding="utf-8")
+    subprocess.run(["git", "add", "tracked.txt"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-qm", "base"], cwd=tmp_path, check=True)
+    prepared = runtime.prepare(
+        repo_root=tmp_path,
+        saga_id="task-runtime-head",
+        run_id="run-1",
+        template=template(),
+        route={"stage": "work", "engine_id": "agy", "variant": "gemini"},
+        cost_class="metered",
+        route_egress={},
+        base_revision="HEAD",
+        payload="safe",
+        created_at="prepared",
+    )
+    assert prepared.candidate_approval.base_revision == subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=tmp_path, check=True, capture_output=True, text=True
+    ).stdout.strip()
 
 
 def test_private_key_payload_is_blocked_before_store_creation(tmp_path: Path) -> None:
