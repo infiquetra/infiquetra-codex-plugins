@@ -1,18 +1,18 @@
 {
   "schema_version": 1,
-  "captured_at": "2026-07-11T06:55:32Z",
+  "captured_at": "2026-07-12T01:19:40Z",
   "refs": {
     "codex": {
-      "historical_plan_base": "788902513e48ea95fd0504ac3c850c8c02e5d920",
-      "execution_base": "3f639109b06ed2634d5333a58fb200b06e36dbbe",
-      "observed_origin_main": "fbd400183c2de70115cbaadc4c301b03d759527d"
+      "historical_plan_base": "39f0a2f466cb6f58e203ce3e586a959ff853a342",
+      "execution_base": "d8f5d165ad0e859af9c7d7f1ba7461b00ec1ae95",
+      "observed_origin_main": "39f0a2f466cb6f58e203ce3e586a959ff853a342"
     },
     "claude": {
-      "source_base": "9470edca65b1db06d2f7562eeb2d5a9e48c34dec",
-      "source_target": "38742ece89880a6b140be237edad6d3f13c97b54",
-      "observed_head": "46fefb6f17f0c9d0d63858978536d3369ab57dfe",
-      "observed_main": "46fefb6f17f0c9d0d63858978536d3369ab57dfe",
-      "observed_origin_main": "46fefb6f17f0c9d0d63858978536d3369ab57dfe",
+      "source_base": "38742ece89880a6b140be237edad6d3f13c97b54",
+      "source_target": "675712b1d6a55ead11f3e971ed0e119354621bf2",
+      "observed_head": "675712b1d6a55ead11f3e971ed0e119354621bf2",
+      "observed_main": "478f3e7f9c0c491a86092b33eb7bf6d0f1d6ae6f",
+      "observed_origin_main": "478f3e7f9c0c491a86092b33eb7bf6d0f1d6ae6f",
       "target_reachable": true
     }
   },

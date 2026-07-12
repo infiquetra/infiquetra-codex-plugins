@@ -1,0 +1,339 @@
+{
+  "authority": {
+    "capability_snapshot": {
+      "path": "docs/validation/codex-runtime-capability-snapshot.json",
+      "schema_path": "docs/validation/codex-runtime-capability-snapshot.schema.json",
+      "schema_sha256": "8aef75ba322116b69e5eaf7a1a86a1fd49f81cfba3bbbf902cf77428cd986e1c",
+      "schema_version": 1,
+      "sha256": "800e81b32bf0922a3427cc4b49e09926b874850e49df3316a84ebd0f97ffdfa5"
+    },
+    "classification_path": "docs/portability/classifications/2026-07-11-external-advisory-execution.md",
+    "plan": {
+      "path": "docs/plans/2026-07-11-codex-external-advisory-execution-contract-plan.md",
+      "sha256": "86278d4fc30ac9fe98f99704dbff12f09fd528f8cdd040087a2f816473b6603e"
+    },
+    "reviews": [
+      {
+        "path": "docs/reviews/2026-07-10-codex-plugin-model-execution-modernization-plan-doc-review-r3.md",
+        "sha256": "f0b8c077bb395adcdf11c428311a91b1819d66222ada3fbe19980ba4e6bf4ef8"
+      },
+      {
+        "path": "docs/reviews/2026-07-11-codex-external-advisory-execution-contract-plan-review.md",
+        "sha256": "41def3318162e78779ccdf08900b2502222e65316d785b38c4b729114da8e616"
+      }
+    ],
+    "runbook": {
+      "path": "docs/portability/claude-to-codex-plugin-port-runbook.md",
+      "sha256": "8dc16667009b745a1d0f8e8f45e0542a5a5744dc40cc16e16930648509d24678",
+      "version": 3
+    }
+  },
+  "codex": {
+    "evidence_ref": "refs/tags/evidence/external-advisory-execution-20260711",
+    "execution_base": "d8f5d165ad0e859af9c7d7f1ba7461b00ec1ae95",
+    "expected_count": 7,
+    "historical_plan_base": "39f0a2f466cb6f58e203ce3e586a959ff853a342",
+    "inventory_sha256": "e6182153e2b1e67522491863f485d325d0ae9fd1b6b14b8ea70e4ac0141e83ab",
+    "observed_origin_main": "39f0a2f466cb6f58e203ce3e586a959ff853a342",
+    "repository_id": "infiquetra/infiquetra-codex-plugins",
+    "rows": [
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Preserve reviewed planning and decision history for docs/brainstorms/2026-07-11-codex-external-advisory-execution-contract-requirements.md.",
+        "new_path": "docs/brainstorms/2026-07-11-codex-external-advisory-execution-contract-requirements.md",
+        "old_path": null,
+        "planned_targets": [
+          "docs/brainstorms/2026-07-11-codex-external-advisory-execution-contract-requirements.md"
+        ],
+        "planned_tests": [],
+        "rationale": "Preserve the reviewed Codex requirements, plan, review, investigation, ideation, and decision artifacts as the execution baseline.",
+        "row_id": "codex-85fc8b7270e3e771",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": [
+          "U1"
+        ]
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Preserve reviewed planning and decision history for docs/engineering-journal/DECISIONS.md.",
+        "new_path": "docs/engineering-journal/DECISIONS.md",
+        "old_path": null,
+        "planned_targets": [
+          "docs/engineering-journal/DECISIONS.md"
+        ],
+        "planned_tests": [],
+        "rationale": "Preserve the reviewed Codex requirements, plan, review, investigation, ideation, and decision artifacts as the execution baseline.",
+        "row_id": "codex-313d2cf5a21dbc54",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": [
+          "U1"
+        ]
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Preserve reviewed planning and decision history for docs/ideation/2026-07-11-codex-workflow-control-agent-lifecycle-ideation.md.",
+        "new_path": "docs/ideation/2026-07-11-codex-workflow-control-agent-lifecycle-ideation.md",
+        "old_path": null,
+        "planned_targets": [
+          "docs/ideation/2026-07-11-codex-workflow-control-agent-lifecycle-ideation.md"
+        ],
+        "planned_tests": [],
+        "rationale": "Preserve the reviewed Codex requirements, plan, review, investigation, ideation, and decision artifacts as the execution baseline.",
+        "row_id": "codex-81b53d5270fa91a2",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": [
+          "U1"
+        ]
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Preserve reviewed planning and decision history for docs/investigations/external-second-opinion-preference-noop-2026-07-11.md.",
+        "new_path": "docs/investigations/external-second-opinion-preference-noop-2026-07-11.md",
+        "old_path": null,
+        "planned_targets": [
+          "docs/investigations/external-second-opinion-preference-noop-2026-07-11.md"
+        ],
+        "planned_tests": [],
+        "rationale": "Preserve the reviewed Codex requirements, plan, review, investigation, ideation, and decision artifacts as the execution baseline.",
+        "row_id": "codex-31722f7003df7c30",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": [
+          "U1"
+        ]
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Preserve reviewed planning and decision history for docs/plans/2026-07-11-codex-external-advisory-execution-contract-plan.md.",
+        "new_path": "docs/plans/2026-07-11-codex-external-advisory-execution-contract-plan.md",
+        "old_path": null,
+        "planned_targets": [
+          "docs/plans/2026-07-11-codex-external-advisory-execution-contract-plan.md"
+        ],
+        "planned_tests": [],
+        "rationale": "Preserve the reviewed Codex requirements, plan, review, investigation, ideation, and decision artifacts as the execution baseline.",
+        "row_id": "codex-4846a961a0a15ae7",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": [
+          "U1"
+        ]
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Preserve reviewed planning and decision history for docs/reviews/2026-07-11-codex-external-advisory-execution-contract-plan-review.md.",
+        "new_path": "docs/reviews/2026-07-11-codex-external-advisory-execution-contract-plan-review.md",
+        "old_path": null,
+        "planned_targets": [
+          "docs/reviews/2026-07-11-codex-external-advisory-execution-contract-plan-review.md"
+        ],
+        "planned_tests": [],
+        "rationale": "Preserve the reviewed Codex requirements, plan, review, investigation, ideation, and decision artifacts as the execution baseline.",
+        "row_id": "codex-cf95eeb6fe21a55b",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": [
+          "U1"
+        ]
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Preserve reviewed planning and decision history for docs/reviews/2026-07-11-codex-external-advisory-execution-contract-requirements-review.md.",
+        "new_path": "docs/reviews/2026-07-11-codex-external-advisory-execution-contract-requirements-review.md",
+        "old_path": null,
+        "planned_targets": [
+          "docs/reviews/2026-07-11-codex-external-advisory-execution-contract-requirements-review.md"
+        ],
+        "planned_tests": [],
+        "rationale": "Preserve the reviewed Codex requirements, plan, review, investigation, ideation, and decision artifacts as the execution baseline.",
+        "row_id": "codex-af9e39a43c7be035",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": [
+          "U1"
+        ]
+      }
+    ]
+  },
+  "evidence": [],
+  "port_id": "external-advisory-execution-2026-07-11",
+  "refresh_changes": [],
+  "release_evidence": {
+    "cutover": null,
+    "fresh_session": null,
+    "isolated_install": null,
+    "review": null,
+    "rollback": null
+  },
+  "schema_version": 1,
+  "source": {
+    "base_ref": "38742ece89880a6b140be237edad6d3f13c97b54",
+    "expected_count": 3,
+    "inventory_sha256": "f6d67d4294f8658118cb90728f151c813e87e3fc684c786277fb8a2f07168db0",
+    "observed_refs": {
+      "head": "675712b1d6a55ead11f3e971ed0e119354621bf2",
+      "local_main": "478f3e7f9c0c491a86092b33eb7bf6d0f1d6ae6f",
+      "origin_main": "478f3e7f9c0c491a86092b33eb7bf6d0f1d6ae6f"
+    },
+    "pathspecs": [
+      "plugins/saga/scripts/second_opinion.py",
+      "plugins/agy/scripts/agy_delegate.py",
+      "plugins/codex/scripts/codex_delegate.py",
+      "tests/test_second_opinion.py",
+      "tests/test_agy_delegate_contract.py",
+      "tests/test_codex_delegate.py",
+      "tests/test_codex_delegate_contract.py"
+    ],
+    "repository_id": "infiquetra/infiquetra-claude-plugins",
+    "rows": [
+      {
+        "capability_refs": [
+          "capability:external-engine-process-boundary"
+        ],
+        "change": "M",
+        "codex_invariant_refs": [
+          "codex-execution-base"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "plugins/codex/scripts/codex_delegate.py",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/saga/scripts/external_action_adapters.py",
+          "plugins/saga/scripts/external_action_workspace.py",
+          "plugins/saga/scripts/claude_delegate.py",
+          "plugins/saga/scripts/agy_delegate.py"
+        ],
+        "planned_tests": [
+          "tests/test_external_action_adapters.py",
+          "tests/test_external_action_workspace.py",
+          "tests/test_claude_delegate.py",
+          "tests/test_agy_delegate.py"
+        ],
+        "rationale": "Adapt process supervision, timeout/no-output cleanup, disposable-clone patch capture, and terminal receipts for Claude CLI and agy without activating the Claude-host Codex delegate surface.",
+        "row_id": "src-473914fd7d27b35c",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "script",
+        "treatment": "codex-adapt",
+        "units": [
+          "U4"
+        ]
+      },
+      {
+        "capability_refs": [
+          "capability:external-engine-process-boundary",
+          "capability:advisory-attestation-boundary"
+        ],
+        "change": "A",
+        "codex_invariant_refs": [
+          "codex-execution-base"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "plugins/saga/scripts/second_opinion.py",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/saga/scripts/external_action_contract.py",
+          "plugins/saga/scripts/external_action_store.py",
+          "plugins/saga/scripts/external_action_runtime.py",
+          "plugins/saga/scripts/external_action_policy.py",
+          "plugins/saga/scripts/external_action_egress.py",
+          "plugins/saga/scripts/reconcile.py"
+        ],
+        "planned_tests": [
+          "tests/test_external_action_store.py",
+          "tests/test_external_action_runtime.py",
+          "tests/test_external_action_egress.py",
+          "tests/test_external_action_lifecycle_contract.py",
+          "tests/test_reconcile.py"
+        ],
+        "rationale": "Adapt bounded context, claim-before-dispatch, typed reconciliation, and advisory-only authority into one Codex-owned external-action runtime; do not copy Claude host orchestration.",
+        "row_id": "src-8abb72835ff1f188",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "script",
+        "treatment": "codex-adapt",
+        "units": [
+          "U2",
+          "U3",
+          "U6",
+          "U7"
+        ]
+      },
+      {
+        "capability_refs": [
+          "capability:negative-host-boundary"
+        ],
+        "change": "M",
+        "codex_invariant_refs": [
+          "codex-execution-base"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "tests/test_codex_delegate_contract.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "The Claude-host Codex delegate contract remains source-only; Codex-native supervised Claude and agy adapter tests replace active host assumptions.",
+        "row_id": "src-ca0462fa1712b112",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "test",
+        "treatment": "reject",
+        "units": []
+      }
+    ],
+    "target_reachable": true,
+    "target_ref": "675712b1d6a55ead11f3e971ed0e119354621bf2"
+  },
+  "version_policy": [
+    {
+      "current_codex_identity": "fleet-core",
+      "current_codex_version": "0.5.0",
+      "policy": "lineage-with-codex-adaptation",
+      "release_unit": "U8",
+      "source_plugin": "fleet-core",
+      "source_version": "0.8.4",
+      "target_codex_identity": "fleet-core",
+      "target_codex_version": "0.8.4"
+    },
+    {
+      "current_codex_identity": "saga",
+      "current_codex_version": "0.65.0",
+      "policy": "lineage-with-codex-adaptation",
+      "release_unit": "U8",
+      "source_plugin": "saga",
+      "source_version": "0.75.17",
+      "target_codex_identity": "saga",
+      "target_codex_version": "0.75.17"
+    },
+    {
+      "current_codex_identity": "team-execution",
+      "current_codex_version": "2.3.0",
+      "policy": "identity-migration-no-byte-parity",
+      "release_unit": "U8",
+      "source_plugin": "team-execution",
+      "source_version": "2.14.3",
+      "target_codex_identity": "verified-workflows",
+      "target_codex_version": "1.0.0"
+    }
+  ]
+}
