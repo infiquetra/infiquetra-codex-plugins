@@ -1,5 +1,32 @@
 # Learnings
 
+## 2026-07-12
+
+### Workflow approval needs a concrete preview  {#workflow-approval-needs-concrete-preview}
+
+**Context.** The external advisory execution plan named Verified Workflows, but execution began
+root-inline and the operator did not see the concrete workflow before agents and validators ran.
+
+**Evidence.** PR #28, `docs/work-sessions/2026-07-11-external-advisory-execution.md`, and
+`docs/retros/task-codex-external-advisory-execution-contract-2026-07-12.md`.
+
+**Mechanism.** Selecting a backend or approving a plan does not expose the actual task graph,
+dependencies, roles, model and effort choices, or downgrade and upgrade recommendations. Automatic
+inline fallback also changes the approved execution contract without returning to the operator.
+
+**Fix (or queued).** QUEUED `#verified-workflow-preview-and-agent-runtime-contract`.
+
+**What surprised.** V2 orchestration and approval semantics caused more rework than the provider
+adaptation itself.
+
+**Generalizable rule.** Treat workflow approval as approval of a concrete execution revision, not a
+backend label. Render the complete proposed workflow conversationally, re-render it after every
+operator-requested change, start nothing before explicit approval, and stop for a new preview whenever
+runtime receipts cannot prove the approved role, model, effort, or permissions.
+
+**Refs.** `docs/ideation/2026-07-11-codex-workflow-control-agent-lifecycle-ideation.md` and QUEUED
+`#verified-workflow-preview-and-agent-runtime-contract`.
+
 ## 2026-07-11: Sol And Terra V2 Can Select Named Profiles After Namespace Bootstrap
 
 **Evidence:** `codex-cli 0.144.1`; OpenAI Codex source tag `rust-v0.144.1`
