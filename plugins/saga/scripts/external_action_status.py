@@ -20,7 +20,9 @@ _receipt = fleet_commons_shim.load("bridge_receipt")
 STATUS_SCHEMA = "saga.external-action.status.v1"
 
 
-def project(snapshot: store_module.Snapshot) -> dict[str, Any]:
+def project(
+    snapshot: store_module.Snapshot, *, evidence_root: Path | None = None
+) -> dict[str, Any]:
     approval = snapshot.approval
     last = snapshot.events[-1] if snapshot.events else None
     complete = next(
@@ -31,7 +33,7 @@ def project(snapshot: store_module.Snapshot) -> dict[str, Any]:
     receipt = complete_detail.get("runner_receipt")
     receipt_errors: list[str] = []
     if isinstance(receipt, dict):
-        evidence_text = _evidence_text(complete_detail.get("evidence_ref"))
+        evidence_text = _evidence_text(complete_detail.get("evidence_ref"), evidence_root)
         receipt_errors.extend(_receipt.validate_receipt(receipt))
         receipt_errors.extend(
             bridge_signatures.validate_receipt_signature(
@@ -93,11 +95,14 @@ def project(snapshot: store_module.Snapshot) -> dict[str, Any]:
     }
 
 
-def _evidence_text(reference: Any) -> str:
+def _evidence_text(reference: Any, evidence_root: Path | None = None) -> str:
     if not isinstance(reference, str):
         return ""
     try:
-        artifact = json.loads(Path(reference).read_text(encoding="utf-8"))
+        path = Path(reference)
+        if evidence_root is not None:
+            path = evidence_root / path.name
+        artifact = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return ""
     evidence = artifact.get("evidence") if isinstance(artifact, dict) else None
@@ -147,6 +152,6 @@ def render(status: dict[str, Any]) -> str:
 
 
 def refresh(store: store_module.Store) -> dict[str, Any]:
-    status = project(store_module.read_snapshot(store))
+    status = project(store_module.read_snapshot(store), evidence_root=store.root)
     store_module.write_projection(store, status, render(status))
     return status

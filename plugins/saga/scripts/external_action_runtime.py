@@ -205,7 +205,13 @@ def execute(store: store_module.Store, *, executor: Executor, at: str) -> Execut
         )
         if current_overlap != approval.dirty_overlap:
             raise RuntimeError("dirty-worktree overlap changed after approval")
-    store_module.append_event(store, event_id="claim-1", event="claim", at=at)
+    try:
+        snapshot = store_module.claim_execution(store, at=at)
+    except store_module.ActionStoreError as exc:
+        raise RuntimeError("action execution claim was acquired by another coordinator") from exc
+    claimed_approval = snapshot.approval
+    if claimed_approval is None:
+        raise RuntimeError("claimed action is missing approval")
     launched = False
 
     def acknowledge_launch(identity: Mapping[str, Any] | None = None) -> None:
@@ -221,60 +227,73 @@ def execute(store: store_module.Store, *, executor: Executor, at: str) -> Execut
             launched = True
 
     try:
-        outcome = executor(snapshot.request, snapshot.approval, acknowledge_launch)
+        outcome = executor(snapshot.request, claimed_approval, acknowledge_launch)
     except TimeoutError:
-        event = "timeout" if launched else "unavailable"
         if launched:
-            _record_returned_termination(store, at=at, disposition="executor-timeout")
-        store_module.append_event(store, event_id="terminal-1", event=event, at=at)
+            return _post_launch_failure(
+                store, at=at, event="timeout", disposition="executor-timeout"
+            )
+        store_module.append_event(store, event_id="terminal-1", event="unavailable", at=at)
         status_module.refresh(store)
-        return ExecutionOutcome("timed-out" if launched else "unavailable")
+        return ExecutionOutcome("unavailable")
     except Exception as exc:
-        event = "invalidate-evidence" if launched else "unavailable"
         detail = {"error_type": type(exc).__name__}
         if launched:
-            _record_returned_termination(store, at=at, disposition="executor-error")
-        store_module.append_event(
-            store, event_id="terminal-1", event=event, at=at, detail=detail
-        )
+            return _post_launch_failure(
+                store,
+                at=at,
+                event="invalidate-evidence",
+                disposition="executor-error",
+                detail=detail,
+            )
+        store_module.append_event(store, event_id="terminal-1", event="unavailable", at=at, detail=detail)
         status_module.refresh(store)
-        return ExecutionOutcome(
-            "invalid-evidence" if launched else "unavailable",
-            detail=detail,
-        )
+        return ExecutionOutcome("unavailable", detail=detail)
     if not launched:
         store_module.append_event(store, event_id="terminal-1", event="unavailable", at=at)
         status_module.refresh(store)
         return ExecutionOutcome("unavailable")
     if outcome.status != "available" or not outcome.evidence_ref:
-        _record_returned_termination(store, at=at, disposition="executor-returned")
-        store_module.append_event(store, event_id="terminal-1", event="invalidate-evidence", at=at)
-        status_module.refresh(store)
-        return ExecutionOutcome("invalid-evidence", detail=outcome.detail)
+        return _post_launch_failure(
+            store,
+            at=at,
+            event="invalidate-evidence",
+            disposition="executor-returned",
+            detail=outcome.detail,
+        )
     evidence_path = Path(outcome.evidence_ref).resolve(strict=False)
     evidence_root = store.root.resolve()
     if (
         not evidence_path.is_relative_to(evidence_root)
         or not evidence_path.is_file()
     ):
-        store_module.append_event(store, event_id="terminal-1", event="invalidate-evidence", at=at)
-        status_module.refresh(store)
-        return ExecutionOutcome("invalid-evidence", detail={"reason": "unbound evidence artifact"})
+        return _post_launch_failure(
+            store,
+            at=at,
+            event="invalidate-evidence",
+            disposition="unbound-evidence",
+            detail={"reason": "unbound evidence artifact"},
+        )
     try:
         artifact, artifact_sha256 = _validate_evidence_artifact(
             snapshot, approval, evidence_path
         )
     except (OSError, ValueError, json.JSONDecodeError) as exc:
-        store_module.append_event(store, event_id="terminal-1", event="invalidate-evidence", at=at)
-        status_module.refresh(store)
-        return ExecutionOutcome(
-            "invalid-evidence", detail={"reason": f"invalid evidence artifact: {exc}"}
+        return _post_launch_failure(
+            store,
+            at=at,
+            event="invalidate-evidence",
+            disposition="invalid-evidence",
+            detail={"reason": f"invalid evidence artifact: {exc}"},
         )
     if outcome.artifact_sha256 and outcome.artifact_sha256 != artifact_sha256:
-        _record_returned_termination(store, at=at, disposition="executor-returned")
-        store_module.append_event(store, event_id="terminal-1", event="invalidate-evidence", at=at)
-        status_module.refresh(store)
-        return ExecutionOutcome("invalid-evidence", detail={"reason": "artifact digest mismatch"})
+        return _post_launch_failure(
+            store,
+            at=at,
+            event="invalidate-evidence",
+            disposition="artifact-digest-mismatch",
+            detail={"reason": "artifact digest mismatch"},
+        )
     _record_returned_termination(store, at=at, disposition="executor-completed")
     store_module.append_event(
         store,
@@ -291,6 +310,22 @@ def execute(store: store_module.Store, *, executor: Executor, at: str) -> Execut
     )
     status_module.refresh(store)
     return outcome
+
+
+def _post_launch_failure(
+    store: store_module.Store,
+    *,
+    at: str,
+    event: str,
+    disposition: str,
+    detail: Mapping[str, Any] | None = None,
+) -> ExecutionOutcome:
+    if _record_returned_termination(store, at=at, disposition=disposition):
+        store_module.append_event(store, event_id="terminal-1", event=event, at=at, detail=detail)
+        status_module.refresh(store)
+        return ExecutionOutcome("timed-out" if event == "timeout" else "invalid-evidence", detail=detail)
+    status_module.refresh(store)
+    return ExecutionOutcome("launched-uncertain", detail=detail)
 
 
 def interrupt(
@@ -360,13 +395,14 @@ def _prepare_retry_successor(
         marker_value = _read_json(marker)
         existing = _find_retry_successor(preview.store, request)
         if marker_value is not None:
-            recorded_run = str(marker_value.get("successor_run_id") or "")
-            if recorded_run != new_run_id:
+            _validate_retry_marker(marker_value, request)
+            if marker_value["successor_run_id"] != new_run_id:
                 raise RuntimeError("retry successor already exists for predecessor")
         if existing is not None:
             existing_store, existing_request = existing
             if existing_request.run_id != new_run_id:
                 raise RuntimeError("retry successor already exists for predecessor")
+            _validate_retry_successor(existing_request, request)
             retry_preview = _complete_retry_preview(
                 existing_store,
                 existing_request,
@@ -499,6 +535,7 @@ def _resolve_base_revision(repo_root: Path, value: str) -> str:
 def _derive_dirty_overlap(repo_root: Path, scopes: tuple[str, ...]) -> tuple[str, ...]:
     if not scopes:
         return ()
+    _validate_scopes(scopes)
     process = subprocess.run(
         ["git", "status", "--porcelain=v1", "-z", "--untracked-files=all"],
         cwd=repo_root,
@@ -525,7 +562,10 @@ def _derive_dirty_overlap(repo_root: Path, scopes: tuple[str, ...]) -> tuple[str
             paths.append(records[index])
             index += 1
         for path in paths:
-            if any(path == scope or path.startswith(scope.rstrip("/") + "/") for scope in scopes):
+            if any(
+                scope == "." or path == scope or path.startswith(scope.rstrip("/") + "/")
+                for scope in scopes
+            ):
                 dirty.append(path)
     return tuple(sorted(set(dirty)))
 
@@ -543,8 +583,9 @@ def _normalize_launch_identity(identity: Mapping[str, Any] | None) -> dict[str, 
             for field in ("pid", "process_group")
         ):
             raise RuntimeError("CLI launch identity requires positive pid and process_group")
-        if not re.fullmatch(r"[0-9a-f]{64}", str(value.get("argv_sha256") or "")):
-            raise RuntimeError("CLI launch identity requires argv_sha256")
+        for field in ("argv_sha256", "process_start_identity"):
+            if not re.fullmatch(r"[0-9a-f]{64}", str(value.get(field) or "")):
+                raise RuntimeError(f"CLI launch identity requires {field}")
     if transport == "http" and not isinstance(value.get("operation_id"), str):
         raise RuntimeError("HTTP launch identity requires operation_id")
     return value
@@ -565,6 +606,20 @@ def _process_group_alive(process_group: int) -> bool:
     except PermissionError:
         return True
     return True
+
+
+def process_start_identity(pid: int) -> str:
+    """Return a stable token for a live PID, not an unbound reusable PID."""
+    process = subprocess.run(
+        ["ps", "-o", "lstart=", "-p", str(pid)],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    started = process.stdout.strip()
+    if process.returncode or not started:
+        raise RuntimeError("cannot bind CLI launch to its process start identity")
+    return hashlib.sha256(started.encode("utf-8")).hexdigest()
 
 
 def _termination_payload(
@@ -590,16 +645,26 @@ def _termination_payload(
     return payload
 
 
-def _record_returned_termination(store: store_module.Store, *, at: str, disposition: str) -> None:
+def _record_returned_termination(store: store_module.Store, *, at: str, disposition: str) -> bool:
     snapshot = store_module.read_snapshot(store)
     launch_event = _launch_event(snapshot)
     identity = _normalize_launch_identity(dict(launch_event.get("detail", {})).get("identity"))
-    if identity["transport"] == "cli" and _process_group_alive(identity["process_group"]):
-        return
+    if identity["transport"] == "http":
+        return False
+    if identity["transport"] == "cli":
+        try:
+            current_identity = process_start_identity(identity["pid"])
+        except RuntimeError:
+            current_identity = None
+        if _process_group_alive(identity["process_group"]):
+            if current_identity != identity["process_start_identity"]:
+                return False
+            return False
     store_module.write_termination(
         store,
         _termination_payload(snapshot, launch_event, at=at, disposition=disposition),
     )
+    return True
 
 
 def _terminate_launched_action(store: store_module.Store, *, at: str) -> dict[str, Any]:
@@ -610,6 +675,8 @@ def _terminate_launched_action(store: store_module.Store, *, at: str) -> dict[st
         raise RuntimeError("launched action has no supervised termination path")
     process_group = identity["process_group"]
     if _process_group_alive(process_group):
+        if process_start_identity(identity["pid"]) != identity["process_start_identity"]:
+            raise RuntimeError("CLI launch process identity is stale or reused")
         os.killpg(process_group, signal.SIGKILL)
         for _ in range(100):
             try:
@@ -719,6 +786,54 @@ def _write_retry_marker(
         handle.write(payload)
         handle.flush()
         os.fsync(handle.fileno())
+
+
+def _validate_retry_marker(
+    marker: Mapping[str, Any], request: contract.ActionRequest
+) -> None:
+    expected = {
+        "predecessor_request_sha256": request.request_sha256,
+        "successor_attempt": request.attempt + 1,
+    }
+    if (
+        set(marker) != {"predecessor_request_sha256", "successor_run_id", "successor_attempt"}
+        or marker.get("predecessor_request_sha256") != expected["predecessor_request_sha256"]
+        or marker.get("successor_attempt") != expected["successor_attempt"]
+        or not isinstance(marker.get("successor_run_id"), str)
+    ):
+        raise RuntimeError("retry lineage marker is not a closed semantic successor record")
+
+
+def _validate_retry_successor(
+    successor: contract.ActionRequest, predecessor: contract.ActionRequest
+) -> None:
+    expected = contract.ActionRequest(
+        saga_id=predecessor.saga_id,
+        run_id=successor.run_id,
+        action_id=predecessor.action_id,
+        stage=predecessor.stage,
+        intent=predecessor.intent,
+        trigger=predecessor.trigger,
+        requiredness=predecessor.requiredness,
+        provider_constraints=predecessor.provider_constraints,
+        context_scope=predecessor.context_scope,
+        sensitivity=predecessor.sensitivity,
+        write_set=predecessor.write_set,
+        evidence_destination=predecessor.evidence_destination,
+        consumption_point=predecessor.consumption_point,
+        created_at=successor.created_at,
+        attempt=predecessor.attempt + 1,
+        predecessor_request_sha256=predecessor.request_sha256,
+    )
+    if successor.to_dict() != expected.to_dict():
+        raise RuntimeError("recovered retry successor is not an exact semantic successor")
+
+
+def _validate_scopes(scopes: tuple[str, ...]) -> None:
+    for scope in scopes:
+        path = Path(scope)
+        if path.is_absolute() or ".." in path.parts:
+            raise RuntimeError("action scopes must be relative and traversal-free")
 
 
 def _find_retry_successor(

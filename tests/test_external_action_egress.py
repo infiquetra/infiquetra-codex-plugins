@@ -25,6 +25,15 @@ def test_private_key_blocks_entire_payload() -> None:
     assert result.detections == ("private-key",)
 
 
+def test_structured_credential_and_jwt_values_fail_closed_without_literals() -> None:
+    token = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyIn0.signaturevalue"
+    result = egress.sanitize({"api_key": "literal-secret", "nested": {"jwt": token}})
+    assert result.blocked
+    assert "literal-secret" not in repr(result)
+    assert token not in repr(result)
+    assert "credential-key:api_key" in result.detections
+
+
 def test_unsupported_objects_fail_closed() -> None:
     try:
         egress.sanitize(object())

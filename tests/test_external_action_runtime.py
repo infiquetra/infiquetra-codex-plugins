@@ -4,6 +4,7 @@ import hashlib
 import json
 import sys
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pytest
@@ -124,6 +125,24 @@ def test_no_launch_acknowledgement_is_unavailable(tmp_path: Path) -> None:
     assert outcome.status == "unavailable"
 
 
+def test_concurrent_execution_claim_dispatches_only_one_provider(tmp_path: Path) -> None:
+    prepared = preview(tmp_path)
+    runtime.approve(prepared, operator="operator", approved_at="approved")
+    calls = 0
+
+    def executor(_request, _approval, launch):
+        nonlocal calls
+        calls += 1
+        launch()
+        return available(prepared)
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        futures = [pool.submit(runtime.execute, prepared.store, executor=executor, at="run") for _ in range(2)]
+        results = [future.result() if future.exception() is None else None for future in futures]
+    assert calls == 1
+    assert sum(result is not None and result.status == "available" for result in results) == 1
+
+
 def test_launched_timeout_is_distinct(tmp_path: Path) -> None:
     prepared = preview(tmp_path)
     runtime.approve(prepared, operator="operator", approved_at="approved")
@@ -190,6 +209,7 @@ def test_launched_interruption_requires_termination_proof(tmp_path: Path) -> Non
                 "transport": "cli",
                 "pid": process.pid,
                 "process_group": process.pid,
+                "process_start_identity": runtime.process_start_identity(process.pid),
                 "argv_sha256": hashlib.sha256(b"fixture").hexdigest(),
             }
         },
@@ -317,6 +337,20 @@ def test_unvalidated_available_evidence_is_rejected(tmp_path: Path) -> None:
     assert runtime.execute(prepared.store, executor=spoofed, at="run").status == "invalid-evidence"
 
 
+def test_http_invalid_evidence_remains_launched_without_local_termination(tmp_path: Path) -> None:
+    prepared = preview(tmp_path)
+    runtime.approve(prepared, operator="operator", approved_at="approved")
+
+    def http_executor(_request, _approval, launch):
+        launch({"transport": "http", "operation_id": "operation-1"})
+        return runtime.ExecutionOutcome("available", "arbitrary-ref")
+
+    outcome = runtime.execute(prepared.store, executor=http_executor, at="run")
+    assert outcome.status == "launched-uncertain"
+    assert store_module.read_termination(prepared.store) is None
+    assert store_module.read_snapshot(prepared.store).state.value == "launched"
+
+
 def test_symbolic_head_is_resolved_before_approval(tmp_path: Path) -> None:
     subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
     subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=tmp_path, check=True)
@@ -354,4 +388,31 @@ def test_private_key_payload_is_blocked_before_store_creation(tmp_path: Path) ->
             base_revision="a" * 40,
             payload="-----BEGIN PRIVATE KEY-----\nabc",
             created_at="now",
+        )
+
+
+@pytest.mark.parametrize("scope", ["/absolute", "docs/../secret"])
+def test_absolute_and_traversal_scopes_fail_closed(tmp_path: Path, scope: str) -> None:
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    scoped = policy.ActionTemplate.from_mapping(
+        {
+            "action_id": "opinion-scope",
+            "intent": "second-opinion",
+            "trigger": "review",
+            "consumption_point": "before gate",
+            "context_scope": [scope],
+        }
+    )
+    with pytest.raises(runtime.RuntimeError, match="traversal-free"):
+        runtime.prepare(
+            repo_root=tmp_path,
+            saga_id="task-runtime-scope",
+            run_id="run-1",
+            template=scoped,
+            route={"stage": "work", "engine_id": "agy", "variant": "gemini"},
+            cost_class="metered",
+            route_egress={},
+            base_revision="a" * 40,
+            payload="safe",
+            created_at="prepared",
         )

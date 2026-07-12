@@ -259,53 +259,103 @@ def append_event(
         if request is None:
             raise ActionStoreError("request must exist before events")
         records = _read_events_unlocked(store, heal_tail=True)
-        for existing in records:
-            if existing["event_id"] == event_id:
-                candidate = {
-                    key: value
-                    for key, value in existing.items()
-                    if key not in {"sequence", "from_state", "to_state", "prev_hash", "this_hash"}
-                }
-                expected = {
-                    "schema": contract.EVENT_SCHEMA,
-                    "event_id": event_id,
-                    "event": event,
-                    "at": at,
-                    "detail": dict(detail or {}),
-                    "rationale": rationale,
-                }
-                if candidate != expected:
-                    raise ActionStoreError("event_id already exists with different content")
-                return existing
-        state = (
-            contract.State(records[-1]["to_state"])
-            if records
-            else contract.State.REQUESTED
+        return _append_event_unlocked(
+            store,
+            records,
+            event_id=event_id,
+            event=event,
+            at=at,
+            detail=detail,
+            rationale=rationale,
         )
-        try:
-            target = contract.next_state(state, event, rationale=rationale)
-        except contract.ContractError as exc:
-            raise ActionStoreError(str(exc)) from exc
-        new_record: dict[str, Any] = {
-            "schema": contract.EVENT_SCHEMA,
-            "event_id": event_id,
-            "sequence": len(records) + 1,
-            "event": event,
-            "at": at,
-            "from_state": state.value,
-            "to_state": target.value,
-            "detail": dict(detail or {}),
-            "rationale": rationale,
-            "prev_hash": records[-1]["this_hash"] if records else "",
-        }
-        new_record["this_hash"] = _event_hash(new_record)
-        store.events_path.parent.mkdir(parents=True, exist_ok=True)
-        with store.events_path.open("a", encoding="utf-8") as handle:
-            handle.write(contract.canonical_json(new_record) + "\n")
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.chmod(store.events_path, 0o600)
-        return new_record
+
+
+def _append_event_unlocked(
+    store: Store,
+    records: list[dict[str, Any]],
+    *,
+    event_id: str,
+    event: str,
+    at: str,
+    detail: Mapping[str, Any] | None,
+    rationale: str | None,
+) -> dict[str, Any]:
+    """Append one event while the caller owns ``store``'s lock."""
+    for existing in records:
+        if existing["event_id"] == event_id:
+            candidate = {
+                key: value
+                for key, value in existing.items()
+                if key not in {"sequence", "from_state", "to_state", "prev_hash", "this_hash"}
+            }
+            expected = {
+                "schema": contract.EVENT_SCHEMA,
+                "event_id": event_id,
+                "event": event,
+                "at": at,
+                "detail": dict(detail or {}),
+                "rationale": rationale,
+            }
+            if candidate != expected:
+                raise ActionStoreError("event_id already exists with different content")
+            return existing
+    state = contract.State(records[-1]["to_state"]) if records else contract.State.REQUESTED
+    try:
+        target = contract.next_state(state, event, rationale=rationale)
+    except contract.ContractError as exc:
+        raise ActionStoreError(str(exc)) from exc
+    new_record: dict[str, Any] = {
+        "schema": contract.EVENT_SCHEMA,
+        "event_id": event_id,
+        "sequence": len(records) + 1,
+        "event": event,
+        "at": at,
+        "from_state": state.value,
+        "to_state": target.value,
+        "detail": dict(detail or {}),
+        "rationale": rationale,
+        "prev_hash": records[-1]["this_hash"] if records else "",
+    }
+    new_record["this_hash"] = _event_hash(new_record)
+    store.events_path.parent.mkdir(parents=True, exist_ok=True)
+    with store.events_path.open("a", encoding="utf-8") as handle:
+        handle.write(contract.canonical_json(new_record) + "\n")
+        handle.flush()
+        os.fsync(handle.fileno())
+    os.chmod(store.events_path, 0o600)
+    return new_record
+
+
+def claim_execution(store: Store, *, at: str) -> Snapshot:
+    """Atomically move one approved action into the claimed state.
+
+    The check and transition share the event-log lock so concurrently recovered
+    coordinators cannot both dispatch the same provider invocation.
+    """
+    with _locked(store):
+        request = read_request(store)
+        if request is None:
+            raise ActionStoreError("action request is missing")
+        approval = read_approval(store)
+        records = _read_events_unlocked(store, heal_tail=True)
+        state = contract.State(records[-1]["to_state"]) if records else contract.State.REQUESTED
+        if state != contract.State.APPROVED or approval is None:
+            raise ActionStoreError("action is no longer available for execution claim")
+        _append_event_unlocked(
+            store,
+            records,
+            event_id="claim-1",
+            event="claim",
+            at=at,
+            detail=None,
+            rationale=None,
+        )
+        return Snapshot(
+            request=request,
+            approval=approval,
+            events=tuple(_read_events_unlocked(store, heal_tail=False)),
+            state=contract.State.CLAIMED,
+        )
 
 
 def read_snapshot(store: Store) -> Snapshot:

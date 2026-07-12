@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import subprocess
 from argparse import Namespace
 from pathlib import Path
 from unittest.mock import patch
@@ -349,6 +350,20 @@ def test_unimplemented_u2_unit_and_final_cutover_are_blocked() -> None:
 
     assert unit_errors
     assert cutover_errors
+
+
+def test_cutover_requires_exact_tagged_release_proof() -> None:
+    manifest = load_manifest()
+    failed = subprocess.CompletedProcess(
+        args=["external_action_release_matrix.py"],
+        returncode=1,
+        stdout="",
+        stderr="external action release proof invalid: evidence bundle missing\n",
+    )
+    with patch.object(contract.subprocess, "run", return_value=failed):
+        errors = contract._validate_cutover_release_proof(ROOT, manifest)
+
+    assert any("evidence bundle missing" in error for error in errors)
 
 
 def test_renderer_is_byte_current() -> None:

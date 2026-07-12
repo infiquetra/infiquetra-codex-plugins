@@ -1257,6 +1257,8 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
         for row in codex_rows:
             if row.get("state") != "verified":
                 errors.append(f"{row.get('row_id')} Codex invariant is not verified for cutover")
+        if not errors:
+            errors.extend(_validate_cutover_release_proof(root, manifest))
 
     if isinstance(authority, dict) and isinstance(authority.get("classification_path"), str):
         try:
@@ -1267,6 +1269,62 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
         except (KeyError, TypeError, ContractError) as exc:
             errors.append(f"generated classification could not be rendered: {exc}")
     return errors
+
+
+def _validate_cutover_release_proof(
+    root: Path, manifest: Mapping[str, Any]
+) -> list[str]:
+    """Require the canonical evidence tag to retain the exact proof and preimages."""
+    codex = manifest.get("codex")
+    release = manifest.get("release_evidence")
+    evidence = manifest.get("evidence")
+    if not isinstance(codex, Mapping) or not isinstance(release, Mapping) or not isinstance(
+        evidence, list
+    ):
+        return ["cutover release proof inputs are unavailable"]
+    evidence_ref = codex.get("evidence_ref")
+    cutover_id = release.get("cutover")
+    cutover = next(
+        (
+            row
+            for row in evidence
+            if isinstance(row, Mapping) and row.get("evidence_id") == cutover_id
+        ),
+        None,
+    )
+    if (
+        not isinstance(evidence_ref, str)
+        or not evidence_ref.startswith("refs/tags/")
+        or not isinstance(cutover, Mapping)
+        or not isinstance(cutover.get("artifact_path"), str)
+    ):
+        return ["cutover requires a tagged release-proof artifact"]
+    verifier = root / "plugins/saga/scripts/external_action_release_matrix.py"
+    proof = root / str(cutover["artifact_path"])
+    if not verifier.is_file() or not proof.is_file():
+        return ["cutover release-proof verifier or artifact is missing"]
+    process = subprocess.run(
+        [
+            sys.executable,
+            str(verifier),
+            "--repo-root",
+            str(root),
+            "--verify",
+            "--output",
+            str(proof),
+            "--expected-ref",
+            evidence_ref,
+        ],
+        cwd=root,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if process.returncode:
+        detail = process.stderr.strip().splitlines()
+        suffix = f": {detail[-1]}" if detail else ""
+        return [f"cutover release proof is not retained by the evidence tag{suffix}"]
+    return []
 
 
 def load_manifest(path: Path) -> dict[str, Any]:

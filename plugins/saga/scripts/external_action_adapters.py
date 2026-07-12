@@ -6,6 +6,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import signal
 import subprocess
 import sys
 import tempfile
@@ -63,22 +64,27 @@ def cli_runner(
                 text=True,
                 start_new_session=True,
             )
-            if on_launch is not None:
-                on_launch(
-                    {
-                        "transport": "cli",
-                        "pid": process.pid,
-                        "process_group": process.pid,
-                        "argv_sha256": hashlib.sha256(
-                            json.dumps(argv, separators=(",", ":")).encode("utf-8")
-                        ).hexdigest(),
-                    }
-                )
+            try:
+                if on_launch is not None:
+                    on_launch(
+                        {
+                            "transport": "cli",
+                            "pid": process.pid,
+                            "process_group": process.pid,
+                            "process_start_identity": runtime.process_start_identity(process.pid),
+                            "argv_sha256": hashlib.sha256(
+                                json.dumps(argv, separators=(",", ":")).encode("utf-8")
+                            ).hexdigest(),
+                        }
+                    )
+            except BaseException:
+                _kill_process_group(process)
+                raise
             try:
                 stdin_text = str(invocation.get("task") or "") if config.stdin_prompt else None
                 stdout, stderr = process.communicate(stdin_text, timeout=config.timeout_seconds)
             except subprocess.TimeoutExpired:
-                os.killpg(process.pid, 9)
+                _kill_process_group(process)
                 process.communicate()
                 return {"status": "timeout", "output": "provider timed out"}
             if process.returncode:
@@ -113,6 +119,17 @@ def cli_runner(
             workspace.close()
 
     return run
+
+
+def _kill_process_group(process: subprocess.Popen[str]) -> None:
+    """Best-effort cleanup when launch persistence cannot be established."""
+    if process.poll() is not None:
+        return
+    try:
+        os.killpg(process.pid, signal.SIGKILL)
+    except ProcessLookupError:
+        return
+    process.communicate()
 
 
 def runner_for(
