@@ -1,5 +1,5 @@
 {
-  "content_sha256": "d6f2b99acdec89a15f8f2223f4e370c62963b310e35fc7585703c304afee21ba",
+  "content_sha256": "2604715096f6f6dac25f82b4ba3fca1ffda47b8c151ad448ef83f412ae888011",
   "prerequisites": {
     "agy_cli": true,
     "claude_cli": true,
@@ -11,17 +11,70 @@
     "claude-cli/opus",
     "ollama-cloud/gpt-oss-120b"
   ],
-  "recorded_at": "2026-07-12T03:10:15.240112+00:00",
+  "recorded_at": "2026-07-12T03:28:01.525393+00:00",
   "rollback_drill": {
-    "base_revision": "cc4ff83d5150e0bdf6bbbfd6682fd43f70bb616a",
-    "candidate_digest": "a87e88243d2e5aedeaf03f9f5fb177f84ac31d8270ae8a806d486ddae0331b40",
+    "base_revision": "14c9b48f14fe74505286668a0a4ee92ea27a3945",
+    "candidate_digest": "ee6088f3ce351120ef4344256555d0239e49fa590de1ef74af670cc3ecfba037",
     "candidate_installed": true,
-    "fleet_install_sha256": "853a2adb4f8f4ea798690105b4d28b99f51f28e406d5b102ad82344bc2d54cc8",
+    "command_records": [
+      {
+        "operation": "prior-list",
+        "record_ref": ".git/saga-external-actions/release-evidence/14c9b48f14fe74505286668a0a4ee92ea27a3945/prior-list-bc8680f6bc962ab9dd058d9a9d6225d870e54f7ea05391d739d952a6be27032c.json",
+        "record_sha256": "19a85d67c7d215908684b17c7e587ea757b5f88a449a6055f14735698a858916"
+      },
+      {
+        "operation": "marketplace-add",
+        "record_ref": ".git/saga-external-actions/release-evidence/14c9b48f14fe74505286668a0a4ee92ea27a3945/marketplace-add-3a80439543dd14ebd76f1358ab620a2eaeb9ab7e4c92f623575d9b1c467059f7.json",
+        "record_sha256": "9de69f66b2caae3eb1d5a92da890f64b71b38250234b63a6b2c209189c600f49"
+      },
+      {
+        "operation": "fleet-install",
+        "record_ref": ".git/saga-external-actions/release-evidence/14c9b48f14fe74505286668a0a4ee92ea27a3945/fleet-install-71492fe5e90aed68a5488f7f49bb37b704e178829aaca69c64dfab3c65081d84.json",
+        "record_sha256": "eee5fd572d6871c8b95fc7bbd768a9fb1bf1f9261799310dc1340cb33833d19e"
+      },
+      {
+        "operation": "saga-install",
+        "record_ref": ".git/saga-external-actions/release-evidence/14c9b48f14fe74505286668a0a4ee92ea27a3945/saga-install-cc49670dfe3adc579e7618f3774e6443bea0367deadfad612da1e27bfcc25b6c.json",
+        "record_sha256": "2bd2d1926dd29e0af731f88e721d0e506f8fd8d3aed1bdef07551c2c8641217c"
+      },
+      {
+        "operation": "installed-list",
+        "record_ref": ".git/saga-external-actions/release-evidence/14c9b48f14fe74505286668a0a4ee92ea27a3945/installed-list-9541a6a57fdfbb7aea8e1be01efde7fb0cef91e3ab6368a71595c807524e1078.json",
+        "record_sha256": "a52ab499fd3c639459e9d9ecc46520f69a76fa45109c0a1164c1adab859a8e89"
+      },
+      {
+        "operation": "fresh-session-probe",
+        "record_ref": ".git/saga-external-actions/release-evidence/14c9b48f14fe74505286668a0a4ee92ea27a3945/fresh-session-probe-6eca185fc428623eeebd1fb8029832ee68fac830c152b26384ce124c2a6e9630.json",
+        "record_sha256": "e3aef675c1cfca7768ec2d70d65b709cb81eb51dd10013e7bb130ef5fc9f8703"
+      },
+      {
+        "operation": "saga-remove",
+        "record_ref": ".git/saga-external-actions/release-evidence/14c9b48f14fe74505286668a0a4ee92ea27a3945/saga-remove-765dd6af30560fab77734a191b6b1c137e67117167ea3de4e35601bba0efb4ee.json",
+        "record_sha256": "1d88178d01a476898ececab76089fca886ead4d76c06de6ddb3632bc701de443"
+      },
+      {
+        "operation": "fleet-remove",
+        "record_ref": ".git/saga-external-actions/release-evidence/14c9b48f14fe74505286668a0a4ee92ea27a3945/fleet-remove-8b16e7d2ce0749d54984f0c9f6a68c84ca3fb43ddc15ce5371a6f3589dd6afe6.json",
+        "record_sha256": "885d87b0d79c9f06d7083c95a405fcaa211e9875f30d14d4ba0a74738a1c6f5c"
+      },
+      {
+        "operation": "marketplace-remove",
+        "record_ref": ".git/saga-external-actions/release-evidence/14c9b48f14fe74505286668a0a4ee92ea27a3945/marketplace-remove-7028e15f797b66f8bbeb970420a8417e90160f6a7eb94f227a10e51e94500681.json",
+        "record_sha256": "7a5505902976b0ff562445110e2a151ad9226ac3fbd895f7873b15160b09f9c4"
+      },
+      {
+        "operation": "restored-list",
+        "record_ref": ".git/saga-external-actions/release-evidence/14c9b48f14fe74505286668a0a4ee92ea27a3945/restored-list-9c3d66a1bee7b93f4b82e1e03226a58e93dfcd8cff7e8cf0c0f336972705c1e6.json",
+        "record_sha256": "68098cfe8a5e3fa5759ef746a5f85c12fed3c82d44d3c9abc01ee2d112b1e5b2"
+      }
+    ],
+    "fleet_candidate_digest": "233ae83073dd16bf36b9dedfd3281ad6d9bfe3de212886cd7fea64ec4d99fdf4",
+    "fleet_install_sha256": "0c703a2436c78fced92ec9e9b0f67237dd6e8c6ddcea79b8a03fb0899e4acf41",
     "fleet_remove_sha256": "35656866d7e50855e1f1913857ed0a548645a2e5c402d1ecc38cbc528c23eed2",
     "fresh_session_passed": true,
-    "fresh_session_sha256": "c76f63cfb9117f2dd5113e5e1f51780200ad8301fa748d1c3e4c709421117033",
-    "install_receipt_sha256": "94ca028f36567a86afe3e6824b110c6b7b1f228e5635292d3c0a6a2e51bc1530",
-    "marketplace_add_sha256": "ca1cd9c6a14ab0c0aa6672c06ee38fde3aebdb7f271f09b4dbccdb7ee95e53da",
+    "fresh_session_sha256": "4bfa46979ea85e5ccf0b285cd54108242652f3ee030a5ec383349764c1f1ae1c",
+    "install_receipt_sha256": "8765ba916a62fc2385dd2b3a52ff6b4347aee2a9221ccb36bc23387f6e972ff8",
+    "marketplace_add_sha256": "c67c569a854c1ac24cb4c826721a606152f7b0e8f928203e4122cf6d140c1d0e",
     "marketplace_remove_sha256": "34bf57e23f8f6f09d0e857049f9a406a26093fcef3b1abf2735dd8895809dd52",
     "passed": true,
     "prior_digest": "654a7a9ba6df00d40f7d066417822a9752b700b75807d1bb5d79c9275cd5b8d0",
@@ -37,117 +90,117 @@
     "raw_receipts": false
   },
   "schema_version": 1,
-  "source_head": "cc4ff83d5150e0bdf6bbbfd6682fd43f70bb616a",
-  "source_tree": "152cad5f5555000f07153294d07193ca555cd9e6",
-  "source_worktree_sha256": "ea361232cd674781a5c344470b06512604c41b72506237d46be1744923373dd0",
+  "source_head": "14c9b48f14fe74505286668a0a4ee92ea27a3945",
+  "source_tree": "a3ca69bf1239d98f9e57be5a4ed75d0b76595e5d",
+  "source_worktree_sha256": "5154ece09f049fd2670fece531e334b3581cb076aa6425d3a3c3980bf5738451",
   "stages": [
     {
       "action_id": "blind-generator",
-      "action_record_ref": ".git/saga-external-actions/task-external-action-release/release-20260712t031015z-1/blind-generator",
-      "action_record_sha256": "5131de49c8c6d27e9e163cd74bbdc9f3113697fd336acdcbe995308167f3668f",
+      "action_record_ref": ".git/saga-external-actions/task-external-action-release/release-20260712t032801z-1/blind-generator",
+      "action_record_sha256": "9afc51f72ebcd08178481c2ac595e6066efb8bc69a5231755213a118aa1a94e9",
       "adapter_class": "claude:delegate",
-      "approval_fingerprint": "11b586b2ca724ac13d97c7202a6a799b1f3c07c2070e775000707a0b1ace732c",
+      "approval_fingerprint": "6a68ea72f87f4cbd151f750f2dbe0100c28a30de4a5e4a9f8db88dfffd1482e4",
       "engine_key": "claude-cli/opus",
-      "event_chain_tip": "ed59786a98e77dd88b5d6a62488fcf3966509052e0700f92ca235622186a64fe",
-      "evidence_sha256": "277166de4da6d40891cc6579a448a95e2e3511ee12abdfe3949219d699d5c336",
+      "event_chain_tip": "aeae82fe5b501b8c91c76601028e9ac2d0d8a3acb3985ed00619fe32c3504fa0",
+      "evidence_sha256": "3568ebe8e1ddcd4a79f68e016c15cd65bd2b987bb7e8a62a8713950417b96faf",
       "intent": "offload",
-      "receipt_sha256": "4035b1642ee773a6f2ee1ac0f93b84147814cf34976fa08c22dfd7c645b14e61",
+      "receipt_sha256": "bb9af3e359d0b9af1cd874239ea74f1733be0240380d80e57a7fa4730421bebb",
       "receipt_validity": "valid",
-      "request_sha256": "16cfe8acfc4f2b3e1660e4428eb89326cd216386eb0c3701b407a7e303cab420",
+      "request_sha256": "a8f0c8310bb4854958e7d6bf9c3ba1dadc7521a0d8e5046bda5d1e1f861f4aa9",
       "requiredness": "best-effort",
       "stage": "ideate",
       "state": "consumed",
-      "status_card_sha256": "392a0c91281b89b0c92e170931f3d74cf843c9d568ca0a527fcd995be7219e70"
+      "status_card_sha256": "9192840f87d0c0a8825957c5d676430dcb39c9c39cc9f6396fdea03019283598"
     },
     {
       "action_id": "scope-opinion",
-      "action_record_ref": ".git/saga-external-actions/task-external-action-release/release-20260712t031015z-2/scope-opinion",
-      "action_record_sha256": "a65c1fa3c18edc9c6984b3be3d9d2ad5bfbd2efa53fa42aead5a1ba9847c5138",
+      "action_record_ref": ".git/saga-external-actions/task-external-action-release/release-20260712t032801z-2/scope-opinion",
+      "action_record_sha256": "562fccf26aacb29bd866a08b7ffc7be5cf143700a78135ba3a4e42ad6197878a",
       "adapter_class": "agy:delegate",
-      "approval_fingerprint": "479e2727d96ed9429803b65122265e5496902c0e6f573f27c6fc8c94c6c7a5c7",
+      "approval_fingerprint": "d216b2f1869366312f152e1b0bfbf1bda15086ebe7d8c0eefea2d9b98aa90072",
       "engine_key": "agy/gemini-3.5-flash-high",
-      "event_chain_tip": "21acbbae9a5a93b93a12a3e7e23ba1111750024230be4beaee2468eab1107e4f",
-      "evidence_sha256": "3de63982af268dcb0e61f7469328a2c9b62f0384b1edc421ada2fb30a08e84b2",
+      "event_chain_tip": "cf7d4290406075b0b65b7fc0099d678a12251958322bb35ceafbbfb79ccc2cb4",
+      "evidence_sha256": "d98cf75e6af429a25eedf586b44b2bba267dc9e93d0fb9b27f14ae44af6d5cf5",
       "intent": "second-opinion",
-      "receipt_sha256": "d9555aefeca794ec44e9def14e4a236a5cc677df52064bf944cffa5f84ae419d",
+      "receipt_sha256": "778b43214f84a3d78c23e00723ee3883fcf2a87ac1fae2b1bb67c6b56d639a4a",
       "receipt_validity": "valid",
-      "request_sha256": "238bf97580712a1deebbe3eccf2789920044cb58b1d99dd2f58fece1f42b22bd",
+      "request_sha256": "10188314adb0f29b2182fb1e16893f847fff1e6df3cb483f472010ad44a0a3e0",
       "requiredness": "best-effort",
       "stage": "brainstorm",
       "state": "consumed",
-      "status_card_sha256": "7daad4c601638d8a11ddec90d6c3a0ab1326576a4610e320ed1cc1c71b8b2e84"
+      "status_card_sha256": "bb9e3e86b012723803e19c241f93baec20c74c3acf220834413bc2709fe4768e"
     },
     {
       "action_id": "bounded-research",
-      "action_record_ref": ".git/saga-external-actions/task-external-action-release/release-20260712t031015z-3/bounded-research",
-      "action_record_sha256": "f469ca2cb54484f81cb2c3f4267f94fd9fcfc89e3a31b093c6da21de5e4ea1fa",
+      "action_record_ref": ".git/saga-external-actions/task-external-action-release/release-20260712t032801z-3/bounded-research",
+      "action_record_sha256": "d5bd930964ee8fb12f33947d2b487495aa35c4627adf91a84f28696b60d6d11f",
       "adapter_class": "engine-bridge-http",
-      "approval_fingerprint": "d10e400d5a89259982c5ab29f62fc7cb35acb59fcc850f21bce100c9a065dde9",
+      "approval_fingerprint": "8157fa0e757463cd7f8b7084ac4cec011661403879a04ff17011fcf7598ab177",
       "engine_key": "ollama-cloud/gpt-oss-120b",
-      "event_chain_tip": "e05580d1c414903f8cf92e95193dc1b30d35fcfffcfbecc12ab363dc0e986c43",
-      "evidence_sha256": "7306f9ef1a76f2a9883e6a4cd92f4a70fca7aa70bffcce77c4506601275a632a",
+      "event_chain_tip": "535d862a65bf9c047c04449b546eaf253328834de8373035108d9246822167df",
+      "evidence_sha256": "043f6ff36442765b738f9fc77c102a8166180ef71eca5b65010bcc6eedb47b98",
       "intent": "offload",
-      "receipt_sha256": "704840391325138b4f70c662ee9275c1d3f60d816da07abe17941de2616af47b",
+      "receipt_sha256": "3f5a07df8b431b6218742498abebbafcbd0f5a9048d6041d1bfece72b8a3dc67",
       "receipt_validity": "valid",
-      "request_sha256": "b7cbe19c2115bd6fa367630a077a2f0fc2b8e66ca80f87e5a228586b731694c4",
+      "request_sha256": "5d9b0eea71d087f868285ec3cf5e002b3ee57d51b46471877a2fd10fdfa13e10",
       "requiredness": "best-effort",
       "stage": "plan",
       "state": "consumed",
-      "status_card_sha256": "1c34dacde461496b5952c40a9ac3024b947022dfec7e07ea3b5c15e0f401f9ec"
+      "status_card_sha256": "80cf26688b0024b02e556e5536bebbc72d1bad2fc0db746e8da86a22326c9481"
     },
     {
       "action_id": "stuck-opinion",
-      "action_record_ref": ".git/saga-external-actions/task-external-action-release/release-20260712t031015z-4/stuck-opinion",
-      "action_record_sha256": "61f9dbd27b68603853227a37a00b7ad4f740d7b9b1231eae4b1f84d1bd3cb4bb",
+      "action_record_ref": ".git/saga-external-actions/task-external-action-release/release-20260712t032801z-4/stuck-opinion",
+      "action_record_sha256": "08ae6b8397de407e00cd34b8d0dea618d11529ef19d3d60d3d6c75cce2f447f5",
       "adapter_class": "claude:delegate",
-      "approval_fingerprint": "c11bad24d1797f4794e38c404ec91f3651ef410b00200ec0b88f24fa58f58238",
+      "approval_fingerprint": "27cbab80269c5c174694cee03154bdd888f48ef09185df6b64d1f10c04f667f9",
       "engine_key": "claude-cli/opus",
-      "event_chain_tip": "827c270955e4b0daeb55230d46356ab7059bb0e27c434f72c276b3f432a10c2d",
-      "evidence_sha256": "29aebf83fd2d57ae82571f599fd0aeca802ba544f760c43e2452601f5a5b5133",
+      "event_chain_tip": "c5ec982be7a8e5a44a2cdf3e39a35c8cce321322b110cbff3280e2d3ef3b21cc",
+      "evidence_sha256": "e35d640e15ebaf425ffdf3f4d107584d80ded898f9f5d91c371565e221de4d37",
       "intent": "second-opinion",
-      "receipt_sha256": "d72d1b186a5122648ad892f2a45882f7cc518efd3e0949df14ecece2f6fb6172",
+      "receipt_sha256": "4dc6cc76dfe96230bf0ca1a8ad3da956b180baa8754a155bb5bf36007f94491d",
       "receipt_validity": "valid",
-      "request_sha256": "2eceb0614ecfa807ee4e073698e8152d23965e4bd58f2760bfb3c794bd9e925a",
+      "request_sha256": "67eaca509cb690028944bb22c93fdc08b2b70862e6ebe65c293c419f6c57bb2c",
       "requiredness": "best-effort",
       "stage": "work",
       "state": "consumed",
-      "status_card_sha256": "610c33cade91b1f8193c6cffeac28a6095fbc2ac2572075cdfe337976a4f1e1e"
+      "status_card_sha256": "7d52bdad9e7d5a6bf098a837a985a63306f678b6b6341affcd1d8ee8b925f3df"
     },
     {
       "action_id": "findings-opinion",
-      "action_record_ref": ".git/saga-external-actions/task-external-action-release/release-20260712t031015z-5/findings-opinion",
-      "action_record_sha256": "0ff22d40ea4ca388d5eaf1653f0e4996a191586edadca1a9aae3063d5c2f847a",
+      "action_record_ref": ".git/saga-external-actions/task-external-action-release/release-20260712t032801z-5/findings-opinion",
+      "action_record_sha256": "8406231780fda659942ef3b6bf7b408fd382ff8b4fd79eed6b52f90fc229bcbd",
       "adapter_class": "agy:delegate",
-      "approval_fingerprint": "95e7942494b9b0ccfd6b9a361f246ed1c6a68abd46f34e9ae031c84695379b28",
+      "approval_fingerprint": "f2c8d0a28cb8b7f772ba92aeb709e04292838accc3560e652304008cb1e90223",
       "engine_key": "agy/gemini-3.5-flash-high",
-      "event_chain_tip": "3c5b70774923166b76e8bf893f101cb3f8d6b2a0b25a3ad5229aaa6e83423543",
-      "evidence_sha256": "e179ec72797ea3693ff4da217cb4bcbc8fe829027688af84624d0c1d498d9210",
+      "event_chain_tip": "fb8995e1a7e925514e1a832e38d922d9ead0916b2b526e5f792019af339cca67",
+      "evidence_sha256": "bb0856c32fb70cdf3a577ea170189e284481e5e61893250557574b300b843dde",
       "intent": "second-opinion",
-      "receipt_sha256": "78f7cde452b571c7878851b1cf915d017aebbcf8ab6cdfd96089a0ef0106b126",
+      "receipt_sha256": "909823dd0ab904bea550829e9dcf1c99b2f80105d2dd22db09d465e4bf62778d",
       "receipt_validity": "valid",
-      "request_sha256": "68e3337d4e80a094a4725a8728a2e16b4846315271d24ca5816a64c071c16f4e",
+      "request_sha256": "fcbcab40494ac634265e240ca584f3ab410ee3c93046f72aff709fb6854f7f37",
       "requiredness": "best-effort",
       "stage": "doc-review",
       "state": "consumed",
-      "status_card_sha256": "35828ad531f30685377856581f0bb3f07c1ba8c947f4e1dc36f308a053a91431"
+      "status_card_sha256": "bae6835a79f2b45c624168dba25c57a482a11706d45162c57d51cd84f2ffdb84"
     },
     {
       "action_id": "findings-opinion",
-      "action_record_ref": ".git/saga-external-actions/task-external-action-release/release-20260712t031015z-6/findings-opinion",
-      "action_record_sha256": "20986b3796753a48b4efaea4fdf46e23e394c2cd0762c6d8d383f1fe6a852182",
+      "action_record_ref": ".git/saga-external-actions/task-external-action-release/release-20260712t032801z-6/findings-opinion",
+      "action_record_sha256": "0d0d7ad99c5028b355915a46173313721141bc9b521782b433ec61458d52963b",
       "adapter_class": "engine-bridge-http",
-      "approval_fingerprint": "185789b7c77e266434eeeaf79bb78957d72d755ecb16733abe40e61cc3594cc6",
+      "approval_fingerprint": "aa35237c25e736017ec46ca0de1d1d65c73fe6c926d261234c2ff31766928ed2",
       "engine_key": "ollama-cloud/gpt-oss-120b",
-      "event_chain_tip": "9b3e0c2937a70b5fc3df0129c2af9707ab13a0a603874f8640689f0d78729d4f",
-      "evidence_sha256": "5f63c95117d067b8a367263e9f644a73238a60b8235e6fe46042a7e203dfd412",
+      "event_chain_tip": "345f178c940d419452547063b9cf17843d6055f10b9636c169f346b07d736088",
+      "evidence_sha256": "31d4510704d21a218a4474c1098081a78295e8f4caa6f9a1214c027152ba4ea5",
       "intent": "second-opinion",
-      "receipt_sha256": "99311052eb96462628098205dfb1474a5f5737cca6a8dcfafed51c3f5327f2ac",
+      "receipt_sha256": "acdb6123d4f5c52468d98971989e1fc4fbf481ee911c799f04f0228fa37065fe",
       "receipt_validity": "valid",
-      "request_sha256": "47c72b4cedbf0c3f42c23d45ee25717f421211a4dcf21a7fb44afdebaca904f0",
+      "request_sha256": "130dff61d5dee66e0f34d6637a8bad7114896682edf84aa44af2455f4afa974d",
       "requiredness": "required-before-continue",
       "stage": "code-review",
       "state": "consumed",
-      "status_card_sha256": "bebee376d76a81f255f1db78e5febc08fe77eb8efcc95e6b7987d235169271ff"
+      "status_card_sha256": "ab934116d4f37b8e3d64211652381c4233b9949707d992c7a5818a817d4d6b81"
     }
   ],
   "status": "passed"
