@@ -174,3 +174,11 @@ rather than retroactively represented as protected workflow evidence.
 - Current Multi-Agent V2 reapplies the unrestricted parent permission profile to children, which cannot satisfy the plan's read-only or workspace-write profile receipts. Because every final lens declares preferred rather than required independence, architecture, security, adversarial, testing, security-scan, and smoke rows used the truthful `verified-workflow-inline` fallback. No child model, effort, sandbox, or independence claim was used for gate authority.
 - Final reviewer scores were architecture `9.6`, security `9.5`, adversarial `9.4`, and testing `9.4`, all `accept` with no findings. The required scoped Bandit scan passed with zero medium/high findings, and the mutation-free external-action CLI smoke passed.
 - The severity-first evaluator returned `pass` with zero hard blockers, remediation items, or warnings. Earlier protected runs remain diagnostic evidence of the stale-subject, permission-profile, user-workspace, self-approval, and transient-lock failures encountered during reconciliation.
+
+## Programmatic code-review remediation
+
+- The work-to-PR review found that exact proof verification was not idempotent: semantic record loading creates transient `.lock` files, and a later evidence-ref comparison treated those store locks as retained proof content.
+- Evidence-ref comparison now excludes only files named `.lock`; every real referenced evidence file remains mandatory and byte-equal to the evidence tag.
+- Added a regression case that validates a tagged bundle while an untracked action-store lock exists.
+- Remediation checks passed with `13 passed`, Ruff clean, and two consecutive exact-tag verification passes without cleanup between them.
+- The verifier fix is commit `8d225826383050ba6c13f1f4faf7bb9cd0ac55a6`. The final protected workflow and code-review freshness gates must use a descendant subject before PR-ready is claimed.

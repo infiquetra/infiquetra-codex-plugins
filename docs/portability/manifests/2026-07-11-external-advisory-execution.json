@@ -333,13 +333,13 @@
         "review-barrier"
       ],
       "artifact_path": "docs/work-sessions/2026-07-11-external-advisory-execution.md",
-      "artifact_sha256": "23b15e8762329b00b82a426360e01b63b57436bc727d0219b66868c0e4992287",
+      "artifact_sha256": "01204367be3919c4a6fa8758d375fa4d8661e6c4f7fb437618ae08925bada6cd",
       "cwd": ".",
       "evidence_id": "u8-review",
       "exit_code": 0,
       "kind": "review",
-      "recorded_at": "2026-07-12T04:56:52.649127Z",
-      "repo_head": "1918f3a9b18953ccafbcc0ab6c24fa03037859fe",
+      "recorded_at": "2026-07-12T05:01:28.895809Z",
+      "repo_head": "8d225826383050ba6c13f1f4faf7bb9cd0ac55a6",
       "unit": "U8"
     },
     {

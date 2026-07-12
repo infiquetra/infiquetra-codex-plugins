@@ -338,7 +338,7 @@
     {
       "classification": "lineage-documentation",
       "path": "docs/portability/manifests/2026-07-11-external-advisory-execution.json",
-      "sha256": "2ed7ad83be0a9fa77f1b27a5770ee46d478114d5796d500a3e364ee81691b586",
+      "sha256": "e0ec102e007478ad5a043dc98b619945f5f7a50e0b286f0150de726424851289",
       "tokens": [
         "team-execution"
       ]
