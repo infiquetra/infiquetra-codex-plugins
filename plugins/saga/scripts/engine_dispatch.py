@@ -345,6 +345,9 @@ def dispatch(
             )
 
     invocation = _build_invocation(resolution, model=model, sandbox=sandbox, write_set=write_set)
+    approved_base = (resolution.invocation or {}).get("base_revision")
+    if approved_base:
+        invocation["base_revision"] = approved_base
 
     # Arm the delegation-liveness marker BEFORE the adapter runs (KTD4: arming authority is
     # the dispatch layer) and disarm in a finally. Arming failure is fail-open but NAMED:
@@ -1511,7 +1514,7 @@ def _build_invocation(
             "task": resolution.payload,
             "model": row.get("model"),
             "effort": row.get("effort"),
-            "base_revision": "HEAD",
+            "base_revision": row.get("base_revision", "HEAD"),
             "write_set": list(write_set or []),
         }
     if resolution.engine_id == "codex":

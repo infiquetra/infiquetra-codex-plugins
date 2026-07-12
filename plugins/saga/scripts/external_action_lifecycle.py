@@ -10,6 +10,7 @@ from typing import Any, Mapping, Sequence
 import external_action_policy as policy
 import external_action_runtime as runtime
 import external_action_status as status_module
+import external_action_store as store_module
 import reconcile
 
 
@@ -159,13 +160,25 @@ def execute_bundle(
     executors: Mapping[str, runtime.Executor],
     at: str,
 ) -> StageRun:
+    missing = [
+        preview.request.action_id
+        for preview in previews
+        if preview.request.action_id not in executors
+    ]
+    if missing:
+        raise LifecycleError(f"missing executor for action {missing[0]!r}")
+    not_approved = [
+        preview.request.action_id
+        for preview in previews
+        if store_module.read_snapshot(preview.store).state.value != "approved"
+    ]
+    if not_approved:
+        raise LifecycleError(f"action must be approved before execution: {not_approved[0]}")
     outcomes: dict[str, runtime.ExecutionOutcome] = {}
     paused: str | None = None
     for preview in previews:
         action_id = preview.request.action_id
-        executor = executors.get(action_id)
-        if executor is None:
-            raise LifecycleError(f"missing executor for action {action_id!r}")
+        executor = executors[action_id]
         outcome = runtime.execute(preview.store, executor=executor, at=at)
         outcomes[action_id] = outcome
         if (

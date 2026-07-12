@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 import sys
@@ -16,6 +17,19 @@ import external_action_lifecycle as lifecycle  # noqa: E402
 import external_action_runtime as runtime  # noqa: E402
 import external_action_store as store  # noqa: E402
 import reconcile  # noqa: E402
+
+
+def _available(preview: runtime.Preview, detail: dict[str, Any]) -> runtime.ExecutionOutcome:
+    artifact = preview.store.root / "evidence-fixture.json"
+    artifact.write_text(json.dumps({"evidence": "fixture"}) + "\n", encoding="utf-8")
+    artifact_sha256 = hashlib.sha256(artifact.read_bytes()).hexdigest()
+    return runtime.ExecutionOutcome(
+        "available",
+        str(artifact),
+        detail,
+        validated=True,
+        artifact_sha256=artifact_sha256,
+    )
 
 STAGE_ACTIONS = (
     ("ideate", 0),
@@ -72,9 +86,8 @@ def test_each_stage_round_trips_through_shared_runtime(
 
     def executor(_request: Any, _approval: Any, launch: Any) -> runtime.ExecutionOutcome:
         launch()
-        return runtime.ExecutionOutcome(
-            "available",
-            "manifest://fixture",
+        return _available(
+            previews[0],
             {
                 "evidence": "typed fixture",
                 "findings": [{"content": "fixture concern"}],
@@ -239,13 +252,7 @@ def test_opinion_requires_decision_for_every_typed_finding(tmp_path: Path) -> No
 
     def executor(_request: Any, _approval: Any, launch: Any) -> runtime.ExecutionOutcome:
         launch()
-        return runtime.ExecutionOutcome(
-            "available",
-            "manifest://fixture",
-                {
-                    "findings": [{"content": "x"}]
-                },
-        )
+        return _available(preview, {"findings": [{"content": "x"}]})
 
     outcome = lifecycle.execute_bundle(
         [preview], executors={action.action_id: executor}, at="executed"

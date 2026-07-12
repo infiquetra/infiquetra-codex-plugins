@@ -70,6 +70,25 @@ def test_overlay_digest_blocks_stale_and_concurrent_writes(tmp_path: Path) -> No
         OVERLAY.save_overlay(tmp_path, OVERLAY.EngineOverlay(), expected_sha256=expected)
 
 
+def test_pin_and_deprecation_transforms_preserve_onboarded_engines() -> None:
+    row = _row()
+    overlay = OVERLAY.EngineOverlay(engines=[row])
+
+    transformed = (
+        OVERLAY.pin_engine(overlay, "code-generation", "fixture/chat"),
+        OVERLAY.deprecate_engine(overlay, "fixture/chat"),
+        OVERLAY.clear_pin(
+            OVERLAY.pin_engine(overlay, "code-generation", "fixture/chat"),
+            "code-generation",
+        ),
+        OVERLAY.clear_deprecated(
+            OVERLAY.deprecate_engine(overlay, "fixture/chat"), "fixture/chat"
+        ),
+    )
+
+    assert all(item.engines == (row,) for item in transformed)
+
+
 def test_promotion_emits_diff_and_finalizes_only_after_identical_readback(
     tmp_path: Path,
 ) -> None:

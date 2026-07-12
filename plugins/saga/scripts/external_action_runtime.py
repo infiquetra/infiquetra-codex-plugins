@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -36,6 +38,8 @@ class ExecutionOutcome:
     status: str
     evidence_ref: str | None = None
     detail: Mapping[str, Any] | None = None
+    validated: bool = False
+    artifact_sha256: str | None = None
 
 
 Executor = Callable[[contract.ActionRequest, contract.ActionApproval, Callable[[], None]], ExecutionOutcome]
@@ -54,6 +58,8 @@ def prepare(
     payload: Any,
     created_at: str,
     dirty_overlap: tuple[str, ...] = (),
+    attempt: int = 1,
+    predecessor_request_sha256: str | None = None,
 ) -> Preview:
     sanitized = egress.sanitize(payload)
     if sanitized.blocked:
@@ -73,19 +79,28 @@ def prepare(
         evidence_destination=template.evidence_destination,
         consumption_point=template.consumption_point,
         created_at=created_at,
+        attempt=attempt,
+        predecessor_request_sha256=predecessor_request_sha256,
     )
+    frozen_payload = json.loads(contract.canonical_json(sanitized.payload))
+    frozen_route = json.loads(contract.canonical_json(dict(route)))
+    frozen_egress = json.loads(contract.canonical_json(dict(route_egress)))
     candidate = contract.ActionApproval(
         action_id=request.action_id,
         approved_at="preview",
         operator="preview",
-        route=dict(route),
+        route=frozen_route,
         context_scope=request.context_scope,
         sensitivity=request.sensitivity,
         base_revision=base_revision,
         write_set=request.write_set,
         cost_class=cost_class,
-        egress=dict(route_egress),
+        egress=frozen_egress,
         request_sha256=request.request_sha256,
+        payload=frozen_payload,
+        payload_sha256=sanitized.payload_sha256 or contract.digest(frozen_payload),
+        dirty_overlap=tuple(dirty_overlap),
+        dirty_overlap_sha256=contract.digest(list(dirty_overlap)),
     )
     store = store_module.Store.for_action(
         saga_id=saga_id, run_id=run_id, action_id=request.action_id, repo_root=repo_root
@@ -105,7 +120,14 @@ def prepare(
         },
     )
     status_module.refresh(store)
-    return Preview(store, request, candidate, candidate.approval_fingerprint, sanitized.payload, sanitized.detections)
+    return Preview(
+        store,
+        request,
+        candidate,
+        candidate.approval_fingerprint,
+        frozen_payload,
+        sanitized.detections,
+    )
 
 
 def _stage_from_route(route: Mapping[str, Any]) -> str:
@@ -128,6 +150,10 @@ def approve(preview: Preview, *, operator: str, approved_at: str) -> contract.Ac
         cost_class=preview.candidate_approval.cost_class,
         egress=preview.candidate_approval.egress,
         request_sha256=preview.candidate_approval.request_sha256,
+        payload=preview.candidate_approval.payload,
+        payload_sha256=preview.candidate_approval.payload_sha256,
+        dirty_overlap=preview.candidate_approval.dirty_overlap,
+        dirty_overlap_sha256=preview.candidate_approval.dirty_overlap_sha256,
     )
     if approval.approval_fingerprint != preview.approval_fingerprint:
         raise RuntimeError("approval input changed after preview")
@@ -141,6 +167,19 @@ def execute(store: store_module.Store, *, executor: Executor, at: str) -> Execut
     snapshot = store_module.read_snapshot(store)
     if snapshot.state != contract.State.APPROVED or snapshot.approval is None:
         raise RuntimeError("action must be approved before execution")
+    approval = snapshot.approval
+    if approval.request_sha256 != snapshot.request.request_sha256:
+        raise RuntimeError("persisted approval does not bind the request")
+    resolved = next(
+        (event for event in snapshot.events if event.get("event") == "resolve"), None
+    )
+    detail = dict(resolved.get("detail", {})) if isinstance(resolved, Mapping) else {}
+    if detail.get("approval_fingerprint") != approval.approval_fingerprint:
+        raise RuntimeError("persisted approval fingerprint differs from resolution")
+    if detail.get("payload_sha256") != approval.payload_sha256:
+        raise RuntimeError("persisted approval does not bind the outbound payload")
+    if tuple(detail.get("dirty_overlap", [])) != approval.dirty_overlap:
+        raise RuntimeError("persisted approval does not bind dirty-worktree overlap")
     store_module.append_event(store, event_id="claim-1", event="claim", at=at)
     launched = False
 
@@ -172,10 +211,21 @@ def execute(store: store_module.Store, *, executor: Executor, at: str) -> Execut
         store_module.append_event(store, event_id="terminal-1", event="unavailable", at=at)
         status_module.refresh(store)
         return ExecutionOutcome("unavailable")
-    if outcome.status != "available" or not outcome.evidence_ref:
+    if outcome.status != "available" or not outcome.evidence_ref or not outcome.validated:
         store_module.append_event(store, event_id="terminal-1", event="invalidate-evidence", at=at)
         status_module.refresh(store)
         return ExecutionOutcome("invalid-evidence", detail=outcome.detail)
+    evidence_path = Path(outcome.evidence_ref).resolve(strict=False)
+    evidence_root = store.root.resolve()
+    if (
+        not evidence_path.is_relative_to(evidence_root)
+        or not evidence_path.is_file()
+        or not outcome.artifact_sha256
+        or hashlib.sha256(evidence_path.read_bytes()).hexdigest() != outcome.artifact_sha256
+    ):
+        store_module.append_event(store, event_id="terminal-1", event="invalidate-evidence", at=at)
+        status_module.refresh(store)
+        return ExecutionOutcome("invalid-evidence", detail={"reason": "unbound evidence artifact"})
     store_module.append_event(
         store,
         event_id="complete-1",
@@ -185,6 +235,97 @@ def execute(store: store_module.Store, *, executor: Executor, at: str) -> Execut
     )
     status_module.refresh(store)
     return outcome
+
+
+def interrupt(store: store_module.Store, *, at: str, rationale: str) -> None:
+    """Resolve an uncertain claimed/launched action without redispatching it."""
+    snapshot = store_module.read_snapshot(store)
+    if snapshot.state not in {contract.State.CLAIMED, contract.State.LAUNCHED}:
+        raise RuntimeError("only claimed or launched actions can be interrupted")
+    store_module.append_event(
+        store,
+        event_id="interrupt-1",
+        event="interrupt",
+        at=at,
+        rationale=rationale,
+    )
+    status_module.refresh(store)
+
+
+def retry(
+    preview: Preview, *, repo_root: Path, new_run_id: str, created_at: str
+) -> Preview:
+    """Create a fresh immutable attempt after an explicit terminal failure."""
+    snapshot = store_module.read_snapshot(preview.store)
+    if snapshot.state not in contract.TERMINAL_FAILURE_STATES:
+        raise RuntimeError("retry requires a terminal failed or interrupted attempt")
+    request = snapshot.request
+    approval = snapshot.approval or preview.candidate_approval
+    retry_request = contract.ActionRequest(
+        saga_id=request.saga_id,
+        run_id=new_run_id,
+        action_id=request.action_id,
+        stage=request.stage,
+        intent=request.intent,
+        trigger=request.trigger,
+        requiredness=request.requiredness,
+        provider_constraints=request.provider_constraints,
+        context_scope=request.context_scope,
+        sensitivity=request.sensitivity,
+        write_set=request.write_set,
+        evidence_destination=request.evidence_destination,
+        consumption_point=request.consumption_point,
+        created_at=created_at,
+        attempt=request.attempt + 1,
+        predecessor_request_sha256=request.request_sha256,
+    )
+    candidate = contract.ActionApproval(
+        action_id=retry_request.action_id,
+        approved_at="preview",
+        operator="preview",
+        route=approval.route,
+        context_scope=approval.context_scope,
+        sensitivity=approval.sensitivity,
+        base_revision=approval.base_revision,
+        write_set=approval.write_set,
+        cost_class=approval.cost_class,
+        egress=approval.egress,
+        request_sha256=retry_request.request_sha256,
+        payload=approval.payload,
+        payload_sha256=approval.payload_sha256,
+        dirty_overlap=approval.dirty_overlap,
+        dirty_overlap_sha256=approval.dirty_overlap_sha256,
+    )
+    retry_store = store_module.Store.for_action(
+        saga_id=retry_request.saga_id,
+        run_id=retry_request.run_id,
+        action_id=retry_request.action_id,
+        repo_root=repo_root,
+    )
+    store_module.write_request(retry_store, retry_request)
+    store_module.append_event(
+        retry_store,
+        event_id="resolve-1",
+        event="resolve",
+        at=created_at,
+        detail={
+            "approval_fingerprint": candidate.approval_fingerprint,
+            "route": dict(candidate.route),
+            "payload_sha256": candidate.payload_sha256,
+            "egress_detections": [],
+            "dirty_overlap": list(candidate.dirty_overlap),
+            "predecessor_request_sha256": request.request_sha256,
+        },
+    )
+    status_module.refresh(retry_store)
+    return Preview(
+        retry_store,
+        retry_request,
+        candidate,
+        candidate.approval_fingerprint,
+        candidate.payload,
+        (),
+    )
 
 
 def adjudicate(store: store_module.Store, *, accepted: bool, at: str, detail: Mapping[str, Any]) -> None:

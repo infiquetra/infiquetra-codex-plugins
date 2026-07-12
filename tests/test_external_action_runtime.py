@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 import sys
 import subprocess
 from pathlib import Path
@@ -42,13 +44,26 @@ def preview(tmp_path: Path) -> runtime.Preview:
     )
 
 
+def available(prepared: runtime.Preview, detail: dict | None = None) -> runtime.ExecutionOutcome:
+    artifact = prepared.store.root / "evidence-fixture.json"
+    artifact.write_text(json.dumps({"evidence": "fixture"}) + "\n", encoding="utf-8")
+    artifact_sha256 = hashlib.sha256(artifact.read_bytes()).hexdigest()
+    return runtime.ExecutionOutcome(
+        "available",
+        str(artifact),
+        detail or {"receipt_valid": True},
+        validated=True,
+        artifact_sha256=artifact_sha256,
+    )
+
+
 def test_prepare_approve_execute_adjudicate_consume(tmp_path: Path) -> None:
     prepared = preview(tmp_path)
     runtime.approve(prepared, operator="operator", approved_at="2026-07-12T00:01:00Z")
 
     def executor(request, approval, launch):
         launch()
-        return runtime.ExecutionOutcome("available", "manifest://run-1", {"receipt_valid": True})
+        return available(prepared)
 
     outcome = runtime.execute(prepared.store, executor=executor, at="2026-07-12T00:02:00Z")
     assert outcome.status == "available"
@@ -83,6 +98,34 @@ def test_launched_timeout_is_distinct(tmp_path: Path) -> None:
         raise TimeoutError
 
     assert runtime.execute(prepared.store, executor=timeout, at="run").status == "timed-out"
+
+
+def test_interrupted_attempt_retries_with_fresh_identity(tmp_path: Path) -> None:
+    prepared = preview(tmp_path)
+    runtime.approve(prepared, operator="operator", approved_at="approved")
+
+    def interrupted(_request, _approval, launch):
+        launch()
+        raise RuntimeError("process disconnected")
+
+    assert runtime.execute(prepared.store, executor=interrupted, at="run").status == "invalid-evidence"
+    retried = runtime.retry(
+        prepared, repo_root=tmp_path, new_run_id="run-2", created_at="retry"
+    )
+    assert retried.request.attempt == 2
+    assert retried.request.predecessor_request_sha256 == prepared.request.request_sha256
+    assert retried.store.root != prepared.store.root
+
+
+def test_unvalidated_available_evidence_is_rejected(tmp_path: Path) -> None:
+    prepared = preview(tmp_path)
+    runtime.approve(prepared, operator="operator", approved_at="approved")
+
+    def spoofed(_request, _approval, launch):
+        launch()
+        return runtime.ExecutionOutcome("available", "arbitrary-ref")
+
+    assert runtime.execute(prepared.store, executor=spoofed, at="run").status == "invalid-evidence"
 
 
 def test_private_key_payload_is_blocked_before_store_creation(tmp_path: Path) -> None:

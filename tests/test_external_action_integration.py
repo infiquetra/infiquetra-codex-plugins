@@ -97,6 +97,10 @@ def test_real_lifecycle_uses_shipped_cli_adapter_dispatch_and_receipt(
     assert artifact["schema"] == "external_action_evidence.v1"
     assert artifact["runner_receipt"]["receipt_emitter"] == "agy-delegate"
     assert artifact["runner_receipt"]["runner"]["argv"][0] == "agy"
+    assert "--print-timeout" in artifact["runner_receipt"]["runner"]["argv"]
+    assert "--add-dir" in artifact["runner_receipt"]["runner"]["argv"]
+    log_index = artifact["runner_receipt"]["runner"]["argv"].index("--log-file")
+    assert artifact["runner_receipt"]["runner"]["argv"][log_index + 1] == os.devnull
     assert artifact_path.stat().st_mode & 0o777 == 0o600
     assert list(preview.store.root.glob("evidence-*.json")) == [artifact_path]
     status = status_module.project(store.read_snapshot(preview.store))
@@ -150,6 +154,7 @@ def test_executor_rejects_incomplete_route_before_launch(tmp_path: Path) -> None
         created_at="prepared",
         selected_action_ids=[action.action_id],
     )[0]
+    lifecycle.approve_bundle([preview], operator="operator", approved_at="approved")
 
     with pytest.raises(ValueError, match="requires engine_id, variant, and invocation"):
         adapters.executor_for_preview(preview, repo_root=tmp_path)

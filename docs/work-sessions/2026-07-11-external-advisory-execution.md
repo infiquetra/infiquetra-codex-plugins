@@ -78,3 +78,54 @@ The provider-neutral runtime implements prepare, approve, claim-before-launch, l
 - Hermetic U7 matrix: `196 passed`; grouped external-action/resolver/overlay follow-up: `56 passed`.
 - Ruff: passed.
 - Mypy: passed for the three changed runtime source files with `--follow-imports=skip --ignore-missing-imports`.
+## Workflow execution deviation
+
+The approved plan contains a Verified Workflows DAG, but U1-U7 were executed manually in the root
+session instead of being initiated and tracked through `verified-workflows:run`.
+
+**Why it happened:** The workflow table assigns U1-U8 to the root with `vehicle=root`. I incorrectly
+treated that root ownership as making the Verified Workflows coordinator optional, rather than
+understanding that the coordinator still had to create the protected subject, intents, workspace
+snapshots, evidence records, dependency chronology, and final barrier. Repeated disconnect/resume
+continuations reinforced the manual per-unit checklist instead of restoring the approved execution
+backend.
+
+**Impact:** The U1-U7 commits and reported tests are real repository evidence, but they do not have
+the protected intent/snapshot/result/root-verification chain required to claim Verified Workflows
+compliance. The planned post-U8 architecture, security, adversarial, testing, scanner, and smoke
+barrier has not run. U8's attended live matrix was stopped when the deviation was identified; no
+release cutover has been claimed.
+
+**Remediation:** Preserve the existing atomic commits as pre-existing implementation, resume the
+Saga, invoke `verified-workflows:run` against the approved plan, declare the current repository state
+as the protected subject, revalidate U1-U7 evidence through the workflow contract, and execute U8 plus
+the final review and validator barrier under the runner. Any evidence the runner cannot bind is rerun
+rather than retroactively represented as protected workflow evidence.
+
+## Verified workflow reconciliation
+
+- Protected workflow run: `record:workflow-run:238c5184211e384e00550032d8f504935145140501c22fab68b6c36ef37970f7`.
+- U1-U7 were recorded as root-owned revalidation receipts against the protected pre-existing implementation subject. These receipts prove the recovery checks; they do not claim that the original implementation was workflow-launched.
+- U8 started under protected intent `record:intent:af453ad43a1cdc75c96b11163f18ed68f9a147ef1c6a68c812a4ee98911874ef`.
+- The first attended U8 matrix failed closed at the Agy brainstorm action because the adapter wrote `.saga-agy.log` inside a disposable clone while declaring an empty write set. The containment layer correctly classified that adapter-owned log as a write-set escape and invalidated the evidence.
+- The adapter now sends the Agy diagnostic log to `os.devnull`; the registry recipes describe the actual Agy CLI invocation, and the integration test asserts that the log path cannot enter the clone.
+- Narrow repair checks passed: the Agy adapter integration case (`2 passed`), release-matrix tests (`6 passed`), and scoped Ruff checks.
+- The attended retry passed with proof content SHA-256 `3e4c78fc10d8a9b1b17465e721409c22805eb9bdbd97eb32bfbed12e471ee7bf`.
+- Cutover remains unclaimed until the protected U8 receipt, independent review/validation barrier, and final gate all pass.
+- The first reconciliation run could not normalize U8 because its initial protected subject omitted the not-yet-created proof path. The subject-chain guard correctly rejected the proof as an outside-scope workspace mutation. That run remains nonpassing evidence; a replacement protected run starts from the complete current subject and revalidates U1-U8 before independent review.
+
+## Review round 1 remediation
+
+- Independent architecture, security, adversarial, and testing lenses found blocking correctness gaps after the first protected U8 receipt.
+- Fixed overlay transforms that deleted onboarded engine rows.
+- Approval now binds the persisted sanitized payload, dirty-worktree overlap, route, request, and approved base revision; adapter execution reloads the persisted approval instead of trusting mutable preview state.
+- Added explicit immutable attempt identity, predecessor binding, interruption handling, and fresh-store retry behavior.
+- Bundle execution now preflights every executor and approval before the first provider launch.
+- Runtime completion now requires a validated, content-addressed evidence artifact contained in the action store.
+- CLI receipts redact prompt argv content, and timeout handling terminates the provider process group.
+- Replaced the marker rollback with an isolated candidate install, fresh-interpreter API readback, prior-state restoration, and digest comparison. Added closed proof fields and semantic content-hash verification.
+- Deterministic remediation evidence: `126 passed`; scoped mypy and Ruff passed.
+- Operator-accepted risk remains unchanged from the plan decision: disposable clones plus provider-native safe/sandbox modes are the containment boundary. Full containers, executable signing, and host-wide credential/egress isolation are not being added in this iteration.
+- A final replacement workflow run is used because earlier reviewer/pytest commands changed ignored cache files outside the prior protected subject. Remaining commands disable bytecode and pytest cache writes so the final subject chain remains auditable.
+- Remediated attended matrix passed under protected U8 intent with proof content SHA-256 `40d905b4e2d7409f0622d76a0af26da6edfe6fb23870143543dcab7c86289b65`.
+- The proof now includes closed per-stage evidence fields, semantic hash verification, an isolated candidate install, a fresh-interpreter runtime API readback, and restoration to the captured prior installed-state digest.

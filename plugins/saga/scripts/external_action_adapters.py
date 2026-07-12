@@ -20,6 +20,7 @@ import engine_bridge_http  # noqa: E402
 import engine_dispatch  # noqa: E402
 import engine_resolver  # noqa: E402
 import external_action_runtime as runtime  # noqa: E402
+import external_action_store as store_module  # noqa: E402
 import fleet_commons_shim  # noqa: E402
 import reconcile  # noqa: E402
 from external_action_workspace import Workspace  # noqa: E402
@@ -37,6 +38,7 @@ class CliConfig:
     argv_builder: Callable[[dict[str, Any]], list[str]]
     variant: str = ""
     timeout_seconds: int = 900
+    stdin_prompt: bool = True
 
 
 def cli_runner(config: CliConfig, *, repo_root: Path) -> Runner:
@@ -54,13 +56,13 @@ def cli_runner(config: CliConfig, *, repo_root: Path) -> Runner:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
+                start_new_session=True,
             )
             try:
-                stdout, stderr = process.communicate(
-                    str(invocation.get("task") or ""), timeout=config.timeout_seconds
-                )
+                stdin_text = str(invocation.get("task") or "") if config.stdin_prompt else None
+                stdout, stderr = process.communicate(stdin_text, timeout=config.timeout_seconds)
             except subprocess.TimeoutExpired:
-                process.kill()
+                os.killpg(process.pid, 9)
                 process.communicate()
                 return {"status": "timeout", "output": "provider timed out"}
             if process.returncode:
@@ -80,7 +82,11 @@ def cli_runner(config: CliConfig, *, repo_root: Path) -> Runner:
                 transport="cli",
                 wall_time_s=elapsed,
                 bytes_produced=len(output.encode("utf-8")),
-                runner={"pid": process.pid, "argv": argv, "exit_code": process.returncode},
+                runner={
+                    "pid": process.pid,
+                    "argv": _receipt_argv(argv, str(invocation.get("task") or "")),
+                    "exit_code": process.returncode,
+                },
                 receipt_emitter=config.receipt_emitter,
                 run_id=f"cli:{config.engine_id}:{process.pid}",
                 invocation_sha256=_receipt.digest_invocation(invocation),
@@ -102,9 +108,20 @@ def runner_for(engine_id: str, *, repo_root: Path, variant: str = "") -> Runner:
                 receipt_emitter="agy-delegate",
                 variant=variant,
                 argv_builder=lambda invocation: [
-                    "agy", "delegate", "--mode", "patch" if invocation.get("write_set") else "no-write",
-                    "--model", str(invocation.get("model") or ""),
+                    "agy",
+                    "--model",
+                    str(invocation.get("model") or ""),
+                    "--print-timeout",
+                    "900s",
+                    "--log-file",
+                    os.devnull,
+                    "--add-dir",
+                    ".",
+                    "--dangerously-skip-permissions" if invocation.get("write_set") else "--sandbox",
+                    "--print",
+                    str(invocation.get("task") or ""),
                 ],
+                stdin_prompt=False,
             ),
             repo_root=repo_root,
         )
@@ -115,7 +132,16 @@ def runner_for(engine_id: str, *, repo_root: Path, variant: str = "") -> Runner:
                 executable="claude",
                 receipt_emitter="claude-delegate",
                 variant=variant,
-                argv_builder=lambda invocation: ["claude", "--print", "--model", str(invocation.get("model") or "")],
+                argv_builder=lambda invocation: [
+                    "claude",
+                    "--safe-mode",
+                    "--tools",
+                    "",
+                    "--disable-slash-commands",
+                    "--print",
+                    "--model",
+                    str(invocation.get("model") or ""),
+                ],
             ),
             repo_root=repo_root,
         )
@@ -128,13 +154,20 @@ def executor_for_preview(
     repo_root: Path,
 ) -> runtime.Executor:
     """Bind an approved preview to the shipped adapter and dispatch contracts."""
-    route = dict(preview.candidate_approval.route)
+    snapshot = store_module.read_snapshot(preview.store)
+    approval = snapshot.approval
+    if approval is None:
+        raise ValueError("executor binding requires a persisted approval")
+    route = dict(approval.route)
     engine_id = str(route.get("engine_id") or "")
     variant = str(route.get("variant") or "")
     invocation = route.get("invocation")
     if not engine_id or not variant or not isinstance(invocation, dict):
         raise ValueError("approved route requires engine_id, variant, and invocation")
-    payload = _payload_text(preview.sanitized_payload)
+    payload = _payload_text(approval.payload)
+    invocation = dict(invocation)
+    invocation["base_revision"] = approval.base_revision
+    invocation["write_set"] = list(approval.write_set)
     resolution = engine_resolver.Resolution(
         engine_id=engine_id,
         variant=variant,
@@ -145,12 +178,14 @@ def executor_for_preview(
         write_capable=bool(invocation.get("write_capable", False)),
         fallback=None,
         halt=None,
-        invocation=dict(invocation),
-        cost_class=preview.candidate_approval.cost_class,
+        invocation=invocation,
+        cost_class=approval.cost_class,
     )
     provider_runner = runner_for(engine_id, repo_root=repo_root, variant=variant)
 
     def executor(_request: Any, _approval: Any, launch: Callable[[], None]) -> runtime.ExecutionOutcome:
+        if _approval.approval_fingerprint != approval.approval_fingerprint:
+            raise ValueError("executor approval changed after binding")
         def typed_runner(invocation_payload: dict[str, Any]) -> dict[str, Any]:
             result = dict(provider_runner(invocation_payload))
             if (
@@ -178,7 +213,7 @@ def executor_for_preview(
         evidence = engine_dispatch.dispatch(
             resolution,
             runner=typed_runner,
-            write_set=list(preview.candidate_approval.write_set),
+            write_set=list(approval.write_set),
             expected_identity=f"{engine_id}/{variant}",
             execution_id=preview.request.action_id,
             intent=preview.request.intent,
@@ -212,9 +247,20 @@ def executor_for_preview(
                 "runner_receipt": evidence.runner_receipt,
                 "artifact_sha256": artifact_sha256,
             },
+            validated=True,
+            artifact_sha256=artifact_sha256,
         )
 
     return executor
+
+
+def _receipt_argv(argv: list[str], task: str) -> list[str]:
+    """Keep durable receipts useful without persisting prompt content."""
+    redacted = list(argv)
+    if task:
+        marker = f"<redacted:{hashlib.sha256(task.encode('utf-8')).hexdigest()}>"
+        redacted = [marker if item == task else item for item in redacted]
+    return redacted
 
 
 def _payload_text(value: Any) -> str:

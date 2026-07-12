@@ -178,7 +178,9 @@ def pin_engine(overlay: EngineOverlay, capability: str, engine_key: str) -> Engi
     _validate_engine_key(engine_key)
     pins = dict(overlay.pins or {})
     pins[capability] = engine_key
-    return EngineOverlay(pins=pins, deprecated=frozenset(overlay.deprecated))
+    return EngineOverlay(
+        pins=pins, deprecated=frozenset(overlay.deprecated), engines=overlay.engines
+    )
 
 
 def deprecate_engine(overlay: EngineOverlay, engine_key: str) -> EngineOverlay:
@@ -186,6 +188,7 @@ def deprecate_engine(overlay: EngineOverlay, engine_key: str) -> EngineOverlay:
     return EngineOverlay(
         pins=dict(overlay.pins or {}),
         deprecated=frozenset({*overlay.deprecated, engine_key}),
+        engines=overlay.engines,
     )
 
 
@@ -193,14 +196,20 @@ def clear_pin(overlay: EngineOverlay, capability: str) -> EngineOverlay:
     _validate_capability(capability)
     pins = dict(overlay.pins or {})
     pins.pop(capability, None)
-    return EngineOverlay(pins=pins, deprecated=frozenset(overlay.deprecated))
+    return EngineOverlay(
+        pins=pins, deprecated=frozenset(overlay.deprecated), engines=overlay.engines
+    )
 
 
 def clear_deprecated(overlay: EngineOverlay, engine_key: str) -> EngineOverlay:
     _validate_engine_key(engine_key)
     deprecated = set(overlay.deprecated)
     deprecated.discard(engine_key)
-    return EngineOverlay(pins=dict(overlay.pins or {}), deprecated=frozenset(deprecated))
+    return EngineOverlay(
+        pins=dict(overlay.pins or {}),
+        deprecated=frozenset(deprecated),
+        engines=overlay.engines,
+    )
 
 
 def clear_all() -> EngineOverlay:

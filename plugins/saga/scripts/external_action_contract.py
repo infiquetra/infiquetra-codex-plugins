@@ -147,6 +147,8 @@ class ActionRequest:
     evidence_destination: str
     consumption_point: str
     created_at: str
+    attempt: int = 1
+    predecessor_request_sha256: str | None = None
     schema: str = field(default=REQUEST_SCHEMA, init=False)
 
     def __post_init__(self) -> None:
@@ -165,6 +167,12 @@ class ActionRequest:
         _string(self.evidence_destination, field_name="evidence_destination")
         _string(self.consumption_point, field_name="consumption_point")
         _string(self.created_at, field_name="created_at")
+        if isinstance(self.attempt, bool) or not isinstance(self.attempt, int) or self.attempt < 1:
+            raise ContractError("attempt must be a positive integer")
+        if self.predecessor_request_sha256 is not None and not re.fullmatch(
+            r"[0-9a-f]{64}", self.predecessor_request_sha256
+        ):
+            raise ContractError("predecessor_request_sha256 must be a SHA-256 digest")
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> ActionRequest:
@@ -185,6 +193,8 @@ class ActionRequest:
             evidence_destination=_required_str(data, "evidence_destination"),
             consumption_point=_required_str(data, "consumption_point"),
             created_at=_required_str(data, "created_at"),
+            attempt=data.get("attempt", 1),
+            predecessor_request_sha256=data.get("predecessor_request_sha256"),
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -213,6 +223,10 @@ class ActionApproval:
     cost_class: str
     egress: Mapping[str, Any]
     request_sha256: str
+    payload: Any = None
+    payload_sha256: str = field(default_factory=lambda: digest(None))
+    dirty_overlap: tuple[str, ...] = ()
+    dirty_overlap_sha256: str = field(default_factory=lambda: digest([]))
     schema: str = field(default=APPROVAL_SCHEMA, init=False)
 
     def __post_init__(self) -> None:
@@ -229,6 +243,10 @@ class ActionApproval:
             raise ContractError("egress must be an object")
         if not re.fullmatch(r"[0-9a-f]{64}", self.request_sha256):
             raise ContractError("request_sha256 must be a SHA-256 digest")
+        if self.payload_sha256 != digest(self.payload):
+            raise ContractError("payload_sha256 does not match payload")
+        if self.dirty_overlap_sha256 != digest(list(self.dirty_overlap)):
+            raise ContractError("dirty_overlap_sha256 does not match dirty_overlap")
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> ActionApproval:
@@ -246,6 +264,12 @@ class ActionApproval:
             cost_class=_required_str(data, "cost_class"),
             egress=dict(data.get("egress", {})),
             request_sha256=_required_str(data, "request_sha256"),
+            payload=data.get("payload"),
+            payload_sha256=data.get("payload_sha256", digest(data.get("payload"))),
+            dirty_overlap=_string_tuple(data.get("dirty_overlap"), field_name="dirty_overlap"),
+            dirty_overlap_sha256=data.get(
+                "dirty_overlap_sha256", digest(list(data.get("dirty_overlap", [])))
+            ),
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -254,6 +278,7 @@ class ActionApproval:
         value["context_scope"] = list(self.context_scope)
         value["write_set"] = list(self.write_set)
         value["egress"] = dict(self.egress)
+        value["dirty_overlap"] = list(self.dirty_overlap)
         return value
 
     @property
