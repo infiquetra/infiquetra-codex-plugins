@@ -162,13 +162,18 @@ the operator asks for a cross-engine pass or the artifact clearly warrants one.
   Codex host, Claude-only autonomous panel surfaces (Workflow/TeamCreate) are negative-gated —
   dispatch runs inline/serially.
 
-## Engine Offer
+## External Action Runtime
 
-Before offering an external-engine second opinion for document review, run
-`python3 plugins/saga/scripts/engine_offer.py offer --stage doc-review --repo-root . --attended`.
-If the helper reports `prompt_required`, `/doc-review` owns the operator prompt and persists the
-preference with `engine_preference.py`. The offer is advisory only; Codex still verifies every
-finding and owns the readiness verdict.
+Before any external call, run
+`python3 plugins/saga/scripts/external_action.py bundle --stage doc-review --repo-root .` and show the
+resolved action bundle and let the operator remove or edit actions; persist reusable changes with
+`external_action_policy.save_policy`, never by silently changing defaults. Resolve the selected
+provider routes, call `external_action_lifecycle.prepare_bundle` without external egress, and show
+`approval_preview_payload` with provider, cost, egress, requiredness, consumption point, fingerprint,
+and status card. Only after explicit approval call `approve_bundle` and `execute_bundle`. Opinion output
+must contain typed findings; Codex accounts for each through `adjudicate_opinion` before the readiness
+verdict. Best-effort failure continues with a named unavailable status; required failure pauses for
+operator retry, removal, or override. External evidence never persists or satisfies a gate on its own.
 
 ## Safe In-Place Fixes
 

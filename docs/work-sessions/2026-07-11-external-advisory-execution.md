@@ -58,3 +58,12 @@ The provider-neutral runtime implements prepare, approve, claim-before-launch, l
 - Focused tests: `77 passed`.
 - Ruff: passed.
 - Mypy: passed for the six U5 source files with `--follow-imports=skip --ignore-missing-imports`.
+## U6 - Six-stage lifecycle integration
+
+- Replaced legacy Engine Offer instructions in ideate, brainstorm, plan, work, doc-review, and code-review with one editable prepare-approve-execute-adjudicate-consume contract.
+- Added a shared lifecycle module for stage bundles, pre-approval route/cost/egress/status views, selected-action preparation, approval, requiredness-aware execution, typed reconciliation, and consumption.
+- Added the `external_action.py bundle` operator command and covered the previously missing plan stage.
+- Proved all ten default actions, both intents, operator removal, pre-dispatch bundle halt, best-effort continuation, required pause, typed-finding completeness, status cards, and final consumption.
+- Focused tests: `113 passed`.
+- Ruff: passed.
+- Mypy: passed for the two U6 source files with `--follow-imports=skip --ignore-missing-imports`.

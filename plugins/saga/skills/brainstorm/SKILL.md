@@ -43,13 +43,19 @@ These govern every turn of the dialogue.
 In a channel session (`redis-channel` active), do not call `Codex blocking question`; inline the choices in
 your reply text instead ("Which? A) ... B) ... C) ...").
 
-## Engine Offer
+## External Action Runtime
 
-Before offering an external-engine lane for brainstorming, run
-`python3 plugins/saga/scripts/engine_offer.py offer --stage brainstorm --repo-root . --attended`.
-If the helper reports `prompt_required`, this skill owns the operator prompt and persists the
-selected preference with `engine_preference.py`. The offer is advisory only; it never
-dispatches, decides scope, or gates requirements.
+Before any external call, run
+`python3 plugins/saga/scripts/external_action.py bundle --stage brainstorm --repo-root .` and show the
+resolved action bundle and let the operator remove or edit actions; persist reusable changes with
+`external_action_policy.save_policy`, never by silently changing defaults. Resolve the selected
+provider routes, call `external_action_lifecycle.prepare_bundle` without external egress, and show
+`approval_preview_payload` with provider, cost, egress, requiredness, consumption point, fingerprint,
+and status card. Only after explicit approval call `approve_bundle` and `execute_bundle`. Offload output
+is inert until Codex adjudicates it and consumes it at the named point. Second-opinion output must use
+typed findings and `adjudicate_opinion`. Best-effort failure continues with a named unavailable status;
+required failure pauses for operator retry, removal, or override. External evidence never decides
+scope or satisfies a gate on its own.
 
 ## Topic
 

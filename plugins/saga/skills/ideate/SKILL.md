@@ -38,13 +38,19 @@ with `blocking question` first if its schema isn't loaded). Fall back to numbere
 chat only when no blocking tool exists or the call errors. In a channel session, inline the
 choices in the reply text. Never silently skip a gate question. Ask one question at a time.
 
-## Engine Offer
+## External Action Runtime
 
-Before offering an external-engine lane for ideation, run
-`python3 plugins/saga/scripts/engine_offer.py offer --stage ideate --repo-root . --attended`.
-If the helper reports `prompt_required`, this skill owns the operator prompt and persists the
-selected preference with `engine_preference.py`. The offer is advisory only; it never
-dispatches, scores, or gates ideas.
+Before any external call, run
+`python3 plugins/saga/scripts/external_action.py bundle --stage ideate --repo-root .` and show the
+resolved action bundle and let the operator remove or edit actions; persist reusable changes with
+`external_action_policy.save_policy`, never by silently changing defaults. Resolve the selected
+provider routes, call `external_action_lifecycle.prepare_bundle` without external egress, and show
+`approval_preview_payload` with provider, cost, egress, requiredness, consumption point, fingerprint,
+and status card. Only after explicit approval call `approve_bundle` and `execute_bundle`. Offload output
+is inert until Codex adjudicates it and consumes it at the named point. Second-opinion output must use
+typed findings and `adjudicate_opinion`. Best-effort failure continues with a named unavailable status;
+required failure pauses for operator retry, removal, or override. External evidence never scores or
+satisfies a gate on its own.
 
 ## Focus hint
 
@@ -501,7 +507,8 @@ run is tactical scope):**
 > full ambition *within that slice* — do not widen the surface to the whole product.
 
 **External-engine generator lane (additive, blind, best-effort).** In addition to the native Codex
-frame agents, attempt one chaperoned external-engine generator lane when the Engine Offer permits it.
+frame agents, attempt one chaperoned external-engine generator lane when the approved
+`blind-generator` action permits it.
 Use `offload` with the cheapest policy-compliant chaperone tier; do not confuse this generator lane
 with the stage offer's `second-opinion` default. Assign an ordinary Phase 2 frame: use the next
 unused frame when one exists, otherwise reuse the frame whose lens best fits the focus.
