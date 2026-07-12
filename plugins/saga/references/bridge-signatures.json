@@ -6,6 +6,11 @@
       "allow_zero_external_tokens": false,
       "require_non_empty_output": true
     },
+    "claude-delegate": {
+      "required_fields": ["run_id", "invocation_sha256", "external_tokens", "output_attestation"],
+      "allow_zero_external_tokens": false,
+      "require_non_empty_output": true
+    },
     "http-bridge": {
       "required_fields": ["run_id", "invocation_sha256", "external_tokens", "output_attestation"],
       "allow_zero_external_tokens": false,

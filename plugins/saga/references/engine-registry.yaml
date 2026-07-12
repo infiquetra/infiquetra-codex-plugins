@@ -21,6 +21,46 @@ capabilities:
   - embedding
 
 engines:
+  - engine_id: claude-cli
+    variant: opus
+    substrate: external
+    egress_policy: networked
+    trust_tier: advisory
+    default_for_engine: true
+    transport: cli
+    invocation:
+      via: claude:delegate
+      recipe: "claude --print --model opus"
+      write_capable: true
+      model: opus
+      effort: high
+      cli: claude
+      auth:
+        mode: files
+        paths:
+          - "~/.claude/.credentials.json"
+    context_window: 200000
+    cost_speed_rank: 4
+    cost_per_token: {input_usd: 0.000015, output_usd: 0.000075}
+    cost_class: metered
+    budget_ceiling_usd: 25.0
+    latency_class: standard
+    model_identity: claude-opus
+    last_validated: 2026-07-11
+    receipt_emitter: claude-delegate
+    capability_profile:
+      code-generation: {rating: STRONG, note: "supervised contained patch generation"}
+      adversarial-review: {rating: STRONG, note: "cross-family review from Codex root"}
+      second-opinion: {rating: STRONG, note: "independent Claude CLI opinion"}
+      debug: {rating: STRONG, note: "contained diagnostic and patch lane"}
+      refactor: {rating: STRONG, note: "contained multi-file refactoring"}
+      long-form-writing: {rating: STRONG, note: "expert prose lane"}
+    prompting_protocol:
+      - "Use the approved bounded task and repository clone only."
+      - "Never claim gate authority or mutate the live Codex worktree."
+    sources:
+      - {claim: "Claude CLI supervised adapter", url: "local validated CLI contract", date: 2026-07-11, tag: OPERATOR, corroboration: STRONG}
+
   # ---- Gemini 3.5 Flash (via the in-repo agy plugin) ------------------------------------------
   - engine_id: agy
     variant: gemini-3.5-flash-high

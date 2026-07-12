@@ -1503,10 +1503,23 @@ def _build_invocation(
     row = resolution.invocation or {}
     if row.get("via") == "engine-bridge-http":
         return build_http_invocation(resolution)
+    if row.get("via") == "claude:delegate":
+        return {
+            "schema": "claude.delegation.v1",
+            "engine_id": resolution.engine_id,
+            "variant": resolution.variant,
+            "task": resolution.payload,
+            "model": row.get("model"),
+            "effort": row.get("effort"),
+            "base_revision": "HEAD",
+            "write_set": list(write_set or []),
+        }
     if resolution.engine_id == "codex":
         raise DispatchError("native Codex agents are not external-engine routes")
     if resolution.engine_id == "agy":
-        return build_agy_envelope(resolution, model=model, sandbox=sandbox, write_set=write_set)
+        return build_agy_envelope(
+            resolution, model=model, sandbox=sandbox, write_set=write_set
+        )
     raise DispatchError(f"unsupported external engine {resolution.engine_id!r}")
 
 

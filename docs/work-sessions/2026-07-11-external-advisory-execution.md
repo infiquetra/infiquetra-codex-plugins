@@ -39,3 +39,12 @@ The provider-neutral runtime implements prepare, approve, claim-before-launch, l
 **Checks run:** 23 combined U2/U3 pytest cases passed; Ruff passed; scoped mypy passed for all four U3 source modules.
 
 **Next step:** Implement U4 supervised Claude, `agy`, and HTTP adapters with disposable-clone containment.
+## U4 - Supervised external adapters
+
+- Added disposable local-clone workspaces with detached checkout, remote removal, binary patch capture, write-set enforcement, and cleanup.
+- Added supervised Agy and Claude CLI adapters plus thin delegate entry points.
+- Added the `claude-cli/opus` registry route and `claude-delegate` bridge-signature policy.
+- Preserved the established Agy invocation digest contract while adding Claude model and effort metadata.
+- Focused tests: `64 passed`.
+- Ruff: passed.
+- Mypy: the four U4 source files pass with `--follow-imports=skip`; unrestricted import following reaches seven pre-existing errors in `fleet_commons_shim.py` and `engine_bridge_http.py`.
