@@ -192,7 +192,7 @@
       "unit": "U1",
       "kind": "source-verification",
       "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
-      "artifact_sha256": "7a52ef73712d2ed2e821607ed3d707e7c7404ff0cf74cea52fa4f1803e94c37c",
+      "artifact_sha256": "ad9ead4b2740a61dec62db2eb843527acfd4d660b28b686bd0276e0157d04af0",
       "argv": [
         "python3",
         "scripts/port_contract.py",
@@ -205,14 +205,14 @@
       "cwd": ".",
       "exit_code": 0,
       "recorded_at": "2026-07-12T02:50:26Z",
-      "repo_head": "ff94079ed82c05cb46070d954b6e78fdc6167c54"
+      "repo_head": "cc4ff83d5150e0bdf6bbbfd6682fd43f70bb616a"
     },
     {
       "evidence_id": "unit-u2-check",
       "unit": "U2",
       "kind": "check",
       "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
-      "artifact_sha256": "7a52ef73712d2ed2e821607ed3d707e7c7404ff0cf74cea52fa4f1803e94c37c",
+      "artifact_sha256": "ad9ead4b2740a61dec62db2eb843527acfd4d660b28b686bd0276e0157d04af0",
       "argv": [
         "python3",
         "scripts/port_contract.py",
@@ -225,14 +225,14 @@
       "cwd": ".",
       "exit_code": 0,
       "recorded_at": "2026-07-12T02:50:26Z",
-      "repo_head": "ff94079ed82c05cb46070d954b6e78fdc6167c54"
+      "repo_head": "cc4ff83d5150e0bdf6bbbfd6682fd43f70bb616a"
     },
     {
       "evidence_id": "unit-u3-check",
       "unit": "U3",
       "kind": "check",
       "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
-      "artifact_sha256": "7a52ef73712d2ed2e821607ed3d707e7c7404ff0cf74cea52fa4f1803e94c37c",
+      "artifact_sha256": "ad9ead4b2740a61dec62db2eb843527acfd4d660b28b686bd0276e0157d04af0",
       "argv": [
         "python3",
         "scripts/port_contract.py",
@@ -245,14 +245,14 @@
       "cwd": ".",
       "exit_code": 0,
       "recorded_at": "2026-07-12T02:50:26Z",
-      "repo_head": "ff94079ed82c05cb46070d954b6e78fdc6167c54"
+      "repo_head": "cc4ff83d5150e0bdf6bbbfd6682fd43f70bb616a"
     },
     {
       "evidence_id": "unit-u4-check",
       "unit": "U4",
       "kind": "check",
       "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
-      "artifact_sha256": "7a52ef73712d2ed2e821607ed3d707e7c7404ff0cf74cea52fa4f1803e94c37c",
+      "artifact_sha256": "ad9ead4b2740a61dec62db2eb843527acfd4d660b28b686bd0276e0157d04af0",
       "argv": [
         "python3",
         "scripts/port_contract.py",
@@ -265,14 +265,14 @@
       "cwd": ".",
       "exit_code": 0,
       "recorded_at": "2026-07-12T02:50:26Z",
-      "repo_head": "ff94079ed82c05cb46070d954b6e78fdc6167c54"
+      "repo_head": "cc4ff83d5150e0bdf6bbbfd6682fd43f70bb616a"
     },
     {
       "evidence_id": "unit-u5-check",
       "unit": "U5",
       "kind": "check",
       "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
-      "artifact_sha256": "7a52ef73712d2ed2e821607ed3d707e7c7404ff0cf74cea52fa4f1803e94c37c",
+      "artifact_sha256": "ad9ead4b2740a61dec62db2eb843527acfd4d660b28b686bd0276e0157d04af0",
       "argv": [
         "python3",
         "scripts/port_contract.py",
@@ -285,14 +285,14 @@
       "cwd": ".",
       "exit_code": 0,
       "recorded_at": "2026-07-12T02:50:26Z",
-      "repo_head": "ff94079ed82c05cb46070d954b6e78fdc6167c54"
+      "repo_head": "cc4ff83d5150e0bdf6bbbfd6682fd43f70bb616a"
     },
     {
       "evidence_id": "unit-u6-check",
       "unit": "U6",
       "kind": "check",
       "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
-      "artifact_sha256": "7a52ef73712d2ed2e821607ed3d707e7c7404ff0cf74cea52fa4f1803e94c37c",
+      "artifact_sha256": "ad9ead4b2740a61dec62db2eb843527acfd4d660b28b686bd0276e0157d04af0",
       "argv": [
         "python3",
         "scripts/port_contract.py",
@@ -305,14 +305,14 @@
       "cwd": ".",
       "exit_code": 0,
       "recorded_at": "2026-07-12T02:50:26Z",
-      "repo_head": "ff94079ed82c05cb46070d954b6e78fdc6167c54"
+      "repo_head": "cc4ff83d5150e0bdf6bbbfd6682fd43f70bb616a"
     },
     {
       "evidence_id": "unit-u7-check",
       "unit": "U7",
       "kind": "check",
       "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
-      "artifact_sha256": "7a52ef73712d2ed2e821607ed3d707e7c7404ff0cf74cea52fa4f1803e94c37c",
+      "artifact_sha256": "ad9ead4b2740a61dec62db2eb843527acfd4d660b28b686bd0276e0157d04af0",
       "argv": [
         "python3",
         "scripts/port_contract.py",
@@ -325,14 +325,14 @@
       "cwd": ".",
       "exit_code": 0,
       "recorded_at": "2026-07-12T02:50:26Z",
-      "repo_head": "ff94079ed82c05cb46070d954b6e78fdc6167c54"
+      "repo_head": "cc4ff83d5150e0bdf6bbbfd6682fd43f70bb616a"
     },
     {
       "evidence_id": "u8-review",
       "unit": "U8",
       "kind": "review",
       "artifact_path": "docs/work-sessions/2026-07-11-external-advisory-execution.md",
-      "artifact_sha256": "66b75d7c1237a81b8a353a7ea48109d35a0b284ed61b6c8e8ae91ea61c7b7422",
+      "artifact_sha256": "0e30b3d7ac575cd6aa6e2f9bc666d31dbd064bb2b21760f53596621cd64a8839",
       "argv": [
         "verified-workflows:run",
         "review-barrier"
@@ -340,71 +340,76 @@
       "cwd": ".",
       "exit_code": 0,
       "recorded_at": "2026-07-12T02:50:26Z",
-      "repo_head": "ff94079ed82c05cb46070d954b6e78fdc6167c54"
+      "repo_head": "cc4ff83d5150e0bdf6bbbfd6682fd43f70bb616a"
     },
     {
       "evidence_id": "u8-isolated-install",
       "unit": "U8",
       "kind": "isolated-install",
       "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
-      "artifact_sha256": "7a52ef73712d2ed2e821607ed3d707e7c7404ff0cf74cea52fa4f1803e94c37c",
+      "artifact_sha256": "ad9ead4b2740a61dec62db2eb843527acfd4d660b28b686bd0276e0157d04af0",
       "argv": [
-        "python3",
-        "plugins/saga/scripts/external_action_release_matrix.py",
-        "--verify"
+        "codex",
+        "plugin",
+        "add",
+        "saga@isolated-external-action",
+        "--json"
       ],
       "cwd": ".",
       "exit_code": 0,
       "recorded_at": "2026-07-12T02:50:26Z",
-      "repo_head": "ff94079ed82c05cb46070d954b6e78fdc6167c54"
+      "repo_head": "cc4ff83d5150e0bdf6bbbfd6682fd43f70bb616a"
     },
     {
       "evidence_id": "u8-fresh-session",
       "unit": "U8",
       "kind": "fresh-session",
       "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
-      "artifact_sha256": "7a52ef73712d2ed2e821607ed3d707e7c7404ff0cf74cea52fa4f1803e94c37c",
+      "artifact_sha256": "ad9ead4b2740a61dec62db2eb843527acfd4d660b28b686bd0276e0157d04af0",
       "argv": [
-        "python3",
-        "plugins/saga/scripts/external_action_release_matrix.py",
-        "--verify"
+        "codex",
+        "plugin",
+        "list",
+        "--json"
       ],
       "cwd": ".",
       "exit_code": 0,
       "recorded_at": "2026-07-12T02:50:26Z",
-      "repo_head": "ff94079ed82c05cb46070d954b6e78fdc6167c54"
+      "repo_head": "cc4ff83d5150e0bdf6bbbfd6682fd43f70bb616a"
     },
     {
       "evidence_id": "u8-rollback",
       "unit": "U8",
       "kind": "rollback",
       "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
-      "artifact_sha256": "7a52ef73712d2ed2e821607ed3d707e7c7404ff0cf74cea52fa4f1803e94c37c",
+      "artifact_sha256": "ad9ead4b2740a61dec62db2eb843527acfd4d660b28b686bd0276e0157d04af0",
       "argv": [
-        "python3",
-        "plugins/saga/scripts/external_action_release_matrix.py",
-        "--verify"
+        "codex",
+        "plugin",
+        "remove",
+        "saga@isolated-external-action",
+        "--json"
       ],
       "cwd": ".",
       "exit_code": 0,
       "recorded_at": "2026-07-12T02:50:26Z",
-      "repo_head": "ff94079ed82c05cb46070d954b6e78fdc6167c54"
+      "repo_head": "cc4ff83d5150e0bdf6bbbfd6682fd43f70bb616a"
     },
     {
       "evidence_id": "u8-cutover",
       "unit": "U8",
       "kind": "cutover",
       "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
-      "artifact_sha256": "7a52ef73712d2ed2e821607ed3d707e7c7404ff0cf74cea52fa4f1803e94c37c",
+      "artifact_sha256": "ad9ead4b2740a61dec62db2eb843527acfd4d660b28b686bd0276e0157d04af0",
       "argv": [
         "python3",
         "plugins/saga/scripts/external_action_release_matrix.py",
-        "--verify"
+        "--attended"
       ],
       "cwd": ".",
       "exit_code": 0,
       "recorded_at": "2026-07-12T02:50:26Z",
-      "repo_head": "ff94079ed82c05cb46070d954b6e78fdc6167c54"
+      "repo_head": "cc4ff83d5150e0bdf6bbbfd6682fd43f70bb616a"
     }
   ],
   "port_id": "external-advisory-execution-2026-07-11",
