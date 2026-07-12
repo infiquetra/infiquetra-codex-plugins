@@ -188,11 +188,6 @@
   },
   "evidence": [
     {
-      "evidence_id": "u1-source-verification",
-      "unit": "U1",
-      "kind": "source-verification",
-      "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
-      "artifact_sha256": "ad9ead4b2740a61dec62db2eb843527acfd4d660b28b686bd0276e0157d04af0",
       "argv": [
         "python3",
         "scripts/port_contract.py",
@@ -202,17 +197,17 @@
         "--unit",
         "U1"
       ],
+      "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
+      "artifact_sha256": "94333ea353b55fe920a3d6419590281f16c77c5550df6d35a307adc1a689062b",
       "cwd": ".",
+      "evidence_id": "u1-source-verification",
       "exit_code": 0,
-      "recorded_at": "2026-07-12T02:50:26Z",
-      "repo_head": "cc4ff83d5150e0bdf6bbbfd6682fd43f70bb616a"
+      "kind": "source-verification",
+      "recorded_at": "2026-07-12T04:00:28.153311Z",
+      "repo_head": "4800246eb492366c0b08369d101ad504713dd74c",
+      "unit": "U1"
     },
     {
-      "evidence_id": "unit-u2-check",
-      "unit": "U2",
-      "kind": "check",
-      "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
-      "artifact_sha256": "ad9ead4b2740a61dec62db2eb843527acfd4d660b28b686bd0276e0157d04af0",
       "argv": [
         "python3",
         "scripts/port_contract.py",
@@ -222,17 +217,17 @@
         "--unit",
         "U2"
       ],
+      "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
+      "artifact_sha256": "94333ea353b55fe920a3d6419590281f16c77c5550df6d35a307adc1a689062b",
       "cwd": ".",
+      "evidence_id": "unit-u2-check",
       "exit_code": 0,
-      "recorded_at": "2026-07-12T02:50:26Z",
-      "repo_head": "cc4ff83d5150e0bdf6bbbfd6682fd43f70bb616a"
+      "kind": "check",
+      "recorded_at": "2026-07-12T04:00:28.153311Z",
+      "repo_head": "4800246eb492366c0b08369d101ad504713dd74c",
+      "unit": "U2"
     },
     {
-      "evidence_id": "unit-u3-check",
-      "unit": "U3",
-      "kind": "check",
-      "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
-      "artifact_sha256": "ad9ead4b2740a61dec62db2eb843527acfd4d660b28b686bd0276e0157d04af0",
       "argv": [
         "python3",
         "scripts/port_contract.py",
@@ -242,17 +237,17 @@
         "--unit",
         "U3"
       ],
+      "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
+      "artifact_sha256": "94333ea353b55fe920a3d6419590281f16c77c5550df6d35a307adc1a689062b",
       "cwd": ".",
+      "evidence_id": "unit-u3-check",
       "exit_code": 0,
-      "recorded_at": "2026-07-12T02:50:26Z",
-      "repo_head": "cc4ff83d5150e0bdf6bbbfd6682fd43f70bb616a"
+      "kind": "check",
+      "recorded_at": "2026-07-12T04:00:28.153311Z",
+      "repo_head": "4800246eb492366c0b08369d101ad504713dd74c",
+      "unit": "U3"
     },
     {
-      "evidence_id": "unit-u4-check",
-      "unit": "U4",
-      "kind": "check",
-      "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
-      "artifact_sha256": "ad9ead4b2740a61dec62db2eb843527acfd4d660b28b686bd0276e0157d04af0",
       "argv": [
         "python3",
         "scripts/port_contract.py",
@@ -262,17 +257,17 @@
         "--unit",
         "U4"
       ],
+      "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
+      "artifact_sha256": "94333ea353b55fe920a3d6419590281f16c77c5550df6d35a307adc1a689062b",
       "cwd": ".",
+      "evidence_id": "unit-u4-check",
       "exit_code": 0,
-      "recorded_at": "2026-07-12T02:50:26Z",
-      "repo_head": "cc4ff83d5150e0bdf6bbbfd6682fd43f70bb616a"
+      "kind": "check",
+      "recorded_at": "2026-07-12T04:00:28.153311Z",
+      "repo_head": "4800246eb492366c0b08369d101ad504713dd74c",
+      "unit": "U4"
     },
     {
-      "evidence_id": "unit-u5-check",
-      "unit": "U5",
-      "kind": "check",
-      "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
-      "artifact_sha256": "ad9ead4b2740a61dec62db2eb843527acfd4d660b28b686bd0276e0157d04af0",
       "argv": [
         "python3",
         "scripts/port_contract.py",
@@ -282,17 +277,17 @@
         "--unit",
         "U5"
       ],
+      "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
+      "artifact_sha256": "94333ea353b55fe920a3d6419590281f16c77c5550df6d35a307adc1a689062b",
       "cwd": ".",
+      "evidence_id": "unit-u5-check",
       "exit_code": 0,
-      "recorded_at": "2026-07-12T02:50:26Z",
-      "repo_head": "cc4ff83d5150e0bdf6bbbfd6682fd43f70bb616a"
+      "kind": "check",
+      "recorded_at": "2026-07-12T04:00:28.153311Z",
+      "repo_head": "4800246eb492366c0b08369d101ad504713dd74c",
+      "unit": "U5"
     },
     {
-      "evidence_id": "unit-u6-check",
-      "unit": "U6",
-      "kind": "check",
-      "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
-      "artifact_sha256": "ad9ead4b2740a61dec62db2eb843527acfd4d660b28b686bd0276e0157d04af0",
       "argv": [
         "python3",
         "scripts/port_contract.py",
@@ -302,17 +297,17 @@
         "--unit",
         "U6"
       ],
+      "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
+      "artifact_sha256": "94333ea353b55fe920a3d6419590281f16c77c5550df6d35a307adc1a689062b",
       "cwd": ".",
+      "evidence_id": "unit-u6-check",
       "exit_code": 0,
-      "recorded_at": "2026-07-12T02:50:26Z",
-      "repo_head": "cc4ff83d5150e0bdf6bbbfd6682fd43f70bb616a"
+      "kind": "check",
+      "recorded_at": "2026-07-12T04:00:28.153311Z",
+      "repo_head": "4800246eb492366c0b08369d101ad504713dd74c",
+      "unit": "U6"
     },
     {
-      "evidence_id": "unit-u7-check",
-      "unit": "U7",
-      "kind": "check",
-      "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
-      "artifact_sha256": "ad9ead4b2740a61dec62db2eb843527acfd4d660b28b686bd0276e0157d04af0",
       "argv": [
         "python3",
         "scripts/port_contract.py",
@@ -322,32 +317,32 @@
         "--unit",
         "U7"
       ],
+      "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
+      "artifact_sha256": "94333ea353b55fe920a3d6419590281f16c77c5550df6d35a307adc1a689062b",
       "cwd": ".",
+      "evidence_id": "unit-u7-check",
       "exit_code": 0,
-      "recorded_at": "2026-07-12T02:50:26Z",
-      "repo_head": "cc4ff83d5150e0bdf6bbbfd6682fd43f70bb616a"
+      "kind": "check",
+      "recorded_at": "2026-07-12T04:00:28.153311Z",
+      "repo_head": "4800246eb492366c0b08369d101ad504713dd74c",
+      "unit": "U7"
     },
     {
-      "evidence_id": "u8-review",
-      "unit": "U8",
-      "kind": "review",
-      "artifact_path": "docs/work-sessions/2026-07-11-external-advisory-execution.md",
-      "artifact_sha256": "0e30b3d7ac575cd6aa6e2f9bc666d31dbd064bb2b21760f53596621cd64a8839",
       "argv": [
         "verified-workflows:run",
         "review-barrier"
       ],
+      "artifact_path": "docs/work-sessions/2026-07-11-external-advisory-execution.md",
+      "artifact_sha256": "6d7037a7be3441e37ed261d1569f983ab03b2bd6bc2b1ec3b6449914faff7714",
       "cwd": ".",
+      "evidence_id": "u8-review",
       "exit_code": 0,
-      "recorded_at": "2026-07-12T02:50:26Z",
-      "repo_head": "cc4ff83d5150e0bdf6bbbfd6682fd43f70bb616a"
+      "kind": "review",
+      "recorded_at": "2026-07-12T04:03:08Z",
+      "repo_head": "0e4edd26eccec52ed19aa0b7ee9dbd3cbf0b13f1",
+      "unit": "U8"
     },
     {
-      "evidence_id": "u8-isolated-install",
-      "unit": "U8",
-      "kind": "isolated-install",
-      "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
-      "artifact_sha256": "ad9ead4b2740a61dec62db2eb843527acfd4d660b28b686bd0276e0157d04af0",
       "argv": [
         "codex",
         "plugin",
@@ -355,34 +350,34 @@
         "saga@isolated-external-action",
         "--json"
       ],
+      "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
+      "artifact_sha256": "94333ea353b55fe920a3d6419590281f16c77c5550df6d35a307adc1a689062b",
       "cwd": ".",
+      "evidence_id": "u8-isolated-install",
       "exit_code": 0,
-      "recorded_at": "2026-07-12T02:50:26Z",
-      "repo_head": "cc4ff83d5150e0bdf6bbbfd6682fd43f70bb616a"
+      "kind": "isolated-install",
+      "recorded_at": "2026-07-12T04:00:28.153311Z",
+      "repo_head": "4800246eb492366c0b08369d101ad504713dd74c",
+      "unit": "U8"
     },
     {
-      "evidence_id": "u8-fresh-session",
-      "unit": "U8",
-      "kind": "fresh-session",
-      "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
-      "artifact_sha256": "ad9ead4b2740a61dec62db2eb843527acfd4d660b28b686bd0276e0157d04af0",
       "argv": [
         "codex",
         "plugin",
         "list",
         "--json"
       ],
+      "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
+      "artifact_sha256": "94333ea353b55fe920a3d6419590281f16c77c5550df6d35a307adc1a689062b",
       "cwd": ".",
+      "evidence_id": "u8-fresh-session",
       "exit_code": 0,
-      "recorded_at": "2026-07-12T02:50:26Z",
-      "repo_head": "cc4ff83d5150e0bdf6bbbfd6682fd43f70bb616a"
+      "kind": "fresh-session",
+      "recorded_at": "2026-07-12T04:00:28.153311Z",
+      "repo_head": "4800246eb492366c0b08369d101ad504713dd74c",
+      "unit": "U8"
     },
     {
-      "evidence_id": "u8-rollback",
-      "unit": "U8",
-      "kind": "rollback",
-      "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
-      "artifact_sha256": "ad9ead4b2740a61dec62db2eb843527acfd4d660b28b686bd0276e0157d04af0",
       "argv": [
         "codex",
         "plugin",
@@ -390,36 +385,41 @@
         "saga@isolated-external-action",
         "--json"
       ],
+      "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
+      "artifact_sha256": "94333ea353b55fe920a3d6419590281f16c77c5550df6d35a307adc1a689062b",
       "cwd": ".",
+      "evidence_id": "u8-rollback",
       "exit_code": 0,
-      "recorded_at": "2026-07-12T02:50:26Z",
-      "repo_head": "cc4ff83d5150e0bdf6bbbfd6682fd43f70bb616a"
+      "kind": "rollback",
+      "recorded_at": "2026-07-12T04:00:28.153311Z",
+      "repo_head": "4800246eb492366c0b08369d101ad504713dd74c",
+      "unit": "U8"
     },
     {
-      "evidence_id": "u8-cutover",
-      "unit": "U8",
-      "kind": "cutover",
-      "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
-      "artifact_sha256": "ad9ead4b2740a61dec62db2eb843527acfd4d660b28b686bd0276e0157d04af0",
       "argv": [
         "python3",
         "plugins/saga/scripts/external_action_release_matrix.py",
         "--attended"
       ],
+      "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
+      "artifact_sha256": "94333ea353b55fe920a3d6419590281f16c77c5550df6d35a307adc1a689062b",
       "cwd": ".",
+      "evidence_id": "u8-cutover",
       "exit_code": 0,
-      "recorded_at": "2026-07-12T02:50:26Z",
-      "repo_head": "cc4ff83d5150e0bdf6bbbfd6682fd43f70bb616a"
+      "kind": "cutover",
+      "recorded_at": "2026-07-12T04:00:28.153311Z",
+      "repo_head": "4800246eb492366c0b08369d101ad504713dd74c",
+      "unit": "U8"
     }
   ],
   "port_id": "external-advisory-execution-2026-07-11",
   "refresh_changes": [],
   "release_evidence": {
-    "review": "u8-review",
-    "isolated_install": "u8-isolated-install",
+    "cutover": "u8-cutover",
     "fresh_session": "u8-fresh-session",
-    "rollback": "u8-rollback",
-    "cutover": "u8-cutover"
+    "isolated_install": "u8-isolated-install",
+    "review": "u8-review",
+    "rollback": "u8-rollback"
   },
   "schema_version": 1,
   "source": {
