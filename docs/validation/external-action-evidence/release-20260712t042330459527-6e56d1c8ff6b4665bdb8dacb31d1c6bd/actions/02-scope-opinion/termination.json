@@ -1,0 +1,18 @@
+{
+  "action_id": "scope-opinion",
+  "disposition": "executor-completed",
+  "launch_event_sha256": "73c75e2330368db827d534618543dd089c8e4d84c023a6e7b903a94ab3e7ca6d",
+  "launch_identity": {
+    "argv_sha256": "5f8408499bfc528713cf11cadbba8bdcc60cf32a8ea4bc4e42df777ae3a76eec",
+    "pid": 58442,
+    "process_group": 58442,
+    "process_start_identity": "01c8a84e8ff2bd95cd5c46ec7df980c3b6e36f2a34ed837574c03b05f29eaa41",
+    "transport": "cli"
+  },
+  "receipt_sha256": "3b9417d75aa119c229fa6564fbd5b9765236a28a5be02fd4479920a5b4dc1866",
+  "request_sha256": "c54a31324f7392062643c352a4355ab50703b5e8e00440bfcf5e1238b2dc3004",
+  "run_id": "release-20260712t042330459527-6e56d1c8ff6b4665bdb8dacb31d1c6bd-2",
+  "schema": "saga.external-action.termination.v1",
+  "terminated": true,
+  "terminated_at": "2026-07-12T04:23:30.459285+00:00"
+}

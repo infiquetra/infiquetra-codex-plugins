@@ -1,0 +1,32 @@
+{
+  "argv": [
+    "codex",
+    "plugin",
+    "marketplace",
+    "remove",
+    "isolated-external-action",
+    "--json"
+  ],
+  "content_sha256": "7597dd5002868e14a4b4c77093f62798607db43508864e6e384a30eba821bca3",
+  "cwd": "$REPO_ROOT",
+  "exit_code": 0,
+  "finished_at": "2026-07-12T04:24:14.962355+00:00",
+  "operation": "marketplace-remove",
+  "parse_error": null,
+  "release_run_id": "release-20260712t042330459527-6e56d1c8ff6b4665bdb8dacb31d1c6bd",
+  "result": {
+    "installedRoot": null,
+    "marketplaceName": "isolated-external-action"
+  },
+  "schema": "saga.external-action.command-evidence.v2",
+  "semantics": {
+    "marketplace_name": "isolated-external-action"
+  },
+  "sequence": 9,
+  "source_head": "45403b9c2906e110beaf640918431d292b96bb4f",
+  "started_at": "2026-07-12T04:24:14.922398+00:00",
+  "stderr_bytes": 0,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_bytes": 77,
+  "stdout_sha256": "7fe9735c199fe33721fabbf3bfed4bcec4f00b57228e4f4308ff726e607bb89f"
+}

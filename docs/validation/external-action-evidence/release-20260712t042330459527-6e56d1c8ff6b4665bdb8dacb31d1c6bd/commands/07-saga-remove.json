@@ -1,0 +1,32 @@
+{
+  "argv": [
+    "codex",
+    "plugin",
+    "remove",
+    "saga@isolated-external-action",
+    "--json"
+  ],
+  "content_sha256": "e482dfa767c3f653d0b62fb9b0a4c67d75e5c6eaacd8f8bea8b11ff8b9048c94",
+  "cwd": "$REPO_ROOT",
+  "exit_code": 0,
+  "finished_at": "2026-07-12T04:24:14.872879+00:00",
+  "operation": "saga-remove",
+  "parse_error": null,
+  "release_run_id": "release-20260712t042330459527-6e56d1c8ff6b4665bdb8dacb31d1c6bd",
+  "result": {
+    "marketplaceName": "isolated-external-action",
+    "name": "saga",
+    "pluginId": "saga@isolated-external-action"
+  },
+  "schema": "saga.external-action.command-evidence.v2",
+  "semantics": {
+    "plugin_name": "saga"
+  },
+  "sequence": 7,
+  "source_head": "45403b9c2906e110beaf640918431d292b96bb4f",
+  "started_at": "2026-07-12T04:24:14.806372+00:00",
+  "stderr_bytes": 0,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_bytes": 117,
+  "stdout_sha256": "4d52c40cdee47d1e38e7a1ca470882219bae8a46241f6f2bb3831309d4c63cac"
+}

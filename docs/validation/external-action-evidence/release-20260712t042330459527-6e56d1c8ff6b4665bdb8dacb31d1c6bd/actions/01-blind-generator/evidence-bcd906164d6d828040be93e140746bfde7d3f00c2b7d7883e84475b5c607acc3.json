@@ -1,0 +1,46 @@
+{
+  "action_id": "blind-generator",
+  "engine_id": "claude-cli",
+  "evidence": "The ideate release fixture bounds each concise artifact sentence to a single verifiable claim.",
+  "evidence_digest": "029ec903a9890870cfd374990b3d9acf43e5d1362a00fe157aea897063a922e7",
+  "findings": [
+    {
+      "content": "The ideate release fixture bounds each concise artifact sentence to a single verifiable claim."
+    }
+  ],
+  "intent": "offload",
+  "runner_receipt": {
+    "bytes_produced": 94,
+    "engine_id": "claude-cli",
+    "invocation_sha256": "23a7f66dc12b23ef8ee6bb007ab8d6a139e160cb891c0b65dc59f25f2a6d5880",
+    "output_attestation": {
+      "artifact": "evidence",
+      "bytes": 94,
+      "empty": false,
+      "schema": "output_attestation.v1",
+      "sha256": "029ec903a9890870cfd374990b3d9acf43e5d1362a00fe157aea897063a922e7"
+    },
+    "receipt_emitter": "claude-delegate",
+    "run_id": "cli:claude-cli:58397",
+    "runner": {
+      "argv": [
+        "claude",
+        "--safe-mode",
+        "--tools",
+        "",
+        "--disable-slash-commands",
+        "--print",
+        "--model",
+        "opus"
+      ],
+      "exit_code": 0,
+      "pid": 58397
+    },
+    "schema": "bridge_receipt.v1",
+    "transport": "cli",
+    "variant": "opus",
+    "wall_time_s": 2.755370333790779
+  },
+  "schema": "external_action_evidence.v1",
+  "variant": "opus"
+}

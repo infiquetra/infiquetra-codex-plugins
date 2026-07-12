@@ -1,0 +1,30 @@
+{
+  "argv": [
+    "codex",
+    "plugin",
+    "list",
+    "--json"
+  ],
+  "content_sha256": "081743d0c72353abcd5a6113f26c63fcae58c31685b42285027c3c8b81d8c951",
+  "cwd": "$REPO_ROOT",
+  "exit_code": 0,
+  "finished_at": "2026-07-12T04:24:14.439129+00:00",
+  "operation": "prior-list",
+  "parse_error": null,
+  "release_run_id": "release-20260712t042330459527-6e56d1c8ff6b4665bdb8dacb31d1c6bd",
+  "result": {
+    "available": [],
+    "installed": []
+  },
+  "schema": "saga.external-action.command-evidence.v2",
+  "semantics": {
+    "list_sha256": "654a7a9ba6df00d40f7d066417822a9752b700b75807d1bb5d79c9275cd5b8d0"
+  },
+  "sequence": 1,
+  "source_head": "45403b9c2906e110beaf640918431d292b96bb4f",
+  "started_at": "2026-07-12T04:24:14.394390+00:00",
+  "stderr_bytes": 0,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_bytes": 41,
+  "stdout_sha256": "050e2dee988ae4ba4d1d8220591b660829a9ee3f06f52d548acc87522ee90885"
+}

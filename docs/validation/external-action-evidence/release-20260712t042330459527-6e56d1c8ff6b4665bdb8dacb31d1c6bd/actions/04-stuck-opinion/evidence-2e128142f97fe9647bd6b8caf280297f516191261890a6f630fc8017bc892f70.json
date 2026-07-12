@@ -1,0 +1,46 @@
+{
+  "action_id": "stuck-opinion",
+  "engine_id": "claude-cli",
+  "evidence": "[\"I don't have any \\\"work release fixture\\\" in view \u2014 nothing in this session identifies or contains it, and I'm instructed not to use tools to locate or read it. Without seeing the actual content, I can't point to a genuine concern; inventing one would just be a fabricated finding.\\n\\nIf you paste the fixture here (or tell me the file path and lift the no-tools constraint), I'll give you a real low-risk advisory.\"]",
+  "evidence_digest": "8b5dc9ea283967158c264a21cd8d141450a43bfa55105d12500d431cc3411399",
+  "findings": [
+    {
+      "content": "I don't have any \"work release fixture\" in view \u2014 nothing in this session identifies or contains it, and I'm instructed not to use tools to locate or read it. Without seeing the actual content, I can't point to a genuine concern; inventing one would just be a fabricated finding.\n\nIf you paste the fixture here (or tell me the file path and lift the no-tools constraint), I'll give you a real low-risk advisory."
+    }
+  ],
+  "intent": "second-opinion",
+  "runner_receipt": {
+    "bytes_produced": 421,
+    "engine_id": "claude-cli",
+    "invocation_sha256": "4053eabaa7800d26e513d9fd048f8397f891c8b9ffe5a33569bd44c0fde3cf17",
+    "output_attestation": {
+      "artifact": "evidence",
+      "bytes": 421,
+      "empty": false,
+      "schema": "output_attestation.v1",
+      "sha256": "8b5dc9ea283967158c264a21cd8d141450a43bfa55105d12500d431cc3411399"
+    },
+    "receipt_emitter": "claude-delegate",
+    "run_id": "cli:claude-cli:59665",
+    "runner": {
+      "argv": [
+        "claude",
+        "--safe-mode",
+        "--tools",
+        "",
+        "--disable-slash-commands",
+        "--print",
+        "--model",
+        "opus"
+      ],
+      "exit_code": 0,
+      "pid": 59665
+    },
+    "schema": "bridge_receipt.v1",
+    "transport": "cli",
+    "variant": "opus",
+    "wall_time_s": 11.162212625145912
+  },
+  "schema": "external_action_evidence.v1",
+  "variant": "opus"
+}

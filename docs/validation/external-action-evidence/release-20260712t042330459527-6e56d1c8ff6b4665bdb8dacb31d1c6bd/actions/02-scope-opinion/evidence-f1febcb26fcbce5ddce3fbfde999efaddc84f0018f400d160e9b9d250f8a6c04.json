@@ -1,0 +1,50 @@
+{
+  "action_id": "scope-opinion",
+  "engine_id": "agy",
+  "evidence": "[\"The brainstorm release fixture relies on static, hardcoded mock timestamps and version numbers. While functionally benign, this introduces a low-risk concern of potential test assertion drift or warnings during validation runs when compared against the current execution environment's system time.\"]",
+  "evidence_digest": "769123eb3f61c67aaf7e6809ff06660f4f8ff089e95def40b6f8bc69964230b5",
+  "findings": [
+    {
+      "content": "The brainstorm release fixture relies on static, hardcoded mock timestamps and version numbers. While functionally benign, this introduces a low-risk concern of potential test assertion drift or warnings during validation runs when compared against the current execution environment's system time."
+    }
+  ],
+  "intent": "second-opinion",
+  "runner_receipt": {
+    "bytes_produced": 301,
+    "engine_id": "agy",
+    "invocation_sha256": "3ce95d20e106f56817fb7ed2c264dfc7cda9d3c4454a62caf897b90f54393284",
+    "output_attestation": {
+      "artifact": "evidence",
+      "bytes": 301,
+      "empty": false,
+      "schema": "output_attestation.v1",
+      "sha256": "769123eb3f61c67aaf7e6809ff06660f4f8ff089e95def40b6f8bc69964230b5"
+    },
+    "receipt_emitter": "agy-delegate",
+    "run_id": "cli:agy:58442",
+    "runner": {
+      "argv": [
+        "agy",
+        "--model",
+        "Gemini 3.5 Flash (High)",
+        "--print-timeout",
+        "900s",
+        "--log-file",
+        "/dev/null",
+        "--add-dir",
+        ".",
+        "--sandbox",
+        "--print",
+        "<redacted:1f6ebb7bb462d2dacc4e5fec0ee426de01f0f0e42e9bf389d5405b3bcd133cfd>"
+      ],
+      "exit_code": 0,
+      "pid": 58442
+    },
+    "schema": "bridge_receipt.v1",
+    "transport": "cli",
+    "variant": "gemini-3.5-flash-high",
+    "wall_time_s": 8.29965570801869
+  },
+  "schema": "external_action_evidence.v1",
+  "variant": "gemini-3.5-flash-high"
+}

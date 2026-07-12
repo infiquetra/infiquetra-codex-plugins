@@ -1,0 +1,41 @@
+{
+  "argv": [
+    "$PYTHON",
+    "-I",
+    "-c",
+    "import sys; sys.path.insert(0, sys.argv[1]); import external_action; raise SystemExit(external_action.main(['probe']))",
+    "$CODEX_HOME/plugins/cache/isolated-external-action/saga/0.75.17+codex.20260711160644/scripts"
+  ],
+  "content_sha256": "ebb932f258cf95174290805115a719597ffb0b6bea8f7b7e48b3b52fb85835fb",
+  "cwd": "$REPO_ROOT",
+  "exit_code": 0,
+  "finished_at": "2026-07-12T04:24:14.805663+00:00",
+  "operation": "fresh-session-probe",
+  "parse_error": null,
+  "release_run_id": "release-20260712t042330459527-6e56d1c8ff6b4665bdb8dacb31d1c6bd",
+  "result": {
+    "operations": [
+      "prepare_bundle",
+      "approve_bundle",
+      "execute_bundle",
+      "load_action",
+      "interrupt_action",
+      "retry_action",
+      "adjudicate_artifact",
+      "adjudicate_opinion",
+      "consume"
+    ],
+    "schema": "saga.external-action.probe.v1"
+  },
+  "schema": "saga.external-action.command-evidence.v2",
+  "semantics": {
+    "probe": "external-action"
+  },
+  "sequence": 6,
+  "source_head": "45403b9c2906e110beaf640918431d292b96bb4f",
+  "started_at": "2026-07-12T04:24:14.700145+00:00",
+  "stderr_bytes": 0,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_bytes": 221,
+  "stdout_sha256": "c76f63cfb9117f2dd5113e5e1f51780200ad8301fa748d1c3e4c709421117033"
+}
