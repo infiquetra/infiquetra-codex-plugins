@@ -30,3 +30,26 @@ def test_cli_runner_emits_receipt_and_cleans_workspace(tmp_path: Path, monkeypat
 
 def test_runner_factory_keeps_http_generic(tmp_path: Path) -> None:
     assert callable(adapters.runner_for("ollama-cloud", repo_root=tmp_path))
+
+
+def test_cli_timeout_is_terminal_and_workspace_is_cleaned(tmp_path: Path) -> None:
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "config", "user.name", "Test"], cwd=tmp_path, check=True)
+    (tmp_path / "a.txt").write_text("a\n")
+    subprocess.run(["git", "add", "a.txt"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-qm", "base"], cwd=tmp_path, check=True)
+    runner = adapters.cli_runner(
+        adapters.CliConfig(
+            "fake",
+            "sh",
+            "agy-delegate",
+            lambda _invocation: ["sh", "-c", "sleep 2"],
+            timeout_seconds=1,
+        ),
+        repo_root=tmp_path,
+    )
+
+    result = runner({"task": "hello", "variant": "v1", "base_revision": "HEAD"})
+
+    assert result["status"] == "timeout"

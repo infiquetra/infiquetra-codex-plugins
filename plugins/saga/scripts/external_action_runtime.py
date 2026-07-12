@@ -159,11 +159,15 @@ def execute(store: store_module.Store, *, executor: Executor, at: str) -> Execut
         return ExecutionOutcome("timed-out" if launched else "unavailable")
     except Exception as exc:
         event = "invalidate-evidence" if launched else "unavailable"
+        detail = {"error_type": type(exc).__name__}
         store_module.append_event(
-            store, event_id="terminal-1", event=event, at=at, detail={"error_type": type(exc).__name__}
+            store, event_id="terminal-1", event=event, at=at, detail=detail
         )
         status_module.refresh(store)
-        return ExecutionOutcome("invalid-evidence" if launched else "unavailable")
+        return ExecutionOutcome(
+            "invalid-evidence" if launched else "unavailable",
+            detail=detail,
+        )
     if not launched:
         store_module.append_event(store, event_id="terminal-1", event="unavailable", at=at)
         status_module.refresh(store)

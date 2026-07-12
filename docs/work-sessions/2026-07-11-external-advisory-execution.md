@@ -67,3 +67,14 @@ The provider-neutral runtime implements prepare, approve, claim-before-launch, l
 - Focused tests: `113 passed`.
 - Ruff: passed.
 - Mypy: passed for the two U6 source files with `--follow-imports=skip --ignore-missing-imports`.
+## U7 - Hermetic vertical and negative matrix
+
+- Bound approved lifecycle previews to shipped CLI/HTTP adapters and dispatch validation through `executor_for_preview`.
+- Added content-addressed, owner-only evidence artifacts carrying normalized evidence, typed findings, and validated bridge receipts.
+- Proved the real subprocess/disposable-workspace path for both offload and second-opinion without injecting a fake runner.
+- Expanded durable status cards with provider, model, adapter, launch, receipt validity, usage, adjudication, and consumption history.
+- Added version-1 frozen definitions for qualifying runs, major rewrites, provider distribution, integrity failures, containment failures, and passing rollback drills.
+- Added R55 closure, operator rejection, duplicate resume, no-output, timeout, drift, containment, onboarding, promotion, and receipt-integrity proof.
+- Hermetic U7 matrix: `196 passed`; grouped external-action/resolver/overlay follow-up: `56 passed`.
+- Ruff: passed.
+- Mypy: passed for the three changed runtime source files with `--follow-imports=skip --ignore-missing-imports`.
