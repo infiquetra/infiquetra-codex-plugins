@@ -1,0 +1,50 @@
+{
+  "action_id": "findings-opinion",
+  "engine_id": "agy",
+  "evidence": "[\"The release fixture lacks an explicit verification step for optional rollback procedures in the post-deployment section. While low-risk because standard rollback mechanisms are handled automatically by the runner, documenting this check ensures completeness.\"]",
+  "evidence_digest": "f40868959cd573dabb25b13ee08525cccd1e398e611017accfc294895f06ce12",
+  "findings": [
+    {
+      "content": "The release fixture lacks an explicit verification step for optional rollback procedures in the post-deployment section. While low-risk because standard rollback mechanisms are handled automatically by the runner, documenting this check ensures completeness."
+    }
+  ],
+  "intent": "second-opinion",
+  "runner_receipt": {
+    "bytes_produced": 262,
+    "engine_id": "agy",
+    "invocation_sha256": "9fa7f8ca32c38e368b9000e92e0fd4c66b4da490aa26a451fee96c8cfda35d8f",
+    "output_attestation": {
+      "artifact": "evidence",
+      "bytes": 262,
+      "empty": false,
+      "schema": "output_attestation.v1",
+      "sha256": "f40868959cd573dabb25b13ee08525cccd1e398e611017accfc294895f06ce12"
+    },
+    "receipt_emitter": "agy-delegate",
+    "run_id": "cli:agy:20678",
+    "runner": {
+      "argv": [
+        "agy",
+        "--model",
+        "Gemini 3.5 Flash (High)",
+        "--print-timeout",
+        "900s",
+        "--log-file",
+        "/dev/null",
+        "--add-dir",
+        ".",
+        "--sandbox",
+        "--print",
+        "<redacted:77bf9ad481e2d5f6962ed031ef96d68cb2a796ac7966c54887c113cbc0b5aa70>"
+      ],
+      "exit_code": 0,
+      "pid": 20678
+    },
+    "schema": "bridge_receipt.v1",
+    "transport": "cli",
+    "variant": "gemini-3.5-flash-high",
+    "wall_time_s": 6.846452957950532
+  },
+  "schema": "external_action_evidence.v1",
+  "variant": "gemini-3.5-flash-high"
+}

@@ -1,0 +1,18 @@
+{
+  "action_id": "stuck-opinion",
+  "disposition": "executor-completed",
+  "launch_event_sha256": "4e4598160d9090447f2034ea51c7c420ce7a79909e35ca551d791e27552052c4",
+  "launch_identity": {
+    "argv_sha256": "1adb63c203b90fe8974115038ad8d9c34b7f11c87129fcd2e7a76eae964b78ed",
+    "pid": 19912,
+    "process_group": 19912,
+    "process_start_identity": "354fcb81882676426079ba2c7dea883b2f642e2fe8194fd052ff8b57c512e3dd",
+    "transport": "cli"
+  },
+  "receipt_sha256": "1fe5a8a97c81edc91f2a4fc10ad87aed3b0bece6a2d8ba9027fc8834ab50f8b9",
+  "request_sha256": "03906557d8d8411d4ced136884759707e9641c32ffb77763a9720d5c4a8dc045",
+  "run_id": "release-20260712t040028153544-4b44ddf42e2f43e59c0f4b62a9334486-4",
+  "schema": "saga.external-action.termination.v1",
+  "terminated": true,
+  "terminated_at": "2026-07-12T04:00:28.153311+00:00"
+}

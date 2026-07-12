@@ -1,0 +1,71 @@
+{
+  "argv": [
+    "codex",
+    "plugin",
+    "list",
+    "--json"
+  ],
+  "content_sha256": "ddd7f3fef5b99f4ef8874b68ca2bb57ebc429e21303ead17030bf60910154234",
+  "cwd": "$REPO_ROOT",
+  "exit_code": 0,
+  "finished_at": "2026-07-12T04:01:08.648302+00:00",
+  "operation": "installed-list",
+  "parse_error": null,
+  "release_run_id": "release-20260712t040028153544-4b44ddf42e2f43e59c0f4b62a9334486",
+  "result": {
+    "available": [],
+    "installed": [
+      {
+        "authPolicy": "ON_INSTALL",
+        "enabled": true,
+        "installPolicy": "AVAILABLE",
+        "installed": true,
+        "marketplaceName": "isolated-external-action",
+        "marketplaceSource": {
+          "source": "$MARKETPLACE",
+          "sourceType": "local"
+        },
+        "name": "fleet-core",
+        "pluginId": "fleet-core@isolated-external-action",
+        "source": {
+          "path": "$MARKETPLACE/plugins/fleet-core",
+          "source": "local"
+        },
+        "version": "0.8.4+codex.20260711134422"
+      },
+      {
+        "authPolicy": "ON_INSTALL",
+        "enabled": true,
+        "installPolicy": "AVAILABLE",
+        "installed": true,
+        "marketplaceName": "isolated-external-action",
+        "marketplaceSource": {
+          "source": "$MARKETPLACE",
+          "sourceType": "local"
+        },
+        "name": "saga",
+        "pluginId": "saga@isolated-external-action",
+        "source": {
+          "path": "$MARKETPLACE/plugins/saga",
+          "source": "local"
+        },
+        "version": "0.75.17+codex.20260711160644"
+      }
+    ]
+  },
+  "schema": "saga.external-action.command-evidence.v2",
+  "semantics": {
+    "list_sha256": "e6160ef65a4087bb313ab7b402965ce9ce896b5c9188e52bb626cc6fe8f9b166",
+    "required_plugins": [
+      "fleet-core",
+      "saga"
+    ]
+  },
+  "sequence": 5,
+  "source_head": "4800246eb492366c0b08369d101ad504713dd74c",
+  "started_at": "2026-07-12T04:01:08.604054+00:00",
+  "stderr_bytes": 0,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_bytes": 1417,
+  "stdout_sha256": "d90592c86e4b7a9ef915902a3866ad07343006a5533111641859b7fa7d73cca0"
+}

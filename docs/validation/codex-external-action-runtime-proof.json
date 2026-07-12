@@ -1,5 +1,6 @@
 {
-  "content_sha256": "2604715096f6f6dac25f82b4ba3fca1ffda47b8c151ad448ef83f412ae888011",
+  "content_sha256": "beb32190736c58dfcd0025ed995732e5dc0d6db87dc854976b7a993cb6cd0e87",
+  "evidence_bundle": "docs/validation/external-action-evidence/release-20260712t040028153544-4b44ddf42e2f43e59c0f4b62a9334486",
   "prerequisites": {
     "agy_cli": true,
     "claude_cli": true,
@@ -11,61 +12,62 @@
     "claude-cli/opus",
     "ollama-cloud/gpt-oss-120b"
   ],
-  "recorded_at": "2026-07-12T03:28:01.525393+00:00",
+  "recorded_at": "2026-07-12T04:00:28.153311+00:00",
+  "release_run_id": "release-20260712t040028153544-4b44ddf42e2f43e59c0f4b62a9334486",
   "rollback_drill": {
-    "base_revision": "14c9b48f14fe74505286668a0a4ee92ea27a3945",
-    "candidate_digest": "ee6088f3ce351120ef4344256555d0239e49fa590de1ef74af670cc3ecfba037",
+    "base_revision": "4800246eb492366c0b08369d101ad504713dd74c",
+    "candidate_digest": "061511d1688c623999f1f1c73c0c194ec42d5759f2893bfb9a10cad7853eb4e3",
     "candidate_installed": true,
     "command_records": [
       {
         "operation": "prior-list",
-        "record_ref": ".git/saga-external-actions/release-evidence/14c9b48f14fe74505286668a0a4ee92ea27a3945/prior-list-bc8680f6bc962ab9dd058d9a9d6225d870e54f7ea05391d739d952a6be27032c.json",
-        "record_sha256": "19a85d67c7d215908684b17c7e587ea757b5f88a449a6055f14735698a858916"
+        "record_ref": "docs/validation/external-action-evidence/release-20260712t040028153544-4b44ddf42e2f43e59c0f4b62a9334486/commands/01-prior-list.json",
+        "record_sha256": "6440a13019ec74c41f1c43cb244d32a519a08ba0657c291a4dafab3266c2d4fe"
       },
       {
         "operation": "marketplace-add",
-        "record_ref": ".git/saga-external-actions/release-evidence/14c9b48f14fe74505286668a0a4ee92ea27a3945/marketplace-add-3a80439543dd14ebd76f1358ab620a2eaeb9ab7e4c92f623575d9b1c467059f7.json",
-        "record_sha256": "9de69f66b2caae3eb1d5a92da890f64b71b38250234b63a6b2c209189c600f49"
+        "record_ref": "docs/validation/external-action-evidence/release-20260712t040028153544-4b44ddf42e2f43e59c0f4b62a9334486/commands/02-marketplace-add.json",
+        "record_sha256": "1bb373c688df1da0aae08e46af8e6f78b06cc7554a9ccd68dffa7e218e937bb9"
       },
       {
         "operation": "fleet-install",
-        "record_ref": ".git/saga-external-actions/release-evidence/14c9b48f14fe74505286668a0a4ee92ea27a3945/fleet-install-71492fe5e90aed68a5488f7f49bb37b704e178829aaca69c64dfab3c65081d84.json",
-        "record_sha256": "eee5fd572d6871c8b95fc7bbd768a9fb1bf1f9261799310dc1340cb33833d19e"
+        "record_ref": "docs/validation/external-action-evidence/release-20260712t040028153544-4b44ddf42e2f43e59c0f4b62a9334486/commands/03-fleet-install.json",
+        "record_sha256": "7c4607929148febebdbbcab008209fbeb058e608ba8919b5d341f50b20302b9f"
       },
       {
         "operation": "saga-install",
-        "record_ref": ".git/saga-external-actions/release-evidence/14c9b48f14fe74505286668a0a4ee92ea27a3945/saga-install-cc49670dfe3adc579e7618f3774e6443bea0367deadfad612da1e27bfcc25b6c.json",
-        "record_sha256": "2bd2d1926dd29e0af731f88e721d0e506f8fd8d3aed1bdef07551c2c8641217c"
+        "record_ref": "docs/validation/external-action-evidence/release-20260712t040028153544-4b44ddf42e2f43e59c0f4b62a9334486/commands/04-saga-install.json",
+        "record_sha256": "e5d957d50dc92ac1a8f7ad81dd128559e9d0cff1ffa145842ab4f06a9aca8455"
       },
       {
         "operation": "installed-list",
-        "record_ref": ".git/saga-external-actions/release-evidence/14c9b48f14fe74505286668a0a4ee92ea27a3945/installed-list-9541a6a57fdfbb7aea8e1be01efde7fb0cef91e3ab6368a71595c807524e1078.json",
-        "record_sha256": "a52ab499fd3c639459e9d9ecc46520f69a76fa45109c0a1164c1adab859a8e89"
+        "record_ref": "docs/validation/external-action-evidence/release-20260712t040028153544-4b44ddf42e2f43e59c0f4b62a9334486/commands/05-installed-list.json",
+        "record_sha256": "3b5ef2f7323f93eb9bdabe202519fef7990f6383123ec9f2e231969023c906ff"
       },
       {
         "operation": "fresh-session-probe",
-        "record_ref": ".git/saga-external-actions/release-evidence/14c9b48f14fe74505286668a0a4ee92ea27a3945/fresh-session-probe-6eca185fc428623eeebd1fb8029832ee68fac830c152b26384ce124c2a6e9630.json",
-        "record_sha256": "e3aef675c1cfca7768ec2d70d65b709cb81eb51dd10013e7bb130ef5fc9f8703"
+        "record_ref": "docs/validation/external-action-evidence/release-20260712t040028153544-4b44ddf42e2f43e59c0f4b62a9334486/commands/06-fresh-session-probe.json",
+        "record_sha256": "c2edfde0c72738735f31924b374b8d9e5e69c555fccb47771d79eeb25b3d0986"
       },
       {
         "operation": "saga-remove",
-        "record_ref": ".git/saga-external-actions/release-evidence/14c9b48f14fe74505286668a0a4ee92ea27a3945/saga-remove-765dd6af30560fab77734a191b6b1c137e67117167ea3de4e35601bba0efb4ee.json",
-        "record_sha256": "1d88178d01a476898ececab76089fca886ead4d76c06de6ddb3632bc701de443"
+        "record_ref": "docs/validation/external-action-evidence/release-20260712t040028153544-4b44ddf42e2f43e59c0f4b62a9334486/commands/07-saga-remove.json",
+        "record_sha256": "5a9defe7cd5644e6e60c19ee327eb9d89667be85982201ea9e5b4c3e70c97bbb"
       },
       {
         "operation": "fleet-remove",
-        "record_ref": ".git/saga-external-actions/release-evidence/14c9b48f14fe74505286668a0a4ee92ea27a3945/fleet-remove-8b16e7d2ce0749d54984f0c9f6a68c84ca3fb43ddc15ce5371a6f3589dd6afe6.json",
-        "record_sha256": "885d87b0d79c9f06d7083c95a405fcaa211e9875f30d14d4ba0a74738a1c6f5c"
+        "record_ref": "docs/validation/external-action-evidence/release-20260712t040028153544-4b44ddf42e2f43e59c0f4b62a9334486/commands/08-fleet-remove.json",
+        "record_sha256": "113637dfb0ddf35c288cdcadb4ba19978c7eaca008b5274cd177357469b843a5"
       },
       {
         "operation": "marketplace-remove",
-        "record_ref": ".git/saga-external-actions/release-evidence/14c9b48f14fe74505286668a0a4ee92ea27a3945/marketplace-remove-7028e15f797b66f8bbeb970420a8417e90160f6a7eb94f227a10e51e94500681.json",
-        "record_sha256": "7a5505902976b0ff562445110e2a151ad9226ac3fbd895f7873b15160b09f9c4"
+        "record_ref": "docs/validation/external-action-evidence/release-20260712t040028153544-4b44ddf42e2f43e59c0f4b62a9334486/commands/09-marketplace-remove.json",
+        "record_sha256": "44965c46141ecf72290ccdd706065a534534cf6479be6227e975e37efe464d9b"
       },
       {
         "operation": "restored-list",
-        "record_ref": ".git/saga-external-actions/release-evidence/14c9b48f14fe74505286668a0a4ee92ea27a3945/restored-list-9c3d66a1bee7b93f4b82e1e03226a58e93dfcd8cff7e8cf0c0f336972705c1e6.json",
-        "record_sha256": "68098cfe8a5e3fa5759ef746a5f85c12fed3c82d44d3c9abc01ee2d112b1e5b2"
+        "record_ref": "docs/validation/external-action-evidence/release-20260712t040028153544-4b44ddf42e2f43e59c0f4b62a9334486/commands/10-restored-list.json",
+        "record_sha256": "d67506499206e22412a03c777c69e880e9e1c027ef05d9c6018ab1428c8f15bb"
       }
     ],
     "fleet_candidate_digest": "233ae83073dd16bf36b9dedfd3281ad6d9bfe3de212886cd7fea64ec4d99fdf4",
@@ -79,6 +81,7 @@
     "passed": true,
     "prior_digest": "654a7a9ba6df00d40f7d066417822a9752b700b75807d1bb5d79c9275cd5b8d0",
     "prior_installed": false,
+    "release_run_id": "release-20260712t040028153544-4b44ddf42e2f43e59c0f4b62a9334486",
     "remove_receipt_sha256": "65cac677bb33c2db310cde51fbd6257e5b0cc833088bed02373f9e045d3ec3ee",
     "restored": true,
     "restored_digest": "654a7a9ba6df00d40f7d066417822a9752b700b75807d1bb5d79c9275cd5b8d0"
@@ -86,121 +89,133 @@
   "sanitization": {
     "absolute_paths": false,
     "credentials": false,
-    "prompts_or_transcripts": false,
-    "raw_receipts": false
+    "prompts_or_transcripts": true,
+    "raw_receipts": true
   },
   "schema_version": 1,
-  "source_head": "14c9b48f14fe74505286668a0a4ee92ea27a3945",
-  "source_tree": "a3ca69bf1239d98f9e57be5a4ed75d0b76595e5d",
-  "source_worktree_sha256": "5154ece09f049fd2670fece531e334b3581cb076aa6425d3a3c3980bf5738451",
+  "source_head": "4800246eb492366c0b08369d101ad504713dd74c",
+  "source_tree": "5038488fabba36798bcc9cdf1331116c361ed91e",
+  "source_worktree_sha256": "d9da8ee7509fca6539360f3f2e05ba86c946a011048302d64c072e8d0f199f9f",
   "stages": [
     {
       "action_id": "blind-generator",
-      "action_record_ref": ".git/saga-external-actions/task-external-action-release/release-20260712t032801z-1/blind-generator",
-      "action_record_sha256": "9afc51f72ebcd08178481c2ac595e6066efb8bc69a5231755213a118aa1a94e9",
+      "action_record_ref": "docs/validation/external-action-evidence/release-20260712t040028153544-4b44ddf42e2f43e59c0f4b62a9334486/actions/01-blind-generator",
+      "action_record_sha256": "2e07f616f5a0a33d1ee5de585498542debbade7c00cf4dbf7b9e948bfe287f45",
       "adapter_class": "claude:delegate",
-      "approval_fingerprint": "6a68ea72f87f4cbd151f750f2dbe0100c28a30de4a5e4a9f8db88dfffd1482e4",
+      "approval_fingerprint": "d371fac43c221ff194e57b20730fa0f3f8aee233a5cf8597c00f33e23fc23104",
       "engine_key": "claude-cli/opus",
-      "event_chain_tip": "aeae82fe5b501b8c91c76601028e9ac2d0d8a3acb3985ed00619fe32c3504fa0",
-      "evidence_sha256": "3568ebe8e1ddcd4a79f68e016c15cd65bd2b987bb7e8a62a8713950417b96faf",
+      "event_chain_tip": "d4909c52c688914de633649240f0e72e581e8bbb1efd933013fdab6e338870d8",
+      "evidence_digest": "e6f2eb386a489e4cc121121a6c2b6206c9bbc60dedc088e57bbe4473333653b1",
+      "evidence_sha256": "d88b30079374899b84a73afa9fa68acf64d8234f41018c3d1f0fbf94ca9d1eaf",
+      "finding_count": 1,
       "intent": "offload",
-      "receipt_sha256": "bb9af3e359d0b9af1cd874239ea74f1733be0240380d80e57a7fa4730421bebb",
+      "receipt_sha256": "b6166a167e40f1304b93bc51d7cca363d84636d01ab13b88d9a69f552016b844",
       "receipt_validity": "valid",
-      "request_sha256": "a8f0c8310bb4854958e7d6bf9c3ba1dadc7521a0d8e5046bda5d1e1f861f4aa9",
+      "request_sha256": "dcf9a5bf25ffad96e134d6b41e926bed798b27150b5ab31d6a0962721ea14c96",
       "requiredness": "best-effort",
       "stage": "ideate",
       "state": "consumed",
-      "status_card_sha256": "9192840f87d0c0a8825957c5d676430dcb39c9c39cc9f6396fdea03019283598"
+      "status_card_sha256": "3765f9100456e8692c0546e6f327ef1225eafb5ad3ad4e98bc5810a7006bec0a"
     },
     {
       "action_id": "scope-opinion",
-      "action_record_ref": ".git/saga-external-actions/task-external-action-release/release-20260712t032801z-2/scope-opinion",
-      "action_record_sha256": "562fccf26aacb29bd866a08b7ffc7be5cf143700a78135ba3a4e42ad6197878a",
+      "action_record_ref": "docs/validation/external-action-evidence/release-20260712t040028153544-4b44ddf42e2f43e59c0f4b62a9334486/actions/02-scope-opinion",
+      "action_record_sha256": "db98a771bd738e995b8d67f9be2ed7dffc7d44bddbff5e106b0e5683311fc340",
       "adapter_class": "agy:delegate",
-      "approval_fingerprint": "d216b2f1869366312f152e1b0bfbf1bda15086ebe7d8c0eefea2d9b98aa90072",
+      "approval_fingerprint": "a89d6575750633fc4d7cc1992ff6e7e0ad9476759af9cf574be31ada7c9d7fff",
       "engine_key": "agy/gemini-3.5-flash-high",
-      "event_chain_tip": "cf7d4290406075b0b65b7fc0099d678a12251958322bb35ceafbbfb79ccc2cb4",
-      "evidence_sha256": "d98cf75e6af429a25eedf586b44b2bba267dc9e93d0fb9b27f14ae44af6d5cf5",
+      "event_chain_tip": "4efd63840c628557705bd5c6a981387791ed2d840442017239db282f31e5ff16",
+      "evidence_digest": "47d784d27854394fcfe62305394fd45acb5ee9964689de2e476e25116773646c",
+      "evidence_sha256": "d5b05257680d3e882067a96c8f39daf1393c14a9c29190e1f79aadd05e18caf4",
+      "finding_count": 1,
       "intent": "second-opinion",
-      "receipt_sha256": "778b43214f84a3d78c23e00723ee3883fcf2a87ac1fae2b1bb67c6b56d639a4a",
+      "receipt_sha256": "f97d63afa94724964ee66393e9a7c0ee3bd9d6ec42f9e11241b7c43499e93ee0",
       "receipt_validity": "valid",
-      "request_sha256": "10188314adb0f29b2182fb1e16893f847fff1e6df3cb483f472010ad44a0a3e0",
+      "request_sha256": "34029fa22b107614a605b88a7e5f4edf83dec574a743510941c87ac014069dcc",
       "requiredness": "best-effort",
       "stage": "brainstorm",
       "state": "consumed",
-      "status_card_sha256": "bb9e3e86b012723803e19c241f93baec20c74c3acf220834413bc2709fe4768e"
+      "status_card_sha256": "d1f8a84f5c21aa8a29bd6e62b987f6cb2adbb4856f1e1a9379cb7d46ab7fe570"
     },
     {
       "action_id": "bounded-research",
-      "action_record_ref": ".git/saga-external-actions/task-external-action-release/release-20260712t032801z-3/bounded-research",
-      "action_record_sha256": "d5bd930964ee8fb12f33947d2b487495aa35c4627adf91a84f28696b60d6d11f",
+      "action_record_ref": "docs/validation/external-action-evidence/release-20260712t040028153544-4b44ddf42e2f43e59c0f4b62a9334486/actions/03-bounded-research",
+      "action_record_sha256": "f59fc517ba453b240eac06f22b88cc35f4043e01fb864ca4e052944b8c5598c7",
       "adapter_class": "engine-bridge-http",
-      "approval_fingerprint": "8157fa0e757463cd7f8b7084ac4cec011661403879a04ff17011fcf7598ab177",
+      "approval_fingerprint": "e226bcf35dd154114d9d31eaa8b119a28dae66adecc9abd37a29f11aba543542",
       "engine_key": "ollama-cloud/gpt-oss-120b",
-      "event_chain_tip": "535d862a65bf9c047c04449b546eaf253328834de8373035108d9246822167df",
-      "evidence_sha256": "043f6ff36442765b738f9fc77c102a8166180ef71eca5b65010bcc6eedb47b98",
+      "event_chain_tip": "6df76e825381ad4abfd2318f441037719b98aa5de3eafb05e9b407a546cd8cfc",
+      "evidence_digest": "57675c770b039ebe2ad8cff46b0d59aa726225590f7d354a509c482840953dc3",
+      "evidence_sha256": "552ceb74bc10b495e0375e086aa477da57c868705581e573689417f33bf78a57",
+      "finding_count": 1,
       "intent": "offload",
-      "receipt_sha256": "3f5a07df8b431b6218742498abebbafcbd0f5a9048d6041d1bfece72b8a3dc67",
+      "receipt_sha256": "5434fc94c8a2eef93be8421480a6375164ad83121f4d0ee9165602f5616071a3",
       "receipt_validity": "valid",
-      "request_sha256": "5d9b0eea71d087f868285ec3cf5e002b3ee57d51b46471877a2fd10fdfa13e10",
+      "request_sha256": "e5d8b476b68736db81cf07157a30675476eca58b5e6206c4b936d8e509a64f6a",
       "requiredness": "best-effort",
       "stage": "plan",
       "state": "consumed",
-      "status_card_sha256": "80cf26688b0024b02e556e5536bebbc72d1bad2fc0db746e8da86a22326c9481"
+      "status_card_sha256": "54e17a596c54d34278d545d218e80a16737ff61adb43efcba0fa23aaf09b216f"
     },
     {
       "action_id": "stuck-opinion",
-      "action_record_ref": ".git/saga-external-actions/task-external-action-release/release-20260712t032801z-4/stuck-opinion",
-      "action_record_sha256": "08ae6b8397de407e00cd34b8d0dea618d11529ef19d3d60d3d6c75cce2f447f5",
+      "action_record_ref": "docs/validation/external-action-evidence/release-20260712t040028153544-4b44ddf42e2f43e59c0f4b62a9334486/actions/04-stuck-opinion",
+      "action_record_sha256": "6bdde00b3b71d42570349b68979f3a5c9961fd951492341ff954dade0d0bfc9f",
       "adapter_class": "claude:delegate",
-      "approval_fingerprint": "27cbab80269c5c174694cee03154bdd888f48ef09185df6b64d1f10c04f667f9",
+      "approval_fingerprint": "65cf556e3374b8e8bba0f7bd20147a3233f612fd74a8e4aac08f5c98de70d2a6",
       "engine_key": "claude-cli/opus",
-      "event_chain_tip": "c5ec982be7a8e5a44a2cdf3e39a35c8cce321322b110cbff3280e2d3ef3b21cc",
-      "evidence_sha256": "e35d640e15ebaf425ffdf3f4d107584d80ded898f9f5d91c371565e221de4d37",
+      "event_chain_tip": "66e4027d4e687bc581e42a37420e86602205c1e1b70f1d59f3c377a4eb4340ae",
+      "evidence_digest": "e8c680ed8a968c68616cf139e5af3b23bd47eafc2d7f8222ce7b4d4a1f87751c",
+      "evidence_sha256": "0603d922105c85ab92db142bb53e8f076c85b5aa7e64f20ab4912f8704844d53",
+      "finding_count": 1,
       "intent": "second-opinion",
-      "receipt_sha256": "4dc6cc76dfe96230bf0ca1a8ad3da956b180baa8754a155bb5bf36007f94491d",
+      "receipt_sha256": "f63aaec6e36f70bfe2c6c1a483a3497ab6b94d40a0ea6263eb08875d3fdb77ae",
       "receipt_validity": "valid",
-      "request_sha256": "67eaca509cb690028944bb22c93fdc08b2b70862e6ebe65c293c419f6c57bb2c",
+      "request_sha256": "03906557d8d8411d4ced136884759707e9641c32ffb77763a9720d5c4a8dc045",
       "requiredness": "best-effort",
       "stage": "work",
       "state": "consumed",
-      "status_card_sha256": "7d52bdad9e7d5a6bf098a837a985a63306f678b6b6341affcd1d8ee8b925f3df"
+      "status_card_sha256": "e40e5ea277893b9f3371dc5efadcfab2af92a88fd4bd1241c2f4b4baf7765a6b"
     },
     {
       "action_id": "findings-opinion",
-      "action_record_ref": ".git/saga-external-actions/task-external-action-release/release-20260712t032801z-5/findings-opinion",
-      "action_record_sha256": "8406231780fda659942ef3b6bf7b408fd382ff8b4fd79eed6b52f90fc229bcbd",
+      "action_record_ref": "docs/validation/external-action-evidence/release-20260712t040028153544-4b44ddf42e2f43e59c0f4b62a9334486/actions/05-findings-opinion",
+      "action_record_sha256": "363104fce56b65534a9e4e2d99cf4946f21611e186845c2772dd7743c266a46b",
       "adapter_class": "agy:delegate",
-      "approval_fingerprint": "f2c8d0a28cb8b7f772ba92aeb709e04292838accc3560e652304008cb1e90223",
+      "approval_fingerprint": "759829782c6f214452290fb0b0535e35fd4594fdf37f97843ba724c6b3e45694",
       "engine_key": "agy/gemini-3.5-flash-high",
-      "event_chain_tip": "fb8995e1a7e925514e1a832e38d922d9ead0916b2b526e5f792019af339cca67",
-      "evidence_sha256": "bb0856c32fb70cdf3a577ea170189e284481e5e61893250557574b300b843dde",
+      "event_chain_tip": "0304d96c73f50e2490486f8ba14b10122b412d0c052df8943af03b4fa556a66c",
+      "evidence_digest": "f40868959cd573dabb25b13ee08525cccd1e398e611017accfc294895f06ce12",
+      "evidence_sha256": "9edf6098ec9a3859f1474201307291da92547704e00f559365b02f34c61cdf39",
+      "finding_count": 1,
       "intent": "second-opinion",
-      "receipt_sha256": "909823dd0ab904bea550829e9dcf1c99b2f80105d2dd22db09d465e4bf62778d",
+      "receipt_sha256": "cb61927c3a3ca92cd1381ad1ff38517eb732b3d632055b738e0e14599b066c91",
       "receipt_validity": "valid",
-      "request_sha256": "fcbcab40494ac634265e240ca584f3ab410ee3c93046f72aff709fb6854f7f37",
+      "request_sha256": "3db4ae51bf13d3e21ba6723383c1d3e3ba24d7d87a66546086b3a93b605fdbe8",
       "requiredness": "best-effort",
       "stage": "doc-review",
       "state": "consumed",
-      "status_card_sha256": "bae6835a79f2b45c624168dba25c57a482a11706d45162c57d51cd84f2ffdb84"
+      "status_card_sha256": "28b6b0d57cea60e28cf7a969335a32b3df04c1bb1b6982f9250598ea7e6d19e2"
     },
     {
       "action_id": "findings-opinion",
-      "action_record_ref": ".git/saga-external-actions/task-external-action-release/release-20260712t032801z-6/findings-opinion",
-      "action_record_sha256": "0d0d7ad99c5028b355915a46173313721141bc9b521782b433ec61458d52963b",
+      "action_record_ref": "docs/validation/external-action-evidence/release-20260712t040028153544-4b44ddf42e2f43e59c0f4b62a9334486/actions/06-findings-opinion",
+      "action_record_sha256": "6edb1053b31ba2b50aae0e0707f8a0a8ab653e51086b4a727956652932520d2f",
       "adapter_class": "engine-bridge-http",
-      "approval_fingerprint": "aa35237c25e736017ec46ca0de1d1d65c73fe6c926d261234c2ff31766928ed2",
+      "approval_fingerprint": "b5dd33673f676a71b7744e6c2d21d7994640902b7a3322cc55f048f7bdb1b0af",
       "engine_key": "ollama-cloud/gpt-oss-120b",
-      "event_chain_tip": "345f178c940d419452547063b9cf17843d6055f10b9636c169f346b07d736088",
-      "evidence_sha256": "31d4510704d21a218a4474c1098081a78295e8f4caa6f9a1214c027152ba4ea5",
+      "event_chain_tip": "56d274d33179642c1a303e68a7165edebbdf2840e9bc94e31501686bc154d566",
+      "evidence_digest": "998f9617508a5ffa8e19facf212cf80e9b89fc4d50b6f6b14e6a589a666c3eef",
+      "evidence_sha256": "752da71d064bb3fb5ef8b28994a02cb5b43b07963464f14541ece5ff855e812c",
+      "finding_count": 1,
       "intent": "second-opinion",
-      "receipt_sha256": "acdb6123d4f5c52468d98971989e1fc4fbf481ee911c799f04f0228fa37065fe",
+      "receipt_sha256": "19a74f1b604cb1b8a99b4fc0452a2cb595431e0fa4064a68aefbbd1f6787d780",
       "receipt_validity": "valid",
-      "request_sha256": "130dff61d5dee66e0f34d6637a8bad7114896682edf84aa44af2455f4afa974d",
+      "request_sha256": "9ff6642cd74d3f3304c50e1467168b51c19ba64a5bfd6bdf38f8b9f8ffdffc8e",
       "requiredness": "required-before-continue",
       "stage": "code-review",
       "state": "consumed",
-      "status_card_sha256": "ab934116d4f37b8e3d64211652381c4233b9949707d992c7a5818a817d4d6b81"
+      "status_card_sha256": "44fa3c6ea92d371dce31a441e157682de46b25a089c7bdb8a438f4a0eb8d7df7"
     }
   ],
   "status": "passed"

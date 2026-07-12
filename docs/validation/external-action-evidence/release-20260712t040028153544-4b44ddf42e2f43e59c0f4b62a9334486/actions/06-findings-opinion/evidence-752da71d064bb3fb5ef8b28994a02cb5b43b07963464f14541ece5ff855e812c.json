@@ -1,0 +1,38 @@
+{
+  "action_id": "findings-opinion",
+  "engine_id": "ollama-cloud",
+  "evidence": "[\"Avoid leaving generic placeholder data (e.g., \u201cTODO\u201d or dummy values) in the release fixture; replace them with realistic defaults or clearly document why they are placeholders to prevent accidental propagation to production.\"]",
+  "evidence_digest": "998f9617508a5ffa8e19facf212cf80e9b89fc4d50b6f6b14e6a589a666c3eef",
+  "findings": [
+    {
+      "content": "Avoid leaving generic placeholder data (e.g., \u201cTODO\u201d or dummy values) in the release fixture; replace them with realistic defaults or clearly document why they are placeholders to prevent accidental propagation to production."
+    }
+  ],
+  "intent": "second-opinion",
+  "runner_receipt": {
+    "bytes_produced": 233,
+    "engine_id": "ollama-cloud",
+    "external_tokens": 199.0,
+    "invocation_sha256": "a3ce471e3bb3d04e87190a0569677027d07275a82ff1a9e445a1b15fe4e6804b",
+    "output_attestation": {
+      "artifact": "evidence",
+      "bytes": 233,
+      "empty": false,
+      "schema": "output_attestation.v1",
+      "sha256": "998f9617508a5ffa8e19facf212cf80e9b89fc4d50b6f6b14e6a589a666c3eef"
+    },
+    "receipt_emitter": "http-bridge",
+    "run_id": "http:ollama-cloud:gpt-oss-120b:2571307.624344541",
+    "runner": {
+      "model": "gpt-oss:120b",
+      "status_code": 200,
+      "url": "https://ollama.com/v1/chat/completions"
+    },
+    "schema": "bridge_receipt.v1",
+    "transport": "http",
+    "variant": "gpt-oss-120b",
+    "wall_time_s": 1.629133208654821
+  },
+  "schema": "external_action_evidence.v1",
+  "variant": "gpt-oss-120b"
+}

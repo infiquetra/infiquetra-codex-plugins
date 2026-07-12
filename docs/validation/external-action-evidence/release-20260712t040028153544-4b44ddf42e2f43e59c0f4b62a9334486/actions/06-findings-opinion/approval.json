@@ -1,0 +1,43 @@
+{
+  "action_id": "findings-opinion",
+  "approval_fingerprint": "b5dd33673f676a71b7744e6c2d21d7994640902b7a3322cc55f048f7bdb1b0af",
+  "approved_at": "2026-07-12T04:00:28.153311+00:00",
+  "base_revision": "4800246eb492366c0b08369d101ad504713dd74c",
+  "context_scope": [],
+  "cost_class": "free",
+  "dirty_overlap": [],
+  "dirty_overlap_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "egress": {
+    "host": "ollama.com",
+    "policy": "networked"
+  },
+  "operator": "attended-operator",
+  "payload": "For the code-review release fixture, identify one low-risk concern. Return concise advisory text only. Do not use tools or modify files.",
+  "payload_sha256": "8a204f39d277e4acea7fd645e91e919724633da6eec08986bc713f624b033d55",
+  "request_sha256": "9ff6642cd74d3f3304c50e1467168b51c19ba64a5bfd6bdf38f8b9f8ffdffc8e",
+  "route": {
+    "engine_id": "ollama-cloud",
+    "invocation": {
+      "auth": {
+        "key_env": "OLLAMA_API_KEY",
+        "mode": "bearer"
+      },
+      "base_url": "https://ollama.com/v1",
+      "effort": "default",
+      "model": "gpt-oss:120b",
+      "recipe": "POST https://ollama.com/v1/chat/completions (gpt-oss:120b)",
+      "via": "engine-bridge-http",
+      "write_capable": false
+    },
+    "protocol": [
+      "Resolve the bearer token from OLLAMA_API_KEY at request-build time only; never log it.",
+      "Availability-gated: skip (never fail) when OLLAMA_API_KEY is absent or endpoint unreachable.",
+      "Advisory only -- never a gate/verdict source (R6, {#external-engines-never-gatekeepers})."
+    ],
+    "stage": "code-review",
+    "variant": "gpt-oss-120b"
+  },
+  "schema": "saga.external-action.approval.v1",
+  "sensitivity": "internal",
+  "write_set": []
+}

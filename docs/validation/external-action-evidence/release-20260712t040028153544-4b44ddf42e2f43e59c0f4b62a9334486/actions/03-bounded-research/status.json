@@ -1,0 +1,57 @@
+{
+  "action_id": "bounded-research",
+  "adapter_class": "engine-bridge-http",
+  "adjudication": "accept",
+  "approval_fingerprint": "e226bcf35dd154114d9d31eaa8b119a28dae66adecc9abd37a29f11aba543542",
+  "consumed_artifact": "release-matrix://plan/bounded-research",
+  "consumption_point": "plan grounding",
+  "cost_class": "free",
+  "egress": {
+    "host": "ollama.com",
+    "policy": "networked"
+  },
+  "estimated_usage": null,
+  "event_count": 7,
+  "evidence_destination": ".codex/saga/external-actions",
+  "intent": "offload",
+  "last_detail": {
+    "artifact_ref": "release-matrix://plan/bounded-research"
+  },
+  "last_event": "consume",
+  "last_event_at": "2026-07-12T04:00:28.153311+00:00",
+  "launch_acknowledged": true,
+  "observed_usage": 294.0,
+  "receipt_errors": [],
+  "receipt_validity": "valid",
+  "request_sha256": "e5d8b476b68736db81cf07157a30675476eca58b5e6206c4b936d8e509a64f6a",
+  "requiredness": "best-effort",
+  "resolved_model": "gpt-oss:120b",
+  "resolved_provider": "ollama-cloud",
+  "route": {
+    "engine_id": "ollama-cloud",
+    "invocation": {
+      "auth": {
+        "key_env": "OLLAMA_API_KEY",
+        "mode": "bearer"
+      },
+      "base_url": "https://ollama.com/v1",
+      "effort": "default",
+      "model": "gpt-oss:120b",
+      "recipe": "POST https://ollama.com/v1/chat/completions (gpt-oss:120b)",
+      "via": "engine-bridge-http",
+      "write_capable": false
+    },
+    "protocol": [
+      "Resolve the bearer token from OLLAMA_API_KEY at request-build time only; never log it.",
+      "Availability-gated: skip (never fail) when OLLAMA_API_KEY is absent or endpoint unreachable.",
+      "Advisory only -- never a gate/verdict source (R6, {#external-engines-never-gatekeepers})."
+    ],
+    "stage": "plan",
+    "variant": "gpt-oss-120b"
+  },
+  "run_id": "release-20260712t040028153544-4b44ddf42e2f43e59c0f4b62a9334486-3",
+  "saga_id": "task-external-action-release",
+  "schema": "saga.external-action.status.v1",
+  "stage": "plan",
+  "state": "consumed"
+}

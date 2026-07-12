@@ -1,0 +1,62 @@
+{
+  "action_id": "scope-opinion",
+  "adapter_class": "agy:delegate",
+  "adjudication": "accept",
+  "approval_fingerprint": "a89d6575750633fc4d7cc1992ff6e7e0ad9476759af9cf574be31ada7c9d7fff",
+  "consumed_artifact": "release-matrix://brainstorm/scope-opinion",
+  "consumption_point": "before requirements write",
+  "cost_class": "metered",
+  "egress": {
+    "host": "agy",
+    "policy": "networked"
+  },
+  "estimated_usage": null,
+  "event_count": 7,
+  "evidence_destination": ".codex/saga/external-actions",
+  "intent": "second-opinion",
+  "last_detail": {
+    "artifact_ref": "release-matrix://brainstorm/scope-opinion"
+  },
+  "last_event": "consume",
+  "last_event_at": "2026-07-12T04:00:28.153311+00:00",
+  "launch_acknowledged": true,
+  "observed_usage": null,
+  "receipt_errors": [],
+  "receipt_validity": "valid",
+  "request_sha256": "34029fa22b107614a605b88a7e5f4edf83dec574a743510941c87ac014069dcc",
+  "requiredness": "best-effort",
+  "resolved_model": "Gemini 3.5 Flash (High)",
+  "resolved_provider": "agy",
+  "route": {
+    "engine_id": "agy",
+    "invocation": {
+      "auth": {
+        "mode": "files",
+        "paths": [
+          "~/.config/agy/config.json",
+          "~/.gemini/settings.json"
+        ]
+      },
+      "cli": "agy",
+      "effort": "high",
+      "model": "Gemini 3.5 Flash (High)",
+      "recipe": "agy --model 'Gemini 3.5 Flash (High)' --print-timeout 900s --log-file /dev/null --add-dir . --sandbox --print <prompt>",
+      "via": "agy:delegate",
+      "write_capable": false
+    },
+    "protocol": [
+      "Assign an explicit adversarial/critic role; do not rely on goodwill.",
+      "Put behavioral constraints at the top; keep prompts terse and command-style.",
+      "Avoid vague blanket negatives ('don't infer' breaks reasoning).",
+      "Give explicit stop conditions to counter over-eagerness; put the question last.",
+      "Set thinking level High on hard tasks; keep temperature default."
+    ],
+    "stage": "brainstorm",
+    "variant": "gemini-3.5-flash-high"
+  },
+  "run_id": "release-20260712t040028153544-4b44ddf42e2f43e59c0f4b62a9334486-2",
+  "saga_id": "task-external-action-release",
+  "schema": "saga.external-action.status.v1",
+  "stage": "brainstorm",
+  "state": "consumed"
+}

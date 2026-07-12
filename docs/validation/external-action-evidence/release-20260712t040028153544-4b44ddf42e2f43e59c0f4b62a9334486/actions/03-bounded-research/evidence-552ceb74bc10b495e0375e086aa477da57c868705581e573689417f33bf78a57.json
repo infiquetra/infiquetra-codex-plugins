@@ -1,0 +1,38 @@
+{
+  "action_id": "bounded-research",
+  "engine_id": "ollama-cloud",
+  "evidence": "The PlanReleaseFixture provides a self\u2011contained, reproducible release plan artifact that bundles version metadata, change\u2011set references, and deployment environment configuration for reliable CI/CD execution.",
+  "evidence_digest": "57675c770b039ebe2ad8cff46b0d59aa726225590f7d354a509c482840953dc3",
+  "findings": [
+    {
+      "content": "The PlanReleaseFixture provides a self\u2011contained, reproducible release plan artifact that bundles version metadata, change\u2011set references, and deployment environment configuration for reliable CI/CD execution."
+    }
+  ],
+  "intent": "offload",
+  "runner_receipt": {
+    "bytes_produced": 213,
+    "engine_id": "ollama-cloud",
+    "external_tokens": 294.0,
+    "invocation_sha256": "ed8d97c221244e161dd3ec215f87836fdf6969bed9121161548e2095ec24db2b",
+    "output_attestation": {
+      "artifact": "evidence",
+      "bytes": 213,
+      "empty": false,
+      "schema": "output_attestation.v1",
+      "sha256": "57675c770b039ebe2ad8cff46b0d59aa726225590f7d354a509c482840953dc3"
+    },
+    "receipt_emitter": "http-bridge",
+    "run_id": "http:ollama-cloud:gpt-oss-120b:2571286.075418625",
+    "runner": {
+      "model": "gpt-oss:120b",
+      "status_code": 200,
+      "url": "https://ollama.com/v1/chat/completions"
+    },
+    "schema": "bridge_receipt.v1",
+    "transport": "http",
+    "variant": "gpt-oss-120b",
+    "wall_time_s": 2.506402499973774
+  },
+  "schema": "external_action_evidence.v1",
+  "variant": "gpt-oss-120b"
+}
