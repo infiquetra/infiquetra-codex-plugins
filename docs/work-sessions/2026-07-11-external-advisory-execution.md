@@ -25,3 +25,17 @@ The store uses `<git-common-dir>/saga-external-actions/<saga-id>/<run-id>/<actio
 **Checks run:** 12 focused pytest cases passed; Ruff passed; mypy passed for all three source modules.
 
 **Next step:** Implement U3 approval, policy, egress, and runtime orchestration.
+
+## U3. Build approval, policy, egress, and runtime orchestration
+
+The shared runtime now resolves explicit actions over repo/stage policy, legacy preferences, and shipped defaults. All six stage bundles are data-authored, while legacy `engine-prefs.json` values remain unapproved intent rather than launch authority.
+
+Outbound payloads are recursively sanitized before any store or executor call. Credential-shaped strings are redacted without retaining values, private keys block the action, and the approved payload digest, route, egress, cost class, context scope, base revision, and write set bind one approval fingerprint.
+
+The provider-neutral runtime implements prepare, approve, claim-before-launch, launch acknowledgement, terminal failure mapping, adjudication, consumption, and status refresh. Executors are injected and must return validated evidence, so no provider is represented as active before U4 wires `engine_dispatch`.
+
+**Files modified:** `plugins/saga/references/external-action-defaults.yaml`, `plugins/saga/scripts/external_action_policy.py`, `plugins/saga/scripts/external_action_egress.py`, `plugins/saga/scripts/external_action_runtime.py`, `plugins/saga/scripts/external_action.py`, `tests/test_external_action_policy.py`, `tests/test_external_action_egress.py`, `tests/test_external_action_runtime.py`.
+
+**Checks run:** 23 combined U2/U3 pytest cases passed; Ruff passed; scoped mypy passed for all four U3 source modules.
+
+**Next step:** Implement U4 supervised Claude, `agy`, and HTTP adapters with disposable-clone containment.
