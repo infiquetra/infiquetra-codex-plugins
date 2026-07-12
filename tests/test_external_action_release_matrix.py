@@ -378,6 +378,7 @@ def test_expected_ref_requires_all_referenced_bundle_files(tmp_path: Path) -> No
     subprocess.run(["git", "add", "proof.json", str(bundle.relative_to(tmp_path))], cwd=tmp_path, check=True)
     subprocess.run(["git", "commit", "-qm", "bundle"], cwd=tmp_path, check=True)
     subprocess.run(["git", "tag", "complete"], cwd=tmp_path, check=True)
+    (bundle / ".lock").touch()
     release_matrix._validate_expected_ref(proof, repo_root=tmp_path, expected_ref="complete", proof_path=proof_path)
     subprocess.run(["git", "rm", "-q", str(artifact.relative_to(tmp_path))], cwd=tmp_path, check=True)
     subprocess.run(["git", "commit", "-qm", "remove bundle"], cwd=tmp_path, check=True)

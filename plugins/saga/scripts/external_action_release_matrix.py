@@ -860,7 +860,11 @@ def _validate_expected_ref(
         except ValueError as exc:
             raise ReleaseMatrixError("release proof referenced evidence escapes repository") from exc
         if local.is_dir():
-            local_files = [item for item in local.rglob("*") if item.is_file()]
+            local_files = [
+                item
+                for item in local.rglob("*")
+                if item.is_file() and item.name != ".lock"
+            ]
         else:
             local_files = [local]
         for local_file in local_files:
