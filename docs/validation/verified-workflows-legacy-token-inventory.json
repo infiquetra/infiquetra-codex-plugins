@@ -92,7 +92,7 @@
       ]
     },
     {
-      "classification": "historical-evidence",
+      "classification": "mutable-engineering-journal",
       "path": "docs/engineering-journal/QUEUED.md",
       "sha256": "d984308817ba1d5b1dbde1cb40214227ca08fcd8657a2e4deb9a5adfd46e2945",
       "tokens": [
@@ -1078,7 +1078,7 @@
     {
       "classification": "migration-fixture",
       "path": "tests/test_verified_workflows_migration.py",
-      "sha256": "99a5c979d2a2ffcd60d71e3ca64be970f86758068eed8c583a3aac81d93f8775",
+      "sha256": "18137bb035c3d9c8b038fe4c559c736a82cc7bd0ee859992347d6acde5276b7a",
       "tokens": [
         "Team Execution",
         "team-execution"
@@ -1086,7 +1086,7 @@
     }
   ],
   "generated_by": "scripts/build_legacy_workflow_inventory.py",
-  "historical_inventory_sha256": "4f1440059c0ec93758067aa36261ba1eea5b7ed67c81db5d780675bea085c9cf",
+  "historical_inventory_sha256": "1213af804e5d2432a0a7301451837b8689aaf2c38a0fd28a84c80db679cb2273",
   "history_sentinels": {
     "docs/investigations/2026-06-30-team-execution-saga-orchestration-debug-report.md": {
       "sha256": "ecc08eceda3a67dc81d15b1930753fe236ca7c1ae9b3ad9dd506cdecfb0ac4fa",

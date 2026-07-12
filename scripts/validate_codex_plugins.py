@@ -276,7 +276,7 @@ STAGED_MARKETPLACE_SHA256 = (
     "42803919b39b720599b9692bfdcd95bcfe8c31b06ebb2c976aacaa890fdfea8a"
 )
 LEGACY_WORKFLOW_HISTORICAL_INVENTORY_SHA256 = (
-    "4f1440059c0ec93758067aa36261ba1eea5b7ed67c81db5d780675bea085c9cf"
+    "1213af804e5d2432a0a7301451837b8689aaf2c38a0fd28a84c80db679cb2273"
 )
 LEGACY_WORKFLOW_INVENTORY = Path(
     "docs/validation/verified-workflows-legacy-token-inventory.json"
@@ -391,6 +391,7 @@ VALID_LEGACY_WORKFLOW_CLASSIFICATIONS = {
     "lineage-documentation",
     "migration-documentation",
     "migration-fixture",
+    "mutable-engineering-journal",
     "temporary-active-marketplace",
     "temporary-legacy-test-path",
     "temporary-saga-instructions",
@@ -702,6 +703,8 @@ def expected_legacy_workflow_classification(path: Path) -> str | None:
     if path.parts and path.parts[0] == "tests":
         return "migration-fixture"
     if path.parts and path.parts[0] == "docs":
+        if path == Path("docs/engineering-journal/QUEUED.md"):
+            return "mutable-engineering-journal"
         if len(path.parts) > 1 and path.parts[1] in LEGACY_WORKFLOW_HISTORICAL_DOC_PARTS:
             return "historical-evidence"
         if path.parts[:2] == ("docs", "portability"):
