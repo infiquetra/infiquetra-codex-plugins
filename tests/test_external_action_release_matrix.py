@@ -306,6 +306,24 @@ def test_copied_action_record_rejects_semantic_artifact_replacement(tmp_path: Pa
         release_matrix._validate_action_record(observed, record_root, repo_root=tmp_path)
 
 
+def test_stage_artifact_bindings_come_from_runtime_complete_event(tmp_path: Path) -> None:
+    preview = _preview(tmp_path)
+    execution = lifecycle.execute_bundle(
+        [preview], executors={preview.request.action_id: _available(preview)}, at="executed"
+    )
+    outcome = execution.outcomes[preview.request.action_id]
+    snapshot = store.read_snapshot(preview.store)
+    complete = next(event for event in snapshot.events if event["event"] == "complete")
+    detail = dict(complete["detail"])
+    bindings = release_matrix._complete_artifact_bindings(snapshot.events)
+    assert "evidence_digest" not in dict(outcome.detail or {})
+    assert bindings == {
+        "evidence_sha256": detail["artifact_sha256"],
+        "evidence_digest": detail["evidence_digest"],
+        "finding_count": detail["finding_count"],
+    }
+
+
 def test_expected_ref_must_contain_exact_proof_blob(tmp_path: Path) -> None:
     subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
     subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=tmp_path, check=True)

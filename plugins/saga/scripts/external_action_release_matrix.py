@@ -164,6 +164,7 @@ def run_matrix(*, repo_root: Path, registry_path: Path = DEFAULT_REGISTRY) -> di
         if snapshot.approval is None:
             raise ReleaseMatrixError(f"{stage}/{engine_key}: consumed action has no approval")
         receipt = _complete_receipt(snapshot.events)
+        artifact_bindings = _complete_artifact_bindings(snapshot.events)
         stages.append(
             {
                 "stage": stage,
@@ -178,9 +179,7 @@ def run_matrix(*, repo_root: Path, registry_path: Path = DEFAULT_REGISTRY) -> di
                 "approval_fingerprint": snapshot.approval.approval_fingerprint,
                 "event_chain_tip": snapshot.events[-1]["this_hash"],
                 "receipt_sha256": _sha256_json(receipt),
-                "evidence_sha256": str(dict(outcome.detail or {}).get("artifact_sha256") or ""),
-                "evidence_digest": str(dict(outcome.detail or {}).get("evidence_digest") or ""),
-                "finding_count": dict(outcome.detail or {}).get("finding_count"),
+                **artifact_bindings,
                 "status_card_sha256": hashlib.sha256(
                     status_module.render(status).encode("utf-8")
                 ).hexdigest(),
@@ -253,6 +252,28 @@ def _complete_receipt(events: tuple[dict[str, Any], ...]) -> dict[str, Any]:
             if isinstance(receipt, dict):
                 return receipt
     raise ReleaseMatrixError("complete event has no receipt")
+
+
+def _complete_artifact_bindings(events: tuple[dict[str, Any], ...]) -> dict[str, Any]:
+    for event in reversed(events):
+        if event["event"] != "complete":
+            continue
+        detail = dict(event.get("detail", {}))
+        evidence_sha256 = detail.get("artifact_sha256")
+        evidence_digest = detail.get("evidence_digest")
+        finding_count = detail.get("finding_count")
+        if (
+            not isinstance(evidence_sha256, str)
+            or not isinstance(evidence_digest, str)
+            or not isinstance(finding_count, int)
+        ):
+            raise ReleaseMatrixError("complete event has incomplete artifact bindings")
+        return {
+            "evidence_sha256": evidence_sha256,
+            "evidence_digest": evidence_digest,
+            "finding_count": finding_count,
+        }
+    raise ReleaseMatrixError("complete event has no artifact bindings")
 
 
 def _rollback_drill(
