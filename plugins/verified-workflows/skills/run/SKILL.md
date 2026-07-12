@@ -8,6 +8,28 @@ description: Run an approved Infiquetra plan as a root-owned Codex workflow DAG 
 Use this skill only after the plan contains one approved `## Workflow Structure` table matching
 [workflow-protocol.md](references/workflow-protocol.md).
 
+## Operator Approval Contract
+
+Before starting any workflow work, render the complete proposed workflow:
+
+- the task graph and dependencies;
+- every work unit's role, lens, execution class, runtime agent, model, and effort;
+- recommended model or effort upgrades and downgrades, with reasons;
+- permission boundaries, deterministic validators, fallback behavior, and agent retention.
+
+The operator changes the proposal conversationally. Compile those requests into a new candidate and
+render the complete updated workflow again. Do not require text editing and do not replace the full
+preview with a change-only diff. Repeat until the operator explicitly approves the exact candidate.
+Do not spawn agents, run validators, or begin workflow execution before that approval.
+
+Treat the approved role, model, effort, and permissions as a hard runtime contract. If host-issued
+runtime receipts cannot prove those settings, stop and render a revised workflow for approval.
+Never silently downgrade, upgrade, substitute, or fall back inline.
+
+Named agents remain directly switchable and retain visible host-issued runtime receipts after
+completion until the workflow or operator releases them. Retention does not weaken the fresh-context
+requirement for a new independent attempt.
+
 ## Runtime Contract
 
 The root Codex thread is the workflow engine. Python scripts parse, normalize, and evaluate state;
@@ -67,8 +89,9 @@ bounded evidence only. Peer messaging is optional and never required.
    read-only parent and `test_medium` beneath workspace-write. Verify host-issued child rollout
    context reports the planned role, model, effort, and effective permission boundary; never accept
    child self-report as that receipt. Task names and prompt text are
-   not selection. Missing selector or mismatched readback degrades preferred independence inline and
-   blocks required independence.
+   not selection. Missing selector or mismatched readback stops execution and returns a revised
+   workflow to the operator for approval. Inline execution is allowed only when the approved workflow
+   explicitly selected it.
 7. Give every `run`, `follow-up`, or `revalidate` attempt a fresh execution context. Use follow-up
    messages only for status or clarification within the already-bound attempt; they cannot change
    its role, class, subject, or evidence and cannot stand in for a new receipt. Selectively rerun
@@ -114,8 +137,9 @@ bounded evidence only. Peer messaging is optional and never required.
 - `verified-workflow-subagent`: root-accountability diagnostic only. It records a candidate
   role/class/lens/profile/model/child/result chain but always blocks the gate until Codex supplies
   host-issued attestation.
-- `verified-workflow-inline`: preferred-independence role run by the root with the lost-independence
-  limitation recorded; no child/model/effort/sandbox claim.
+- `verified-workflow-inline`: role run by the root only when explicitly shown in and approved as part
+  of the workflow preview, with the lost-independence limitation recorded and no
+  child/model/effort/sandbox claim.
 - `deterministic-tool`: pinned command plus protected output and no-write audit, with no model fields.
 - Generic child output, helper-script output, follow-up messages, and `protocol_probe.py` are
   diagnostic only and cannot satisfy a workflow gate.
