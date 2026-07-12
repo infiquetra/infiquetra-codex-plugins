@@ -41,7 +41,12 @@ class CliConfig:
     stdin_prompt: bool = True
 
 
-def cli_runner(config: CliConfig, *, repo_root: Path) -> Runner:
+def cli_runner(
+    config: CliConfig,
+    *,
+    repo_root: Path,
+    on_launch: runtime.LaunchReporter | None = None,
+) -> Runner:
     def run(invocation: dict[str, Any]) -> dict[str, Any]:
         base = str(invocation.get("base_revision") or "HEAD")
         write_set = tuple(str(item) for item in invocation.get("write_set", []))
@@ -58,6 +63,17 @@ def cli_runner(config: CliConfig, *, repo_root: Path) -> Runner:
                 text=True,
                 start_new_session=True,
             )
+            if on_launch is not None:
+                on_launch(
+                    {
+                        "transport": "cli",
+                        "pid": process.pid,
+                        "process_group": process.pid,
+                        "argv_sha256": hashlib.sha256(
+                            json.dumps(argv, separators=(",", ":")).encode("utf-8")
+                        ).hexdigest(),
+                    }
+                )
             try:
                 stdin_text = str(invocation.get("task") or "") if config.stdin_prompt else None
                 stdout, stderr = process.communicate(stdin_text, timeout=config.timeout_seconds)
@@ -99,7 +115,13 @@ def cli_runner(config: CliConfig, *, repo_root: Path) -> Runner:
     return run
 
 
-def runner_for(engine_id: str, *, repo_root: Path, variant: str = "") -> Runner:
+def runner_for(
+    engine_id: str,
+    *,
+    repo_root: Path,
+    variant: str = "",
+    on_launch: runtime.LaunchReporter | None = None,
+) -> Runner:
     if engine_id == "agy":
         return cli_runner(
             CliConfig(
@@ -124,6 +146,7 @@ def runner_for(engine_id: str, *, repo_root: Path, variant: str = "") -> Runner:
                 stdin_prompt=False,
             ),
             repo_root=repo_root,
+            on_launch=on_launch,
         )
     if engine_id == "claude-cli":
         return cli_runner(
@@ -144,8 +167,21 @@ def runner_for(engine_id: str, *, repo_root: Path, variant: str = "") -> Runner:
                 ],
             ),
             repo_root=repo_root,
+            on_launch=on_launch,
         )
-    return engine_bridge_http.runner()
+    http_runner = engine_bridge_http.runner()
+
+    def run_http(invocation: dict[str, Any]) -> dict[str, Any]:
+        if on_launch is not None:
+            on_launch(
+                {
+                    "transport": "http",
+                    "operation_id": _receipt.digest_invocation(invocation),
+                }
+            )
+        return http_runner(invocation)
+
+    return run_http
 
 
 def executor_for_preview(
@@ -181,11 +217,19 @@ def executor_for_preview(
         invocation=invocation,
         cost_class=approval.cost_class,
     )
-    provider_runner = runner_for(engine_id, repo_root=repo_root, variant=variant)
-
-    def executor(_request: Any, _approval: Any, launch: Callable[[], None]) -> runtime.ExecutionOutcome:
+    def executor(
+        _request: Any,
+        _approval: Any,
+        launch: runtime.LaunchReporter,
+    ) -> runtime.ExecutionOutcome:
         if _approval.approval_fingerprint != approval.approval_fingerprint:
             raise ValueError("executor approval changed after binding")
+        provider_runner = runner_for(
+            engine_id,
+            repo_root=repo_root,
+            variant=variant,
+            on_launch=launch,
+        )
         def typed_runner(invocation_payload: dict[str, Any]) -> dict[str, Any]:
             result = dict(provider_runner(invocation_payload))
             if (
@@ -209,7 +253,6 @@ def executor_for_preview(
                     result["receipt"] = normalized_receipt
             return result
 
-        launch()
         evidence = engine_dispatch.dispatch(
             resolution,
             runner=typed_runner,

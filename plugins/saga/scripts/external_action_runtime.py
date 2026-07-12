@@ -4,11 +4,15 @@
 from __future__ import annotations
 
 import hashlib
+import fcntl
 import json
 import os
 import re
+import signal
 import subprocess
 import sys
+import time
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Mapping
@@ -49,7 +53,8 @@ class ExecutionOutcome:
     artifact_sha256: str | None = None
 
 
-Executor = Callable[[contract.ActionRequest, contract.ActionApproval, Callable[[], None]], ExecutionOutcome]
+LaunchReporter = Callable[[Mapping[str, Any] | None], None]
+Executor = Callable[[contract.ActionRequest, contract.ActionApproval, LaunchReporter], ExecutionOutcome]
 
 
 def prepare(
@@ -203,22 +208,32 @@ def execute(store: store_module.Store, *, executor: Executor, at: str) -> Execut
     store_module.append_event(store, event_id="claim-1", event="claim", at=at)
     launched = False
 
-    def acknowledge_launch() -> None:
+    def acknowledge_launch(identity: Mapping[str, Any] | None = None) -> None:
         nonlocal launched
         if not launched:
-            store_module.append_event(store, event_id="launch-1", event="launch", at=at)
+            store_module.append_event(
+                store,
+                event_id="launch-1",
+                event="launch",
+                at=at,
+                detail={"identity": _normalize_launch_identity(identity)},
+            )
             launched = True
 
     try:
         outcome = executor(snapshot.request, snapshot.approval, acknowledge_launch)
     except TimeoutError:
         event = "timeout" if launched else "unavailable"
+        if launched:
+            _record_returned_termination(store, at=at, disposition="executor-timeout")
         store_module.append_event(store, event_id="terminal-1", event=event, at=at)
         status_module.refresh(store)
         return ExecutionOutcome("timed-out" if launched else "unavailable")
     except Exception as exc:
         event = "invalidate-evidence" if launched else "unavailable"
         detail = {"error_type": type(exc).__name__}
+        if launched:
+            _record_returned_termination(store, at=at, disposition="executor-error")
         store_module.append_event(
             store, event_id="terminal-1", event=event, at=at, detail=detail
         )
@@ -232,6 +247,7 @@ def execute(store: store_module.Store, *, executor: Executor, at: str) -> Execut
         status_module.refresh(store)
         return ExecutionOutcome("unavailable")
     if outcome.status != "available" or not outcome.evidence_ref:
+        _record_returned_termination(store, at=at, disposition="executor-returned")
         store_module.append_event(store, event_id="terminal-1", event="invalidate-evidence", at=at)
         status_module.refresh(store)
         return ExecutionOutcome("invalid-evidence", detail=outcome.detail)
@@ -255,9 +271,11 @@ def execute(store: store_module.Store, *, executor: Executor, at: str) -> Execut
             "invalid-evidence", detail={"reason": f"invalid evidence artifact: {exc}"}
         )
     if outcome.artifact_sha256 and outcome.artifact_sha256 != artifact_sha256:
+        _record_returned_termination(store, at=at, disposition="executor-returned")
         store_module.append_event(store, event_id="terminal-1", event="invalidate-evidence", at=at)
         status_module.refresh(store)
         return ExecutionOutcome("invalid-evidence", detail={"reason": "artifact digest mismatch"})
+    _record_returned_termination(store, at=at, disposition="executor-completed")
     store_module.append_event(
         store,
         event_id="complete-1",
@@ -287,19 +305,23 @@ def interrupt(
     if snapshot.state not in {contract.State.CLAIMED, contract.State.LAUNCHED}:
         raise RuntimeError("only claimed or launched actions can be interrupted")
     launched = snapshot.state == contract.State.LAUNCHED
-    proof = dict(termination_proof or {})
-    if launched and (
-        proof.get("terminated") is not True
-        or not re.fullmatch(r"[0-9a-f]{64}", str(proof.get("receipt_sha256") or ""))
-    ):
-        raise RuntimeError("launched action interruption requires termination proof")
+    if termination_proof is not None:
+        raise RuntimeError("caller-supplied termination proof is not accepted")
+    receipt: dict[str, Any] | None = None
+    if launched:
+        receipt = _terminate_launched_action(store, at=at)
     store_module.append_event(
         store,
         event_id="interrupt-1",
         event="interrupt",
         at=at,
         rationale=rationale,
-        detail={"launched": launched, "termination_proof": proof},
+        detail={
+            "launched": launched,
+            "termination_receipt_sha256": (
+                receipt.get("receipt_sha256") if receipt is not None else None
+            ),
+        },
     )
     status_module.refresh(store)
 
@@ -311,10 +333,49 @@ def retry(
     snapshot = store_module.read_snapshot(preview.store)
     if snapshot.state not in contract.TERMINAL_FAILURE_STATES:
         raise RuntimeError("retry requires a terminal failed or interrupted attempt")
-    request = snapshot.request
     approval = snapshot.approval or preview.candidate_approval
-    _claim_retry_successor(preview.store, request, new_run_id)
-    retry_request = contract.ActionRequest(
+    if any(event.get("event") == "launch" for event in snapshot.events):
+        _validated_termination_receipt(preview.store, snapshot)
+    return _prepare_retry_successor(
+        preview,
+        repo_root=repo_root,
+        new_run_id=new_run_id,
+        created_at=created_at,
+        approval=approval,
+    )
+
+
+def _prepare_retry_successor(
+    preview: Preview,
+    *,
+    repo_root: Path,
+    new_run_id: str,
+    created_at: str,
+    approval: contract.ActionApproval,
+) -> Preview:
+    request = preview.request
+    contract.require_id(new_run_id, field_name="new_run_id")
+    with _lineage_lock(preview.store, request):
+        marker = _retry_marker(preview.store, request)
+        marker_value = _read_json(marker)
+        existing = _find_retry_successor(preview.store, request)
+        if marker_value is not None:
+            recorded_run = str(marker_value.get("successor_run_id") or "")
+            if recorded_run != new_run_id:
+                raise RuntimeError("retry successor already exists for predecessor")
+        if existing is not None:
+            existing_store, existing_request = existing
+            if existing_request.run_id != new_run_id:
+                raise RuntimeError("retry successor already exists for predecessor")
+            retry_preview = _complete_retry_preview(
+                existing_store,
+                existing_request,
+                approval,
+                created_at=existing_request.created_at,
+            )
+            _write_retry_marker(marker, request, existing_request.run_id)
+            return retry_preview
+        retry_request = contract.ActionRequest(
         saga_id=request.saga_id,
         run_id=new_run_id,
         action_id=request.action_id,
@@ -331,7 +392,31 @@ def retry(
         created_at=created_at,
         attempt=request.attempt + 1,
         predecessor_request_sha256=request.request_sha256,
-    )
+        )
+        retry_store = store_module.Store.for_action(
+            saga_id=retry_request.saga_id,
+            run_id=retry_request.run_id,
+            action_id=retry_request.action_id,
+            repo_root=repo_root,
+        )
+        store_module.write_request(retry_store, retry_request)
+        retry_preview = _complete_retry_preview(
+            retry_store,
+            retry_request,
+            approval,
+            created_at=created_at,
+        )
+        _write_retry_marker(marker, request, new_run_id)
+        return retry_preview
+
+
+def _complete_retry_preview(
+    retry_store: store_module.Store,
+    retry_request: contract.ActionRequest,
+    approval: contract.ActionApproval,
+    *,
+    created_at: str,
+) -> Preview:
     candidate = contract.ActionApproval(
         action_id=retry_request.action_id,
         approved_at="preview",
@@ -349,13 +434,6 @@ def retry(
         dirty_overlap=approval.dirty_overlap,
         dirty_overlap_sha256=approval.dirty_overlap_sha256,
     )
-    retry_store = store_module.Store.for_action(
-        saga_id=retry_request.saga_id,
-        run_id=retry_request.run_id,
-        action_id=retry_request.action_id,
-        repo_root=repo_root,
-    )
-    store_module.write_request(retry_store, retry_request)
     store_module.append_event(
         retry_store,
         event_id="resolve-1",
@@ -367,7 +445,7 @@ def retry(
             "payload_sha256": candidate.payload_sha256,
             "egress_detections": [],
             "dirty_overlap": list(candidate.dirty_overlap),
-            "predecessor_request_sha256": request.request_sha256,
+                "predecessor_request_sha256": retry_request.predecessor_request_sha256,
         },
     )
     status_module.refresh(retry_store)
@@ -429,24 +507,202 @@ def _derive_dirty_overlap(repo_root: Path, scopes: tuple[str, ...]) -> tuple[str
         text=True,
     )
     if process.returncode:
-        return ()
+        raise RuntimeError("cannot inspect dirty-worktree overlap")
     dirty: list[str] = []
-    for record in process.stdout.split("\0"):
+    records = process.stdout.split("\0")
+    index = 0
+    while index < len(records):
+        record = records[index]
+        index += 1
         if not record:
             continue
-        path = record[3:].split(" -> ")[-1]
-        if any(path == scope or path.startswith(scope.rstrip("/") + "/") for scope in scopes):
-            dirty.append(path)
+        if len(record) < 4:
+            raise RuntimeError("git status returned a malformed porcelain record")
+        paths = [record[3:]]
+        if "R" in record[:2] or "C" in record[:2]:
+            if index >= len(records) or not records[index]:
+                raise RuntimeError("git status returned an incomplete rename record")
+            paths.append(records[index])
+            index += 1
+        for path in paths:
+            if any(path == scope or path.startswith(scope.rstrip("/") + "/") for scope in scopes):
+                dirty.append(path)
     return tuple(sorted(set(dirty)))
 
 
-def _claim_retry_successor(
-    store: store_module.Store, request: contract.ActionRequest, new_run_id: str
-) -> None:
-    lineage = store.root.parents[1] / ".lineage" / request.action_id
+def _normalize_launch_identity(identity: Mapping[str, Any] | None) -> dict[str, Any]:
+    value = dict(identity or {"transport": "in-process"})
+    transport = value.get("transport")
+    if transport not in {"cli", "http", "in-process"}:
+        raise RuntimeError("launch identity transport is invalid")
+    if transport == "cli":
+        if any(
+            isinstance(value.get(field), bool)
+            or not isinstance(value.get(field), int)
+            or value[field] < 1
+            for field in ("pid", "process_group")
+        ):
+            raise RuntimeError("CLI launch identity requires positive pid and process_group")
+        if not re.fullmatch(r"[0-9a-f]{64}", str(value.get("argv_sha256") or "")):
+            raise RuntimeError("CLI launch identity requires argv_sha256")
+    if transport == "http" and not isinstance(value.get("operation_id"), str):
+        raise RuntimeError("HTTP launch identity requires operation_id")
+    return value
+
+
+def _launch_event(snapshot: store_module.Snapshot) -> dict[str, Any]:
+    launches = [event for event in snapshot.events if event.get("event") == "launch"]
+    if len(launches) != 1:
+        raise RuntimeError("launched action must have exactly one launch event")
+    return launches[0]
+
+
+def _process_group_alive(process_group: int) -> bool:
+    try:
+        os.killpg(process_group, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+def _termination_payload(
+    snapshot: store_module.Snapshot,
+    launch_event: Mapping[str, Any],
+    *,
+    at: str,
+    disposition: str,
+) -> dict[str, Any]:
+    identity = _normalize_launch_identity(dict(launch_event.get("detail", {})).get("identity"))
+    payload = {
+        "schema": "saga.external-action.termination.v1",
+        "request_sha256": snapshot.request.request_sha256,
+        "action_id": snapshot.request.action_id,
+        "run_id": snapshot.request.run_id,
+        "launch_event_sha256": launch_event["this_hash"],
+        "launch_identity": identity,
+        "terminated": True,
+        "terminated_at": at,
+        "disposition": disposition,
+    }
+    payload["receipt_sha256"] = contract.digest(payload)
+    return payload
+
+
+def _record_returned_termination(store: store_module.Store, *, at: str, disposition: str) -> None:
+    snapshot = store_module.read_snapshot(store)
+    launch_event = _launch_event(snapshot)
+    identity = _normalize_launch_identity(dict(launch_event.get("detail", {})).get("identity"))
+    if identity["transport"] == "cli" and _process_group_alive(identity["process_group"]):
+        return
+    store_module.write_termination(
+        store,
+        _termination_payload(snapshot, launch_event, at=at, disposition=disposition),
+    )
+
+
+def _terminate_launched_action(store: store_module.Store, *, at: str) -> dict[str, Any]:
+    snapshot = store_module.read_snapshot(store)
+    launch_event = _launch_event(snapshot)
+    identity = _normalize_launch_identity(dict(launch_event.get("detail", {})).get("identity"))
+    if identity["transport"] != "cli":
+        raise RuntimeError("launched action has no supervised termination path")
+    process_group = identity["process_group"]
+    if _process_group_alive(process_group):
+        os.killpg(process_group, signal.SIGKILL)
+        for _ in range(100):
+            try:
+                os.waitpid(identity["pid"], os.WNOHANG)
+            except ChildProcessError:
+                pass
+            if not _process_group_alive(process_group):
+                break
+            time.sleep(0.01)
+    if _process_group_alive(process_group):
+        raise RuntimeError("provider process group termination could not be confirmed")
+    receipt = _termination_payload(
+        snapshot,
+        launch_event,
+        at=at,
+        disposition="runtime-kill-confirmed",
+    )
+    store_module.write_termination(store, receipt)
+    return receipt
+
+
+def _validated_termination_receipt(
+    store: store_module.Store, snapshot: store_module.Snapshot
+) -> dict[str, Any]:
+    receipt = store_module.read_termination(store)
+    if receipt is None:
+        raise RuntimeError("retry requires a runtime termination receipt")
+    launch_event = _launch_event(snapshot)
+    required = {
+        "schema",
+        "request_sha256",
+        "action_id",
+        "run_id",
+        "launch_event_sha256",
+        "launch_identity",
+        "terminated",
+        "terminated_at",
+        "disposition",
+        "receipt_sha256",
+    }
+    if set(receipt) != required:
+        raise RuntimeError("termination receipt fields are not closed")
+    claimed = dict(receipt)
+    claimed_hash = claimed.pop("receipt_sha256")
+    expected_identity = _normalize_launch_identity(
+        dict(launch_event.get("detail", {})).get("identity")
+    )
+    if (
+        claimed_hash != contract.digest(claimed)
+        or receipt.get("schema") != "saga.external-action.termination.v1"
+        or receipt.get("request_sha256") != snapshot.request.request_sha256
+        or receipt.get("action_id") != snapshot.request.action_id
+        or receipt.get("run_id") != snapshot.request.run_id
+        or receipt.get("launch_event_sha256") != launch_event.get("this_hash")
+        or receipt.get("launch_identity") != expected_identity
+        or receipt.get("terminated") is not True
+    ):
+        raise RuntimeError("termination receipt is not bound to the launched attempt")
+    return receipt
+
+
+def _retry_marker(store: store_module.Store, request: contract.ActionRequest) -> Path:
+    return store.root.parents[1] / ".lineage" / request.action_id / f"{request.request_sha256}.json"
+
+
+@contextmanager
+def _lineage_lock(store: store_module.Store, request: contract.ActionRequest):
+    lineage = _retry_marker(store, request).parent
     lineage.mkdir(parents=True, exist_ok=True)
     os.chmod(lineage, 0o700)
-    marker = lineage / f"{request.request_sha256}.json"
+    lock = lineage / ".lock"
+    with lock.open("a+", encoding="utf-8") as handle:
+        os.chmod(lock, 0o600)
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+
+
+def _read_json(path: Path) -> dict[str, Any] | None:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return None
+    if not isinstance(value, dict):
+        raise RuntimeError("retry lineage marker is malformed")
+    return value
+
+
+def _write_retry_marker(
+    marker: Path, request: contract.ActionRequest, new_run_id: str
+) -> None:
     payload = contract.canonical_json(
         {
             "predecessor_request_sha256": request.request_sha256,
@@ -454,14 +710,31 @@ def _claim_retry_successor(
             "successor_attempt": request.attempt + 1,
         }
     ) + "\n"
-    try:
-        descriptor = os.open(marker, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-    except FileExistsError as exc:
-        raise RuntimeError("retry successor already exists for predecessor") from exc
+    if marker.exists():
+        if marker.read_text(encoding="utf-8") != payload:
+            raise RuntimeError("retry successor already exists for predecessor")
+        return
+    descriptor = os.open(marker, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
         handle.write(payload)
         handle.flush()
         os.fsync(handle.fileno())
+
+
+def _find_retry_successor(
+    store: store_module.Store, request: contract.ActionRequest
+) -> tuple[store_module.Store, contract.ActionRequest] | None:
+    saga_root = store.root.parents[1]
+    matches: list[tuple[store_module.Store, contract.ActionRequest]] = []
+    for request_path in saga_root.glob(f"*/{request.action_id}/request.json"):
+        candidate_store = store_module.Store(request_path.parent, store.repo_root)
+        candidate = store_module.read_request(candidate_store)
+        if candidate is None or candidate.predecessor_request_sha256 != request.request_sha256:
+            continue
+        matches.append((candidate_store, candidate))
+    if len(matches) > 1:
+        raise RuntimeError("multiple retry successors exist for predecessor")
+    return matches[0] if matches else None
 
 
 def _validate_evidence_artifact(

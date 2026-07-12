@@ -156,21 +156,154 @@ def test_interrupted_attempt_retries_with_fresh_identity(tmp_path: Path) -> None
         )
 
 
+def test_launched_retry_requires_intact_runtime_termination_receipt(tmp_path: Path) -> None:
+    prepared = preview(tmp_path)
+    runtime.approve(prepared, operator="operator", approved_at="approved")
+
+    def interrupted(_request, _approval, launch):
+        launch()
+        raise RuntimeError("process disconnected")
+
+    assert runtime.execute(prepared.store, executor=interrupted, at="run").status == "invalid-evidence"
+    prepared.store.termination_path.unlink()
+    with pytest.raises(runtime.RuntimeError, match="runtime termination receipt"):
+        runtime.retry(
+            prepared, repo_root=tmp_path, new_run_id="run-2", created_at="retry"
+        )
+
+
 def test_launched_interruption_requires_termination_proof(tmp_path: Path) -> None:
     prepared = preview(tmp_path)
     runtime.approve(prepared, operator="operator", approved_at="approved")
-    store_module.append_event(prepared.store, event_id="claim-1", event="claim", at="claim")
-    store_module.append_event(prepared.store, event_id="launch-1", event="launch", at="launch")
-
-    with pytest.raises(runtime.RuntimeError, match="termination proof"):
-        runtime.interrupt(prepared.store, at="interrupt", rationale="lost coordinator")
-    runtime.interrupt(
-        prepared.store,
-        at="interrupt",
-        rationale="provider process group terminated",
-        termination_proof={"terminated": True, "receipt_sha256": "a" * 64},
+    process = subprocess.Popen(
+        [sys.executable, "-c", "import time; time.sleep(60)"],
+        start_new_session=True,
     )
+    store_module.append_event(prepared.store, event_id="claim-1", event="claim", at="claim")
+    store_module.append_event(
+        prepared.store,
+        event_id="launch-1",
+        event="launch",
+        at="launch",
+        detail={
+            "identity": {
+                "transport": "cli",
+                "pid": process.pid,
+                "process_group": process.pid,
+                "argv_sha256": hashlib.sha256(b"fixture").hexdigest(),
+            }
+        },
+    )
+
+    with pytest.raises(runtime.RuntimeError, match="caller-supplied"):
+        runtime.interrupt(
+            prepared.store,
+            at="interrupt",
+            rationale="lost coordinator",
+            termination_proof={"terminated": True, "receipt_sha256": "a" * 64},
+        )
+    assert process.poll() is None
+    runtime.interrupt(
+        prepared.store, at="interrupt", rationale="provider process group terminated"
+    )
+    process.wait(timeout=2)
+    receipt = store_module.read_termination(prepared.store)
+    assert receipt is not None
+    assert receipt["request_sha256"] == prepared.request.request_sha256
+    assert receipt["launch_identity"]["process_group"] == process.pid
     assert store_module.read_snapshot(prepared.store).state.value == "interrupted"
+
+
+def test_retry_recovers_successor_created_before_lineage_publish(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    prepared = preview(tmp_path)
+    runtime.approve(prepared, operator="operator", approved_at="approved")
+
+    def failed(_request, _approval, launch):
+        launch()
+        raise RuntimeError("failed")
+
+    runtime.execute(prepared.store, executor=failed, at="run")
+    original = runtime._write_retry_marker
+    failed_once = False
+
+    def interrupted_marker(*args, **kwargs):
+        nonlocal failed_once
+        if not failed_once:
+            failed_once = True
+            raise OSError("simulated crash")
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(runtime, "_write_retry_marker", interrupted_marker)
+    with pytest.raises(OSError, match="simulated crash"):
+        runtime.retry(
+            prepared, repo_root=tmp_path, new_run_id="run-2", created_at="retry"
+        )
+    recovered = runtime.retry(
+        prepared, repo_root=tmp_path, new_run_id="run-2", created_at="retry"
+    )
+    assert recovered.request.run_id == "run-2"
+
+
+def test_dirty_overlap_fails_closed_when_git_status_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+
+    def failed_status(*args, **kwargs):
+        return subprocess.CompletedProcess(args[0], 1, "", "failure")
+
+    monkeypatch.setattr(runtime.subprocess, "run", failed_status)
+    with pytest.raises(runtime.RuntimeError, match="cannot inspect"):
+        runtime.prepare(
+            repo_root=tmp_path,
+            saga_id="task-runtime-status",
+            run_id="run-1",
+            template=template(),
+            route={"stage": "work", "engine_id": "agy", "variant": "gemini"},
+            cost_class="metered",
+            route_egress={},
+            base_revision="a" * 40,
+            payload="safe",
+            created_at="prepared",
+        )
+
+
+def test_dirty_overlap_preserves_both_rename_paths(tmp_path: Path) -> None:
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "config", "user.name", "Test"], cwd=tmp_path, check=True)
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs" / "old.md").write_text("old\n", encoding="utf-8")
+    subprocess.run(["git", "add", "docs/old.md"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-qm", "base"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "mv", "docs/old.md", "docs/new.md"], cwd=tmp_path, check=True)
+    scoped = policy.ActionTemplate.from_mapping(
+        {
+            "action_id": "opinion-rename",
+            "intent": "second-opinion",
+            "trigger": "review",
+            "consumption_point": "before gate",
+            "context_scope": ["docs"],
+        }
+    )
+    prepared = runtime.prepare(
+        repo_root=tmp_path,
+        saga_id="task-runtime-rename",
+        run_id="run-1",
+        template=scoped,
+        route={"stage": "work", "engine_id": "agy", "variant": "gemini"},
+        cost_class="metered",
+        route_egress={},
+        base_revision="HEAD",
+        payload="safe",
+        created_at="prepared",
+    )
+    assert prepared.candidate_approval.dirty_overlap == (
+        "docs/new.md",
+        "docs/old.md",
+    )
 
 
 def test_unvalidated_available_evidence_is_rejected(tmp_path: Path) -> None:

@@ -14,7 +14,7 @@ import tempfile
 from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 from urllib.parse import urlsplit
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -181,7 +181,7 @@ def run_matrix(*, repo_root: Path, registry_path: Path = DEFAULT_REGISTRY) -> di
         "recorded_at": recorded_at,
         "source_head": source_head,
         "source_tree": _git(repo_root, "rev-parse", f"{source_head}^{{tree}}"),
-        "source_worktree_sha256": _workspace_digest(repo_root),
+        "source_worktree_sha256": _commit_workspace_digest(repo_root, source_head),
         "status": "passed",
         "prerequisites": checks,
         "providers": sorted({item["engine_key"] for item in stages}),
@@ -291,6 +291,7 @@ def _rollback_drill(repo_root: Path, base_revision: str) -> dict[str, Any]:
         fleet_root = Path(str(fleet_install.get("installedPath") or "")).resolve(strict=False)
         if not fleet_root.is_relative_to(codex_home.resolve()) or not fleet_root.is_dir():
             raise ReleaseMatrixError("isolated fleet-core install path is missing or escaped")
+        fleet_candidate_digest = _directory_digest(fleet_root)
         env["FLEET_COMMONS_ROOT"] = str(fleet_root)
         install = _codex_json(
             env, "plugin", "add", "saga@isolated-external-action", "--json"
@@ -361,6 +362,60 @@ def _rollback_drill(repo_root: Path, base_revision: str) -> dict[str, Any]:
             and fresh_session_passed
             and restored
         )
+        command_results = (
+            ("prior-list", ["codex", "plugin", "list", "--json"], prior_list),
+            (
+                "marketplace-add",
+                ["codex", "plugin", "marketplace", "add", "$MARKETPLACE", "--json"],
+                add_marketplace,
+            ),
+            (
+                "fleet-install",
+                ["codex", "plugin", "add", "fleet-core@isolated-external-action", "--json"],
+                fleet_install,
+            ),
+            (
+                "saga-install",
+                ["codex", "plugin", "add", "saga@isolated-external-action", "--json"],
+                install,
+            ),
+            ("installed-list", ["codex", "plugin", "list", "--json"], installed_list),
+            ("fresh-session-probe", ["python", "-I", "external_action.py", "probe"], readback),
+            (
+                "saga-remove",
+                ["codex", "plugin", "remove", "saga@isolated-external-action", "--json"],
+                remove,
+            ),
+            (
+                "fleet-remove",
+                ["codex", "plugin", "remove", "fleet-core@isolated-external-action", "--json"],
+                fleet_remove,
+            ),
+            (
+                "marketplace-remove",
+                ["codex", "plugin", "marketplace", "remove", "isolated-external-action", "--json"],
+                remove_marketplace,
+            ),
+            ("restored-list", ["codex", "plugin", "list", "--json"], restored_list),
+        )
+        records: list[dict[str, Any]] = []
+        normalized_results: dict[str, Any] = {}
+        replacements = {
+            str(codex_home.resolve()): "$CODEX_HOME",
+            str(marketplace.resolve()): "$MARKETPLACE",
+            str(root.resolve()): "$ISOLATED_ROOT",
+        }
+        for operation, argv, result in command_results:
+            record, normalized = _write_command_record(
+                repo_root,
+                base_revision=base_revision,
+                operation=operation,
+                argv=argv,
+                result=result,
+                replacements=replacements,
+            )
+            records.append(record)
+            normalized_results[operation] = normalized
         return {
             "passed": passed,
             "base_revision": base_revision,
@@ -370,14 +425,16 @@ def _rollback_drill(repo_root: Path, base_revision: str) -> dict[str, Any]:
             "restored": restored,
             "prior_digest": _sha256_json(prior_list),
             "candidate_digest": candidate_digest,
+            "fleet_candidate_digest": fleet_candidate_digest,
             "restored_digest": _sha256_json(restored_list),
-            "marketplace_add_sha256": _sha256_json(add_marketplace),
-            "install_receipt_sha256": _sha256_json(install),
-            "fleet_install_sha256": _sha256_json(fleet_install),
-            "remove_receipt_sha256": _sha256_json(remove),
-            "fleet_remove_sha256": _sha256_json(fleet_remove),
-            "marketplace_remove_sha256": _sha256_json(remove_marketplace),
-            "fresh_session_sha256": hashlib.sha256(probe.stdout.encode("utf-8")).hexdigest(),
+            "marketplace_add_sha256": _sha256_json(normalized_results["marketplace-add"]),
+            "install_receipt_sha256": _sha256_json(normalized_results["saga-install"]),
+            "fleet_install_sha256": _sha256_json(normalized_results["fleet-install"]),
+            "remove_receipt_sha256": _sha256_json(normalized_results["saga-remove"]),
+            "fleet_remove_sha256": _sha256_json(normalized_results["fleet-remove"]),
+            "marketplace_remove_sha256": _sha256_json(normalized_results["marketplace-remove"]),
+            "fresh_session_sha256": _sha256_json(normalized_results["fresh-session-probe"]),
+            "command_records": records,
         }
 
 
@@ -392,13 +449,107 @@ def _codex_json(env: dict[str, str], *args: str) -> Any:
     return json.loads(process.stdout)
 
 
-def _workspace_digest(root: Path) -> str:
-    tracked = _git(root, "ls-files", "-z").split("\0")
+def _commit_workspace_digest(root: Path, revision: str) -> str:
+    process = subprocess.run(
+        ["git", "ls-tree", "-r", "--name-only", "-z", revision],
+        cwd=root,
+        check=True,
+        capture_output=True,
+    )
+    tracked = process.stdout.decode("utf-8").split("\0")
     digest = hashlib.sha256()
     for name in sorted(item for item in tracked if item):
-        path = root / name
-        digest.update(name.encode("utf-8") + b"\0" + path.read_bytes() + b"\0")
+        content = subprocess.run(
+            ["git", "show", f"{revision}:{name}"],
+            cwd=root,
+            check=True,
+            capture_output=True,
+        ).stdout
+        digest.update(name.encode("utf-8") + b"\0" + content + b"\0")
     return digest.hexdigest()
+
+
+def _commit_directory_digest(root: Path, revision: str, directory: str) -> str:
+    process = subprocess.run(
+        ["git", "ls-tree", "-r", "--name-only", "-z", revision, "--", directory],
+        cwd=root,
+        check=True,
+        capture_output=True,
+    )
+    names = process.stdout.decode("utf-8").split("\0")
+    digest = hashlib.sha256()
+    prefix = directory.rstrip("/") + "/"
+    for name in sorted(item for item in names if item):
+        relative = name.removeprefix(prefix)
+        if "__pycache__" in Path(relative).parts or relative.endswith(".pyc") or Path(relative).name == ".lock":
+            continue
+        content = subprocess.run(
+            ["git", "show", f"{revision}:{name}"],
+            cwd=root,
+            check=True,
+            capture_output=True,
+        ).stdout
+        digest.update(relative.encode("utf-8") + b"\0" + content + b"\0")
+    return digest.hexdigest()
+
+
+def _git_common_dir(repo_root: Path) -> Path:
+    value = _git(repo_root, "rev-parse", "--git-common-dir")
+    path = Path(value)
+    return (repo_root / path).resolve() if not path.is_absolute() else path.resolve()
+
+
+def _sanitize_record_value(value: Any, replacements: Mapping[str, str]) -> Any:
+    if isinstance(value, dict):
+        return {
+            str(key): _sanitize_record_value(item, replacements)
+            for key, item in value.items()
+        }
+    if isinstance(value, list):
+        return [_sanitize_record_value(item, replacements) for item in value]
+    if isinstance(value, str):
+        sanitized = value
+        for source, replacement in replacements.items():
+            sanitized = sanitized.replace(source, replacement)
+        return sanitized
+    return value
+
+
+def _write_command_record(
+    repo_root: Path,
+    *,
+    base_revision: str,
+    operation: str,
+    argv: list[str],
+    result: Any,
+    replacements: Mapping[str, str],
+) -> tuple[dict[str, Any], Any]:
+    normalized = _sanitize_record_value(result, replacements)
+    payload = {
+        "schema": "saga.external-action.command-evidence.v1",
+        "source_head": base_revision,
+        "operation": operation,
+        "argv": argv,
+        "result": normalized,
+    }
+    payload["content_sha256"] = _sha256_json(payload)
+    root = _git_common_dir(repo_root) / "saga-external-actions" / "release-evidence" / base_revision
+    root.mkdir(parents=True, exist_ok=True)
+    os.chmod(root, 0o700)
+    content = json.dumps(payload, indent=2, sort_keys=True) + "\n"
+    path = root / f"{operation}-{payload['content_sha256']}.json"
+    if path.exists() and path.read_text(encoding="utf-8") != content:
+        raise ReleaseMatrixError("immutable command evidence differs")
+    path.write_text(content, encoding="utf-8")
+    os.chmod(path, 0o600)
+    return (
+        {
+            "operation": operation,
+            "record_ref": Path(os.path.relpath(path, repo_root)).as_posix(),
+            "record_sha256": hashlib.sha256(content.encode("utf-8")).hexdigest(),
+        },
+        normalized,
+    )
 
 
 def _directory_digest(root: Path) -> str:
@@ -431,6 +582,7 @@ def validate_proof(
     *,
     repo_root: Path | None = None,
     expected_ref: str | None = None,
+    proof_path: Path | None = None,
 ) -> None:
     """Independently recompute the release proof's closed semantic claims."""
     expected_hash = proof.get("content_sha256")
@@ -448,8 +600,17 @@ def validate_proof(
             raise ReleaseMatrixError("release proof source_head is unavailable") from exc
         if proof.get("source_tree") != source_tree:
             raise ReleaseMatrixError("release proof source tree is invalid")
-        if expected_ref is not None and _git(repo_root, "rev-parse", expected_ref) != source_head:
-            raise ReleaseMatrixError("release proof source_head differs from expected evidence ref")
+        if proof.get("source_worktree_sha256") != _commit_workspace_digest(
+            repo_root, source_head
+        ):
+            raise ReleaseMatrixError("release proof source worktree digest is invalid")
+        if expected_ref is not None:
+            _validate_expected_ref(
+                proof,
+                repo_root=repo_root,
+                expected_ref=expected_ref,
+                proof_path=proof_path,
+            )
     expected_providers = sorted({item[2] for item in ASSIGNMENTS})
     if proof.get("providers") != expected_providers:
         raise ReleaseMatrixError("release proof provider set is invalid")
@@ -489,6 +650,7 @@ def validate_proof(
                 raise ReleaseMatrixError(f"release proof {stage} action record escapes protected root")
             if not record_root.is_dir() or _directory_digest(record_root) != observed["action_record_sha256"]:
                 raise ReleaseMatrixError(f"release proof {stage} action record digest is invalid")
+            _validate_action_record(observed, record_root, repo_root=repo_root)
     rollback = proof.get("rollback_drill")
     if not isinstance(rollback, dict) or not all(
         rollback.get(field) is True
@@ -513,6 +675,17 @@ def validate_proof(
     ):
         if not isinstance(rollback.get(field), str) or len(rollback[field]) != 64:
             raise ReleaseMatrixError(f"release proof rollback {field} is invalid")
+    if repo_root is not None:
+        source_head = str(proof.get("source_head") or "")
+        if rollback.get("candidate_digest") != _commit_directory_digest(
+            repo_root, source_head, "plugins/saga"
+        ):
+            raise ReleaseMatrixError("release proof installed Saga digest is invalid")
+        if rollback.get("fleet_candidate_digest") != _commit_directory_digest(
+            repo_root, source_head, "plugins/fleet-core"
+        ):
+            raise ReleaseMatrixError("release proof installed fleet-core digest is invalid")
+        _validate_command_records(rollback, repo_root=repo_root, source_head=source_head)
     if proof.get("sanitization") != {
         "credentials": False,
         "prompts_or_transcripts": False,
@@ -520,6 +693,182 @@ def validate_proof(
         "raw_receipts": False,
     }:
         raise ReleaseMatrixError("release proof sanitization claims are invalid")
+
+
+def _validate_expected_ref(
+    proof: Mapping[str, Any],
+    *,
+    repo_root: Path,
+    expected_ref: str,
+    proof_path: Path | None,
+) -> None:
+    if proof_path is None:
+        raise ReleaseMatrixError("expected evidence ref validation requires the proof path")
+    source_head = str(proof.get("source_head") or "")
+    expected_commit = _git(repo_root, "rev-parse", f"{expected_ref}^{{commit}}")
+    ancestor = subprocess.run(
+        ["git", "merge-base", "--is-ancestor", source_head, expected_commit],
+        cwd=repo_root,
+        check=False,
+    )
+    if ancestor.returncode:
+        raise ReleaseMatrixError("release proof source_head is not contained by evidence ref")
+    try:
+        relative = proof_path.resolve().relative_to(repo_root.resolve()).as_posix()
+    except ValueError as exc:
+        raise ReleaseMatrixError("release proof path is outside the repository") from exc
+    process = subprocess.run(
+        ["git", "show", f"{expected_ref}:{relative}"],
+        cwd=repo_root,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if process.returncode:
+        raise ReleaseMatrixError("expected evidence ref does not contain the release proof")
+    try:
+        tagged_proof = json.loads(process.stdout)
+    except json.JSONDecodeError as exc:
+        raise ReleaseMatrixError("tagged release proof is malformed") from exc
+    if tagged_proof != dict(proof):
+        raise ReleaseMatrixError("expected evidence ref contains a different release proof")
+
+
+def _validate_action_record(
+    observed: Mapping[str, Any],
+    record_root: Path,
+    *,
+    repo_root: Path,
+) -> None:
+    snapshot = store_module.read_snapshot(store_module.Store(record_root, repo_root))
+    approval = snapshot.approval
+    if approval is None:
+        raise ReleaseMatrixError("release action record has no approval")
+    complete = next(
+        (event for event in snapshot.events if event.get("event") == "complete"),
+        None,
+    )
+    if complete is None:
+        raise ReleaseMatrixError("release action record has no completion event")
+    detail = dict(complete.get("detail", {}))
+    evidence_ref = detail.get("evidence_ref")
+    if not isinstance(evidence_ref, str):
+        raise ReleaseMatrixError("release action record has no evidence reference")
+    evidence_path = Path(evidence_ref).resolve(strict=False)
+    if not evidence_path.is_relative_to(record_root.resolve()) or not evidence_path.is_file():
+        raise ReleaseMatrixError("release action evidence is unavailable or escaped")
+    projected = status_module.project(snapshot)
+    expected = {
+        "action_id": snapshot.request.action_id,
+        "stage": snapshot.request.stage,
+        "intent": snapshot.request.intent,
+        "requiredness": snapshot.request.requiredness.value,
+        "engine_key": f"{approval.route.get('engine_id')}/{approval.route.get('variant')}",
+        "state": projected["state"],
+        "receipt_validity": projected["receipt_validity"],
+        "request_sha256": snapshot.request.request_sha256,
+        "approval_fingerprint": approval.approval_fingerprint,
+        "event_chain_tip": snapshot.events[-1]["this_hash"],
+        "receipt_sha256": _sha256_json(_complete_receipt(snapshot.events)),
+        "evidence_sha256": hashlib.sha256(evidence_path.read_bytes()).hexdigest(),
+        "status_card_sha256": hashlib.sha256(
+            status_module.render(projected).encode("utf-8")
+        ).hexdigest(),
+        "action_record_sha256": _directory_digest(record_root),
+    }
+    for field, value in expected.items():
+        if observed.get(field) != value:
+            raise ReleaseMatrixError(f"release action record {field} binding is invalid")
+
+
+def _validate_command_records(
+    rollback: Mapping[str, Any],
+    *,
+    repo_root: Path,
+    source_head: str,
+) -> None:
+    operations = (
+        "prior-list",
+        "marketplace-add",
+        "fleet-install",
+        "saga-install",
+        "installed-list",
+        "fresh-session-probe",
+        "saga-remove",
+        "fleet-remove",
+        "marketplace-remove",
+        "restored-list",
+    )
+    records = rollback.get("command_records")
+    if not isinstance(records, list) or [item.get("operation") for item in records] != list(operations):
+        raise ReleaseMatrixError("release proof command evidence matrix is incomplete")
+    protected_root = (
+        _git_common_dir(repo_root) / "saga-external-actions" / "release-evidence"
+    ).resolve()
+    results: dict[str, Any] = {}
+    for item in records:
+        ref = item.get("record_ref")
+        if not isinstance(ref, str):
+            raise ReleaseMatrixError("release proof command evidence reference is invalid")
+        path = (repo_root / ref).resolve(strict=False)
+        if not path.is_relative_to(protected_root) or not path.is_file():
+            raise ReleaseMatrixError("release proof command evidence is unavailable or escaped")
+        content = path.read_bytes()
+        if hashlib.sha256(content).hexdigest() != item.get("record_sha256"):
+            raise ReleaseMatrixError("release proof command evidence digest is invalid")
+        try:
+            record = json.loads(content)
+        except json.JSONDecodeError as exc:
+            raise ReleaseMatrixError("release proof command evidence is malformed") from exc
+        claimed = dict(record)
+        claimed_hash = claimed.pop("content_sha256", None)
+        if (
+            record.get("schema") != "saga.external-action.command-evidence.v1"
+            or record.get("source_head") != source_head
+            or record.get("operation") != item.get("operation")
+            or claimed_hash != _sha256_json(claimed)
+        ):
+            raise ReleaseMatrixError("release proof command evidence binding is invalid")
+        results[str(item["operation"])] = record.get("result")
+    if results["prior-list"] != results["restored-list"]:
+        raise ReleaseMatrixError("release proof plugin state was not restored")
+    if "$CODEX_HOME/" not in str(results["saga-install"].get("installedPath", "")):
+        raise ReleaseMatrixError("release proof Saga install path is invalid")
+    if "$CODEX_HOME/" not in str(results["fleet-install"].get("installedPath", "")):
+        raise ReleaseMatrixError("release proof fleet install path is invalid")
+    installed = json.dumps(results["installed-list"], sort_keys=True)
+    if "saga" not in installed or "fleet-core" not in installed:
+        raise ReleaseMatrixError("release proof installed plugin readback is incomplete")
+    probe = results["fresh-session-probe"]
+    required_operations = {
+        "prepare_bundle",
+        "approve_bundle",
+        "execute_bundle",
+        "load_action",
+        "interrupt_action",
+        "retry_action",
+        "adjudicate_artifact",
+        "adjudicate_opinion",
+        "consume",
+    }
+    if (
+        not isinstance(probe, dict)
+        or probe.get("schema") != "saga.external-action.probe.v1"
+        or set(probe.get("operations", [])) != required_operations
+    ):
+        raise ReleaseMatrixError("release proof fresh-session probe is invalid")
+    result_hash_fields = {
+        "marketplace_add_sha256": "marketplace-add",
+        "install_receipt_sha256": "saga-install",
+        "fleet_install_sha256": "fleet-install",
+        "remove_receipt_sha256": "saga-remove",
+        "fleet_remove_sha256": "fleet-remove",
+        "marketplace_remove_sha256": "marketplace-remove",
+        "fresh_session_sha256": "fresh-session-probe",
+    }
+    for field, operation in result_hash_fields.items():
+        if rollback.get(field) != _sha256_json(results[operation]):
+            raise ReleaseMatrixError(f"release proof rollback {field} binding is invalid")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -540,7 +889,12 @@ def main(argv: list[str] | None = None) -> int:
     if args.verify:
         try:
             proof = json.loads(Path(args.output).read_text(encoding="utf-8"))
-            validate_proof(proof, repo_root=repo_root, expected_ref=args.expected_ref)
+            validate_proof(
+                proof,
+                repo_root=repo_root,
+                expected_ref=args.expected_ref,
+                proof_path=Path(args.output),
+            )
         except (OSError, ValueError, ReleaseMatrixError) as exc:
             print(f"external action release proof invalid: {exc}", file=sys.stderr)
             return 1

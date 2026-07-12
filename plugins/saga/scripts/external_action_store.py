@@ -57,6 +57,10 @@ class Store:
         return self.root / "approval.json"
 
     @property
+    def termination_path(self) -> Path:
+        return self.root / "termination.json"
+
+    @property
     def events_path(self) -> Path:
         return self.root / "events.jsonl"
 
@@ -147,6 +151,15 @@ def write_approval(store: Store, approval: contract.ActionApproval) -> Path:
     payload = approval.to_dict()
     payload["approval_fingerprint"] = approval.approval_fingerprint
     return _write_once(store.approval_path, payload)
+
+
+def write_termination(store: Store, payload: Mapping[str, Any]) -> Path:
+    """Persist one immutable runtime-produced termination receipt."""
+    return _write_once(store.ensure().termination_path, payload)
+
+
+def read_termination(store: Store) -> dict[str, Any] | None:
+    return _read_object(store.termination_path)
 
 
 def _read_object(path: Path) -> dict[str, Any] | None:

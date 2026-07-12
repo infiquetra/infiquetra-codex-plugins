@@ -207,13 +207,11 @@ def interrupt_action(
     *,
     at: str,
     rationale: str,
-    termination_proof: Mapping[str, Any] | None = None,
 ) -> None:
     runtime.interrupt(
         preview.store,
         at=at,
         rationale=rationale,
-        termination_proof=termination_proof,
     )
 
 

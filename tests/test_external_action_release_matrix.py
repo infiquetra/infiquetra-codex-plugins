@@ -217,6 +217,7 @@ def test_rollback_drill_installs_reads_back_and_restores(tmp_path: Path) -> None
         ["cp", "-R", str(ROOT / "plugins" / "fleet-core"), str(repo / "plugins" / "fleet-core")],
         check=True,
     )
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
 
     proof = release_matrix._rollback_drill(repo, "a" * 40)
 
@@ -224,3 +225,49 @@ def test_rollback_drill_installs_reads_back_and_restores(tmp_path: Path) -> None
     assert proof["candidate_installed"] is True
     assert proof["fresh_session_passed"] is True
     assert proof["restored"] is True
+    assert len(proof["command_records"]) == 10
+    release_matrix._validate_command_records(
+        proof, repo_root=repo, source_head="a" * 40
+    )
+    evidence = repo / proof["command_records"][0]["record_ref"]
+    evidence.write_text("{}\n", encoding="utf-8")
+    with pytest.raises(release_matrix.ReleaseMatrixError, match="digest"):
+        release_matrix._validate_command_records(
+            proof, repo_root=repo, source_head="a" * 40
+        )
+
+
+def test_expected_ref_must_contain_exact_proof_blob(tmp_path: Path) -> None:
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "config", "user.name", "Test"], cwd=tmp_path, check=True)
+    proof_path = tmp_path / "proof.json"
+    proof = {"source_head": ""}
+    proof_path.write_text(json.dumps(proof) + "\n", encoding="utf-8")
+    subprocess.run(["git", "add", "proof.json"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-qm", "proof"], cwd=tmp_path, check=True)
+    head = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=tmp_path,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    proof["source_head"] = head
+    proof_path.write_text(json.dumps(proof) + "\n", encoding="utf-8")
+    subprocess.run(["git", "add", "proof.json"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-qm", "bind proof"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "tag", "evidence"], cwd=tmp_path, check=True)
+    release_matrix._validate_expected_ref(
+        proof,
+        repo_root=tmp_path,
+        expected_ref="evidence",
+        proof_path=proof_path,
+    )
+    with pytest.raises(release_matrix.ReleaseMatrixError, match="different"):
+        release_matrix._validate_expected_ref(
+            {**proof, "changed": True},
+            repo_root=tmp_path,
+            expected_ref="evidence",
+            proof_path=proof_path,
+        )
