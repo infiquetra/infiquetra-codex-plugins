@@ -198,13 +198,13 @@
         "U1"
       ],
       "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
-      "artifact_sha256": "94333ea353b55fe920a3d6419590281f16c77c5550df6d35a307adc1a689062b",
+      "artifact_sha256": "619c49d83e6b8ec1c33ea1cfdac08204e4fd6ea4e3aa6f15f56ecf1b0c9afd19",
       "cwd": ".",
       "evidence_id": "u1-source-verification",
       "exit_code": 0,
       "kind": "source-verification",
-      "recorded_at": "2026-07-12T04:00:28.153311Z",
-      "repo_head": "4800246eb492366c0b08369d101ad504713dd74c",
+      "recorded_at": "2026-07-12T04:23:30.459285Z",
+      "repo_head": "45403b9c2906e110beaf640918431d292b96bb4f",
       "unit": "U1"
     },
     {
@@ -218,13 +218,13 @@
         "U2"
       ],
       "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
-      "artifact_sha256": "94333ea353b55fe920a3d6419590281f16c77c5550df6d35a307adc1a689062b",
+      "artifact_sha256": "619c49d83e6b8ec1c33ea1cfdac08204e4fd6ea4e3aa6f15f56ecf1b0c9afd19",
       "cwd": ".",
       "evidence_id": "unit-u2-check",
       "exit_code": 0,
       "kind": "check",
-      "recorded_at": "2026-07-12T04:00:28.153311Z",
-      "repo_head": "4800246eb492366c0b08369d101ad504713dd74c",
+      "recorded_at": "2026-07-12T04:23:30.459285Z",
+      "repo_head": "45403b9c2906e110beaf640918431d292b96bb4f",
       "unit": "U2"
     },
     {
@@ -238,13 +238,13 @@
         "U3"
       ],
       "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
-      "artifact_sha256": "94333ea353b55fe920a3d6419590281f16c77c5550df6d35a307adc1a689062b",
+      "artifact_sha256": "619c49d83e6b8ec1c33ea1cfdac08204e4fd6ea4e3aa6f15f56ecf1b0c9afd19",
       "cwd": ".",
       "evidence_id": "unit-u3-check",
       "exit_code": 0,
       "kind": "check",
-      "recorded_at": "2026-07-12T04:00:28.153311Z",
-      "repo_head": "4800246eb492366c0b08369d101ad504713dd74c",
+      "recorded_at": "2026-07-12T04:23:30.459285Z",
+      "repo_head": "45403b9c2906e110beaf640918431d292b96bb4f",
       "unit": "U3"
     },
     {
@@ -258,13 +258,13 @@
         "U4"
       ],
       "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
-      "artifact_sha256": "94333ea353b55fe920a3d6419590281f16c77c5550df6d35a307adc1a689062b",
+      "artifact_sha256": "619c49d83e6b8ec1c33ea1cfdac08204e4fd6ea4e3aa6f15f56ecf1b0c9afd19",
       "cwd": ".",
       "evidence_id": "unit-u4-check",
       "exit_code": 0,
       "kind": "check",
-      "recorded_at": "2026-07-12T04:00:28.153311Z",
-      "repo_head": "4800246eb492366c0b08369d101ad504713dd74c",
+      "recorded_at": "2026-07-12T04:23:30.459285Z",
+      "repo_head": "45403b9c2906e110beaf640918431d292b96bb4f",
       "unit": "U4"
     },
     {
@@ -278,13 +278,13 @@
         "U5"
       ],
       "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
-      "artifact_sha256": "94333ea353b55fe920a3d6419590281f16c77c5550df6d35a307adc1a689062b",
+      "artifact_sha256": "619c49d83e6b8ec1c33ea1cfdac08204e4fd6ea4e3aa6f15f56ecf1b0c9afd19",
       "cwd": ".",
       "evidence_id": "unit-u5-check",
       "exit_code": 0,
       "kind": "check",
-      "recorded_at": "2026-07-12T04:00:28.153311Z",
-      "repo_head": "4800246eb492366c0b08369d101ad504713dd74c",
+      "recorded_at": "2026-07-12T04:23:30.459285Z",
+      "repo_head": "45403b9c2906e110beaf640918431d292b96bb4f",
       "unit": "U5"
     },
     {
@@ -298,13 +298,13 @@
         "U6"
       ],
       "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
-      "artifact_sha256": "94333ea353b55fe920a3d6419590281f16c77c5550df6d35a307adc1a689062b",
+      "artifact_sha256": "619c49d83e6b8ec1c33ea1cfdac08204e4fd6ea4e3aa6f15f56ecf1b0c9afd19",
       "cwd": ".",
       "evidence_id": "unit-u6-check",
       "exit_code": 0,
       "kind": "check",
-      "recorded_at": "2026-07-12T04:00:28.153311Z",
-      "repo_head": "4800246eb492366c0b08369d101ad504713dd74c",
+      "recorded_at": "2026-07-12T04:23:30.459285Z",
+      "repo_head": "45403b9c2906e110beaf640918431d292b96bb4f",
       "unit": "U6"
     },
     {
@@ -318,13 +318,13 @@
         "U7"
       ],
       "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
-      "artifact_sha256": "94333ea353b55fe920a3d6419590281f16c77c5550df6d35a307adc1a689062b",
+      "artifact_sha256": "619c49d83e6b8ec1c33ea1cfdac08204e4fd6ea4e3aa6f15f56ecf1b0c9afd19",
       "cwd": ".",
       "evidence_id": "unit-u7-check",
       "exit_code": 0,
       "kind": "check",
-      "recorded_at": "2026-07-12T04:00:28.153311Z",
-      "repo_head": "4800246eb492366c0b08369d101ad504713dd74c",
+      "recorded_at": "2026-07-12T04:23:30.459285Z",
+      "repo_head": "45403b9c2906e110beaf640918431d292b96bb4f",
       "unit": "U7"
     },
     {
@@ -333,13 +333,13 @@
         "review-barrier"
       ],
       "artifact_path": "docs/work-sessions/2026-07-11-external-advisory-execution.md",
-      "artifact_sha256": "6d7037a7be3441e37ed261d1569f983ab03b2bd6bc2b1ec3b6449914faff7714",
+      "artifact_sha256": "cda793083de271ed263394968da3495c049acad87665b78abe51ee21380378ce",
       "cwd": ".",
       "evidence_id": "u8-review",
       "exit_code": 0,
       "kind": "review",
-      "recorded_at": "2026-07-12T04:03:08Z",
-      "repo_head": "0e4edd26eccec52ed19aa0b7ee9dbd3cbf0b13f1",
+      "recorded_at": "2026-07-12T04:26:59.011809Z",
+      "repo_head": "e342d58b1e0a30d58f06a18f2b21ab5da74f7fc8",
       "unit": "U8"
     },
     {
@@ -351,13 +351,13 @@
         "--json"
       ],
       "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
-      "artifact_sha256": "94333ea353b55fe920a3d6419590281f16c77c5550df6d35a307adc1a689062b",
+      "artifact_sha256": "619c49d83e6b8ec1c33ea1cfdac08204e4fd6ea4e3aa6f15f56ecf1b0c9afd19",
       "cwd": ".",
       "evidence_id": "u8-isolated-install",
       "exit_code": 0,
       "kind": "isolated-install",
-      "recorded_at": "2026-07-12T04:00:28.153311Z",
-      "repo_head": "4800246eb492366c0b08369d101ad504713dd74c",
+      "recorded_at": "2026-07-12T04:23:30.459285Z",
+      "repo_head": "45403b9c2906e110beaf640918431d292b96bb4f",
       "unit": "U8"
     },
     {
@@ -368,13 +368,13 @@
         "--json"
       ],
       "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
-      "artifact_sha256": "94333ea353b55fe920a3d6419590281f16c77c5550df6d35a307adc1a689062b",
+      "artifact_sha256": "619c49d83e6b8ec1c33ea1cfdac08204e4fd6ea4e3aa6f15f56ecf1b0c9afd19",
       "cwd": ".",
       "evidence_id": "u8-fresh-session",
       "exit_code": 0,
       "kind": "fresh-session",
-      "recorded_at": "2026-07-12T04:00:28.153311Z",
-      "repo_head": "4800246eb492366c0b08369d101ad504713dd74c",
+      "recorded_at": "2026-07-12T04:23:30.459285Z",
+      "repo_head": "45403b9c2906e110beaf640918431d292b96bb4f",
       "unit": "U8"
     },
     {
@@ -386,13 +386,13 @@
         "--json"
       ],
       "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
-      "artifact_sha256": "94333ea353b55fe920a3d6419590281f16c77c5550df6d35a307adc1a689062b",
+      "artifact_sha256": "619c49d83e6b8ec1c33ea1cfdac08204e4fd6ea4e3aa6f15f56ecf1b0c9afd19",
       "cwd": ".",
       "evidence_id": "u8-rollback",
       "exit_code": 0,
       "kind": "rollback",
-      "recorded_at": "2026-07-12T04:00:28.153311Z",
-      "repo_head": "4800246eb492366c0b08369d101ad504713dd74c",
+      "recorded_at": "2026-07-12T04:23:30.459285Z",
+      "repo_head": "45403b9c2906e110beaf640918431d292b96bb4f",
       "unit": "U8"
     },
     {
@@ -402,13 +402,13 @@
         "--attended"
       ],
       "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
-      "artifact_sha256": "94333ea353b55fe920a3d6419590281f16c77c5550df6d35a307adc1a689062b",
+      "artifact_sha256": "619c49d83e6b8ec1c33ea1cfdac08204e4fd6ea4e3aa6f15f56ecf1b0c9afd19",
       "cwd": ".",
       "evidence_id": "u8-cutover",
       "exit_code": 0,
       "kind": "cutover",
-      "recorded_at": "2026-07-12T04:00:28.153311Z",
-      "repo_head": "4800246eb492366c0b08369d101ad504713dd74c",
+      "recorded_at": "2026-07-12T04:23:30.459285Z",
+      "repo_head": "45403b9c2906e110beaf640918431d292b96bb4f",
       "unit": "U8"
     }
   ],

@@ -154,3 +154,13 @@ rather than retroactively represented as protected workflow evidence.
 - `port_contract.py validate --stage cutover` now invokes exact proof-and-bundle tag verification instead of relying on an optional manual command.
 - Operator-accepted scope remains unchanged: disposable clones plus provider-native safe/sandbox modes are the containment boundary for this iteration. Full containers, host-wide credential isolation, controlled network namespaces, and keyed/HMAC action-history anchoring remain explicitly outside this plan.
 - Combined deterministic remediation checks: `99 passed` with the stale-manifest assertion deferred until proof regeneration; Ruff passed. The attended portable provider/install/rollback matrix passed with content digest `beb32190736c58dfcd0025ed995732e5dc0d6db87dc854976b7a993cb6cd0e87` from source commit `4800246eb492366c0b08369d101ad504713dd74c`.
+
+## Review round 4 remediation
+
+- The final adversarial reviewer found two P1 issues: a successful CLI leader could complete while a same-process-group descendant remained alive, and the port-contract suite still expected the finalized U2/cutover manifest to fail.
+- CLI completion now requires terminal process-group confirmation. If the provider group remains active after a valid artifact is returned, the action stays `launched-uncertain`, no completion event or termination receipt is written, and retry remains blocked until the launched attempt is resolved.
+- Added a real subprocess regression test whose leader exits after spawning a same-process-group descendant. The test proves the runtime remains launched and then explicitly cleans up the group.
+- Replaced the obsolete pre-cutover assertion with a positive current-manifest U2/cutover test while retaining mutation-based negative coverage.
+- Focused remediation checks passed with `61 passed`; Ruff and `git diff --check` passed.
+- The attended portable provider/install/rollback matrix was regenerated from source commit `45403b9c2906e110beaf640918431d292b96bb4f`. Exact retained-bundle verification passes with content digest `a2dfa2ae5b6b456ed8f4e96151fd490822816376f44a73d25f339c3b9f04de09`.
+- The prior final reviewer receipts remain diagnostic because they predate these fixes. A fresh protected final barrier must accept the refreshed subject before cutover is claimed.
