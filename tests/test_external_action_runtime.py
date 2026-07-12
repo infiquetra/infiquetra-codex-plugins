@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import signal
 import sys
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
@@ -106,6 +108,53 @@ def test_prepare_approve_execute_adjudicate_consume(tmp_path: Path) -> None:
     runtime.adjudicate(prepared.store, accepted=True, at="2026-07-12T00:03:00Z", detail={"verified": True})
     runtime.consume(prepared.store, at="2026-07-12T00:04:00Z", artifact_ref="docs/result.md")
     assert store_module.read_snapshot(prepared.store).state.value == "consumed"
+
+
+def test_cli_completion_waits_for_surviving_process_group_descendant(
+    tmp_path: Path,
+) -> None:
+    prepared = preview(tmp_path)
+    runtime.approve(prepared, operator="operator", approved_at="approved")
+    process_group: int | None = None
+
+    def executor(_request, _approval, launch):
+        nonlocal process_group
+        leader = subprocess.Popen(
+            [
+                sys.executable,
+                "-c",
+                (
+                    "import subprocess,sys,time; "
+                    "subprocess.Popen([sys.executable,'-c','import time; time.sleep(60)']); "
+                    "time.sleep(0.5)"
+                ),
+            ],
+            start_new_session=True,
+        )
+        process_group = leader.pid
+        launch(
+            {
+                "transport": "cli",
+                "pid": leader.pid,
+                "process_group": leader.pid,
+                "argv_sha256": hashlib.sha256(b"descendant-fixture").hexdigest(),
+                "process_start_identity": runtime.process_start_identity(leader.pid),
+            }
+        )
+        leader.wait(timeout=2)
+        return available(prepared)
+
+    try:
+        outcome = runtime.execute(prepared.store, executor=executor, at="run")
+        assert outcome.status == "launched-uncertain"
+        assert store_module.read_snapshot(prepared.store).state.value == "launched"
+        assert store_module.read_termination(prepared.store) is None
+    finally:
+        if process_group is not None:
+            try:
+                os.killpg(process_group, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
 
 
 def test_execute_requires_approval(tmp_path: Path) -> None:

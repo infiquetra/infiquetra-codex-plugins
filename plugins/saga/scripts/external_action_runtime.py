@@ -294,7 +294,18 @@ def execute(store: store_module.Store, *, executor: Executor, at: str) -> Execut
             disposition="artifact-digest-mismatch",
             detail={"reason": "artifact digest mismatch"},
         )
-    _record_returned_termination(store, at=at, disposition="executor-completed")
+    completed_snapshot = store_module.read_snapshot(store)
+    launch_identity = _normalize_launch_identity(
+        dict(_launch_event(completed_snapshot).get("detail", {})).get("identity")
+    )
+    if launch_identity["transport"] != "http" and not _record_returned_termination(
+        store, at=at, disposition="executor-completed"
+    ):
+        status_module.refresh(store)
+        return ExecutionOutcome(
+            "launched-uncertain",
+            detail={"reason": "provider process group remains active after executor return"},
+        )
     store_module.append_event(
         store,
         event_id="complete-1",
