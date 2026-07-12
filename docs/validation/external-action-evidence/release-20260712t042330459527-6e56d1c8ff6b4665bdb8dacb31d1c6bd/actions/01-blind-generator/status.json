@@ -1,0 +1,58 @@
+{
+  "action_id": "blind-generator",
+  "adapter_class": "claude:delegate",
+  "adjudication": "accept",
+  "approval_fingerprint": "059abc1472dc3dc24c78a8331f38465817adbfea8d98204ea05df3de8c9eb613",
+  "consumed_artifact": "release-matrix://ideate/blind-generator",
+  "consumption_point": "divergent candidate pool",
+  "cost_class": "metered",
+  "egress": {
+    "host": "claude-cli",
+    "policy": "networked"
+  },
+  "estimated_usage": null,
+  "event_count": 7,
+  "evidence_destination": ".codex/saga/external-actions",
+  "intent": "offload",
+  "last_detail": {
+    "artifact_ref": "release-matrix://ideate/blind-generator"
+  },
+  "last_event": "consume",
+  "last_event_at": "2026-07-12T04:23:30.459285+00:00",
+  "launch_acknowledged": true,
+  "observed_usage": null,
+  "receipt_errors": [],
+  "receipt_validity": "valid",
+  "request_sha256": "26db1e1cef95cd3dd9f8b0caa1fd0872ed7319e3b5232b8ef501952f5225e79d",
+  "requiredness": "best-effort",
+  "resolved_model": "opus",
+  "resolved_provider": "claude-cli",
+  "route": {
+    "engine_id": "claude-cli",
+    "invocation": {
+      "auth": {
+        "mode": "files",
+        "paths": [
+          "~/.claude/.credentials.json"
+        ]
+      },
+      "cli": "claude",
+      "effort": "high",
+      "model": "opus",
+      "recipe": "claude --safe-mode --tools '' --disable-slash-commands --print --model opus",
+      "via": "claude:delegate",
+      "write_capable": true
+    },
+    "protocol": [
+      "Use the approved bounded task and repository clone only.",
+      "Never claim gate authority or mutate the live Codex worktree."
+    ],
+    "stage": "ideate",
+    "variant": "opus"
+  },
+  "run_id": "release-20260712t042330459527-6e56d1c8ff6b4665bdb8dacb31d1c6bd-1",
+  "saga_id": "task-external-action-release",
+  "schema": "saga.external-action.status.v1",
+  "stage": "ideate",
+  "state": "consumed"
+}

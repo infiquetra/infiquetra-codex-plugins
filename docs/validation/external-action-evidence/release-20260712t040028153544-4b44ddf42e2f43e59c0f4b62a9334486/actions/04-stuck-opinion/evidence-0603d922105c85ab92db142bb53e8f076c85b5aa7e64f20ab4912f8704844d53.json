@@ -1,0 +1,46 @@
+{
+  "action_id": "stuck-opinion",
+  "engine_id": "claude-cli",
+  "evidence": "[\"I don't have the contents of the \\\"work release fixture\\\" in my context, and you've asked me not to use tools to inspect it. Without seeing the actual fixture, any concern I offered would be fabricated rather than observed.\\n\\nIf you paste the fixture inline, or lift the no-tools constraint so I can read it, I'll return a single concrete low-risk advisory.\"]",
+  "evidence_digest": "e8c680ed8a968c68616cf139e5af3b23bd47eafc2d7f8222ce7b4d4a1f87751c",
+  "findings": [
+    {
+      "content": "I don't have the contents of the \"work release fixture\" in my context, and you've asked me not to use tools to inspect it. Without seeing the actual fixture, any concern I offered would be fabricated rather than observed.\n\nIf you paste the fixture inline, or lift the no-tools constraint so I can read it, I'll return a single concrete low-risk advisory."
+    }
+  ],
+  "intent": "second-opinion",
+  "runner_receipt": {
+    "bytes_produced": 362,
+    "engine_id": "claude-cli",
+    "invocation_sha256": "dc01adc6f58dcf57ae1fa75e76d568dedeac38ab8e327ba8913f20463493cbdb",
+    "output_attestation": {
+      "artifact": "evidence",
+      "bytes": 362,
+      "empty": false,
+      "schema": "output_attestation.v1",
+      "sha256": "e8c680ed8a968c68616cf139e5af3b23bd47eafc2d7f8222ce7b4d4a1f87751c"
+    },
+    "receipt_emitter": "claude-delegate",
+    "run_id": "cli:claude-cli:19912",
+    "runner": {
+      "argv": [
+        "claude",
+        "--safe-mode",
+        "--tools",
+        "",
+        "--disable-slash-commands",
+        "--print",
+        "--model",
+        "opus"
+      ],
+      "exit_code": 0,
+      "pid": 19912
+    },
+    "schema": "bridge_receipt.v1",
+    "transport": "cli",
+    "variant": "opus",
+    "wall_time_s": 11.596603500191122
+  },
+  "schema": "external_action_evidence.v1",
+  "variant": "opus"
+}

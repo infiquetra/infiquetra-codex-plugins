@@ -1,0 +1,34 @@
+version: 1
+evidence_window:
+  definition_version_frozen: true
+  note: A run records this version; changing definitions starts a new evidence window.
+qualifying_run:
+  required:
+    - approved route identity matches the terminal receipt
+    - receipt and action event chains validate
+    - containment passes with no live-tree mutation or write-set escape
+    - Codex explicitly accepts at least part of the result
+    - the accepted result is consumed at the named lifecycle point
+  excluded:
+    - unavailable, timed-out, interrupted, canceled, or invalid-evidence attempts
+    - rejected or unconsumed results
+major_rewrite:
+  definition: Root discards and independently reimplements the provider result, or changes at least half of the provider-produced changed lines before consumption.
+  fields:
+    - provider_changed_lines
+    - root_rewritten_lines
+    - rewrite_ratio
+provider_distribution:
+  definition: Count qualifying runs by exact engine_id and variant; do not merge provider families or sibling variants.
+integrity_failure:
+  definition: Any action-chain, receipt-schema, receipt-signature, invocation, provider, model, output-attestation, or content-address mismatch.
+containment_failure:
+  definition: Any live-tree mutation, write-set escape, dirty-base overlap accepted without adjudication, remote retained in a disposable clone, or incomplete workspace cleanup.
+passing_rollback_drill:
+  definition: From the pinned clean base, apply the accepted artifact, exercise the declared rollback, and prove tracked plus untracked workspace bytes return to the captured pre-apply digest.
+  required_evidence:
+    - pinned base revision
+    - pre-apply workspace digest
+    - apply result
+    - rollback command or inverse artifact
+    - post-rollback workspace digest equal to the pre-apply digest

@@ -1,0 +1,32 @@
+{
+  "argv": [
+    "codex",
+    "plugin",
+    "remove",
+    "fleet-core@isolated-external-action",
+    "--json"
+  ],
+  "content_sha256": "db3f9e9e2e5896217d19acccb11ec77d18d6da4427be4d27c4d151e5dab2f3e4",
+  "cwd": "$REPO_ROOT",
+  "exit_code": 0,
+  "finished_at": "2026-07-12T04:01:08.896657+00:00",
+  "operation": "fleet-remove",
+  "parse_error": null,
+  "release_run_id": "release-20260712t040028153544-4b44ddf42e2f43e59c0f4b62a9334486",
+  "result": {
+    "marketplaceName": "isolated-external-action",
+    "name": "fleet-core",
+    "pluginId": "fleet-core@isolated-external-action"
+  },
+  "schema": "saga.external-action.command-evidence.v2",
+  "semantics": {
+    "plugin_name": "fleet-core"
+  },
+  "sequence": 8,
+  "source_head": "4800246eb492366c0b08369d101ad504713dd74c",
+  "started_at": "2026-07-12T04:01:08.852470+00:00",
+  "stderr_bytes": 0,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_bytes": 129,
+  "stdout_sha256": "5e5e6c148950456b8d6057fa1e6fcbe25da7b34211436526ed70f2452364e4ea"
+}

@@ -1,0 +1,48 @@
+{
+  "action_id": "findings-opinion",
+  "approval_fingerprint": "5a61b48c5347f0c17fcbd64039df30fbee1345742cf8b593e4a0fc23bb47bd65",
+  "approved_at": "2026-07-12T04:23:30.459285+00:00",
+  "base_revision": "45403b9c2906e110beaf640918431d292b96bb4f",
+  "context_scope": [],
+  "cost_class": "metered",
+  "dirty_overlap": [],
+  "dirty_overlap_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "egress": {
+    "host": "agy",
+    "policy": "networked"
+  },
+  "operator": "attended-operator",
+  "payload": "For the doc-review release fixture, identify one low-risk concern. Return concise advisory text only. Do not use tools or modify files.",
+  "payload_sha256": "fef888ba8a2a7d157545f6f57d1eef7598476b9b6131614bbe3086fee1e9d57e",
+  "request_sha256": "1f3e44c48d4ffa7f8dad8278fa423e09f37a9984cf4b3dc1bf370f3fcb5befed",
+  "route": {
+    "engine_id": "agy",
+    "invocation": {
+      "auth": {
+        "mode": "files",
+        "paths": [
+          "~/.config/agy/config.json",
+          "~/.gemini/settings.json"
+        ]
+      },
+      "cli": "agy",
+      "effort": "high",
+      "model": "Gemini 3.5 Flash (High)",
+      "recipe": "agy --model 'Gemini 3.5 Flash (High)' --print-timeout 900s --log-file /dev/null --add-dir . --sandbox --print <prompt>",
+      "via": "agy:delegate",
+      "write_capable": false
+    },
+    "protocol": [
+      "Assign an explicit adversarial/critic role; do not rely on goodwill.",
+      "Put behavioral constraints at the top; keep prompts terse and command-style.",
+      "Avoid vague blanket negatives ('don't infer' breaks reasoning).",
+      "Give explicit stop conditions to counter over-eagerness; put the question last.",
+      "Set thinking level High on hard tasks; keep temperature default."
+    ],
+    "stage": "doc-review",
+    "variant": "gemini-3.5-flash-high"
+  },
+  "schema": "saga.external-action.approval.v1",
+  "sensitivity": "internal",
+  "write_set": []
+}

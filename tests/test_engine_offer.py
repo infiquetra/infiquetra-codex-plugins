@@ -18,6 +18,7 @@ EXECUTION_SPEC_SCRIPT = SCRIPT_DIR / "execution_spec.py"
 STAGE_SKILLS = {
     "ideate": ROOT / "plugins" / "saga" / "skills" / "ideate" / "SKILL.md",
     "brainstorm": ROOT / "plugins" / "saga" / "skills" / "brainstorm" / "SKILL.md",
+    "plan": ROOT / "plugins" / "saga" / "skills" / "plan" / "SKILL.md",
     "work": ROOT / "plugins" / "saga" / "skills" / "work" / "SKILL.md",
     "doc-review": ROOT / "plugins" / "saga" / "skills" / "doc-review" / "SKILL.md",
     "code-review": ROOT / "plugins" / "saga" / "skills" / "code-review" / "SKILL.md",
@@ -416,13 +417,13 @@ def test_preferences_and_surface_defaults_are_closed_schemas(tmp_path: Path) -> 
         E.load_surface_intent_defaults(defaults)
 
 
-def test_drift_guard_stage_skills_reference_shared_engine_offer_helper() -> None:
+def test_stage_skills_reference_shared_external_action_runtime() -> None:
     for stage, path in STAGE_SKILLS.items():
         text = path.read_text(encoding="utf-8")
-        expected = f"engine_offer.py offer --stage {stage}"
-        assert expected in text, f"{path} must call the shared engine_offer helper"
-        if "engine-prefs.json" in text:
-            assert "engine_preference.py" in text, f"{path} must use the explicit preference mutator"
+        expected = f"external_action.py bundle --stage {stage}"
+        assert expected in text, f"{path} must call the shared external-action runtime"
+        assert "external_action_lifecycle.prepare_bundle" in text
+        assert "engine_offer.py offer" not in text
 
 
 def test_engine_preference_file_is_gitignored() -> None:

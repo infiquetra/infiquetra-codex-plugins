@@ -1,0 +1,19 @@
+{
+  "action_id": "blind-generator",
+  "attempt": 1,
+  "consumption_point": "divergent candidate pool",
+  "context_scope": [],
+  "created_at": "2026-07-12T04:23:30.459285+00:00",
+  "evidence_destination": ".codex/saga/external-actions",
+  "intent": "offload",
+  "predecessor_request_sha256": null,
+  "provider_constraints": {},
+  "requiredness": "best-effort",
+  "run_id": "release-20260712t042330459527-6e56d1c8ff6b4665bdb8dacb31d1c6bd-1",
+  "saga_id": "task-external-action-release",
+  "schema": "saga.external-action.request.v1",
+  "sensitivity": "internal",
+  "stage": "ideate",
+  "trigger": "Generate one blind candidate frame.",
+  "write_set": []
+}

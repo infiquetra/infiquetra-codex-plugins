@@ -1,0 +1,18 @@
+{
+  "action_id": "findings-opinion",
+  "disposition": "executor-completed",
+  "launch_event_sha256": "c119374596d8f3f7d2b595d8fab66ca72c659d612b1d719466c7e06fde666290",
+  "launch_identity": {
+    "argv_sha256": "24ed78ad66c6e7f86a8b7e56418c662eae841a18bdfde7eaae9ec200eb572ce8",
+    "pid": 20678,
+    "process_group": 20678,
+    "process_start_identity": "f58f0adadd0688133cdd278c48d484c48be1a9f5d373d300badcf35ca3e7973e",
+    "transport": "cli"
+  },
+  "receipt_sha256": "bdcfcf1e5a85ad169bde7ac2a29b2a6d0477ae012fcca5236bc36c677f3b8966",
+  "request_sha256": "3db4ae51bf13d3e21ba6723383c1d3e3ba24d7d87a66546086b3a93b605fdbe8",
+  "run_id": "release-20260712t040028153544-4b44ddf42e2f43e59c0f4b62a9334486-5",
+  "schema": "saga.external-action.termination.v1",
+  "terminated": true,
+  "terminated_at": "2026-07-12T04:00:28.153311+00:00"
+}

@@ -1,0 +1,38 @@
+{
+  "action_id": "findings-opinion",
+  "engine_id": "ollama-cloud",
+  "evidence": "[\"Add a brief comment explaining the fixture\u2019s purpose and usage to improve code readability.\"]",
+  "evidence_digest": "6053868bec6eec08319e6e33245c2d7e207b33dffdff8a26125ad93c683e5672",
+  "findings": [
+    {
+      "content": "Add a brief comment explaining the fixture\u2019s purpose and usage to improve code readability."
+    }
+  ],
+  "intent": "second-opinion",
+  "runner_receipt": {
+    "bytes_produced": 97,
+    "engine_id": "ollama-cloud",
+    "external_tokens": 236.0,
+    "invocation_sha256": "5bdaba648fec9a067e056b73f561b500d5c65a7046ef5e9920e65ef2e54806a6",
+    "output_attestation": {
+      "artifact": "evidence",
+      "bytes": 97,
+      "empty": false,
+      "schema": "output_attestation.v1",
+      "sha256": "6053868bec6eec08319e6e33245c2d7e207b33dffdff8a26125ad93c683e5672"
+    },
+    "receipt_emitter": "http-bridge",
+    "run_id": "http:ollama-cloud:gpt-oss-120b:2572692.256363708",
+    "runner": {
+      "model": "gpt-oss:120b",
+      "status_code": 200,
+      "url": "https://ollama.com/v1/chat/completions"
+    },
+    "schema": "bridge_receipt.v1",
+    "transport": "http",
+    "variant": "gpt-oss-120b",
+    "wall_time_s": 3.039632957894355
+  },
+  "schema": "external_action_evidence.v1",
+  "variant": "gpt-oss-120b"
+}

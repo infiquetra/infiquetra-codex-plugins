@@ -1,0 +1,50 @@
+{
+  "action_id": "findings-opinion",
+  "engine_id": "agy",
+  "evidence": "[\"The release fixture contains placeholder timestamps for the post-deployment verification phase. This is a low-risk concern as the actual logs and verification metrics are recorded in the central deployment system, but the placeholders should be cleared before final archival.\"]",
+  "evidence_digest": "8516fe0cb4bf7a104640e6daab68b3d4ec7b20b3053daf97ca3b283365ef32d4",
+  "findings": [
+    {
+      "content": "The release fixture contains placeholder timestamps for the post-deployment verification phase. This is a low-risk concern as the actual logs and verification metrics are recorded in the central deployment system, but the placeholders should be cleared before final archival."
+    }
+  ],
+  "intent": "second-opinion",
+  "runner_receipt": {
+    "bytes_produced": 279,
+    "engine_id": "agy",
+    "invocation_sha256": "027f9d813560e4f4132d0e58640307111333366b542dd8fddc1f0919ceb66f37",
+    "output_attestation": {
+      "artifact": "evidence",
+      "bytes": 279,
+      "empty": false,
+      "schema": "output_attestation.v1",
+      "sha256": "8516fe0cb4bf7a104640e6daab68b3d4ec7b20b3053daf97ca3b283365ef32d4"
+    },
+    "receipt_emitter": "agy-delegate",
+    "run_id": "cli:agy:60324",
+    "runner": {
+      "argv": [
+        "agy",
+        "--model",
+        "Gemini 3.5 Flash (High)",
+        "--print-timeout",
+        "900s",
+        "--log-file",
+        "/dev/null",
+        "--add-dir",
+        ".",
+        "--sandbox",
+        "--print",
+        "<redacted:77bf9ad481e2d5f6962ed031ef96d68cb2a796ac7966c54887c113cbc0b5aa70>"
+      ],
+      "exit_code": 0,
+      "pid": 60324
+    },
+    "schema": "bridge_receipt.v1",
+    "transport": "cli",
+    "variant": "gemini-3.5-flash-high",
+    "wall_time_s": 10.35544400010258
+  },
+  "schema": "external_action_evidence.v1",
+  "variant": "gemini-3.5-flash-high"
+}

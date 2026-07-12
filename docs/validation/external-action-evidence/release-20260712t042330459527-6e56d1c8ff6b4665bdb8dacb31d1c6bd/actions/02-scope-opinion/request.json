@@ -1,0 +1,19 @@
+{
+  "action_id": "scope-opinion",
+  "attempt": 1,
+  "consumption_point": "before requirements write",
+  "context_scope": [],
+  "created_at": "2026-07-12T04:23:30.459285+00:00",
+  "evidence_destination": ".codex/saga/external-actions",
+  "intent": "second-opinion",
+  "predecessor_request_sha256": null,
+  "provider_constraints": {},
+  "requiredness": "best-effort",
+  "run_id": "release-20260712t042330459527-6e56d1c8ff6b4665bdb8dacb31d1c6bd-2",
+  "saga_id": "task-external-action-release",
+  "schema": "saga.external-action.request.v1",
+  "sensitivity": "internal",
+  "stage": "brainstorm",
+  "trigger": "Review the scope synthesis.",
+  "write_set": []
+}

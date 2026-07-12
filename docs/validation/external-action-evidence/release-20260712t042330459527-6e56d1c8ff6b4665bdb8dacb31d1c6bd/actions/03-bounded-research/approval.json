@@ -1,0 +1,43 @@
+{
+  "action_id": "bounded-research",
+  "approval_fingerprint": "1e479dde265ca43ab38852cad9018f820db0883e0b5d2a190bfcaee32693054c",
+  "approved_at": "2026-07-12T04:23:30.459285+00:00",
+  "base_revision": "45403b9c2906e110beaf640918431d292b96bb4f",
+  "context_scope": [],
+  "cost_class": "free",
+  "dirty_overlap": [],
+  "dirty_overlap_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "egress": {
+    "host": "ollama.com",
+    "policy": "networked"
+  },
+  "operator": "attended-operator",
+  "payload": "For the plan release fixture, return one concise bounded artifact sentence. Do not use tools or modify files.",
+  "payload_sha256": "ffeb0fef0eff5e4415178fb04c98e42b498328bbda59b54beb9e3d381e1decda",
+  "request_sha256": "8fc6a43b4d64c9f2086195ffe2a5826bc914ec1d5d4176e2a182008f4ccc7585",
+  "route": {
+    "engine_id": "ollama-cloud",
+    "invocation": {
+      "auth": {
+        "key_env": "OLLAMA_API_KEY",
+        "mode": "bearer"
+      },
+      "base_url": "https://ollama.com/v1",
+      "effort": "default",
+      "model": "gpt-oss:120b",
+      "recipe": "POST https://ollama.com/v1/chat/completions (gpt-oss:120b)",
+      "via": "engine-bridge-http",
+      "write_capable": false
+    },
+    "protocol": [
+      "Resolve the bearer token from OLLAMA_API_KEY at request-build time only; never log it.",
+      "Availability-gated: skip (never fail) when OLLAMA_API_KEY is absent or endpoint unreachable.",
+      "Advisory only -- never a gate/verdict source (R6, {#external-engines-never-gatekeepers})."
+    ],
+    "stage": "plan",
+    "variant": "gpt-oss-120b"
+  },
+  "schema": "saga.external-action.approval.v1",
+  "sensitivity": "internal",
+  "write_set": []
+}

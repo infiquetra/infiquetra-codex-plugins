@@ -1,0 +1,57 @@
+{
+  "action_id": "findings-opinion",
+  "adapter_class": "engine-bridge-http",
+  "adjudication": "accept",
+  "approval_fingerprint": "b4523915abd465b06737bf46c8d66a94b980e022fb5edccb7ab2b809bb66feaa",
+  "consumed_artifact": "release-matrix://code-review/findings-opinion",
+  "consumption_point": "before review verdict",
+  "cost_class": "free",
+  "egress": {
+    "host": "ollama.com",
+    "policy": "networked"
+  },
+  "estimated_usage": null,
+  "event_count": 7,
+  "evidence_destination": ".codex/saga/external-actions",
+  "intent": "second-opinion",
+  "last_detail": {
+    "artifact_ref": "release-matrix://code-review/findings-opinion"
+  },
+  "last_event": "consume",
+  "last_event_at": "2026-07-12T04:23:30.459285+00:00",
+  "launch_acknowledged": true,
+  "observed_usage": 236.0,
+  "receipt_errors": [],
+  "receipt_validity": "valid",
+  "request_sha256": "9f382a385357e8ac39c25853553eb2138134a45d28fd3bc704823c999ac26fb7",
+  "requiredness": "required-before-continue",
+  "resolved_model": "gpt-oss:120b",
+  "resolved_provider": "ollama-cloud",
+  "route": {
+    "engine_id": "ollama-cloud",
+    "invocation": {
+      "auth": {
+        "key_env": "OLLAMA_API_KEY",
+        "mode": "bearer"
+      },
+      "base_url": "https://ollama.com/v1",
+      "effort": "default",
+      "model": "gpt-oss:120b",
+      "recipe": "POST https://ollama.com/v1/chat/completions (gpt-oss:120b)",
+      "via": "engine-bridge-http",
+      "write_capable": false
+    },
+    "protocol": [
+      "Resolve the bearer token from OLLAMA_API_KEY at request-build time only; never log it.",
+      "Availability-gated: skip (never fail) when OLLAMA_API_KEY is absent or endpoint unreachable.",
+      "Advisory only -- never a gate/verdict source (R6, {#external-engines-never-gatekeepers})."
+    ],
+    "stage": "code-review",
+    "variant": "gpt-oss-120b"
+  },
+  "run_id": "release-20260712t042330459527-6e56d1c8ff6b4665bdb8dacb31d1c6bd-6",
+  "saga_id": "task-external-action-release",
+  "schema": "saga.external-action.status.v1",
+  "stage": "code-review",
+  "state": "consumed"
+}

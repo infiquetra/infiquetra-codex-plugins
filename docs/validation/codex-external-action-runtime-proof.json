@@ -1,0 +1,222 @@
+{
+  "content_sha256": "a2dfa2ae5b6b456ed8f4e96151fd490822816376f44a73d25f339c3b9f04de09",
+  "evidence_bundle": "docs/validation/external-action-evidence/release-20260712t042330459527-6e56d1c8ff6b4665bdb8dacb31d1c6bd",
+  "prerequisites": {
+    "agy_cli": true,
+    "claude_cli": true,
+    "ollama_key_available": true,
+    "ollama_key_ref": "OLLAMA_API_KEY"
+  },
+  "providers": [
+    "agy/gemini-3.5-flash-high",
+    "claude-cli/opus",
+    "ollama-cloud/gpt-oss-120b"
+  ],
+  "recorded_at": "2026-07-12T04:23:30.459285+00:00",
+  "release_run_id": "release-20260712t042330459527-6e56d1c8ff6b4665bdb8dacb31d1c6bd",
+  "rollback_drill": {
+    "base_revision": "45403b9c2906e110beaf640918431d292b96bb4f",
+    "candidate_digest": "7894d72555b2280db713d54209d649ab8b1f3c4816975ed63520a3485730bea6",
+    "candidate_installed": true,
+    "command_records": [
+      {
+        "operation": "prior-list",
+        "record_ref": "docs/validation/external-action-evidence/release-20260712t042330459527-6e56d1c8ff6b4665bdb8dacb31d1c6bd/commands/01-prior-list.json",
+        "record_sha256": "74146bbfd536826cdd42be85555f6a0966da92e61fee1b59ca90430404ab3571"
+      },
+      {
+        "operation": "marketplace-add",
+        "record_ref": "docs/validation/external-action-evidence/release-20260712t042330459527-6e56d1c8ff6b4665bdb8dacb31d1c6bd/commands/02-marketplace-add.json",
+        "record_sha256": "8dd7868b756abd6dcca4bcc685370d4965e02e269cb8403628aa41feb3ff939b"
+      },
+      {
+        "operation": "fleet-install",
+        "record_ref": "docs/validation/external-action-evidence/release-20260712t042330459527-6e56d1c8ff6b4665bdb8dacb31d1c6bd/commands/03-fleet-install.json",
+        "record_sha256": "3479ab41036fdb91f22b0dcdd6d1061967e86687b831b5ad0be6642c085b0f52"
+      },
+      {
+        "operation": "saga-install",
+        "record_ref": "docs/validation/external-action-evidence/release-20260712t042330459527-6e56d1c8ff6b4665bdb8dacb31d1c6bd/commands/04-saga-install.json",
+        "record_sha256": "bd33c0d479d588c3da0e1b903939a62f67ceb66b34461719d3070d9de75bf253"
+      },
+      {
+        "operation": "installed-list",
+        "record_ref": "docs/validation/external-action-evidence/release-20260712t042330459527-6e56d1c8ff6b4665bdb8dacb31d1c6bd/commands/05-installed-list.json",
+        "record_sha256": "fa9a2d7cc6409dea7157788e2f98e04dddea294134999ee20928e393859258ab"
+      },
+      {
+        "operation": "fresh-session-probe",
+        "record_ref": "docs/validation/external-action-evidence/release-20260712t042330459527-6e56d1c8ff6b4665bdb8dacb31d1c6bd/commands/06-fresh-session-probe.json",
+        "record_sha256": "8b53d540b058227f0cc0a99900e609064f6b6ad084fdd4b72f2ef3610006d1f0"
+      },
+      {
+        "operation": "saga-remove",
+        "record_ref": "docs/validation/external-action-evidence/release-20260712t042330459527-6e56d1c8ff6b4665bdb8dacb31d1c6bd/commands/07-saga-remove.json",
+        "record_sha256": "294f720ea1691c64ee42a8bd1dd9e5d050d306f8fbf7a9a96e40f5ffaeca9a3f"
+      },
+      {
+        "operation": "fleet-remove",
+        "record_ref": "docs/validation/external-action-evidence/release-20260712t042330459527-6e56d1c8ff6b4665bdb8dacb31d1c6bd/commands/08-fleet-remove.json",
+        "record_sha256": "30c206e913529b3ba4e5128488d6a4fbd3a214a916f535840d1a75ee11cd9b20"
+      },
+      {
+        "operation": "marketplace-remove",
+        "record_ref": "docs/validation/external-action-evidence/release-20260712t042330459527-6e56d1c8ff6b4665bdb8dacb31d1c6bd/commands/09-marketplace-remove.json",
+        "record_sha256": "637b4f2f7190707a434d91d65b340072f00b2e69429d1c8bc1df3048c28a1388"
+      },
+      {
+        "operation": "restored-list",
+        "record_ref": "docs/validation/external-action-evidence/release-20260712t042330459527-6e56d1c8ff6b4665bdb8dacb31d1c6bd/commands/10-restored-list.json",
+        "record_sha256": "307db3a1c15adc548f7691907dde4d8d6ecbca72fb8a1b3028f10ad9e193ea7d"
+      }
+    ],
+    "fleet_candidate_digest": "233ae83073dd16bf36b9dedfd3281ad6d9bfe3de212886cd7fea64ec4d99fdf4",
+    "fleet_install_sha256": "0c703a2436c78fced92ec9e9b0f67237dd6e8c6ddcea79b8a03fb0899e4acf41",
+    "fleet_remove_sha256": "35656866d7e50855e1f1913857ed0a548645a2e5c402d1ecc38cbc528c23eed2",
+    "fresh_session_passed": true,
+    "fresh_session_sha256": "4bfa46979ea85e5ccf0b285cd54108242652f3ee030a5ec383349764c1f1ae1c",
+    "install_receipt_sha256": "8765ba916a62fc2385dd2b3a52ff6b4347aee2a9221ccb36bc23387f6e972ff8",
+    "marketplace_add_sha256": "c67c569a854c1ac24cb4c826721a606152f7b0e8f928203e4122cf6d140c1d0e",
+    "marketplace_remove_sha256": "34bf57e23f8f6f09d0e857049f9a406a26093fcef3b1abf2735dd8895809dd52",
+    "passed": true,
+    "prior_digest": "654a7a9ba6df00d40f7d066417822a9752b700b75807d1bb5d79c9275cd5b8d0",
+    "prior_installed": false,
+    "release_run_id": "release-20260712t042330459527-6e56d1c8ff6b4665bdb8dacb31d1c6bd",
+    "remove_receipt_sha256": "65cac677bb33c2db310cde51fbd6257e5b0cc833088bed02373f9e045d3ec3ee",
+    "restored": true,
+    "restored_digest": "654a7a9ba6df00d40f7d066417822a9752b700b75807d1bb5d79c9275cd5b8d0"
+  },
+  "sanitization": {
+    "absolute_paths": false,
+    "credentials": false,
+    "prompts_or_transcripts": true,
+    "raw_receipts": true
+  },
+  "schema_version": 1,
+  "source_head": "45403b9c2906e110beaf640918431d292b96bb4f",
+  "source_tree": "40c3ced7374ab713e29dc066e995a564566850e6",
+  "source_worktree_sha256": "2afe7fe4614b1c1ca52087c20126ccc4194ea2ec6fcbb088e8a0b8c4877af7a0",
+  "stages": [
+    {
+      "action_id": "blind-generator",
+      "action_record_ref": "docs/validation/external-action-evidence/release-20260712t042330459527-6e56d1c8ff6b4665bdb8dacb31d1c6bd/actions/01-blind-generator",
+      "action_record_sha256": "9e0d85956f89a2ff81797294c5f02380c008f76107bfdacb9a1bf443b796551b",
+      "adapter_class": "claude:delegate",
+      "approval_fingerprint": "059abc1472dc3dc24c78a8331f38465817adbfea8d98204ea05df3de8c9eb613",
+      "engine_key": "claude-cli/opus",
+      "event_chain_tip": "bcf194f4a58aa40c99a718775d47d4147ee9a0be70bc5399cd6624718b7ccc8f",
+      "evidence_digest": "029ec903a9890870cfd374990b3d9acf43e5d1362a00fe157aea897063a922e7",
+      "evidence_sha256": "bcd906164d6d828040be93e140746bfde7d3f00c2b7d7883e84475b5c607acc3",
+      "finding_count": 1,
+      "intent": "offload",
+      "receipt_sha256": "49990e3554636702be40987d4eb6975ef30f6ee89bda5583bc4e4f2b3bbed425",
+      "receipt_validity": "valid",
+      "request_sha256": "26db1e1cef95cd3dd9f8b0caa1fd0872ed7319e3b5232b8ef501952f5225e79d",
+      "requiredness": "best-effort",
+      "stage": "ideate",
+      "state": "consumed",
+      "status_card_sha256": "a9d77856d3b9877f6b83b72ec8f03e5e6673779f8ff1cf7cf6191225be89ba46"
+    },
+    {
+      "action_id": "scope-opinion",
+      "action_record_ref": "docs/validation/external-action-evidence/release-20260712t042330459527-6e56d1c8ff6b4665bdb8dacb31d1c6bd/actions/02-scope-opinion",
+      "action_record_sha256": "d3ee54e3d9b06c420fd03c854daa8eb117d05fed277a6fc7ff85e01dae3e24fc",
+      "adapter_class": "agy:delegate",
+      "approval_fingerprint": "125b5b3ab8d75d0c2bea99770cce0daaa1b1af698b8207db0340b82ec5dc3da6",
+      "engine_key": "agy/gemini-3.5-flash-high",
+      "event_chain_tip": "54267663dcade740220001fd469748de1a8bfa86c449b79251165fa26a2d5950",
+      "evidence_digest": "769123eb3f61c67aaf7e6809ff06660f4f8ff089e95def40b6f8bc69964230b5",
+      "evidence_sha256": "f1febcb26fcbce5ddce3fbfde999efaddc84f0018f400d160e9b9d250f8a6c04",
+      "finding_count": 1,
+      "intent": "second-opinion",
+      "receipt_sha256": "908572f2891680153c4db686caac2e0ae35734a0d6e8917358c15905a1807316",
+      "receipt_validity": "valid",
+      "request_sha256": "c54a31324f7392062643c352a4355ab50703b5e8e00440bfcf5e1238b2dc3004",
+      "requiredness": "best-effort",
+      "stage": "brainstorm",
+      "state": "consumed",
+      "status_card_sha256": "dad52f1e5681f459a6fbbea78c39f8fea3beed4a5181ad5c29849d09f4e4cfd7"
+    },
+    {
+      "action_id": "bounded-research",
+      "action_record_ref": "docs/validation/external-action-evidence/release-20260712t042330459527-6e56d1c8ff6b4665bdb8dacb31d1c6bd/actions/03-bounded-research",
+      "action_record_sha256": "decf39ef673e8f5f32009068ebe35aed3a7375272b7d4feca9bca297f5bb0812",
+      "adapter_class": "engine-bridge-http",
+      "approval_fingerprint": "1e479dde265ca43ab38852cad9018f820db0883e0b5d2a190bfcaee32693054c",
+      "engine_key": "ollama-cloud/gpt-oss-120b",
+      "event_chain_tip": "1acf99c62ed7b9ef4d59190038c6577caecfa3a93deda902f3da11e147e46c49",
+      "evidence_digest": "7eb996c8b4d5dd0fa372d9c0247b8a41fc734f1af537233fe0bbce1977aa7aff",
+      "evidence_sha256": "4ad3b3084f8bc7cee588d3a83a3bd06545c6d76ccda9889bbcedf059ebeccd3d",
+      "finding_count": 1,
+      "intent": "offload",
+      "receipt_sha256": "ee2e59c002e14c343edb65cf0b130480b1363021ff0b5ac87e765e8d25bb2e0a",
+      "receipt_validity": "valid",
+      "request_sha256": "8fc6a43b4d64c9f2086195ffe2a5826bc914ec1d5d4176e2a182008f4ccc7585",
+      "requiredness": "best-effort",
+      "stage": "plan",
+      "state": "consumed",
+      "status_card_sha256": "3a6fa789a9d8da5b0f538744f73ff6523e3ed8eaae05531e0dc0b3435fb8322b"
+    },
+    {
+      "action_id": "stuck-opinion",
+      "action_record_ref": "docs/validation/external-action-evidence/release-20260712t042330459527-6e56d1c8ff6b4665bdb8dacb31d1c6bd/actions/04-stuck-opinion",
+      "action_record_sha256": "6bf0cd107c2c2aa9bd0a0745df1172f8978a6fb70477b11ebda3743bfb8a5f10",
+      "adapter_class": "claude:delegate",
+      "approval_fingerprint": "e90f4a734f50c069e1d5b4153ab642841f263f196f0f7bc3e6382289dd7e1b54",
+      "engine_key": "claude-cli/opus",
+      "event_chain_tip": "abca5396abfc2c69a9a80cc565089abb17bebd4fe72553621f5352e740fd88a6",
+      "evidence_digest": "8b5dc9ea283967158c264a21cd8d141450a43bfa55105d12500d431cc3411399",
+      "evidence_sha256": "2e128142f97fe9647bd6b8caf280297f516191261890a6f630fc8017bc892f70",
+      "finding_count": 1,
+      "intent": "second-opinion",
+      "receipt_sha256": "9df742f1944ea70bfc7b66ba65408efebba47cb1413590ab16753bf6b0188272",
+      "receipt_validity": "valid",
+      "request_sha256": "b46b96b35373716cd9d6decee0329eec183c126d18d9744b2c570a4e86feb73c",
+      "requiredness": "best-effort",
+      "stage": "work",
+      "state": "consumed",
+      "status_card_sha256": "29e9fbfad7918e87e376803cadbed24f97fa323b85fa202cb2f287c43a490ac3"
+    },
+    {
+      "action_id": "findings-opinion",
+      "action_record_ref": "docs/validation/external-action-evidence/release-20260712t042330459527-6e56d1c8ff6b4665bdb8dacb31d1c6bd/actions/05-findings-opinion",
+      "action_record_sha256": "b0716acc4d73db17bc5aa64b64e9cfef1e87d5b33d87315d3d0a8638ef52b3c5",
+      "adapter_class": "agy:delegate",
+      "approval_fingerprint": "5a61b48c5347f0c17fcbd64039df30fbee1345742cf8b593e4a0fc23bb47bd65",
+      "engine_key": "agy/gemini-3.5-flash-high",
+      "event_chain_tip": "297a8b177b19357e754751ce3687750df60aaddddd67763b40005858a8e0af67",
+      "evidence_digest": "8516fe0cb4bf7a104640e6daab68b3d4ec7b20b3053daf97ca3b283365ef32d4",
+      "evidence_sha256": "872efeea4eb990b7e4d95094c998c650d4bf5acf889427b29ae182bfde89a820",
+      "finding_count": 1,
+      "intent": "second-opinion",
+      "receipt_sha256": "733747fffacf508558013daddd2d6836dae08b05eaea29f340f77a4fa211676b",
+      "receipt_validity": "valid",
+      "request_sha256": "1f3e44c48d4ffa7f8dad8278fa423e09f37a9984cf4b3dc1bf370f3fcb5befed",
+      "requiredness": "best-effort",
+      "stage": "doc-review",
+      "state": "consumed",
+      "status_card_sha256": "05e5e13b19cb5d04dc250c81592d4aacfc668de9b263d3131fbdc8666ba81925"
+    },
+    {
+      "action_id": "findings-opinion",
+      "action_record_ref": "docs/validation/external-action-evidence/release-20260712t042330459527-6e56d1c8ff6b4665bdb8dacb31d1c6bd/actions/06-findings-opinion",
+      "action_record_sha256": "5db472696d906612225f31b6f2e5fd9603d0208b033fe94b4f971089e4ceca85",
+      "adapter_class": "engine-bridge-http",
+      "approval_fingerprint": "b4523915abd465b06737bf46c8d66a94b980e022fb5edccb7ab2b809bb66feaa",
+      "engine_key": "ollama-cloud/gpt-oss-120b",
+      "event_chain_tip": "f71e1ffc0e2290e20168fc60e0775281ef3628eae17868778137de21253fbd5b",
+      "evidence_digest": "6053868bec6eec08319e6e33245c2d7e207b33dffdff8a26125ad93c683e5672",
+      "evidence_sha256": "edcdd9e05abf2fd196d9b5809ab2cde54e29f57133e74afa7ad1c29140410c55",
+      "finding_count": 1,
+      "intent": "second-opinion",
+      "receipt_sha256": "ee0b6d59f8e8eb9cf6eb4470aaace348175678a519c3dee468965f82ab6b4e78",
+      "receipt_validity": "valid",
+      "request_sha256": "9f382a385357e8ac39c25853553eb2138134a45d28fd3bc704823c999ac26fb7",
+      "requiredness": "required-before-continue",
+      "stage": "code-review",
+      "state": "consumed",
+      "status_card_sha256": "f1a1a5c5a82fe2b8dd809a56d6725ed9a0a5ee478b905894b9fed2cf0be37a65"
+    }
+  ],
+  "status": "passed"
+}

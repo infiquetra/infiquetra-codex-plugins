@@ -1,0 +1,35 @@
+{
+  "argv": [
+    "codex",
+    "plugin",
+    "add",
+    "fleet-core@isolated-external-action",
+    "--json"
+  ],
+  "content_sha256": "24a5897a58592952782257d1fb05ec346343159a3d2385835f2e3749a317d681",
+  "cwd": "$REPO_ROOT",
+  "exit_code": 0,
+  "finished_at": "2026-07-12T04:24:14.531034+00:00",
+  "operation": "fleet-install",
+  "parse_error": null,
+  "release_run_id": "release-20260712t042330459527-6e56d1c8ff6b4665bdb8dacb31d1c6bd",
+  "result": {
+    "authPolicy": "ON_INSTALL",
+    "installedPath": "$CODEX_HOME/plugins/cache/isolated-external-action/fleet-core/0.8.4+codex.20260711134422",
+    "marketplaceName": "isolated-external-action",
+    "name": "fleet-core",
+    "pluginId": "fleet-core@isolated-external-action",
+    "version": "0.8.4+codex.20260711134422"
+  },
+  "schema": "saga.external-action.command-evidence.v2",
+  "semantics": {
+    "plugin_name": "fleet-core"
+  },
+  "sequence": 3,
+  "source_head": "45403b9c2906e110beaf640918431d292b96bb4f",
+  "started_at": "2026-07-12T04:24:14.483083+00:00",
+  "stderr_bytes": 0,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_bytes": 400,
+  "stdout_sha256": "3281c58cfeb300e24876c345eece384fe01e8f7240afc80cf8857f54665a40fa"
+}

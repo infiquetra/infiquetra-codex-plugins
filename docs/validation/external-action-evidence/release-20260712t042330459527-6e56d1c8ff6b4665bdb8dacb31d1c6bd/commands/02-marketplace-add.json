@@ -1,0 +1,33 @@
+{
+  "argv": [
+    "codex",
+    "plugin",
+    "marketplace",
+    "add",
+    "$MARKETPLACE",
+    "--json"
+  ],
+  "content_sha256": "6b37f08d5c24d989c6dc537c010305c2521a11c3f192e188fb161e4fef5c5369",
+  "cwd": "$REPO_ROOT",
+  "exit_code": 0,
+  "finished_at": "2026-07-12T04:24:14.482372+00:00",
+  "operation": "marketplace-add",
+  "parse_error": null,
+  "release_run_id": "release-20260712t042330459527-6e56d1c8ff6b4665bdb8dacb31d1c6bd",
+  "result": {
+    "alreadyAdded": false,
+    "installedRoot": "$MARKETPLACE",
+    "marketplaceName": "isolated-external-action"
+  },
+  "schema": "saga.external-action.command-evidence.v2",
+  "semantics": {
+    "marketplace_name": "isolated-external-action"
+  },
+  "sequence": 2,
+  "source_head": "45403b9c2906e110beaf640918431d292b96bb4f",
+  "started_at": "2026-07-12T04:24:14.439698+00:00",
+  "stderr_bytes": 0,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_bytes": 199,
+  "stdout_sha256": "8604ed08079bd46c87a03c471d514357ca6ef8d52c53b33be278f03776993ad2"
+}

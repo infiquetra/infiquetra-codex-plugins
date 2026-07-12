@@ -1,0 +1,38 @@
+{
+  "action_id": "bounded-research",
+  "engine_id": "ollama-cloud",
+  "evidence": "The plan release fixture provides a deterministic, version\u2011controlled plan configuration that isolates each test case for reproducible release testing.",
+  "evidence_digest": "7eb996c8b4d5dd0fa372d9c0247b8a41fc734f1af537233fe0bbce1977aa7aff",
+  "findings": [
+    {
+      "content": "The plan release fixture provides a deterministic, version\u2011controlled plan configuration that isolates each test case for reproducible release testing."
+    }
+  ],
+  "intent": "offload",
+  "runner_receipt": {
+    "bytes_produced": 153,
+    "engine_id": "ollama-cloud",
+    "external_tokens": 217.0,
+    "invocation_sha256": "55dd939a19d15faa3587b02fcd345aff5c6c88411e0765a5a3980cc3390fedd5",
+    "output_attestation": {
+      "artifact": "evidence",
+      "bytes": 153,
+      "empty": false,
+      "schema": "output_attestation.v1",
+      "sha256": "7eb996c8b4d5dd0fa372d9c0247b8a41fc734f1af537233fe0bbce1977aa7aff"
+    },
+    "receipt_emitter": "http-bridge",
+    "run_id": "http:ollama-cloud:gpt-oss-120b:2572668.587188541",
+    "runner": {
+      "model": "gpt-oss:120b",
+      "status_code": 200,
+      "url": "https://ollama.com/v1/chat/completions"
+    },
+    "schema": "bridge_receipt.v1",
+    "transport": "http",
+    "variant": "gpt-oss-120b",
+    "wall_time_s": 1.5042524999007583
+  },
+  "schema": "external_action_evidence.v1",
+  "variant": "gpt-oss-120b"
+}

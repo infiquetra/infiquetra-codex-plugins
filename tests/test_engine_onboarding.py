@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import importlib.util
-import hashlib
 import json
 import sys
 from pathlib import Path
@@ -33,6 +32,13 @@ def _load() -> ModuleType:
 
 ONBOARDING = _load()
 CONFORMANCE = importlib.import_module("engine_registry_conformance")
+OVERLAY = importlib.import_module("engine_overlay")
+REGISTRY_OVERLAY = importlib.import_module("engine_registry_overlay")
+DISPATCH = importlib.import_module("engine_dispatch")
+RESOLVER = importlib.import_module("engine_resolver")
+FLEET_COMMONS = importlib.import_module("fleet_commons_shim")
+BRIDGE_RECEIPT = FLEET_COMMONS.load("bridge_receipt")
+OUTPUT_ATTESTATION = FLEET_COMMONS.load("output_attestation")
 
 
 def _spec() -> dict[str, Any]:
@@ -89,7 +95,7 @@ def _onboard(
     apply: bool = False,
     before_replace: Any | None = None,
 ) -> Any:
-    expected = hashlib.sha256(registry.read_bytes()).hexdigest() if apply else None
+    expected = OVERLAY.overlay_sha256(registry.parent) if apply else None
     return ONBOARDING.onboard(
         spec,
         registry,
@@ -97,6 +103,12 @@ def _onboard(
         expected_sha256=expected,
         repo_root=registry.parent,
         before_replace=before_replace,
+        smoke_runner=lambda _invocation: {
+            "status": "ok",
+            "output": "SAGA_PROVIDER_SMOKE_OK",
+            "external_tokens": 1,
+        },
+        getenv=lambda _name: "fixture-secret",
     )
 
 
@@ -116,18 +128,16 @@ def test_dry_run_builds_probationary_generic_http_row_without_writing(tmp_path: 
     assert registry.read_text(encoding="utf-8") == before
 
 
-def test_apply_inserts_only_row_before_roles_and_registry_loads(tmp_path: Path) -> None:
+def test_apply_writes_only_overlay_and_composed_registry_loads(tmp_path: Path) -> None:
     spec = _write_spec(tmp_path)
     registry = _copy_registry(tmp_path)
     before = registry.read_text(encoding="utf-8")
 
     result = _onboard(spec, registry, apply=True)
 
-    after = registry.read_text(encoding="utf-8")
     assert result.applied
-    assert after.replace(result.fragment + "\n", "", 1) == before
-    assert after.index(result.fragment) < after.index("roles:")
-    loaded = ONBOARDING.Registry.load(registry)
+    assert registry.read_text(encoding="utf-8") == before
+    loaded = REGISTRY_OVERLAY.load_composed_registry(registry, tmp_path)
     entry = loaded.by_key("fixture-http/fixture-chat")
     assert entry.trust_tier == "probation"
     assert entry.default_for_engine is True
@@ -231,15 +241,19 @@ def test_concurrent_registry_edit_aborts_without_overwriting_it(tmp_path: Path) 
     registry = _copy_registry(tmp_path)
 
     def concurrent_edit() -> None:
-        registry.write_text(
-            registry.read_text(encoding="utf-8") + "\n# concurrent operator edit\n",
-            encoding="utf-8",
+        OVERLAY.save_overlay(
+            tmp_path,
+            OVERLAY.EngineOverlay(
+                pins={"code-generation": "agy/gemini-3.5-flash-high"}
+            ),
         )
 
-    with pytest.raises(ONBOARDING.OnboardingError, match="changed during onboarding"):
+    with pytest.raises(ONBOARDING.OnboardingError, match="overlay changed during apply"):
         _onboard(spec, registry, apply=True, before_replace=concurrent_edit)
 
-    assert registry.read_text(encoding="utf-8").endswith("# concurrent operator edit\n")
+    assert OVERLAY.load_overlay(tmp_path).pins == {
+        "code-generation": "agy/gemini-3.5-flash-high"
+    }
     assert "fixture-http" not in registry.read_text(encoding="utf-8")
 
 
@@ -287,7 +301,7 @@ def test_apply_requires_current_digest_and_contained_regular_target(tmp_path: Pa
     registry = _copy_registry(tmp_path)
     before = registry.read_bytes()
 
-    with pytest.raises(ONBOARDING.OnboardingError, match="expected pre-write SHA-256"):
+    with pytest.raises(ONBOARDING.OnboardingError, match="expected overlay SHA-256"):
         ONBOARDING.onboard(spec, registry, apply=True, repo_root=tmp_path)
     with pytest.raises(ONBOARDING.OnboardingError, match="does not match"):
         ONBOARDING.onboard(
@@ -311,3 +325,87 @@ def test_apply_requires_current_digest_and_contained_regular_target(tmp_path: Pa
     with pytest.raises(ONBOARDING.OnboardingError, match="symlink"):
         ONBOARDING.onboard(spec, link, repo_root=tmp_path)
     assert registry.read_bytes() == before
+
+
+def test_apply_rejects_unresolved_secret_and_failed_smoke(tmp_path: Path) -> None:
+    spec = _write_spec(tmp_path)
+    registry = _copy_registry(tmp_path)
+    expected = OVERLAY.overlay_sha256(tmp_path)
+
+    with pytest.raises(ONBOARDING.OnboardingError, match="secret reference"):
+        ONBOARDING.onboard(
+            spec,
+            registry,
+            apply=True,
+            expected_sha256=expected,
+            repo_root=tmp_path,
+            getenv=lambda _name: None,
+        )
+    with pytest.raises(ONBOARDING.OnboardingError, match="provider smoke failed"):
+        ONBOARDING.onboard(
+            spec,
+            registry,
+            apply=True,
+            expected_sha256=expected,
+            repo_root=tmp_path,
+            getenv=lambda _name: "fixture-secret",
+            smoke_runner=lambda _invocation: {"status": "error", "note": "fixture failure"},
+        )
+    assert not (tmp_path / ".codex" / "saga" / "engine-overlay.json").exists()
+
+
+def test_onboarded_overlay_row_dispatches_through_generic_http_contract(
+    tmp_path: Path,
+) -> None:
+    spec = _write_spec(tmp_path)
+    registry = _copy_registry(tmp_path)
+    _onboard(spec, registry, apply=True)
+    entry = REGISTRY_OVERLAY.load_composed_registry(registry, tmp_path).by_key(
+        "fixture-http/fixture-chat"
+    )
+    resolution = RESOLVER.Resolution(
+        engine_id=entry.engine_id,
+        variant=entry.variant,
+        effort=str(entry.invocation["effort"]),
+        recipe=str(entry.invocation["recipe"]),
+        protocol=list(entry.prompting_protocol),
+        payload="review this fixture",
+        write_capable=False,
+        fallback=None,
+        halt=None,
+        invocation=dict(entry.invocation),
+    )
+
+    def runner(invocation: dict[str, Any]) -> dict[str, Any]:
+        output = "fixture advisory"
+        receipt = BRIDGE_RECEIPT.emit_receipt(
+            engine_id=entry.engine_id,
+            variant=entry.variant,
+            transport="http",
+            wall_time_s=0.01,
+            bytes_produced=len(output.encode("utf-8")),
+            runner={
+                "url": str(invocation["base_url"]).rstrip("/") + "/chat/completions",
+                "status_code": 200,
+                "model": invocation["model"],
+            },
+            receipt_emitter="http-bridge",
+            run_id="fixture-http:1",
+            invocation_sha256=BRIDGE_RECEIPT.digest_invocation(invocation),
+            external_tokens=3.0,
+            output_attestation=OUTPUT_ATTESTATION.emit_attestation(
+                artifact="evidence", content=output
+            ),
+        )
+        return {
+            "status": "ok",
+            "output": output,
+            "tokens": 3.0,
+            "latency_seconds": 0.01,
+            "receipt": receipt,
+        }
+
+    evidence = DISPATCH.dispatch(resolution, runner=runner)
+
+    assert evidence.evidence == "fixture advisory"
+    assert evidence.runner_receipt["receipt_emitter"] == "http-bridge"

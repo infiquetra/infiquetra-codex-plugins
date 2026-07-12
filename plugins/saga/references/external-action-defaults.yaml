@@ -1,0 +1,58 @@
+version: 1
+stages:
+  ideate:
+    - action_id: blind-generator
+      intent: offload
+      trigger: Generate one blind candidate frame.
+      requiredness: best-effort
+      consumption_point: divergent candidate pool
+    - action_id: survivor-opinion
+      intent: second-opinion
+      trigger: Review the converged survivor set.
+      requiredness: best-effort
+      consumption_point: before survivor publication
+  brainstorm:
+    - action_id: alternative-approach
+      intent: offload
+      trigger: Generate one alternative approach.
+      requiredness: best-effort
+      consumption_point: scope synthesis
+    - action_id: scope-opinion
+      intent: second-opinion
+      trigger: Review the scope synthesis.
+      requiredness: best-effort
+      consumption_point: before requirements write
+  plan:
+    - action_id: bounded-research
+      intent: offload
+      trigger: Perform bounded research or extraction.
+      requiredness: best-effort
+      consumption_point: plan grounding
+    - action_id: architecture-opinion
+      intent: second-opinion
+      trigger: Review major architectural tradeoffs.
+      requiredness: best-effort
+      consumption_point: before plan write
+  work:
+    - action_id: bounded-unit
+      intent: offload
+      trigger: Execute an eligible bounded unit.
+      requiredness: best-effort
+      consumption_point: root integration
+    - action_id: stuck-opinion
+      intent: second-opinion
+      trigger: Review stuck or disputed work.
+      requiredness: best-effort
+      consumption_point: before remediation
+  doc-review:
+    - action_id: findings-opinion
+      intent: second-opinion
+      trigger: Review selected document findings.
+      requiredness: best-effort
+      consumption_point: before readiness verdict
+  code-review:
+    - action_id: findings-opinion
+      intent: second-opinion
+      trigger: Review selected code findings.
+      requiredness: best-effort
+      consumption_point: before review verdict

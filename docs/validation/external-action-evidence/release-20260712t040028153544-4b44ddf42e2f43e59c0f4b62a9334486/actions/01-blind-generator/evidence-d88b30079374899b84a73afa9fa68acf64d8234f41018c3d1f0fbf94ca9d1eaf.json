@@ -1,0 +1,46 @@
+{
+  "action_id": "blind-generator",
+  "engine_id": "claude-cli",
+  "evidence": "The ideate release fixture binds one bounded artifact per stage so downstream release evidence stays traceable to its source.",
+  "evidence_digest": "e6f2eb386a489e4cc121121a6c2b6206c9bbc60dedc088e57bbe4473333653b1",
+  "findings": [
+    {
+      "content": "The ideate release fixture binds one bounded artifact per stage so downstream release evidence stays traceable to its source."
+    }
+  ],
+  "intent": "offload",
+  "runner_receipt": {
+    "bytes_produced": 125,
+    "engine_id": "claude-cli",
+    "invocation_sha256": "7306291793ad68eb526f8366db2b33124126a3b0dac7efa2db10e540cfa7f8f7",
+    "output_attestation": {
+      "artifact": "evidence",
+      "bytes": 125,
+      "empty": false,
+      "schema": "output_attestation.v1",
+      "sha256": "e6f2eb386a489e4cc121121a6c2b6206c9bbc60dedc088e57bbe4473333653b1"
+    },
+    "receipt_emitter": "claude-delegate",
+    "run_id": "cli:claude-cli:18142",
+    "runner": {
+      "argv": [
+        "claude",
+        "--safe-mode",
+        "--tools",
+        "",
+        "--disable-slash-commands",
+        "--print",
+        "--model",
+        "opus"
+      ],
+      "exit_code": 0,
+      "pid": 18142
+    },
+    "schema": "bridge_receipt.v1",
+    "transport": "cli",
+    "variant": "opus",
+    "wall_time_s": 2.7789121251553297
+  },
+  "schema": "external_action_evidence.v1",
+  "variant": "opus"
+}

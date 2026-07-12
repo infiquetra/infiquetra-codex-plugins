@@ -33,6 +33,7 @@ from engine_registry import (  # noqa: E402
     Registry,
     RegistryError,
 )
+from engine_registry_overlay import load_composed_registry  # noqa: E402
 
 DEFAULT_REGISTRY = Path(__file__).resolve().parent.parent / "references" / "engine-registry.yaml"
 DEFAULT_RELEASES = Path(__file__).resolve().parent.parent / "references" / "model-releases.yaml"
@@ -95,9 +96,9 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def _run(args: argparse.Namespace) -> int:
-    registry = Registry.load(args.registry)
     repo_root = Path(args.repo_root)
     overlay = load_overlay(repo_root)
+    registry = load_composed_registry(args.registry, repo_root)
 
     if args.family == "engines":
         if args.engine_command == "list":
@@ -150,7 +151,7 @@ def _row_payload(
 ) -> dict[str, object]:
     pinned = sorted(
         capability
-        for capability, engine_key in dict(overlay.pins).items()
+        for capability, engine_key in dict(overlay.pins or {}).items()
         if engine_key == entry.key
     )
     capabilities = {
@@ -171,6 +172,10 @@ def _row_payload(
         "overlay": {
             "pinned": pinned,
             "deprecated": entry.key in overlay.deprecated,
+            "local_provider": any(
+                row.get("engine_id") == entry.engine_id and row.get("variant") == entry.variant
+                for row in overlay.engines
+            ),
         },
     }
 
@@ -193,6 +198,8 @@ def _format_rows(rows: list[dict[str, object]]) -> str:
             overlay_parts.append("pinned:" + ",".join(str(item) for item in pinned))
         if overlay["deprecated"]:
             overlay_parts.append("deprecated")
+        if overlay["local_provider"]:
+            overlay_parts.append("local-provider")
         overlay_text = ",".join(overlay_parts) if overlay_parts else "active"
         currency = "stale" if row["stale"] else "current"
         budget = row["budget_ceiling_usd"]

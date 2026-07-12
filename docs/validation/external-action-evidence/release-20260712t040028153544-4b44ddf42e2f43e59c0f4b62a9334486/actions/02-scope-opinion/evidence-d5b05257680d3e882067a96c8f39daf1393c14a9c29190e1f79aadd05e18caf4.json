@@ -1,0 +1,50 @@
+{
+  "action_id": "scope-opinion",
+  "engine_id": "agy",
+  "evidence": "[\"Advisory: The brainstorm release fixture relies on static metadata and mock timestamps, which presents a low-risk concern for potential assertion drift or minor schema validation warnings if upstream payload formats or runtime date boundaries are updated.\"]",
+  "evidence_digest": "47d784d27854394fcfe62305394fd45acb5ee9964689de2e476e25116773646c",
+  "findings": [
+    {
+      "content": "Advisory: The brainstorm release fixture relies on static metadata and mock timestamps, which presents a low-risk concern for potential assertion drift or minor schema validation warnings if upstream payload formats or runtime date boundaries are updated."
+    }
+  ],
+  "intent": "second-opinion",
+  "runner_receipt": {
+    "bytes_produced": 259,
+    "engine_id": "agy",
+    "invocation_sha256": "cea435a8567004513d1d28bfeff979a2a2d8937eb28a2250e2f4d867737cac45",
+    "output_attestation": {
+      "artifact": "evidence",
+      "bytes": 259,
+      "empty": false,
+      "schema": "output_attestation.v1",
+      "sha256": "47d784d27854394fcfe62305394fd45acb5ee9964689de2e476e25116773646c"
+    },
+    "receipt_emitter": "agy-delegate",
+    "run_id": "cli:agy:18455",
+    "runner": {
+      "argv": [
+        "agy",
+        "--model",
+        "Gemini 3.5 Flash (High)",
+        "--print-timeout",
+        "900s",
+        "--log-file",
+        "/dev/null",
+        "--add-dir",
+        ".",
+        "--sandbox",
+        "--print",
+        "<redacted:1f6ebb7bb462d2dacc4e5fec0ee426de01f0f0e42e9bf389d5405b3bcd133cfd>"
+      ],
+      "exit_code": 0,
+      "pid": 18455
+    },
+    "schema": "bridge_receipt.v1",
+    "transport": "cli",
+    "variant": "gemini-3.5-flash-high",
+    "wall_time_s": 7.976158833131194
+  },
+  "schema": "external_action_evidence.v1",
+  "variant": "gemini-3.5-flash-high"
+}

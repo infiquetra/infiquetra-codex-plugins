@@ -58,6 +58,20 @@ in your reply text instead. Follow the canonical channel-inline convention in
 Use repo-relative paths in every generated document. Absolute paths break portability across machines
 and worktrees.
 
+## External Action Runtime
+
+Before any external call, run
+`python3 plugins/saga/scripts/external_action.py bundle --stage plan --repo-root .` and show the
+resolved action bundle and let the operator remove or edit actions; persist reusable changes with
+`external_action_policy.save_policy`, never by silently changing defaults. Resolve the selected
+provider routes, call `external_action_lifecycle.prepare_bundle` without external egress, and show
+`approval_preview_payload` with provider, cost, egress, requiredness, consumption point, fingerprint,
+and status card. Only after explicit approval call `approve_bundle` and `execute_bundle`. Offload output
+is inert until Codex adjudicates it and consumes it at plan grounding. Second-opinion output must use
+typed findings and `adjudicate_opinion` before the plan write. Best-effort failure continues with a
+named unavailable status; required failure pauses for operator retry, removal, or override. External
+evidence never makes an architectural decision or satisfies a gate on its own.
+
 ---
 
 ## Phase 0 — Enter and warranted-gate

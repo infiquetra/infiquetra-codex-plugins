@@ -19,31 +19,38 @@ from typing import Any
 
 SCHEMA_VERSION = 1
 RUNBOOK_VERSION = 3
-DEFAULT_MANIFEST = Path("docs/portability/ports/2026-07-10-saga-07517.json")
-DEFAULT_RENDER = Path("docs/portability/codex-saga-07517-drift-classification.md")
+DEFAULT_MANIFEST = Path("docs/portability/manifests/2026-07-11-external-advisory-execution.json")
+DEFAULT_RENDER = Path(
+    "docs/portability/classifications/2026-07-11-external-advisory-execution.md"
+)
 DEFAULT_RUNBOOK = Path("docs/portability/claude-to-codex-plugin-port-runbook.md")
 DEFAULT_CAPABILITY = Path("docs/validation/codex-runtime-capability-snapshot.json")
 DEFAULT_CAPABILITY_SCHEMA = Path("docs/validation/codex-runtime-capability-snapshot.schema.json")
-DEFAULT_PLAN = Path("docs/plans/2026-07-10-codex-plugin-model-execution-modernization-plan.md")
+DEFAULT_PLAN = Path(
+    "docs/plans/2026-07-11-codex-external-advisory-execution-contract-plan.md"
+)
 DEFAULT_REVIEWS = (
-    Path("docs/reviews/2026-07-10-codex-plugin-model-execution-modernization-plan-doc-review-r3.md"),
+    Path("docs/reviews/2026-07-11-codex-external-advisory-execution-contract-plan-review.md"),
 )
-DEFAULT_SOURCE_BASE = "9470edca65b1db06d2f7562eeb2d5a9e48c34dec"
-DEFAULT_SOURCE_TARGET = "38742ece89880a6b140be237edad6d3f13c97b54"
-DEFAULT_CODEX_PLAN_BASE = "788902513e48ea95fd0504ac3c850c8c02e5d920"
-ACTIVE_PORT_ID = "2026-07-10-saga-07517"
-APPROVED_CODEX_EXECUTION_BASE = "3f639109b06ed2634d5333a58fb200b06e36dbbe"
-CODEX_EVIDENCE_REF = "refs/tags/evidence/verified-workflows-modernization-20260711"
-EXPECTED_SOURCE_INVENTORY_SHA256 = "a481fa9cee40ed9bd3a70800475d0511fbbe0d92926334e847e0dae4756a723d"
-EXPECTED_CODEX_INVENTORY_SHA256 = "845d04095184fe2612a05dbf8c17d482a5cbdcb9d467d4b4eeb2b6ba446195a8"
+DEFAULT_SOURCE_BASE = "38742ece89880a6b140be237edad6d3f13c97b54"
+DEFAULT_SOURCE_TARGET = "675712b1d6a55ead11f3e971ed0e119354621bf2"
+DEFAULT_CODEX_PLAN_BASE = "39f0a2f466cb6f58e203ce3e586a959ff853a342"
+ACTIVE_PORT_ID = "external-advisory-execution-2026-07-11"
+APPROVED_CODEX_EXECUTION_BASE = "d8f5d165ad0e859af9c7d7f1ba7461b00ec1ae95"
+CODEX_EVIDENCE_REF = "refs/tags/evidence/external-advisory-execution-20260711"
+EXPECTED_SOURCE_INVENTORY_SHA256 = "f6d67d4294f8658118cb90728f151c813e87e3fc684c786277fb8a2f07168db0"
+EXPECTED_CODEX_INVENTORY_SHA256 = "e6182153e2b1e67522491863f485d325d0ae9fd1b6b14b8ea70e4ac0141e83ab"
 DEFAULT_SOURCE_PATHS = (
-    "plugins/fleet-core",
-    "plugins/saga",
-    "plugins/team-execution",
-    "tests",
+    "plugins/saga/scripts/second_opinion.py",
+    "plugins/agy/scripts/agy_delegate.py",
+    "plugins/codex/scripts/codex_delegate.py",
+    "tests/test_second_opinion.py",
+    "tests/test_agy_delegate_contract.py",
+    "tests/test_codex_delegate.py",
+    "tests/test_codex_delegate_contract.py",
 )
-EXPECTED_SOURCE_COUNT = 156
-EXPECTED_CODEX_COUNT = 35
+EXPECTED_SOURCE_COUNT = 3
+EXPECTED_CODEX_COUNT = 7
 VALID_STAGES = {"classification", "unit", "cutover"}
 SOURCE_STATES = {"unclassified", "classified", "implemented", "verified"}
 SOURCE_TREATMENTS = {None, "direct-port", "codex-adapt", "defer", "reject"}
@@ -1250,6 +1257,8 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
         for row in codex_rows:
             if row.get("state") != "verified":
                 errors.append(f"{row.get('row_id')} Codex invariant is not verified for cutover")
+        if not errors:
+            errors.extend(_validate_cutover_release_proof(root, manifest))
 
     if isinstance(authority, dict) and isinstance(authority.get("classification_path"), str):
         try:
@@ -1260,6 +1269,62 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
         except (KeyError, TypeError, ContractError) as exc:
             errors.append(f"generated classification could not be rendered: {exc}")
     return errors
+
+
+def _validate_cutover_release_proof(
+    root: Path, manifest: Mapping[str, Any]
+) -> list[str]:
+    """Require the canonical evidence tag to retain the exact proof and preimages."""
+    codex = manifest.get("codex")
+    release = manifest.get("release_evidence")
+    evidence = manifest.get("evidence")
+    if not isinstance(codex, Mapping) or not isinstance(release, Mapping) or not isinstance(
+        evidence, list
+    ):
+        return ["cutover release proof inputs are unavailable"]
+    evidence_ref = codex.get("evidence_ref")
+    cutover_id = release.get("cutover")
+    cutover = next(
+        (
+            row
+            for row in evidence
+            if isinstance(row, Mapping) and row.get("evidence_id") == cutover_id
+        ),
+        None,
+    )
+    if (
+        not isinstance(evidence_ref, str)
+        or not evidence_ref.startswith("refs/tags/")
+        or not isinstance(cutover, Mapping)
+        or not isinstance(cutover.get("artifact_path"), str)
+    ):
+        return ["cutover requires a tagged release-proof artifact"]
+    verifier = root / "plugins/saga/scripts/external_action_release_matrix.py"
+    proof = root / str(cutover["artifact_path"])
+    if not verifier.is_file() or not proof.is_file():
+        return ["cutover release-proof verifier or artifact is missing"]
+    process = subprocess.run(
+        [
+            sys.executable,
+            str(verifier),
+            "--repo-root",
+            str(root),
+            "--verify",
+            "--output",
+            str(proof),
+            "--expected-ref",
+            evidence_ref,
+        ],
+        cwd=root,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if process.returncode:
+        detail = process.stderr.strip().splitlines()
+        suffix = f": {detail[-1]}" if detail else ""
+        return [f"cutover release proof is not retained by the evidence tag{suffix}"]
+    return []
 
 
 def load_manifest(path: Path) -> dict[str, Any]:

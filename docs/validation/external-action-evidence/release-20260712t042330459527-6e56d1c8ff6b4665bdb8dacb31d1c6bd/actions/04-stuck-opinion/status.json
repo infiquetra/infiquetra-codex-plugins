@@ -1,0 +1,58 @@
+{
+  "action_id": "stuck-opinion",
+  "adapter_class": "claude:delegate",
+  "adjudication": "accept",
+  "approval_fingerprint": "e90f4a734f50c069e1d5b4153ab642841f263f196f0f7bc3e6382289dd7e1b54",
+  "consumed_artifact": "release-matrix://work/stuck-opinion",
+  "consumption_point": "before remediation",
+  "cost_class": "metered",
+  "egress": {
+    "host": "claude-cli",
+    "policy": "networked"
+  },
+  "estimated_usage": null,
+  "event_count": 7,
+  "evidence_destination": ".codex/saga/external-actions",
+  "intent": "second-opinion",
+  "last_detail": {
+    "artifact_ref": "release-matrix://work/stuck-opinion"
+  },
+  "last_event": "consume",
+  "last_event_at": "2026-07-12T04:23:30.459285+00:00",
+  "launch_acknowledged": true,
+  "observed_usage": null,
+  "receipt_errors": [],
+  "receipt_validity": "valid",
+  "request_sha256": "b46b96b35373716cd9d6decee0329eec183c126d18d9744b2c570a4e86feb73c",
+  "requiredness": "best-effort",
+  "resolved_model": "opus",
+  "resolved_provider": "claude-cli",
+  "route": {
+    "engine_id": "claude-cli",
+    "invocation": {
+      "auth": {
+        "mode": "files",
+        "paths": [
+          "~/.claude/.credentials.json"
+        ]
+      },
+      "cli": "claude",
+      "effort": "high",
+      "model": "opus",
+      "recipe": "claude --safe-mode --tools '' --disable-slash-commands --print --model opus",
+      "via": "claude:delegate",
+      "write_capable": true
+    },
+    "protocol": [
+      "Use the approved bounded task and repository clone only.",
+      "Never claim gate authority or mutate the live Codex worktree."
+    ],
+    "stage": "work",
+    "variant": "opus"
+  },
+  "run_id": "release-20260712t042330459527-6e56d1c8ff6b4665bdb8dacb31d1c6bd-4",
+  "saga_id": "task-external-action-release",
+  "schema": "saga.external-action.status.v1",
+  "stage": "work",
+  "state": "consumed"
+}

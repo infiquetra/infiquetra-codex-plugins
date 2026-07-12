@@ -37,7 +37,7 @@ REGISTRY_SCRIPT = ROOT / "plugins" / "saga" / "scripts" / "engine_registry.py"
 IN_REPO_EMITTERS: dict[str, Path] = {
     "http-bridge": ROOT / "plugins" / "saga" / "scripts" / "engine_bridge_http.py",
 }
-EXTERNAL_EMITTERS = {"agy-delegate"}
+EXTERNAL_EMITTERS = {"agy-delegate", "claude-delegate"}
 
 # --- Emitters named in the registry with NO in-repo wiring yet, each pinned to its tracking -----
 # issue. Dated explicit declaration (KTD9). The value is the issue reference for humans; NOTHING
@@ -182,7 +182,7 @@ def test_in_repo_and_pending_emitters_are_disjoint() -> None:
 
 
 def test_external_emitters_do_not_activate_missing_plugins() -> None:
-    assert EXTERNAL_EMITTERS == {"agy-delegate"}
+    assert EXTERNAL_EMITTERS == {"agy-delegate", "claude-delegate"}
     assert not (ROOT / "plugins" / "agy").exists()
 
 

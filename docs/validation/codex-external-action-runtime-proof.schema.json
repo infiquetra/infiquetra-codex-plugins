@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Codex external action runtime proof",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "recorded_at", "source_head", "source_tree", "source_worktree_sha256", "status", "prerequisites", "providers", "stages", "rollback_drill", "sanitization", "content_sha256"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "recorded_at": {"type": "string", "minLength": 1},
+    "source_head": {"$ref": "#/$defs/sha40"},
+    "source_tree": {"$ref": "#/$defs/sha40"},
+    "source_worktree_sha256": {"$ref": "#/$defs/sha256"},
+    "status": {"const": "passed"},
+    "prerequisites": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["claude_cli", "agy_cli", "ollama_key_ref", "ollama_key_available"],
+      "properties": {
+        "claude_cli": {"const": true},
+        "agy_cli": {"const": true},
+        "ollama_key_ref": {"type": "string", "minLength": 1},
+        "ollama_key_available": {"const": true}
+      }
+    },
+    "providers": {
+      "const": ["agy/gemini-3.5-flash-high", "claude-cli/opus", "ollama-cloud/gpt-oss-120b"]
+    },
+    "stages": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "items": {"$ref": "#/$defs/stage"}
+    },
+    "rollback_drill": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["passed", "base_revision", "prior_installed", "candidate_installed", "fresh_session_passed", "restored", "prior_digest", "candidate_digest", "restored_digest", "marketplace_add_sha256", "install_receipt_sha256", "fleet_install_sha256", "remove_receipt_sha256", "fleet_remove_sha256", "marketplace_remove_sha256", "fresh_session_sha256"],
+      "properties": {
+        "passed": {"const": true},
+        "base_revision": {"$ref": "#/$defs/sha40"},
+        "prior_installed": {"const": false},
+        "candidate_installed": {"const": true},
+        "fresh_session_passed": {"const": true},
+        "restored": {"const": true},
+        "prior_digest": {"$ref": "#/$defs/sha256"},
+        "candidate_digest": {"$ref": "#/$defs/sha256"},
+        "restored_digest": {"$ref": "#/$defs/sha256"},
+        "marketplace_add_sha256": {"$ref": "#/$defs/sha256"},
+        "install_receipt_sha256": {"$ref": "#/$defs/sha256"},
+        "fleet_install_sha256": {"$ref": "#/$defs/sha256"},
+        "remove_receipt_sha256": {"$ref": "#/$defs/sha256"},
+        "fleet_remove_sha256": {"$ref": "#/$defs/sha256"},
+        "marketplace_remove_sha256": {"$ref": "#/$defs/sha256"},
+        "fresh_session_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "sanitization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["credentials", "prompts_or_transcripts", "absolute_paths", "raw_receipts"],
+      "properties": {
+        "credentials": {"const": false},
+        "prompts_or_transcripts": {"const": false},
+        "absolute_paths": {"const": false},
+        "raw_receipts": {"const": false}
+      }
+    },
+    "content_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha40": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "stage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stage", "action_id", "intent", "requiredness", "engine_key", "adapter_class", "state", "receipt_validity", "request_sha256", "approval_fingerprint", "event_chain_tip", "receipt_sha256", "evidence_sha256", "status_card_sha256", "action_record_sha256", "action_record_ref"],
+      "properties": {
+        "stage": {"enum": ["ideate", "brainstorm", "plan", "work", "doc-review", "code-review"]},
+        "action_id": {"type": "string", "minLength": 1},
+        "intent": {"enum": ["offload", "second-opinion"]},
+        "requiredness": {"enum": ["best-effort", "required-before-continue"]},
+        "engine_key": {"enum": ["agy/gemini-3.5-flash-high", "claude-cli/opus", "ollama-cloud/gpt-oss-120b"]},
+        "adapter_class": {"type": "string", "minLength": 1},
+        "state": {"const": "consumed"},
+        "receipt_validity": {"const": "valid"},
+        "request_sha256": {"$ref": "#/$defs/sha256"},
+        "approval_fingerprint": {"$ref": "#/$defs/sha256"},
+        "event_chain_tip": {"$ref": "#/$defs/sha256"},
+        "receipt_sha256": {"$ref": "#/$defs/sha256"},
+        "evidence_sha256": {"$ref": "#/$defs/sha256"},
+        "status_card_sha256": {"$ref": "#/$defs/sha256"},
+        "action_record_sha256": {"$ref": "#/$defs/sha256"},
+        "action_record_ref": {"type": "string", "pattern": "^\\.git/saga-external-actions/"}
+      }
+    }
+  }
+}

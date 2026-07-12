@@ -1,0 +1,44 @@
+{
+  "action_id": "stuck-opinion",
+  "approval_fingerprint": "e90f4a734f50c069e1d5b4153ab642841f263f196f0f7bc3e6382289dd7e1b54",
+  "approved_at": "2026-07-12T04:23:30.459285+00:00",
+  "base_revision": "45403b9c2906e110beaf640918431d292b96bb4f",
+  "context_scope": [],
+  "cost_class": "metered",
+  "dirty_overlap": [],
+  "dirty_overlap_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "egress": {
+    "host": "claude-cli",
+    "policy": "networked"
+  },
+  "operator": "attended-operator",
+  "payload": "For the work release fixture, identify one low-risk concern. Return concise advisory text only. Do not use tools or modify files.",
+  "payload_sha256": "f317e0366f047207f6b82223206d47bc024e1aecdce4ce0534873acb3e61be46",
+  "request_sha256": "b46b96b35373716cd9d6decee0329eec183c126d18d9744b2c570a4e86feb73c",
+  "route": {
+    "engine_id": "claude-cli",
+    "invocation": {
+      "auth": {
+        "mode": "files",
+        "paths": [
+          "~/.claude/.credentials.json"
+        ]
+      },
+      "cli": "claude",
+      "effort": "high",
+      "model": "opus",
+      "recipe": "claude --safe-mode --tools '' --disable-slash-commands --print --model opus",
+      "via": "claude:delegate",
+      "write_capable": true
+    },
+    "protocol": [
+      "Use the approved bounded task and repository clone only.",
+      "Never claim gate authority or mutate the live Codex worktree."
+    ],
+    "stage": "work",
+    "variant": "opus"
+  },
+  "schema": "saga.external-action.approval.v1",
+  "sensitivity": "internal",
+  "write_set": []
+}

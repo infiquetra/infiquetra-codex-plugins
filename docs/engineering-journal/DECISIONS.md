@@ -42,6 +42,18 @@ degraded path where the role permits it, not the normal model-pinned execution p
 Learning: `docs/engineering-journal/LEARNINGS.md`, "Sol And Terra V2 Can Select Named Profiles
 After Namespace Bootstrap."
 
+## 2026-07-11: External Advisory Actions Use One Codex-Owned Runtime
+
+External offload and second-opinion actions use one shared Codex runtime across Ideate, Brainstorm, Plan, Work, Doc Review, and Code Review. Lifecycle stages declare and consume actions; the runtime owns concrete route preview, run-specific approval, dispatch, durable action state, receipts, replay, adjudication, and status projection, while Codex root remains the only live-tree mutation and gate authority.
+
+Each action stores an immutable request and approval record plus an append-only transition log under the repository Git common directory. The store references existing engine manifests and run-ledger facts rather than overloading them, because those surfaces prove execution and record facts but do not model operator approval, requiredness, adjudication, or consumption.
+
+The runtime owns the adapter factory while `engine_dispatch.py` remains the receipt and advisory-evidence validator. V1 adapters are supervised Claude CLI, contained `agy`, and generic OpenAI-compatible HTTP; CLI patch work uses full disposable local clones pinned to a recorded base with remotes removed, write-set diff evidence, terminal cleanup, and no provider application to the live tree.
+
+Repo-and-stage policy moves to `external-action-policy.json`; legacy `engine-prefs.json` values are unapproved desired intent only. Validated provider onboarding applies first to a repo-local registry overlay, canonical promotion is a separate reviewed source change, normal CI remains hermetic, and an explicit attended release harness proves real Claude, `agy`, Ollama Cloud, and all six lifecycle stages before cutover.
+
+Plan: `docs/plans/2026-07-11-codex-external-advisory-execution-contract-plan.md`.
+
 ## 2026-07-11: Complete U4 Inline, Preserve Named-Child Proof, Then Pause
 
 The modernization run completes U4 in the root thread as five sequential checkpoints: workflow contract/compiler, behavior-preserving receipt-module extraction, executable receipts/root verification, severity-first gates, and named-child selection plus attestation. Extraction reduces the 6,000-plus-line receipt facade into cohesive modules without deleting schemas or behavior.

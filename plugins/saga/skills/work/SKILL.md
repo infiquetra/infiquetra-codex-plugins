@@ -72,14 +72,19 @@ Use repo-relative paths in every generated document. Absolute paths break portab
 and worktrees. (The one exception is the saga `--review-paths` value passed through to `/code-review`,
 which mirrors that skill's convention.)
 
-## Engine Offer
+## External Action Runtime
 
-Before offering external-engine help for a work unit, run
-`python3 plugins/saga/scripts/engine_offer.py offer --stage work --repo-root . --attended`.
-Pass explicit unit shape or fingerprint text when available so mechanical or scaffold work can
-default to offload while judgment work stays advisory. If the helper reports `prompt_required`,
-`/work` owns the operator prompt and persists the preference with `engine_preference.py`. The
-offer never dispatches by itself, replaces the backend choice, or satisfies a gate.
+Before any external call, run
+`python3 plugins/saga/scripts/external_action.py bundle --stage work --repo-root .` and show the
+resolved action bundle and let the operator remove or edit actions; persist reusable changes with
+`external_action_policy.save_policy`, never by silently changing defaults. Resolve the selected
+provider routes, call `external_action_lifecycle.prepare_bundle` without external egress, and show
+`approval_preview_payload` with provider, cost, egress, requiredness, consumption point, fingerprint,
+and status card. Only after explicit approval call `approve_bundle` and `execute_bundle`. Offload patches
+remain inert in disposable workspaces until root adjudicates and consumes them at integration. Typed
+second opinions use `adjudicate_opinion` before remediation. Best-effort failure continues with a
+named unavailable status; required failure pauses for operator retry, removal, or override. External
+evidence never replaces the backend decision or satisfies a gate on its own.
 
 ---
 

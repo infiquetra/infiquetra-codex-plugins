@@ -1,0 +1,18 @@
+{
+  "action_id": "blind-generator",
+  "disposition": "executor-completed",
+  "launch_event_sha256": "6977199a553d5f51583412492abe0ce7cfd2af68e8ab43466c6af0de44a47ecb",
+  "launch_identity": {
+    "argv_sha256": "1adb63c203b90fe8974115038ad8d9c34b7f11c87129fcd2e7a76eae964b78ed",
+    "pid": 18142,
+    "process_group": 18142,
+    "process_start_identity": "70fc7d9cdead61a50cb693c246300bc89143ada9c31de0d0326ff01244cd5c77",
+    "transport": "cli"
+  },
+  "receipt_sha256": "07d72017c542398b320a3c6da65d2984477247b723f1dd05daa7e187a1e25e94",
+  "request_sha256": "dcf9a5bf25ffad96e134d6b41e926bed798b27150b5ab31d6a0962721ea14c96",
+  "run_id": "release-20260712t040028153544-4b44ddf42e2f43e59c0f4b62a9334486-1",
+  "schema": "saga.external-action.termination.v1",
+  "terminated": true,
+  "terminated_at": "2026-07-12T04:00:28.153311+00:00"
+}

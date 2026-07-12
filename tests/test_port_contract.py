@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import subprocess
 from argparse import Namespace
 from pathlib import Path
 from unittest.mock import patch
@@ -34,9 +35,9 @@ def test_frozen_source_and_codex_inventories_are_exhaustive() -> None:
     assert source["pathspecs"] == list(contract.DEFAULT_SOURCE_PATHS)
     assert source["base_ref"] == contract.DEFAULT_SOURCE_BASE
     assert source["target_ref"] == contract.DEFAULT_SOURCE_TARGET
-    assert len(source["rows"]) == source["expected_count"] == 156
+    assert len(source["rows"]) == source["expected_count"] == contract.EXPECTED_SOURCE_COUNT
     assert contract.inventory_digest(source["rows"]) == source["inventory_sha256"]
-    assert len({row["row_id"] for row in source["rows"]}) == 156
+    assert len({row["row_id"] for row in source["rows"]}) == contract.EXPECTED_SOURCE_COUNT
     assert all(row["state"] in {"classified", "implemented", "verified"} for row in source["rows"])
     assert all(
         row["treatment"] in {"direct-port", "codex-adapt", "defer", "reject"}
@@ -44,9 +45,9 @@ def test_frozen_source_and_codex_inventories_are_exhaustive() -> None:
     )
 
     assert codex["historical_plan_base"] == contract.DEFAULT_CODEX_PLAN_BASE
-    assert codex["execution_base"] == "3f639109b06ed2634d5333a58fb200b06e36dbbe"
+    assert codex["execution_base"] == contract.APPROVED_CODEX_EXECUTION_BASE
     assert codex["evidence_ref"] == contract.CODEX_EVIDENCE_REF
-    assert len(codex["rows"]) == codex["expected_count"] == 35
+    assert len(codex["rows"]) == codex["expected_count"] == contract.EXPECTED_CODEX_COUNT
     assert contract.inventory_digest(codex["rows"]) == codex["inventory_sha256"]
     assert all(row["treatment"] in {"preserve", "reconcile", "superseded-by-plan"} for row in codex["rows"])
 
@@ -124,7 +125,8 @@ def test_classification_rejects_unknown_schema_keys() -> None:
 
 def test_claude_only_surface_cannot_be_direct_port() -> None:
     manifest = load_manifest()
-    row = next(row for row in manifest["source"]["rows"] if row["surface_kind"] == "command")
+    row = manifest["source"]["rows"][0]
+    row["surface_kind"] = "command"
     row["treatment"] = "direct-port"
 
     errors = contract.validate_manifest(ROOT, manifest, stage="classification")
@@ -276,8 +278,23 @@ def test_evidence_can_bind_the_exact_current_target_tree() -> None:
 
 def test_evidence_commit_must_be_retained_by_durable_ref() -> None:
     manifest = load_manifest()
-    repo_head = manifest["evidence"][0]["repo_head"]
+    repo_head = manifest["codex"]["execution_base"]
     evidence_head = contract.resolve_ref(ROOT, contract.CODEX_EVIDENCE_REF)
+    artifact = ROOT / "tests/test_port_contract.py"
+    manifest["evidence"].append(
+        {
+            "evidence_id": "retention-evidence",
+            "unit": "U2",
+            "kind": "check",
+            "artifact_path": "tests/test_port_contract.py",
+            "artifact_sha256": contract.sha256_file(artifact),
+            "argv": ["python3", "-m", "pytest", "tests/test_port_contract.py"],
+            "cwd": ".",
+            "exit_code": 0,
+            "recorded_at": "2026-07-12T01:20:00Z",
+            "repo_head": repo_head,
+        }
+    )
     real_is_ancestor = contract.is_ancestor
 
     def fake_is_ancestor(repo: Path, base: str, target: str) -> bool:
@@ -325,7 +342,7 @@ def test_release_evidence_kind_must_match_release_slot() -> None:
     assert any("release_evidence.review must reference `review` evidence" in error for error in errors)
 
 
-def test_completed_u2_unit_and_final_cutover_pass() -> None:
+def test_current_u2_unit_and_final_cutover_pass() -> None:
     manifest = load_manifest()
 
     unit_errors = contract.validate_manifest(ROOT, manifest, stage="unit", unit="U2")
@@ -333,6 +350,20 @@ def test_completed_u2_unit_and_final_cutover_pass() -> None:
 
     assert unit_errors == []
     assert cutover_errors == []
+
+
+def test_cutover_requires_exact_tagged_release_proof() -> None:
+    manifest = load_manifest()
+    failed = subprocess.CompletedProcess(
+        args=["external_action_release_matrix.py"],
+        returncode=1,
+        stdout="",
+        stderr="external action release proof invalid: evidence bundle missing\n",
+    )
+    with patch.object(contract.subprocess, "run", return_value=failed):
+        errors = contract._validate_cutover_release_proof(ROOT, manifest)
+
+    assert any("evidence bundle missing" in error for error in errors)
 
 
 def test_renderer_is_byte_current() -> None:

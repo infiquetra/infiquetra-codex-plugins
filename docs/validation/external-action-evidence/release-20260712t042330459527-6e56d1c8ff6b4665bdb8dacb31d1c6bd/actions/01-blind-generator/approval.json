@@ -1,0 +1,44 @@
+{
+  "action_id": "blind-generator",
+  "approval_fingerprint": "059abc1472dc3dc24c78a8331f38465817adbfea8d98204ea05df3de8c9eb613",
+  "approved_at": "2026-07-12T04:23:30.459285+00:00",
+  "base_revision": "45403b9c2906e110beaf640918431d292b96bb4f",
+  "context_scope": [],
+  "cost_class": "metered",
+  "dirty_overlap": [],
+  "dirty_overlap_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "egress": {
+    "host": "claude-cli",
+    "policy": "networked"
+  },
+  "operator": "attended-operator",
+  "payload": "For the ideate release fixture, return one concise bounded artifact sentence. Do not use tools or modify files.",
+  "payload_sha256": "96c68b39ad4c598f58255a4f3c8bd8f0f0f8815cb7c31254d0ec7d5b5b352b06",
+  "request_sha256": "26db1e1cef95cd3dd9f8b0caa1fd0872ed7319e3b5232b8ef501952f5225e79d",
+  "route": {
+    "engine_id": "claude-cli",
+    "invocation": {
+      "auth": {
+        "mode": "files",
+        "paths": [
+          "~/.claude/.credentials.json"
+        ]
+      },
+      "cli": "claude",
+      "effort": "high",
+      "model": "opus",
+      "recipe": "claude --safe-mode --tools '' --disable-slash-commands --print --model opus",
+      "via": "claude:delegate",
+      "write_capable": true
+    },
+    "protocol": [
+      "Use the approved bounded task and repository clone only.",
+      "Never claim gate authority or mutate the live Codex worktree."
+    ],
+    "stage": "ideate",
+    "variant": "opus"
+  },
+  "schema": "saga.external-action.approval.v1",
+  "sensitivity": "internal",
+  "write_set": []
+}

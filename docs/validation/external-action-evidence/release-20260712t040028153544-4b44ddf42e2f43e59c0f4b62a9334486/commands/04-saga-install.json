@@ -1,0 +1,35 @@
+{
+  "argv": [
+    "codex",
+    "plugin",
+    "add",
+    "saga@isolated-external-action",
+    "--json"
+  ],
+  "content_sha256": "f5832c82f13dfb1dd68679810273e987a43d0173cc3dc41009b7311604346b2f",
+  "cwd": "$REPO_ROOT",
+  "exit_code": 0,
+  "finished_at": "2026-07-12T04:01:08.603446+00:00",
+  "operation": "saga-install",
+  "parse_error": null,
+  "release_run_id": "release-20260712t040028153544-4b44ddf42e2f43e59c0f4b62a9334486",
+  "result": {
+    "authPolicy": "ON_INSTALL",
+    "installedPath": "$CODEX_HOME/plugins/cache/isolated-external-action/saga/0.75.17+codex.20260711160644",
+    "marketplaceName": "isolated-external-action",
+    "name": "saga",
+    "pluginId": "saga@isolated-external-action",
+    "version": "0.75.17+codex.20260711160644"
+  },
+  "schema": "saga.external-action.command-evidence.v2",
+  "semantics": {
+    "plugin_name": "saga"
+  },
+  "sequence": 4,
+  "source_head": "4800246eb492366c0b08369d101ad504713dd74c",
+  "started_at": "2026-07-12T04:01:08.504723+00:00",
+  "stderr_bytes": 0,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_bytes": 386,
+  "stdout_sha256": "c891b30dfe492b80a1298599e05218e1be48c284ccb8e0923a0860c76e21b7ee"
+}
