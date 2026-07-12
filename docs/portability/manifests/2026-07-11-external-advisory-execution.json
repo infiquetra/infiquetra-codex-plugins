@@ -39,7 +39,9 @@
     "rows": [
       {
         "change": "A",
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u1-source-verification"
+        ],
         "invariant": "Preserve reviewed planning and decision history for docs/brainstorms/2026-07-11-codex-external-advisory-execution-contract-requirements.md.",
         "new_path": "docs/brainstorms/2026-07-11-codex-external-advisory-execution-contract-requirements.md",
         "old_path": null,
@@ -50,7 +52,7 @@
         "rationale": "Preserve the reviewed Codex requirements, plan, review, investigation, ideation, and decision artifacts as the execution baseline.",
         "row_id": "codex-85fc8b7270e3e771",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "preserve",
         "units": [
           "U1"
@@ -58,7 +60,9 @@
       },
       {
         "change": "M",
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u1-source-verification"
+        ],
         "invariant": "Preserve reviewed planning and decision history for docs/engineering-journal/DECISIONS.md.",
         "new_path": "docs/engineering-journal/DECISIONS.md",
         "old_path": null,
@@ -69,7 +73,7 @@
         "rationale": "Preserve the reviewed Codex requirements, plan, review, investigation, ideation, and decision artifacts as the execution baseline.",
         "row_id": "codex-313d2cf5a21dbc54",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "preserve",
         "units": [
           "U1"
@@ -77,7 +81,9 @@
       },
       {
         "change": "A",
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u1-source-verification"
+        ],
         "invariant": "Preserve reviewed planning and decision history for docs/ideation/2026-07-11-codex-workflow-control-agent-lifecycle-ideation.md.",
         "new_path": "docs/ideation/2026-07-11-codex-workflow-control-agent-lifecycle-ideation.md",
         "old_path": null,
@@ -88,7 +94,7 @@
         "rationale": "Preserve the reviewed Codex requirements, plan, review, investigation, ideation, and decision artifacts as the execution baseline.",
         "row_id": "codex-81b53d5270fa91a2",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "preserve",
         "units": [
           "U1"
@@ -96,7 +102,9 @@
       },
       {
         "change": "A",
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u1-source-verification"
+        ],
         "invariant": "Preserve reviewed planning and decision history for docs/investigations/external-second-opinion-preference-noop-2026-07-11.md.",
         "new_path": "docs/investigations/external-second-opinion-preference-noop-2026-07-11.md",
         "old_path": null,
@@ -107,7 +115,7 @@
         "rationale": "Preserve the reviewed Codex requirements, plan, review, investigation, ideation, and decision artifacts as the execution baseline.",
         "row_id": "codex-31722f7003df7c30",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "preserve",
         "units": [
           "U1"
@@ -115,7 +123,9 @@
       },
       {
         "change": "A",
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u1-source-verification"
+        ],
         "invariant": "Preserve reviewed planning and decision history for docs/plans/2026-07-11-codex-external-advisory-execution-contract-plan.md.",
         "new_path": "docs/plans/2026-07-11-codex-external-advisory-execution-contract-plan.md",
         "old_path": null,
@@ -126,7 +136,7 @@
         "rationale": "Preserve the reviewed Codex requirements, plan, review, investigation, ideation, and decision artifacts as the execution baseline.",
         "row_id": "codex-4846a961a0a15ae7",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "preserve",
         "units": [
           "U1"
@@ -134,7 +144,9 @@
       },
       {
         "change": "A",
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u1-source-verification"
+        ],
         "invariant": "Preserve reviewed planning and decision history for docs/reviews/2026-07-11-codex-external-advisory-execution-contract-plan-review.md.",
         "new_path": "docs/reviews/2026-07-11-codex-external-advisory-execution-contract-plan-review.md",
         "old_path": null,
@@ -145,7 +157,7 @@
         "rationale": "Preserve the reviewed Codex requirements, plan, review, investigation, ideation, and decision artifacts as the execution baseline.",
         "row_id": "codex-cf95eeb6fe21a55b",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "preserve",
         "units": [
           "U1"
@@ -153,7 +165,9 @@
       },
       {
         "change": "A",
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u1-source-verification"
+        ],
         "invariant": "Preserve reviewed planning and decision history for docs/reviews/2026-07-11-codex-external-advisory-execution-contract-requirements-review.md.",
         "new_path": "docs/reviews/2026-07-11-codex-external-advisory-execution-contract-requirements-review.md",
         "old_path": null,
@@ -164,7 +178,7 @@
         "rationale": "Preserve the reviewed Codex requirements, plan, review, investigation, ideation, and decision artifacts as the execution baseline.",
         "row_id": "codex-af9e39a43c7be035",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "preserve",
         "units": [
           "U1"
@@ -172,15 +186,235 @@
       }
     ]
   },
-  "evidence": [],
+  "evidence": [
+    {
+      "evidence_id": "u1-source-verification",
+      "unit": "U1",
+      "kind": "source-verification",
+      "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
+      "artifact_sha256": "7a52ef73712d2ed2e821607ed3d707e7c7404ff0cf74cea52fa4f1803e94c37c",
+      "argv": [
+        "python3",
+        "scripts/port_contract.py",
+        "validate",
+        "--stage",
+        "unit",
+        "--unit",
+        "U1"
+      ],
+      "cwd": ".",
+      "exit_code": 0,
+      "recorded_at": "2026-07-12T02:50:26Z",
+      "repo_head": "ff94079ed82c05cb46070d954b6e78fdc6167c54"
+    },
+    {
+      "evidence_id": "unit-u2-check",
+      "unit": "U2",
+      "kind": "check",
+      "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
+      "artifact_sha256": "7a52ef73712d2ed2e821607ed3d707e7c7404ff0cf74cea52fa4f1803e94c37c",
+      "argv": [
+        "python3",
+        "scripts/port_contract.py",
+        "validate",
+        "--stage",
+        "unit",
+        "--unit",
+        "U2"
+      ],
+      "cwd": ".",
+      "exit_code": 0,
+      "recorded_at": "2026-07-12T02:50:26Z",
+      "repo_head": "ff94079ed82c05cb46070d954b6e78fdc6167c54"
+    },
+    {
+      "evidence_id": "unit-u3-check",
+      "unit": "U3",
+      "kind": "check",
+      "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
+      "artifact_sha256": "7a52ef73712d2ed2e821607ed3d707e7c7404ff0cf74cea52fa4f1803e94c37c",
+      "argv": [
+        "python3",
+        "scripts/port_contract.py",
+        "validate",
+        "--stage",
+        "unit",
+        "--unit",
+        "U3"
+      ],
+      "cwd": ".",
+      "exit_code": 0,
+      "recorded_at": "2026-07-12T02:50:26Z",
+      "repo_head": "ff94079ed82c05cb46070d954b6e78fdc6167c54"
+    },
+    {
+      "evidence_id": "unit-u4-check",
+      "unit": "U4",
+      "kind": "check",
+      "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
+      "artifact_sha256": "7a52ef73712d2ed2e821607ed3d707e7c7404ff0cf74cea52fa4f1803e94c37c",
+      "argv": [
+        "python3",
+        "scripts/port_contract.py",
+        "validate",
+        "--stage",
+        "unit",
+        "--unit",
+        "U4"
+      ],
+      "cwd": ".",
+      "exit_code": 0,
+      "recorded_at": "2026-07-12T02:50:26Z",
+      "repo_head": "ff94079ed82c05cb46070d954b6e78fdc6167c54"
+    },
+    {
+      "evidence_id": "unit-u5-check",
+      "unit": "U5",
+      "kind": "check",
+      "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
+      "artifact_sha256": "7a52ef73712d2ed2e821607ed3d707e7c7404ff0cf74cea52fa4f1803e94c37c",
+      "argv": [
+        "python3",
+        "scripts/port_contract.py",
+        "validate",
+        "--stage",
+        "unit",
+        "--unit",
+        "U5"
+      ],
+      "cwd": ".",
+      "exit_code": 0,
+      "recorded_at": "2026-07-12T02:50:26Z",
+      "repo_head": "ff94079ed82c05cb46070d954b6e78fdc6167c54"
+    },
+    {
+      "evidence_id": "unit-u6-check",
+      "unit": "U6",
+      "kind": "check",
+      "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
+      "artifact_sha256": "7a52ef73712d2ed2e821607ed3d707e7c7404ff0cf74cea52fa4f1803e94c37c",
+      "argv": [
+        "python3",
+        "scripts/port_contract.py",
+        "validate",
+        "--stage",
+        "unit",
+        "--unit",
+        "U6"
+      ],
+      "cwd": ".",
+      "exit_code": 0,
+      "recorded_at": "2026-07-12T02:50:26Z",
+      "repo_head": "ff94079ed82c05cb46070d954b6e78fdc6167c54"
+    },
+    {
+      "evidence_id": "unit-u7-check",
+      "unit": "U7",
+      "kind": "check",
+      "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
+      "artifact_sha256": "7a52ef73712d2ed2e821607ed3d707e7c7404ff0cf74cea52fa4f1803e94c37c",
+      "argv": [
+        "python3",
+        "scripts/port_contract.py",
+        "validate",
+        "--stage",
+        "unit",
+        "--unit",
+        "U7"
+      ],
+      "cwd": ".",
+      "exit_code": 0,
+      "recorded_at": "2026-07-12T02:50:26Z",
+      "repo_head": "ff94079ed82c05cb46070d954b6e78fdc6167c54"
+    },
+    {
+      "evidence_id": "u8-review",
+      "unit": "U8",
+      "kind": "review",
+      "artifact_path": "docs/work-sessions/2026-07-11-external-advisory-execution.md",
+      "artifact_sha256": "66b75d7c1237a81b8a353a7ea48109d35a0b284ed61b6c8e8ae91ea61c7b7422",
+      "argv": [
+        "verified-workflows:run",
+        "review-barrier"
+      ],
+      "cwd": ".",
+      "exit_code": 0,
+      "recorded_at": "2026-07-12T02:50:26Z",
+      "repo_head": "ff94079ed82c05cb46070d954b6e78fdc6167c54"
+    },
+    {
+      "evidence_id": "u8-isolated-install",
+      "unit": "U8",
+      "kind": "isolated-install",
+      "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
+      "artifact_sha256": "7a52ef73712d2ed2e821607ed3d707e7c7404ff0cf74cea52fa4f1803e94c37c",
+      "argv": [
+        "python3",
+        "plugins/saga/scripts/external_action_release_matrix.py",
+        "--verify"
+      ],
+      "cwd": ".",
+      "exit_code": 0,
+      "recorded_at": "2026-07-12T02:50:26Z",
+      "repo_head": "ff94079ed82c05cb46070d954b6e78fdc6167c54"
+    },
+    {
+      "evidence_id": "u8-fresh-session",
+      "unit": "U8",
+      "kind": "fresh-session",
+      "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
+      "artifact_sha256": "7a52ef73712d2ed2e821607ed3d707e7c7404ff0cf74cea52fa4f1803e94c37c",
+      "argv": [
+        "python3",
+        "plugins/saga/scripts/external_action_release_matrix.py",
+        "--verify"
+      ],
+      "cwd": ".",
+      "exit_code": 0,
+      "recorded_at": "2026-07-12T02:50:26Z",
+      "repo_head": "ff94079ed82c05cb46070d954b6e78fdc6167c54"
+    },
+    {
+      "evidence_id": "u8-rollback",
+      "unit": "U8",
+      "kind": "rollback",
+      "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
+      "artifact_sha256": "7a52ef73712d2ed2e821607ed3d707e7c7404ff0cf74cea52fa4f1803e94c37c",
+      "argv": [
+        "python3",
+        "plugins/saga/scripts/external_action_release_matrix.py",
+        "--verify"
+      ],
+      "cwd": ".",
+      "exit_code": 0,
+      "recorded_at": "2026-07-12T02:50:26Z",
+      "repo_head": "ff94079ed82c05cb46070d954b6e78fdc6167c54"
+    },
+    {
+      "evidence_id": "u8-cutover",
+      "unit": "U8",
+      "kind": "cutover",
+      "artifact_path": "docs/validation/codex-external-action-runtime-proof.json",
+      "artifact_sha256": "7a52ef73712d2ed2e821607ed3d707e7c7404ff0cf74cea52fa4f1803e94c37c",
+      "argv": [
+        "python3",
+        "plugins/saga/scripts/external_action_release_matrix.py",
+        "--verify"
+      ],
+      "cwd": ".",
+      "exit_code": 0,
+      "recorded_at": "2026-07-12T02:50:26Z",
+      "repo_head": "ff94079ed82c05cb46070d954b6e78fdc6167c54"
+    }
+  ],
   "port_id": "external-advisory-execution-2026-07-11",
   "refresh_changes": [],
   "release_evidence": {
-    "cutover": null,
-    "fresh_session": null,
-    "isolated_install": null,
-    "review": null,
-    "rollback": null
+    "review": "u8-review",
+    "isolated_install": "u8-isolated-install",
+    "fresh_session": "u8-fresh-session",
+    "rollback": "u8-rollback",
+    "cutover": "u8-cutover"
   },
   "schema_version": 1,
   "source": {
@@ -211,7 +445,9 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "unit-u4-check"
+        ],
         "host_primitives": [],
         "new_path": "plugins/codex/scripts/codex_delegate.py",
         "old_path": null,
@@ -224,13 +460,12 @@
         "planned_tests": [
           "tests/test_external_action_adapters.py",
           "tests/test_external_action_workspace.py",
-          "tests/test_claude_delegate.py",
-          "tests/test_agy_delegate.py"
+          "tests/test_external_action_integration.py"
         ],
         "rationale": "Adapt process supervision, timeout/no-output cleanup, disposable-clone patch capture, and terminal receipts for Claude CLI and agy without activating the Claude-host Codex delegate surface.",
         "row_id": "src-473914fd7d27b35c",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -246,7 +481,15 @@
         "codex_invariant_refs": [
           "codex-execution-base"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u1-source-verification",
+          "unit-u2-check",
+          "unit-u3-check",
+          "unit-u5-check",
+          "unit-u6-check",
+          "unit-u7-check",
+          "u8-cutover"
+        ],
         "host_primitives": [],
         "new_path": "plugins/saga/scripts/second_opinion.py",
         "old_path": null,
@@ -268,14 +511,17 @@
         "rationale": "Adapt bounded context, claim-before-dispatch, typed reconciliation, and advisory-only authority into one Codex-owned external-action runtime; do not copy Claude host orchestration.",
         "row_id": "src-8abb72835ff1f188",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
+          "U1",
           "U2",
           "U3",
+          "U5",
           "U6",
-          "U7"
+          "U7",
+          "U8"
         ]
       },
       {
