@@ -48,3 +48,13 @@ The provider-neutral runtime implements prepare, approve, claim-before-launch, l
 - Focused tests: `64 passed`.
 - Ruff: passed.
 - Mypy: the four U4 source files pass with `--follow-imports=skip`; unrestricted import following reaches seven pre-existing errors in `fleet_commons_shim.py` and `engine_bridge_http.py`.
+## U5 - Provider onboarding and policy persistence
+
+- Extended repo-local engine overlays with validated additive provider rows and canonical-plus-overlay composition.
+- Redirected OpenAI-compatible onboarding apply away from the canonical registry and into a digest-bound overlay after a bounded non-sensitive HTTP smoke.
+- Added environment-variable secret-reference enforcement, duplicate-key rejection, optimistic concurrency, and composed-registry CLI visibility.
+- Added atomic digest-bound external-action policy persistence.
+- Added canonical promotion diff output and overlay finalization that requires identical canonical readback.
+- Focused tests: `77 passed`.
+- Ruff: passed.
+- Mypy: passed for the six U5 source files with `--follow-imports=skip --ignore-missing-imports`.

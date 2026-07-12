@@ -34,6 +34,15 @@ from engine_registry import (  # noqa: E402
     RegistryError,
 )
 from engine_registry_conformance import check_registry  # noqa: E402
+import engine_bridge_http  # noqa: E402
+from engine_overlay import (  # noqa: E402
+    EngineOverlayError,
+    load_overlay,
+    overlay_sha256,
+    save_overlay,
+    with_engine,
+)
+from engine_registry_overlay import compose_mapping  # noqa: E402
 
 DEFAULT_REGISTRY = Path(__file__).resolve().parent.parent / "references" / "engine-registry.yaml"
 DEFAULT_REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -75,6 +84,7 @@ class OnboardingResult:
     row: dict[str, Any]
     fragment: str
     applied: bool
+    overlay_sha256: str
 
 
 def onboard(
@@ -85,60 +95,92 @@ def onboard(
     expected_sha256: str | None = None,
     repo_root: Path | str = DEFAULT_REPO_ROOT,
     before_replace: BeforeReplace | None = None,
+    smoke_runner: Callable[[dict[str, Any]], dict[str, Any]] | None = None,
+    getenv: Callable[[str], str | None] = os.environ.get,
 ) -> OnboardingResult:
-    """Validate a provider spec and optionally insert its row atomically."""
+    """Validate a provider spec and optionally add it to the repo-local overlay."""
     destination = _contained_registry_path(registry_path, repo_root)
     try:
         source = destination.read_text(encoding="utf-8")
     except UnicodeDecodeError as exc:
         raise OnboardingError(f"{destination}: registry must be UTF-8") from exc
-    source_hash = _sha256(source)
+    root = Path(repo_root)
+    current_overlay_sha256 = overlay_sha256(root)
     if apply:
         if expected_sha256 is None:
-            raise OnboardingError("--apply requires the expected pre-write SHA-256")
+            raise OnboardingError("--apply requires the expected overlay SHA-256")
         if not re.fullmatch(r"[0-9a-f]{64}", expected_sha256):
             raise OnboardingError("expected pre-write SHA-256 must be 64 lowercase hex characters")
-        if expected_sha256 != source_hash:
+        if expected_sha256 != current_overlay_sha256:
             raise OnboardingError(
-                f"{destination}: expected pre-write SHA-256 does not match current registry"
+                "expected overlay SHA-256 does not match current repo-local overlay"
             )
     raw_registry = _load_registry_mapping(source, destination)
+    overlay = load_overlay(root)
+    composed_registry = compose_mapping(raw_registry, overlay)
     spec = _load_spec(spec_path)
-    existing = _equivalent_existing_row(spec, raw_registry)
+    existing = _equivalent_existing_row(spec, composed_registry)
     if existing is not None:
         return OnboardingResult(
             engine_key=f"{existing['engine_id']}/{existing['variant']}",
             row=existing,
             fragment=render_row(existing),
             applied=False,
+            overlay_sha256=current_overlay_sha256,
         )
-    row = build_row(spec, raw_registry)
-    candidate = deepcopy(raw_registry)
-    engines = candidate.get("engines")
-    if not isinstance(engines, list):
-        raise OnboardingError(f"{destination}: registry engines must be a list")
-    engines.append(row)
-    _validate_candidate(candidate)
+    row = build_row(spec, composed_registry)
+    candidate_overlay = with_engine(overlay, row)
+    _validate_candidate(compose_mapping(raw_registry, candidate_overlay))
 
     fragment = render_row(row)
-    rendered = _insert_before_roles(source, fragment, destination)
-    _validate_rendered(rendered, destination)
 
     if apply:
-        _atomic_replace_if_unchanged(
-            destination,
-            rendered,
-            expected_hash=expected_sha256,
-            before_replace=before_replace,
-        )
-        _validate_applied_readback(destination, rendered)
+        _smoke(row, runner=smoke_runner, getenv=getenv)
+        try:
+            save_overlay(
+                root,
+                candidate_overlay,
+                expected_sha256=expected_sha256,
+                before_replace=before_replace,
+            )
+        except EngineOverlayError as exc:
+            raise OnboardingError(str(exc)) from exc
+        loaded = compose_mapping(raw_registry, load_overlay(root))
+        _validate_candidate(loaded)
 
     return OnboardingResult(
         engine_key=f"{row['engine_id']}/{row['variant']}",
         row=row,
         fragment=fragment,
         applied=apply,
+        overlay_sha256=overlay_sha256(root),
     )
+
+
+def _smoke(
+    row: dict[str, Any],
+    *,
+    runner: Callable[[dict[str, Any]], dict[str, Any]] | None,
+    getenv: Callable[[str], str | None],
+) -> None:
+    invocation = dict(row["invocation"])
+    auth = invocation.get("auth")
+    if not isinstance(auth, dict):
+        raise OnboardingError("provider invocation requires an auth object")
+    key_env = str(auth.get("key_env") or "")
+    if not key_env or not getenv(key_env):
+        raise OnboardingError(f"secret reference {key_env!r} is unresolved")
+    invocation.update(
+        {
+            "engine_id": row["engine_id"],
+            "variant": row["variant"],
+            "task": "Reply with exactly: SAGA_PROVIDER_SMOKE_OK",
+        }
+    )
+    result = (runner or engine_bridge_http.runner(timeout=15.0))(invocation)
+    if result.get("status") != "ok" or not str(result.get("output") or "").strip():
+        detail = str(result.get("error") or result.get("note") or result.get("status") or "failed")
+        raise OnboardingError(f"provider smoke failed: {detail}")
 
 
 def _contained_registry_path(path: Path | str, repo_root: Path | str) -> Path:
@@ -537,10 +579,10 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--spec", required=True, help="provider JSON specification")
     parser.add_argument("--registry", default=str(DEFAULT_REGISTRY), help="engine registry YAML")
     parser.add_argument("--repo-root", default=str(DEFAULT_REPO_ROOT), help="containment root")
-    parser.add_argument("--apply", action="store_true", help="insert the validated row atomically")
+    parser.add_argument("--apply", action="store_true", help="add the validated row to the local overlay")
     parser.add_argument(
         "--expected-sha256",
-        help="required with --apply; SHA-256 of the exact registry bytes before mutation",
+        help="required with --apply; SHA-256 of the repo-local overlay before mutation",
     )
     return parser
 
@@ -560,7 +602,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     if result.applied:
-        print(f"added probationary engine row {result.engine_key}")
+        print(f"added probationary overlay engine row {result.engine_key}")
     else:
         print(result.fragment, end="")
         print(f"validated probationary engine row {result.engine_key} (dry-run)")

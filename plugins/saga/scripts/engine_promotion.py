@@ -4,9 +4,11 @@
 from __future__ import annotations
 
 import argparse
+import difflib
 import json
 import sys
-from dataclasses import dataclass
+from copy import deepcopy
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, cast
 
@@ -15,7 +17,14 @@ import yaml
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import run_ledger  # noqa: E402
+from engine_overlay import (  # noqa: E402
+    EngineOverlayError,
+    load_overlay,
+    save_overlay,
+    without_engine,
+)
 from engine_registry import Registry, RegistryError  # noqa: E402
+from engine_registry_overlay import load_composed_registry  # noqa: E402
 
 DEFAULT_REGISTRY = Path(__file__).resolve().parent.parent / "references" / "engine-registry.yaml"
 REQUIRED_RUNS = 5
@@ -57,12 +66,17 @@ def assess_promotion(
     *,
     registry_path: Path | str = DEFAULT_REGISTRY,
     ledger: run_ledger.RunLedger,
+    repo_root: Path | str | None = None,
 ) -> PromotionAssessment:
     """Assess the five latest exact-variant facts without mutating registry or ledger."""
     engine_id, variant = _parse_engine_key(engine_key)
     normalized_key = f"{engine_id}/{variant}"
     try:
-        registry = Registry.load(registry_path)
+        registry = (
+            load_composed_registry(registry_path, repo_root)
+            if repo_root is not None
+            else Registry.load(registry_path)
+        )
         entry = registry.by_key(normalized_key)
     except (RegistryError, UnicodeError, yaml.YAMLError) as exc:
         raise PromotionError(str(exc)) from exc
@@ -125,6 +139,98 @@ def assess_promotion(
     )
 
 
+def promotion_diff(
+    engine_key: str,
+    *,
+    registry_path: Path | str = DEFAULT_REGISTRY,
+    repo_root: Path | str,
+) -> str:
+    """Render, but never apply, the canonical source diff for one overlay row."""
+    normalized_key = "/".join(_parse_engine_key(engine_key))
+    overlay = load_overlay(repo_root)
+    rows = [row for row in overlay.engines if _row_key(row) == normalized_key]
+    if len(rows) != 1:
+        raise PromotionError(f"overlay must contain exactly one row for {normalized_key!r}")
+    path = Path(registry_path)
+    source = path.read_text(encoding="utf-8")
+    raw = yaml.safe_load(source)
+    if not isinstance(raw, dict) or not isinstance(raw.get("engines"), list):
+        raise PromotionError("canonical registry is malformed")
+    if any(_row_key(row) == normalized_key for row in raw["engines"]):
+        raise PromotionError(f"canonical registry already contains {normalized_key!r}")
+    candidate = deepcopy(raw)
+    candidate["engines"].append(deepcopy(dict(rows[0])))
+    Registry.from_dict(candidate)
+    block = yaml.safe_dump({"engines": [dict(rows[0])]}, sort_keys=False)
+    fragment = "".join(
+        f"  {line}" if line.strip() else line
+        for line in block.removeprefix("engines:\n").splitlines(keepends=True)
+    )
+    marker = "\nroles:"
+    index = source.find(marker)
+    if index < 0:
+        raise PromotionError("canonical registry needs a top-level roles mapping")
+    rendered = source[: index + 1] + fragment + "\n" + source[index + 1 :]
+    return "".join(
+        difflib.unified_diff(
+            source.splitlines(keepends=True),
+            rendered.splitlines(keepends=True),
+            fromfile=str(path),
+            tofile=str(path),
+        )
+    )
+
+
+def finalize_overlay_promotion(
+    engine_key: str,
+    *,
+    registry_path: Path | str = DEFAULT_REGISTRY,
+    repo_root: Path | str,
+    expected_overlay_sha256: str,
+) -> Path:
+    """Remove a local row only after an identical canonical row is readable."""
+    normalized_key = "/".join(_parse_engine_key(engine_key))
+    overlay = load_overlay(repo_root)
+    rows = [row for row in overlay.engines if _row_key(row) == normalized_key]
+    if len(rows) != 1:
+        raise PromotionError(f"overlay must contain exactly one row for {normalized_key!r}")
+    canonical = Registry.load(registry_path)
+    try:
+        canonical_entry = canonical.by_key(normalized_key)
+    except RegistryError as exc:
+        raise PromotionError(
+            f"canonical registry does not contain promoted row {normalized_key!r}"
+        ) from exc
+    raw = yaml.safe_load(Path(registry_path).read_text(encoding="utf-8"))
+    assert isinstance(raw, dict)
+    comparison = deepcopy(raw)
+    comparison["engines"] = [dict(rows[0])]
+    comparison["roles"] = {}
+    overlay_entry = Registry.from_dict(comparison).by_key(normalized_key)
+    canonical_values = asdict(canonical_entry)
+    overlay_values = asdict(overlay_entry)
+    canonical_values.pop("registry_order", None)
+    overlay_values.pop("registry_order", None)
+    if canonical_values != overlay_values:
+        raise PromotionError(
+            f"canonical row {normalized_key!r} is not identical to the overlay row"
+        )
+    try:
+        return save_overlay(
+            repo_root,
+            without_engine(overlay, normalized_key),
+            expected_sha256=expected_overlay_sha256,
+        )
+    except EngineOverlayError as exc:
+        raise PromotionError(str(exc)) from exc
+
+
+def _row_key(row: Any) -> str:
+    if not isinstance(row, dict):
+        raise PromotionError("engine row must be an object")
+    return f"{row.get('engine_id')}/{row.get('variant')}"
+
+
 def _parse_engine_key(engine_key: str) -> tuple[str, str]:
     value = engine_key.strip()
     engine_id, separator, variant = value.partition("/")
@@ -159,6 +265,14 @@ def _build_parser() -> argparse.ArgumentParser:
         help="run-fact ledger JSONL (defaults to the current repository's shared ledger)",
     )
     parser.add_argument("--json", action="store_true", help="emit one JSON object")
+    parser.add_argument("--repo-root", help="repository root containing the local overlay")
+    parser.add_argument("--emit-diff", action="store_true", help="emit the canonical source diff")
+    parser.add_argument(
+        "--finalize-overlay",
+        action="store_true",
+        help="remove the overlay row after identical canonical readback",
+    )
+    parser.add_argument("--expected-overlay-sha256")
     return parser
 
 
@@ -193,7 +307,33 @@ def main(argv: list[str] | None = None) -> int:
             args.engine_key,
             registry_path=args.registry,
             ledger=ledger,
+            repo_root=args.repo_root,
         )
+        if args.emit_diff:
+            if not args.repo_root or not assessment.eligible:
+                raise PromotionError("--emit-diff requires repo root and eligible evidence")
+            print(
+                promotion_diff(
+                    args.engine_key,
+                    registry_path=args.registry,
+                    repo_root=args.repo_root,
+                ),
+                end="",
+            )
+            return 0
+        if args.finalize_overlay:
+            if not args.repo_root or not args.expected_overlay_sha256:
+                raise PromotionError(
+                    "--finalize-overlay requires repo root and expected overlay SHA-256"
+                )
+            finalize_overlay_promotion(
+                args.engine_key,
+                registry_path=args.registry,
+                repo_root=args.repo_root,
+                expected_overlay_sha256=args.expected_overlay_sha256,
+            )
+            print(f"finalized overlay promotion: {args.engine_key}")
+            return 0
     except (OSError, ValueError, yaml.YAMLError) as exc:
         print(f"engine promotion assessment failed: {exc}", file=sys.stderr)
         return 1

@@ -4,7 +4,10 @@
 from __future__ import annotations
 
 import json
+import hashlib
+import os
 import sys
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -140,6 +143,64 @@ def load_policy(repo_root: Path) -> dict[str, tuple[ActionTemplate, ...]]:
     except (OSError, json.JSONDecodeError) as exc:
         raise PolicyError(f"{path}: cannot load policy: {exc}") from exc
     return _parse_document(raw, source=str(path))
+
+
+def policy_sha256(repo_root: Path) -> str:
+    path = repo_root / POLICY_PATH
+    payload = path.read_bytes() if path.exists() else b""
+    return hashlib.sha256(payload).hexdigest()
+
+
+def save_policy(
+    repo_root: Path,
+    stages: Mapping[str, Sequence[Mapping[str, Any]]],
+    *,
+    expected_sha256: str,
+) -> Path:
+    """Persist a closed policy document with optimistic concurrency."""
+    document: dict[str, Any] = {"version": POLICY_VERSION, "stages": dict(stages)}
+    parsed = _parse_document(document, source="policy update")
+    normalized = {
+        "version": POLICY_VERSION,
+        "stages": {
+            stage: [_template_json(item) for item in actions]
+            for stage, actions in sorted(parsed.items())
+        },
+    }
+    if policy_sha256(repo_root) != expected_sha256:
+        raise PolicyError("external-action policy digest changed before apply")
+    path = repo_root / POLICY_PATH
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = json.dumps(normalized, indent=2, sort_keys=True) + "\n"
+    fd, name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+    temporary = Path(name)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+        if policy_sha256(repo_root) != expected_sha256:
+            raise PolicyError("external-action policy changed during apply")
+        os.replace(temporary, path)
+        os.chmod(path, 0o600)
+    finally:
+        temporary.unlink(missing_ok=True)
+    return path
+
+
+def _template_json(item: ActionTemplate) -> dict[str, Any]:
+    return {
+        "action_id": item.action_id,
+        "intent": item.intent,
+        "trigger": item.trigger,
+        "requiredness": item.requiredness.value,
+        "consumption_point": item.consumption_point,
+        "provider_constraints": dict(item.provider_constraints),
+        "context_scope": list(item.context_scope),
+        "sensitivity": item.sensitivity,
+        "write_set": list(item.write_set),
+        "evidence_destination": item.evidence_destination,
+    }
 
 
 def resolve(
