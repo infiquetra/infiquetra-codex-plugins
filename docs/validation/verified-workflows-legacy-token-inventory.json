@@ -519,7 +519,7 @@
     {
       "classification": "legacy-read-metadata",
       "path": "docs/validation/saga-family-target-inventory.json",
-      "sha256": "171f91031baadaf68ce650459e2128b1503ace55c91365d0a7139ae952e154e6",
+      "sha256": "befd142dac5fcec12934b6ee00a6f3edcdeb3347cdffd5fffd4a04a4f2fddf47",
       "tokens": [
         ".codex/team-execution/",
         "team-execution"

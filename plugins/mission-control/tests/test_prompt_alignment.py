@@ -19,7 +19,7 @@ def test_sdlc_manager_metadata_and_marketplace_entry_match() -> None:
     entry = next(p for p in fixture["plugins"] if p["name"] == "mission-control")
 
     assert plugin_json["name"] == "mission-control"
-    assert plugin_json["version"] == "2.4.0"
+    assert plugin_json["version"] == "2.4.1"
     assert entry["version"] == plugin_json["version"]
     assert sorted(entry["skills"]) == [
         "board",
@@ -37,6 +37,14 @@ def test_sdlc_manager_metadata_and_marketplace_entry_match() -> None:
     assert "campps" in plugin_json["keywords"]
     assert "Mount Olympus" not in json.dumps(plugin_json)
     assert "mount-olympus" not in json.dumps(plugin_json)
+
+
+def test_flow_catalog_description_leads_with_assign_mimir() -> None:
+    frontmatter = _read(PLUGIN_ROOT / "skills" / "flow" / "SKILL.md").split(
+        "when_to_use:", maxsplit=1
+    )[0]
+
+    assert "Assign covered issues to Team Mimir" in frontmatter[:180]
 
 
 def test_issue_type_reference_uses_current_template_labels() -> None:
