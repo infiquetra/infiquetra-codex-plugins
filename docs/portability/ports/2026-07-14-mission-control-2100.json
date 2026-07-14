@@ -38,7 +38,26 @@
     "repository_id": "infiquetra/infiquetra-codex-plugins",
     "rows": []
   },
-  "evidence": [],
+  "evidence": [
+    {
+      "artifact_path": "docs/validation/mission-control-2100-unit-evidence.md",
+      "artifact_sha256": "dbfc0b44fe82701c0c71f13c0e1b7fa4b4a4e975bbe756a65c1ad12e42dc68e9",
+      "argv": [
+        "PYTHONPATH=.",
+        "uv",
+        "run",
+        "pytest",
+        "-q"
+      ],
+      "cwd": ".",
+      "evidence_id": "u2-local-gates",
+      "exit_code": 0,
+      "kind": "check",
+      "recorded_at": "2026-07-14T17:51:14Z",
+      "repo_head": "51082d6bf91a053307788613da14505ee865fa93",
+      "unit": "U2"
+    }
+  ],
   "port_id": "mission-control-assign-mimir-2026-07-14",
   "refresh_changes": [],
   "release_evidence": {
@@ -77,7 +96,9 @@
           "MAP-MANIFEST",
           "MAP-METADATA"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u2-local-gates"
+        ],
         "host_primitives": [],
         "new_path": "plugins/mission-control/.claude-plugin/plugin.json",
         "old_path": null,
@@ -90,7 +111,7 @@
         "rationale": "Recreate Codex package metadata for tested Codex behavior and retain the adapter's independent version lineage.",
         "row_id": "src-cb0788572d2f1cb5",
         "similarity": null,
-        "state": "implemented",
+        "state": "verified",
         "surface_kind": "claude-manifest",
         "treatment": "codex-adapt",
         "units": [
@@ -103,7 +124,9 @@
         "codex_invariant_refs": [
           "MAP-METADATA"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u2-local-gates"
+        ],
         "host_primitives": [],
         "new_path": "plugins/mission-control/CHANGELOG.md",
         "old_path": null,
@@ -116,7 +139,7 @@
         "rationale": "Describe the Codex-visible command and the Codex adapter's 2.4.0 release without claiming byte parity.",
         "row_id": "src-97172da2308bf99e",
         "similarity": null,
-        "state": "implemented",
+        "state": "verified",
         "surface_kind": "changelog",
         "treatment": "codex-adapt",
         "units": [
@@ -129,7 +152,9 @@
         "codex_invariant_refs": [
           "MAP-DOC"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u2-local-gates"
+        ],
         "host_primitives": [],
         "new_path": "plugins/mission-control/README.md",
         "old_path": null,
@@ -142,7 +167,7 @@
         "rationale": "Document the same operator contract with Codex package paths and skill names.",
         "row_id": "src-f3ca108fe3b1bb10",
         "similarity": null,
-        "state": "implemented",
+        "state": "verified",
         "surface_kind": "documentation",
         "treatment": "codex-adapt",
         "units": [
@@ -155,7 +180,9 @@
         "codex_invariant_refs": [
           "MAP-SCRIPT-CONFIG"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u2-local-gates"
+        ],
         "host_primitives": [],
         "new_path": "plugins/mission-control/scripts/sdlc_manager.py",
         "old_path": null,
@@ -168,7 +195,7 @@
         "rationale": "Port the authenticated fail-closed GitHub mutation behavior while retaining Codex confirmation and package boundaries.",
         "row_id": "src-8568d1b391a031f3",
         "similarity": null,
-        "state": "implemented",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -181,7 +208,9 @@
         "codex_invariant_refs": [
           "MAP-SKILL"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u2-local-gates"
+        ],
         "host_primitives": [],
         "new_path": "plugins/mission-control/skills/flow/SKILL.md",
         "old_path": null,
@@ -194,7 +223,7 @@
         "rationale": "Expose the command through the Codex flow skill with explicit mutation confirmation and readback semantics.",
         "row_id": "src-9a03ccbd6eef0110",
         "similarity": null,
-        "state": "implemented",
+        "state": "verified",
         "surface_kind": "skill",
         "treatment": "codex-adapt",
         "units": [
@@ -207,7 +236,9 @@
         "codex_invariant_refs": [
           "MAP-SKILL"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u2-local-gates"
+        ],
         "host_primitives": [],
         "new_path": "plugins/mission-control/skills/issues/SKILL.md",
         "old_path": null,
@@ -220,7 +251,7 @@
         "rationale": "Teach the Codex issue workflow to delegate Mimir intake assignment to the maintained flow command.",
         "row_id": "src-c9844af1dfc2ccb7",
         "similarity": null,
-        "state": "implemented",
+        "state": "verified",
         "surface_kind": "skill",
         "treatment": "codex-adapt",
         "units": [
@@ -233,7 +264,9 @@
         "codex_invariant_refs": [
           "MAP-TEST"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u2-local-gates"
+        ],
         "host_primitives": [],
         "new_path": "plugins/mission-control/tests/test_assign_mimir.py",
         "old_path": null,
@@ -246,7 +279,7 @@
         "rationale": "Adapt the canonical success and failure fixtures to the Codex import and confirmation surface.",
         "row_id": "src-4c65cb3b2e99165a",
         "similarity": null,
-        "state": "implemented",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -260,7 +293,9 @@
           "MAP-TEST",
           "MAP-METADATA"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u2-local-gates"
+        ],
         "host_primitives": [],
         "new_path": "plugins/mission-control/tests/test_prompt_alignment.py",
         "old_path": null,
@@ -273,7 +308,7 @@
         "rationale": "Update Codex prompt and release drift guards for the new command and independent adapter version.",
         "row_id": "src-7acce98f94485e48",
         "similarity": null,
-        "state": "implemented",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
