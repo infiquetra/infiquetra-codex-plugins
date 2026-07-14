@@ -94,7 +94,7 @@
           "skill_path": "plugins/mission-control/skills/board/SKILL.md"
         },
         {
-          "description": "Operator-facing GraphQL + REST helpers for the active project boards. Wraps the GitHub APIs the orchestrator uses, so Jeff can do per-card work (set Initiative/Objective fields, link or unlink sub-issues, validate card bodies, self-heal labels, discover project mappings) without writing GraphQL by hand. Each command is idempotent where possible, and surfaces partial failures clearly.",
+          "description": "Operator-facing GraphQL + REST helpers for the active project boards. Wraps the GitHub APIs the orchestrator uses, so Jeff can do per-card work (set Initiative/Objective fields, link or unlink sub-issues, validate card bodies, self-heal labels, discover project mappings, assign covered issues to Team Mimir) without writing GraphQL by hand. Each command is idempotent where possible, and surfaces partial failures clearly.",
           "name": "flow",
           "namespace": "mission-control:flow",
           "skill_path": "plugins/mission-control/skills/flow/SKILL.md"
@@ -130,7 +130,7 @@
           "skill_path": "plugins/mission-control/skills/rollout/SKILL.md"
         }
       ],
-      "version": "2.3.0"
+      "version": "2.4.0"
     },
     "saga": {
       "skills": [

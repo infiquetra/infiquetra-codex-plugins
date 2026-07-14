@@ -1,0 +1,12 @@
+[
+  {
+    "source_plugin": "mission-control",
+    "source_version": "2.10.0",
+    "current_codex_identity": "mission-control",
+    "current_codex_version": "2.3.0",
+    "target_codex_identity": "mission-control",
+    "target_codex_version": "2.4.0",
+    "policy": "lineage-with-codex-adaptation",
+    "release_unit": "U2"
+  }
+]

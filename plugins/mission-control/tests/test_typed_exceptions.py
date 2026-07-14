@@ -5,7 +5,6 @@ GhApiError subclass; downstream callers catch by type instead of doing
 `"422" in str(e)` substring matching.
 """
 
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest

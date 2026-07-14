@@ -316,7 +316,9 @@ def _validate_external_engine_selector(
             registry.by_key(engine)
         elif capability not in registry.capabilities:
             raise registry_module.RegistryError(f"unknown capability {capability!r}")
-    except registry_module.RegistryError as exc:
+    # Dynamic adapter loading can produce an equivalent RegistryError class from another module
+    # instance. Registry validation errors share the stable ValueError boundary.
+    except ValueError as exc:
         raise SpecError(f"{where}: external-engine selector is invalid: {exc}") from exc
 
 

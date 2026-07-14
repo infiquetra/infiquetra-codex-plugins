@@ -1,0 +1,299 @@
+{
+  "authority": {
+    "capability_snapshot": {
+      "path": "docs/validation/mission-control-2100-runtime-capability-snapshot.json",
+      "schema_path": "docs/validation/codex-runtime-capability-snapshot.schema.json",
+      "schema_sha256": "8aef75ba322116b69e5eaf7a1a86a1fd49f81cfba3bbbf902cf77428cd986e1c",
+      "schema_version": 1,
+      "sha256": "b5bedf55181cfb8984976d02da55e5daeff0a59f9df9c4b9b2c0069eb4878d30"
+    },
+    "classification_path": "docs/portability/classifications/2026-07-14-mission-control-2100.md",
+    "plan": {
+      "path": "docs/plans/2026-07-14-mission-control-assign-mimir-port-plan.md",
+      "sha256": "675af1ad34adf463cdad10cf719cfaec59b90b2e0fae243226e3f427b6c79f5c"
+    },
+    "reviews": [
+      {
+        "path": "docs/reviews/2026-07-14-mission-control-assign-mimir-port-plan-review.md",
+        "sha256": "6a88a3b4e615d8f0772c6bdbd29017c1de231de25f38257346aeabfd2abf6d76"
+      },
+      {
+        "path": "docs/code-reviews/2026-07-14-issue-23-assign-mimir-code-review.md",
+        "sha256": "1a7bf84ac5ac0d122361ba1307a8c1d05edbf52d85a669cd502cdee66ed44cc4"
+      }
+    ],
+    "runbook": {
+      "path": "docs/portability/claude-to-codex-plugin-port-runbook.md",
+      "sha256": "8dc16667009b745a1d0f8e8f45e0542a5a5744dc40cc16e16930648509d24678",
+      "version": 3
+    }
+  },
+  "codex": {
+    "evidence_ref": "refs/tags/evidence/mission-control-assign-mimir-20260714",
+    "execution_base": "fc077d4f4485a7f2398a7b201947479d998e0a33",
+    "expected_count": 0,
+    "historical_plan_base": "fc077d4f4485a7f2398a7b201947479d998e0a33",
+    "inventory_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "observed_origin_main": "fc077d4f4485a7f2398a7b201947479d998e0a33",
+    "repository_id": "infiquetra/infiquetra-codex-plugins",
+    "rows": []
+  },
+  "evidence": [],
+  "port_id": "mission-control-assign-mimir-2026-07-14",
+  "refresh_changes": [],
+  "release_evidence": {
+    "cutover": null,
+    "fresh_session": null,
+    "isolated_install": null,
+    "review": null,
+    "rollback": null
+  },
+  "schema_version": 1,
+  "source": {
+    "base_ref": "1457aed6ee2d3a58900bc4b069871609d2fd166a",
+    "expected_count": 8,
+    "inventory_sha256": "5fb3eac32977a1d1987bd1a9fb77c1453a39a64918f0f76b4701394e463d8b8f",
+    "observed_refs": {
+      "head": "ec8a80b850fb6820aae38173633c8cb9f3875417",
+      "local_main": "ec8a80b850fb6820aae38173633c8cb9f3875417",
+      "origin_main": "ec8a80b850fb6820aae38173633c8cb9f3875417"
+    },
+    "pathspecs": [
+      "plugins/mission-control/.claude-plugin/plugin.json",
+      "plugins/mission-control/CHANGELOG.md",
+      "plugins/mission-control/README.md",
+      "plugins/mission-control/scripts/sdlc_manager.py",
+      "plugins/mission-control/skills/flow/SKILL.md",
+      "plugins/mission-control/skills/issues/SKILL.md",
+      "plugins/mission-control/tests/test_assign_mimir.py",
+      "plugins/mission-control/tests/test_prompt_alignment.py"
+    ],
+    "repository_id": "infiquetra/infiquetra-claude-plugins",
+    "rows": [
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-MANIFEST",
+          "MAP-METADATA"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "plugins/mission-control/.claude-plugin/plugin.json",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/mission-control/.codex-plugin/plugin.json"
+        ],
+        "planned_tests": [
+          "plugins/mission-control/tests/test_prompt_alignment.py"
+        ],
+        "rationale": "Recreate Codex package metadata for tested Codex behavior and retain the adapter's independent version lineage.",
+        "row_id": "src-cb0788572d2f1cb5",
+        "similarity": null,
+        "state": "implemented",
+        "surface_kind": "claude-manifest",
+        "treatment": "codex-adapt",
+        "units": [
+          "U2"
+        ]
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-METADATA"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "plugins/mission-control/CHANGELOG.md",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/mission-control/CHANGELOG.md"
+        ],
+        "planned_tests": [
+          "plugins/mission-control/tests/test_prompt_alignment.py"
+        ],
+        "rationale": "Describe the Codex-visible command and the Codex adapter's 2.4.0 release without claiming byte parity.",
+        "row_id": "src-97172da2308bf99e",
+        "similarity": null,
+        "state": "implemented",
+        "surface_kind": "changelog",
+        "treatment": "codex-adapt",
+        "units": [
+          "U2"
+        ]
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-DOC"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "plugins/mission-control/README.md",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/mission-control/README.md"
+        ],
+        "planned_tests": [
+          "plugins/mission-control/tests/test_prompt_alignment.py"
+        ],
+        "rationale": "Document the same operator contract with Codex package paths and skill names.",
+        "row_id": "src-f3ca108fe3b1bb10",
+        "similarity": null,
+        "state": "implemented",
+        "surface_kind": "documentation",
+        "treatment": "codex-adapt",
+        "units": [
+          "U2"
+        ]
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-SCRIPT-CONFIG"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "plugins/mission-control/scripts/sdlc_manager.py",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/mission-control/scripts/sdlc_manager.py"
+        ],
+        "planned_tests": [
+          "plugins/mission-control/tests/test_assign_mimir.py"
+        ],
+        "rationale": "Port the authenticated fail-closed GitHub mutation behavior while retaining Codex confirmation and package boundaries.",
+        "row_id": "src-8568d1b391a031f3",
+        "similarity": null,
+        "state": "implemented",
+        "surface_kind": "script",
+        "treatment": "codex-adapt",
+        "units": [
+          "U2"
+        ]
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-SKILL"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "plugins/mission-control/skills/flow/SKILL.md",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/mission-control/skills/flow/SKILL.md"
+        ],
+        "planned_tests": [
+          "plugins/mission-control/tests/test_prompt_alignment.py"
+        ],
+        "rationale": "Expose the command through the Codex flow skill with explicit mutation confirmation and readback semantics.",
+        "row_id": "src-9a03ccbd6eef0110",
+        "similarity": null,
+        "state": "implemented",
+        "surface_kind": "skill",
+        "treatment": "codex-adapt",
+        "units": [
+          "U2"
+        ]
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-SKILL"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "plugins/mission-control/skills/issues/SKILL.md",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/mission-control/skills/issues/SKILL.md"
+        ],
+        "planned_tests": [
+          "plugins/mission-control/tests/test_prompt_alignment.py"
+        ],
+        "rationale": "Teach the Codex issue workflow to delegate Mimir intake assignment to the maintained flow command.",
+        "row_id": "src-c9844af1dfc2ccb7",
+        "similarity": null,
+        "state": "implemented",
+        "surface_kind": "skill",
+        "treatment": "codex-adapt",
+        "units": [
+          "U2"
+        ]
+      },
+      {
+        "capability_refs": [],
+        "change": "A",
+        "codex_invariant_refs": [
+          "MAP-TEST"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "plugins/mission-control/tests/test_assign_mimir.py",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/mission-control/tests/test_assign_mimir.py"
+        ],
+        "planned_tests": [
+          "plugins/mission-control/tests/test_assign_mimir.py"
+        ],
+        "rationale": "Adapt the canonical success and failure fixtures to the Codex import and confirmation surface.",
+        "row_id": "src-4c65cb3b2e99165a",
+        "similarity": null,
+        "state": "implemented",
+        "surface_kind": "test",
+        "treatment": "codex-adapt",
+        "units": [
+          "U2"
+        ]
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-TEST",
+          "MAP-METADATA"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "plugins/mission-control/tests/test_prompt_alignment.py",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/mission-control/tests/test_prompt_alignment.py"
+        ],
+        "planned_tests": [
+          "plugins/mission-control/tests/test_prompt_alignment.py"
+        ],
+        "rationale": "Update Codex prompt and release drift guards for the new command and independent adapter version.",
+        "row_id": "src-7acce98f94485e48",
+        "similarity": null,
+        "state": "implemented",
+        "surface_kind": "test",
+        "treatment": "codex-adapt",
+        "units": [
+          "U2"
+        ]
+      }
+    ],
+    "target_reachable": true,
+    "target_ref": "9adb971020df9eb5928595760b5e9c75e498ef2c"
+  },
+  "version_policy": [
+    {
+      "current_codex_identity": "mission-control",
+      "current_codex_version": "2.3.0",
+      "policy": "lineage-with-codex-adaptation",
+      "release_unit": "U2",
+      "source_plugin": "mission-control",
+      "source_version": "2.10.0",
+      "target_codex_identity": "mission-control",
+      "target_codex_version": "2.4.0"
+    }
+  ]
+}

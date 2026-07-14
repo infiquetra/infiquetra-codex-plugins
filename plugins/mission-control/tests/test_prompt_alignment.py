@@ -19,7 +19,7 @@ def test_sdlc_manager_metadata_and_marketplace_entry_match() -> None:
     entry = next(p for p in fixture["plugins"] if p["name"] == "mission-control")
 
     assert plugin_json["name"] == "mission-control"
-    assert plugin_json["version"] == "2.3.0"
+    assert plugin_json["version"] == "2.4.0"
     assert entry["version"] == plugin_json["version"]
     assert sorted(entry["skills"]) == [
         "board",
@@ -77,6 +77,19 @@ def test_flow_skill_uses_project_fields_and_current_actionable_labels() -> None:
     assert "Set Initiative or Objective on a card (project FIELDS, not labels)" in flow
     assert "initiative/objective labels" not in flow
     assert "needs-analysis" not in flow
+    assert "flow assign-mimir" in flow
+    assert "never creates policy" in flow
+
+
+def test_assign_mimir_guidance_is_aligned_across_active_surfaces() -> None:
+    flow = _read(PLUGIN_ROOT / "skills/flow/SKILL.md")
+    issues = _read(PLUGIN_ROOT / "skills/issues/SKILL.md")
+    readme = _read(PLUGIN_ROOT / "README.md")
+
+    for text in (flow, issues, readme):
+        assert "flow assign-mimir" in text
+    assert "alternate credentials" in flow
+    assert "never admits a repository" in issues
 
 
 def test_field_first_hierarchy_guidance_is_consistent() -> None:

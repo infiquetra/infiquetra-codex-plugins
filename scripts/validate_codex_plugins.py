@@ -115,7 +115,7 @@ PRE_CUTOVER_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
         ),
     },
     "mission-control": {
-        "version": "2.3.0",
+        "version": "2.4.0",
         "skills": (
             "board",
             "flow",

@@ -12,7 +12,7 @@
     {
       "classification": "migration-documentation",
       "path": "README.md",
-      "sha256": "1107965ee30cb41ce7f213d6c69dc0ef176b0cf4a2aeed0aadc1bfa444c75c1b",
+      "sha256": "d081ea055b5e4956f110e0fb7dfb61e52a1233c1d623d02c6f5b7f650b587b1f",
       "tokens": [
         "Team Execution"
       ]
@@ -501,6 +501,14 @@
     },
     {
       "classification": "migration-documentation",
+      "path": "docs/validation/mission-control-2100-runtime-capability-snapshot.json",
+      "sha256": "b5bedf55181cfb8984976d02da55e5daeff0a59f9df9c4b9b2c0069eb4878d30",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-documentation",
       "path": "docs/validation/saga-family-codex-proof.md",
       "sha256": "8b4b7d92a662b6ab27456c50d83303a4976c0e96c47cc8440a7093408ed7f396",
       "tokens": [
@@ -511,7 +519,7 @@
     {
       "classification": "legacy-read-metadata",
       "path": "docs/validation/saga-family-target-inventory.json",
-      "sha256": "42676629ba4af8a8b4f1f3dd15e2cc6867d3cc6a0e7429eaa827b73caefed7f6",
+      "sha256": "171f91031baadaf68ce650459e2128b1503ace55c91365d0a7139ae952e154e6",
       "tokens": [
         ".codex/team-execution/",
         "team-execution"

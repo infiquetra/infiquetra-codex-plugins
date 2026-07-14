@@ -31,7 +31,6 @@ from engine_registry import (  # noqa: E402
     CapabilityExplanation,
     EngineEntry,
     Registry,
-    RegistryError,
 )
 from engine_registry_overlay import load_composed_registry  # noqa: E402
 
@@ -45,7 +44,10 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(["engines", "list"] if raw_args == [] else raw_args)
     try:
         return _run(args)
-    except (EngineOverlayError, RegistryError, OSError) as exc:
+    # Registry modules are loaded dynamically by several in-repo callers. Catch the stable
+    # public ValueError boundary so an equivalent RegistryError from another module instance
+    # still produces the CLI's documented non-zero result instead of escaping.
+    except (EngineOverlayError, OSError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
 
@@ -140,7 +142,7 @@ def _run(args: argparse.Namespace) -> int:
         _emit(payload, args.json, _format_explanation(explanation))
         return 0
 
-    raise RegistryError("unhandled engine registry CLI command")
+    raise ValueError("unhandled engine registry CLI command")
 
 
 def _row_payload(
