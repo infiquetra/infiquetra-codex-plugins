@@ -79,8 +79,8 @@ def _reg_dict() -> dict[str, Any]:
 def test_happy_path_lookups_by_capability_engine_and_role(tmp_path: Path) -> None:
     registry = REG.Registry.load(_write_registry(tmp_path, _reg_dict()))
 
-    assert registry.by_capability("debug").key == "agy/gemini-3.1-pro-high"
-    assert registry.by_capability("code-generation").key == "agy/gemini-3.5-flash-high"
+    assert registry.by_capability("debug").key == "claude-cli/opus"
+    assert registry.by_capability("code-generation").key == "claude-cli/opus"
     assert registry.by_engine("agy").key == "agy/gemini-3.5-flash-high"
     assert registry.by_role("cross-family-review-panel").members == [
         "agy/gemini-3.1-pro-high",
@@ -215,12 +215,12 @@ def test_capability_dispatch_returns_variant_protocol_and_payload(registry: Any)
         registry=registry,
     )
 
-    assert resolution.engine_id == "agy"
-    assert resolution.variant == "gemini-3.5-flash-high"
+    assert resolution.engine_id == "claude-cli"
+    assert resolution.variant == "opus"
     assert resolution.effort == "high"
-    assert "agy delegate" in resolution.recipe
+    assert "claude --safe-mode" in resolution.recipe
     assert resolution.payload == "\n".join(resolution.protocol) + "\n\n" + context
-    assert resolution.write_capable is False
+    assert resolution.write_capable is True
     assert resolution.fallback is None
     assert resolution.halt is None
 
@@ -258,7 +258,12 @@ def test_payload_preserves_protocol_line_order_byte_for_byte(registry: Any) -> N
     assert resolution.payload.splitlines()[: len(resolution.protocol)] == resolution.protocol
 
 
-def test_long_form_writing_worker_no_fit_falls_back_not_halts(registry: Any) -> None:
+def test_long_form_writing_worker_no_fit_falls_back_not_halts(tmp_path: Path) -> None:
+    data = _res_dict()
+    for engine in data["engines"]:
+        engine["capability_profile"].pop("long-form-writing", None)
+    registry = REG.Registry.load(_write_registry(tmp_path, data))
+
     resolution = R.resolve(
         {
             "capability": "long-form-writing",
@@ -273,7 +278,7 @@ def test_long_form_writing_worker_no_fit_falls_back_not_halts(registry: Any) -> 
     assert resolution.engine_id == "codex-root"
     assert resolution.fallback is not None
     assert "long-form-writing" in resolution.fallback
-    assert "WEAK rating" in resolution.fallback
+    assert "no external engine supports" in resolution.fallback
     assert resolution.halt is None
 
 

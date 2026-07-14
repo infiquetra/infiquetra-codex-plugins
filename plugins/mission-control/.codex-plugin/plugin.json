@@ -1,6 +1,6 @@
 {
   "name": "mission-control",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "SDLC management for Operations, Asgard, and CAMPPS: prepared issue drafts, board schemas, labels, project fields, sub-issues, metrics, and card validation.",
   "author": {
     "name": "Infiquetra",

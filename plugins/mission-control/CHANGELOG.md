@@ -1,5 +1,19 @@
 # Changelog — mission-control
 
+## 2.4.0 - 2026-07-14
+
+### Added
+
+- Added idempotent `flow assign-mimir --repo REPO --number N`, adapted from canonical Claude
+  Mission Control 2.10.0 at `9adb971020df9eb5928595760b5e9c75e498ef2c`. Before its only
+  mutation it reads Team Mimir's exact live coverage from authenticated GitHub, requires an
+  active issue route, an open issue, triage-or-higher operator authority, and the repository's
+  existing `intake:mimir` label. Success is emitted only after issue readback and includes trigger
+  state, coverage route, issue URL, and live Objective project-field values when present.
+- Added fail-closed coverage for unsupported repositories, closed issues, insufficient authority,
+  missing or malformed policy, missing trigger labels, API failures, and failed mutation readback.
+  The command creates no labels, comments, repository admissions, or alternate credential paths.
+
 ## 2.3.0 - 2026-07-10
 
 ### Changed
