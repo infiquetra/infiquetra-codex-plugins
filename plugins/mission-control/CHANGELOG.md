@@ -1,5 +1,12 @@
 # Changelog — mission-control
 
+## 2.4.1 - 2026-07-14
+
+### Fixed
+
+- Moved the assign-to-Mimir capability to the start of the `flow` skill description so Codex's
+  shortened fresh-thread catalog advertises the installed command.
+
 ## 2.4.0 - 2026-07-14
 
 ### Added

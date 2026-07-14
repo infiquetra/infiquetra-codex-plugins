@@ -1,8 +1,9 @@
 ---
 name: flow
 description: |
-  Operator-facing GraphQL + REST helpers for the active project boards. Wraps
-  the GitHub APIs the orchestrator uses, so Jeff can do per-card work
+  Assign covered issues to Team Mimir and provide operator-facing GraphQL + REST
+  helpers for the active project boards. Wraps the GitHub APIs the orchestrator
+  uses, so Jeff can do per-card work
   (set Initiative/Objective fields, link or unlink sub-issues, validate card bodies,
   self-heal labels, discover project mappings, assign covered issues to Team Mimir) without writing GraphQL by
   hand. Each command is idempotent where possible, and surfaces partial
