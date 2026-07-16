@@ -30,9 +30,16 @@ Verdict: APPROVE
    invalid-Status behavior, no mutation, fresh-session discovery, rollback, and
    cleanup in an isolated VM 209 Codex home.
 
+6. **Medium - the shared validator is specialized to another active port.**
+   `scripts/port_contract.py validate` hardcodes the external-advisory contract
+   refs, inventories, and evidence tag, so it cannot truthfully validate a
+   second concurrent manifest. This port uses the generic initializer,
+   source-verification and renderer, plus an exact cycle-specific pytest gate
+   for authority, inventory, classification, lineage, and final evidence.
+
 ## Readiness
 
-The source authority, exact refs, independent version lineage, behavior and
-metadata treatments, tests, nonproduction host, dirty-state isolation,
-installed proof, rollback, verification, and stop conditions are
-decision-complete. No unresolved P0-P2 finding remains.
+The source authority, exact refs, independent version lineage, validator
+boundary, behavior and metadata treatments, tests, nonproduction host,
+dirty-state isolation, installed proof, rollback, verification, and stop
+conditions are decision-complete. No unresolved P0-P2 finding remains.

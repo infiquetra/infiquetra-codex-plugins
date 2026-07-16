@@ -1,0 +1,230 @@
+{
+  "authority": {
+    "capability_snapshot": {
+      "path": "docs/validation/mission-control-2101-runtime-capability-snapshot.json",
+      "schema_path": "docs/validation/codex-runtime-capability-snapshot.schema.json",
+      "schema_sha256": "8aef75ba322116b69e5eaf7a1a86a1fd49f81cfba3bbbf902cf77428cd986e1c",
+      "schema_version": 1,
+      "sha256": "258fa1b32f76d3a2738a784a6515409eaecd734af3aed2d1a3998ece78f6222c"
+    },
+    "classification_path": "docs/portability/classifications/2026-07-16-mission-control-2101.md",
+    "plan": {
+      "path": "docs/plans/2026-07-16-mission-control-board-move-fail-loud-port-plan.md",
+      "sha256": "50ec0ed4a899bf0420931e113c3271c7a7a064999eb83190ade1fa117856d41d"
+    },
+    "reviews": [
+      {
+        "path": "docs/reviews/2026-07-16-mission-control-board-move-fail-loud-port-plan-review.md",
+        "sha256": "351d04ff13902d8a6bff00628ef60db69318049b0ccd3a297db918928069d913"
+      }
+    ],
+    "runbook": {
+      "path": "docs/portability/claude-to-codex-plugin-port-runbook.md",
+      "sha256": "8dc16667009b745a1d0f8e8f45e0542a5a5744dc40cc16e16930648509d24678",
+      "version": 3
+    }
+  },
+  "codex": {
+    "evidence_ref": "refs/tags/evidence/external-advisory-execution-20260711",
+    "execution_base": "7b429f765eea2afca3bba63b5c498dc8efb219ff",
+    "expected_count": 0,
+    "historical_plan_base": "7b429f765eea2afca3bba63b5c498dc8efb219ff",
+    "inventory_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "observed_origin_main": "7b429f765eea2afca3bba63b5c498dc8efb219ff",
+    "repository_id": "infiquetra/infiquetra-codex-plugins",
+    "rows": []
+  },
+  "evidence": [],
+  "port_id": "mission-control-board-move-fail-loud-2026-07-16",
+  "refresh_changes": [],
+  "release_evidence": {
+    "cutover": null,
+    "fresh_session": null,
+    "isolated_install": null,
+    "review": null,
+    "rollback": null
+  },
+  "schema_version": 1,
+  "source": {
+    "base_ref": "9adb971020df9eb5928595760b5e9c75e498ef2c",
+    "expected_count": 6,
+    "inventory_sha256": "5f989d44300e4630347c36e840cfb6dc9d62d87f72b2690e61b35016dc46167a",
+    "observed_refs": {
+      "head": "a6f3bcff0fe9df213e2d2947afca99d5e7516393",
+      "local_main": "a6f3bcff0fe9df213e2d2947afca99d5e7516393",
+      "origin_main": "a6f3bcff0fe9df213e2d2947afca99d5e7516393"
+    },
+    "pathspecs": [
+      ".claude-plugin/marketplace.json",
+      "plugins/mission-control/.claude-plugin/plugin.json",
+      "plugins/mission-control/CHANGELOG.md",
+      "plugins/mission-control/scripts/sdlc_manager.py",
+      "plugins/mission-control/tests/test_board_move_exit.py",
+      "plugins/mission-control/tests/test_prompt_alignment.py"
+    ],
+    "repository_id": "infiquetra/infiquetra-claude-plugins",
+    "rows": [
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [],
+        "evidence_refs": [],
+        "host_primitives": [
+          "ClaudeCommand"
+        ],
+        "new_path": ".claude-plugin/marketplace.json",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "row_id": "src-63823a1533d83eba",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "claude-manifest",
+        "treatment": "reject",
+        "rationale": "Reject the Claude marketplace version row because the Codex marketplace has no per-entry version; Codex package identity remains manifest-owned.",
+        "units": []
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-MANIFEST",
+          "MAP-METADATA"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "plugins/mission-control/.claude-plugin/plugin.json",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/mission-control/.codex-plugin/plugin.json"
+        ],
+        "planned_tests": [
+          "plugins/mission-control/tests/test_prompt_alignment.py"
+        ],
+        "rationale": "Recreate Codex package metadata for the independently versioned 2.4.2 adapter after its behavior is proved.",
+        "row_id": "src-cb0788572d2f1cb5",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "claude-manifest",
+        "treatment": "codex-adapt",
+        "units": [
+          "U2"
+        ]
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-METADATA"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "plugins/mission-control/CHANGELOG.md",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/mission-control/CHANGELOG.md"
+        ],
+        "planned_tests": [
+          "plugins/mission-control/tests/test_prompt_alignment.py"
+        ],
+        "rationale": "Describe the tested fail-loud behavior in the independent Codex 2.4.2 release lineage.",
+        "row_id": "src-97172da2308bf99e",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "changelog",
+        "treatment": "codex-adapt",
+        "units": [
+          "U2"
+        ]
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "plugins/mission-control/scripts/sdlc_manager.py",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/mission-control/scripts/sdlc_manager.py"
+        ],
+        "planned_tests": [
+          "plugins/mission-control/tests/test_board_move_exit.py"
+        ],
+        "rationale": "Adapt aggregate board-move success and CLI exit propagation while preserving Codex confirmation, imports, and paths.",
+        "row_id": "src-8568d1b391a031f3",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "script",
+        "treatment": "codex-adapt",
+        "units": [
+          "U2"
+        ]
+      },
+      {
+        "capability_refs": [],
+        "change": "A",
+        "codex_invariant_refs": [],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "plugins/mission-control/tests/test_board_move_exit.py",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/mission-control/tests/test_board_move_exit.py"
+        ],
+        "planned_tests": [
+          "plugins/mission-control/tests/test_board_move_exit.py"
+        ],
+        "rationale": "Adapt all six canonical fail-loud cases to the native Codex module and command surface.",
+        "row_id": "src-6653531248eb6c51",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "test",
+        "treatment": "codex-adapt",
+        "units": [
+          "U2"
+        ]
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-METADATA"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "plugins/mission-control/tests/test_prompt_alignment.py",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/mission-control/tests/test_prompt_alignment.py"
+        ],
+        "planned_tests": [
+          "plugins/mission-control/tests/test_prompt_alignment.py"
+        ],
+        "rationale": "Advance the Codex version guard to 2.4.2 without importing Claude marketplace assumptions.",
+        "row_id": "src-7acce98f94485e48",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "test",
+        "treatment": "codex-adapt",
+        "units": [
+          "U2"
+        ]
+      }
+    ],
+    "target_reachable": true,
+    "target_ref": "5d4dfb2e1d0be5abbe9f3a693e33d152ba7cfcba"
+  },
+  "version_policy": [
+    {
+      "current_codex_identity": "mission-control",
+      "current_codex_version": "2.4.1",
+      "policy": "lineage-with-codex-adaptation",
+      "release_unit": "U2",
+      "source_plugin": "mission-control",
+      "source_version": "2.10.1",
+      "target_codex_identity": "mission-control",
+      "target_codex_version": "2.4.2"
+    }
+  ]
+}

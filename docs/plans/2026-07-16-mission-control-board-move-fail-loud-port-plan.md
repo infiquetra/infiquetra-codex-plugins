@@ -56,9 +56,12 @@ record, generated target inventory/facts, port classification, unit evidence,
 plan/review, and code review required by the release. Do not add Actions,
 branch protection, remote credentials, or a duplicated marketplace version.
 
-R7. Pass source verification, classification, unit, and cutover port gates;
-focused Mission Control tests; full locked Codex tests; Ruff; current and
-target-fixture validators; generated Saga facts/assets; and diff checks.
+R7. Pass source verification and the cycle-specific classification, unit, and
+cutover contract tests; focused Mission Control tests; full locked Codex tests;
+Ruff; current and target-fixture validators; generated Saga facts/assets; and
+diff checks. The shared `port_contract.py validate` command remains bound to the
+repository's active external-advisory contract and is not valid for this
+concurrent focused port.
 
 R8. Merge only the exact reviewed head. On VM 209, install Codex and set
 `CODEX_HOME` inside `/home/agent/.hermes/canaries/team-mimir-108`, install and
@@ -76,7 +79,9 @@ credential, or mutation to the user's existing Codex configuration/cache.
 
 Capture a sanitized capability snapshot, initialize the exact source/Codex
 contract, bind this plan and review, classify every source row, render the
-classification, and pass the classification gate before behavior changes.
+classification, and pass
+`tests/test_mission_control_board_move_port_contract.py` before behavior
+changes.
 
 ### U2. Behavior and fixtures
 
@@ -106,7 +111,7 @@ behavior, rollback, clean up, and attach receipts to #35 and #108.
 
 ```bash
 python3 scripts/port_contract.py verify-source --manifest <manifest> --source-repo <source>
-python3 scripts/port_contract.py validate --manifest <manifest> --stage classification
+PYTHONPATH=. uv run pytest -q tests/test_mission_control_board_move_port_contract.py -k classification
 PYTHONPATH=. uv run pytest -q plugins/mission-control/tests
 PYTHONPATH=. uv run pytest -q
 uv run ruff check .
@@ -115,7 +120,7 @@ python3 scripts/validate_codex_plugins.py --mode target-fixture
 python3 scripts/build_saga_docs_facts.py --check
 python3 scripts/render_saga_docs_assets.py --check
 git diff --check
-python3 scripts/port_contract.py validate --manifest <manifest> --stage cutover
+PYTHONPATH=. uv run pytest -q tests/test_mission_control_board_move_port_contract.py
 ```
 
 ## Stop conditions
