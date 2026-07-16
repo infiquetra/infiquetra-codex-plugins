@@ -1,5 +1,13 @@
 # Changelog — mission-control
 
+## 2.4.2 - 2026-07-16
+
+### Fixed
+
+- Made `board move` exit nonzero after reporting all selected project results
+  when an item, Status field or option, or mutation is unavailable. Invalid
+  Status requests still list provider-read options and never call mutation.
+
 ## 2.4.1 - 2026-07-14
 
 ### Fixed

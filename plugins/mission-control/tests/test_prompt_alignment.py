@@ -19,7 +19,7 @@ def test_sdlc_manager_metadata_and_marketplace_entry_match() -> None:
     entry = next(p for p in fixture["plugins"] if p["name"] == "mission-control")
 
     assert plugin_json["name"] == "mission-control"
-    assert plugin_json["version"] == "2.4.1"
+    assert plugin_json["version"] == "2.4.2"  # #35 fail-loud board move
     assert entry["version"] == plugin_json["version"]
     assert sorted(entry["skills"]) == [
         "board",

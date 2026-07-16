@@ -1148,7 +1148,7 @@ def board_add(
 
 def board_move(
     repo: str, number: int, status: str, fmt: str, project_name: str | None = None
-) -> None:
+) -> bool:
     """Move item to a different board column."""
     config = load_config()
     projects = (
@@ -1161,6 +1161,7 @@ def board_move(
         sys.exit(1)
 
     results = []
+    failed = False
     for proj in projects:
         project_id, items = get_project_items(proj["number"])
 
@@ -1177,6 +1178,7 @@ def board_move(
 
         if not target_item:
             results.append(f"Item {repo}#{number} not found in '{proj['name']}'")
+            failed = True
             continue
 
         # Find Status field ID and option ID via field discovery
@@ -1201,6 +1203,7 @@ def board_move(
 
         if not status_field:
             results.append(f"No Status field found in '{proj['name']}'")
+            failed = True
             continue
         if not status_option_id:
             available = [o["name"] for o in status_field.get("options", [])]
@@ -1209,6 +1212,7 @@ def board_move(
             if hint:
                 message = f"{message}. {hint}"
             results.append(message)
+            failed = True
             continue
 
         try:
@@ -1224,8 +1228,10 @@ def board_move(
             results.append(f"Moved {repo}#{number} to '{status}' in '{proj['name']}'")
         except Exception as e:
             results.append(f"Failed to move: {e}")
+            failed = True
 
     _out("\n".join(results), fmt)
+    return not failed
 
 
 def board_archive(project_name: str, dry_run: bool, fmt: str) -> None:
@@ -5469,7 +5475,14 @@ def main() -> None:
             elif args.action == "add":
                 board_add(args.repo, args.number, fmt, project_names=args.project)
             elif args.action == "move":
-                board_move(args.repo, args.number, args.status, fmt, project_name=args.project)
+                if not board_move(
+                    args.repo,
+                    args.number,
+                    args.status,
+                    fmt,
+                    project_name=args.project,
+                ):
+                    raise SystemExit(1)
             elif args.action == "archive":
                 board_archive(args.project, args.dry_run, fmt)
             elif args.action == "wip":

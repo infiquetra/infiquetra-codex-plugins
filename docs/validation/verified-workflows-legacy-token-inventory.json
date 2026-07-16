@@ -509,6 +509,14 @@
     },
     {
       "classification": "migration-documentation",
+      "path": "docs/validation/mission-control-2101-runtime-capability-snapshot.json",
+      "sha256": "258fa1b32f76d3a2738a784a6515409eaecd734af3aed2d1a3998ece78f6222c",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-documentation",
       "path": "docs/validation/saga-family-codex-proof.md",
       "sha256": "8b4b7d92a662b6ab27456c50d83303a4976c0e96c47cc8440a7093408ed7f396",
       "tokens": [
@@ -519,7 +527,7 @@
     {
       "classification": "legacy-read-metadata",
       "path": "docs/validation/saga-family-target-inventory.json",
-      "sha256": "befd142dac5fcec12934b6ee00a6f3edcdeb3347cdffd5fffd4a04a4f2fddf47",
+      "sha256": "cf381226c534a611f61d24da3362c844017a732f35628909fba279321bd06738",
       "tokens": [
         ".codex/team-execution/",
         "team-execution"
