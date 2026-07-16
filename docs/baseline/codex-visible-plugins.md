@@ -17,7 +17,7 @@ maintained source after validation.
 |---|---:|---|
 | `saga` | 0.75.17+codex.20260711160644 | `saga:office-hours`, `saga:ideate`, `saga:product-review`, `saga:brainstorm`, `saga:spec`, `saga:implementation-spec`, `saga:strategy`, `saga:plan`, `saga:work`, `saga:outcome`, `saga:qa`, `saga:investigate`, `saga:retro`, `saga:resume`, `saga:handoff`, `saga:promote`, `saga:founder-review`, `saga:ceo-review`, `saga:doc-review`, `saga:code-review`, `saga:optimize`, `saga:loop` |
 | `deploy` | 0.1.1 | `deploy:deploy-state`, `deploy:deploy`, `deploy:deploy-status`, `deploy:deploy-notes`, `deploy:deploy-hotfix` |
-| `mission-control` | 2.4.1 | `mission-control:board`, `mission-control:flow`, `mission-control:issues`, `mission-control:labels`, `mission-control:metrics`, `mission-control:milestones`, `mission-control:rollout` |
+| `mission-control` | 2.4.2 | `mission-control:board`, `mission-control:flow`, `mission-control:issues`, `mission-control:labels`, `mission-control:metrics`, `mission-control:milestones`, `mission-control:rollout` |
 | `verified-workflows` | 1.0.0+codex.20260711160140 | `verified-workflows:run`, `verified-workflows:appsec-audit` |
 | `fleet-core` | 0.8.4+codex.20260711134422 | library only |
 | `discord-identity-assets` | 0.2.0 | `discord-identity-assets:discord-identity-assets` |
