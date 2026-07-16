@@ -7,6 +7,7 @@
 | Parent onboarding | `infiquetra/team-mimir#108` |
 | Source onboarding PR | `infiquetra/team-mimir#192`, merge `e53e9df9451a4cc4ba9eef5ba5472d6ec5c40ea2` |
 | Feature PR | #36, merge `2bc27eb60d64090dcc78c4f70d98c9fbe48bd99f` |
+| QA receipt PR | #37 |
 | Reviewed feature head | `0575c03126cb17bb59c1dec090bb93470354ffda` |
 | Installed release | Mission Control 2.4.2 |
 | Canonical run | `8c326812-87db-4148-91ce-635e4a5351ed` |
