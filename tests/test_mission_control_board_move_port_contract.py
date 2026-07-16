@@ -90,7 +90,7 @@ def test_classification_has_one_explicit_treatment_per_source_row() -> None:
     assert set(rows) == {"src-63823a1533d83eba", *ADAPTED_ROWS}
     rejected = rows["src-63823a1533d83eba"]
     assert rejected["new_path"] == SOURCE_PATHS[0]
-    assert rejected["state"] == "classified"
+    assert rejected["state"] in {"classified", "verified"}
     assert rejected["treatment"] == "reject"
     assert rejected["units"] == []
     assert rejected["planned_targets"] == []
@@ -137,3 +137,23 @@ def test_classification_preserves_independent_codex_version_lineage() -> None:
             "target_codex_version": "2.4.2",
         }
     ]
+
+
+def test_cutover_has_exact_local_review_and_unit_evidence() -> None:
+    manifest = _manifest()
+    reviews = manifest["authority"]["reviews"]
+    evidence = manifest["evidence"]
+
+    assert reviews[-1]["path"] == (
+        "docs/code-reviews/2026-07-16-issue-35-board-move-code-review.md"
+    )
+    assert len(evidence) == 1
+    assert evidence[0]["evidence_id"] == "u2-local-gates"
+    assert evidence[0]["repo_head"] == "86c0968ed344b8dfb878b1973cd263caf2af5234"
+    assert evidence[0]["exit_code"] == 0
+    assert evidence[0]["artifact_path"] == (
+        "docs/validation/mission-control-2101-unit-evidence.md"
+    )
+    for row in manifest["source"]["rows"]:
+        assert row["state"] == "verified"
+        assert row["evidence_refs"] == ["u2-local-gates"]

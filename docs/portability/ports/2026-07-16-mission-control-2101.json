@@ -16,6 +16,10 @@
       {
         "path": "docs/reviews/2026-07-16-mission-control-board-move-fail-loud-port-plan-review.md",
         "sha256": "351d04ff13902d8a6bff00628ef60db69318049b0ccd3a297db918928069d913"
+      },
+      {
+        "path": "docs/code-reviews/2026-07-16-issue-35-board-move-code-review.md",
+        "sha256": "d1d6b8d458edbbcd8593e5ee1a4048fc362c3f0ed5e934c1f230ade2f8016562"
       }
     ],
     "runbook": {
@@ -34,7 +38,26 @@
     "repository_id": "infiquetra/infiquetra-codex-plugins",
     "rows": []
   },
-  "evidence": [],
+  "evidence": [
+    {
+      "artifact_path": "docs/validation/mission-control-2101-unit-evidence.md",
+      "artifact_sha256": "dc1faa3f1fb5015f7523c8af6f898ecbdbe33bbf795f3ef393ff036bea962e1d",
+      "argv": [
+        "PYTHONPATH=.",
+        "uv",
+        "run",
+        "pytest",
+        "-q"
+      ],
+      "cwd": ".",
+      "evidence_id": "u2-local-gates",
+      "exit_code": 0,
+      "kind": "check",
+      "recorded_at": "2026-07-16T18:17:52Z",
+      "repo_head": "86c0968ed344b8dfb878b1973cd263caf2af5234",
+      "unit": "U2"
+    }
+  ],
   "port_id": "mission-control-board-move-fail-loud-2026-07-16",
   "refresh_changes": [],
   "release_evidence": {
@@ -68,7 +91,9 @@
         "capability_refs": [],
         "change": "M",
         "codex_invariant_refs": [],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u2-local-gates"
+        ],
         "host_primitives": [
           "ClaudeCommand"
         ],
@@ -78,7 +103,7 @@
         "planned_tests": [],
         "row_id": "src-63823a1533d83eba",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "claude-manifest",
         "treatment": "reject",
         "rationale": "Reject the Claude marketplace version row because the Codex marketplace has no per-entry version; Codex package identity remains manifest-owned.",
@@ -91,7 +116,9 @@
           "MAP-MANIFEST",
           "MAP-METADATA"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u2-local-gates"
+        ],
         "host_primitives": [],
         "new_path": "plugins/mission-control/.claude-plugin/plugin.json",
         "old_path": null,
@@ -104,7 +131,7 @@
         "rationale": "Recreate Codex package metadata for the independently versioned 2.4.2 adapter after its behavior is proved.",
         "row_id": "src-cb0788572d2f1cb5",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "claude-manifest",
         "treatment": "codex-adapt",
         "units": [
@@ -117,7 +144,9 @@
         "codex_invariant_refs": [
           "MAP-METADATA"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u2-local-gates"
+        ],
         "host_primitives": [],
         "new_path": "plugins/mission-control/CHANGELOG.md",
         "old_path": null,
@@ -130,7 +159,7 @@
         "rationale": "Describe the tested fail-loud behavior in the independent Codex 2.4.2 release lineage.",
         "row_id": "src-97172da2308bf99e",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "changelog",
         "treatment": "codex-adapt",
         "units": [
@@ -141,7 +170,9 @@
         "capability_refs": [],
         "change": "M",
         "codex_invariant_refs": [],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u2-local-gates"
+        ],
         "host_primitives": [],
         "new_path": "plugins/mission-control/scripts/sdlc_manager.py",
         "old_path": null,
@@ -154,7 +185,7 @@
         "rationale": "Adapt aggregate board-move success and CLI exit propagation while preserving Codex confirmation, imports, and paths.",
         "row_id": "src-8568d1b391a031f3",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -165,7 +196,9 @@
         "capability_refs": [],
         "change": "A",
         "codex_invariant_refs": [],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u2-local-gates"
+        ],
         "host_primitives": [],
         "new_path": "plugins/mission-control/tests/test_board_move_exit.py",
         "old_path": null,
@@ -178,7 +211,7 @@
         "rationale": "Adapt all six canonical fail-loud cases to the native Codex module and command surface.",
         "row_id": "src-6653531248eb6c51",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -191,7 +224,9 @@
         "codex_invariant_refs": [
           "MAP-METADATA"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u2-local-gates"
+        ],
         "host_primitives": [],
         "new_path": "plugins/mission-control/tests/test_prompt_alignment.py",
         "old_path": null,
@@ -204,7 +239,7 @@
         "rationale": "Advance the Codex version guard to 2.4.2 without importing Claude marketplace assumptions.",
         "row_id": "src-7acce98f94485e48",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
