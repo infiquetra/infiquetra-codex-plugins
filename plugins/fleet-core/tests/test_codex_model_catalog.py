@@ -112,6 +112,33 @@ def test_refreshed_success_calls_once() -> None:
     assert calls == [("codex", "debug", "models")]
 
 
+def test_full_document_preserves_validated_catalog_bytes() -> None:
+    payload = {"models": [_raw_row()]}
+    raw = json.dumps(payload, indent=2).encode()
+
+    def run(_argv, _timeout, _limit):
+        return catalog.CommandResult(returncode=0, stdout=raw, stderr=b"")
+
+    document = catalog.read_catalog_document(run)
+
+    assert document.source == "refreshed"
+    assert document.raw_bytes == raw
+    assert document.snapshot.model("gpt-5.6-sol") is not None
+
+
+def test_bundled_document_bypasses_refreshed_catalog() -> None:
+    calls: list[tuple[str, ...]] = []
+
+    def run(argv, _timeout, _limit):
+        calls.append(tuple(argv))
+        return _result({"models": [_raw_row()]})
+
+    document = catalog.read_bundled_catalog_document(run)
+
+    assert document.source == "bundled"
+    assert calls == [("codex", "debug", "models", "--bundled")]
+
+
 @pytest.mark.parametrize("first_failure", ["exit", "invalid", "timeout", "oversize"])
 def test_refreshed_failure_tries_bundled_once(first_failure: str) -> None:
     calls: list[tuple[str, ...]] = []

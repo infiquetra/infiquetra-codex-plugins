@@ -18,6 +18,7 @@ from scripts.validate_codex_plugins import (
     LEGACY_TEAM_EXECUTION_TREE_SHA256,
     LEGACY_WORKFLOW_HISTORY_SENTINELS,
     LEGACY_WORKFLOW_INVENTORY,
+    MODERNIZATION_CUTOVER_VERSIONS,
     REQUIRED_LEGACY_STATE_ROOTS,
     TARGET_EXPECTED_PLUGINS,
     compare_inventory,
@@ -154,6 +155,24 @@ def test_current_mode_rejects_pending_real_profile_cutover(monkeypatch):
     assert any("real-profile cutover evidence is incomplete" in error for error in errors)
 
 
+def test_modernization_cutover_versions_are_frozen_receipt_values():
+    path = (
+        REPO_ROOT
+        / "docs"
+        / "validation"
+        / "codex-plugin-modernization-cutover.json"
+    )
+    payload = json.loads(path.read_text(encoding="utf-8"))
+
+    assert payload["versions"] == MODERNIZATION_CUTOVER_VERSIONS
+    assert MODERNIZATION_CUTOVER_VERSIONS["fleet-core"] != (
+        TARGET_EXPECTED_PLUGINS["fleet-core"]["version"]
+    )
+    assert MODERNIZATION_CUTOVER_VERSIONS["verified-workflows"] != (
+        TARGET_EXPECTED_PLUGINS["verified-workflows"]["version"]
+    )
+
+
 def test_current_and_target_fixture_run_classification_port_gate():
     errors: list[str] = []
 
@@ -209,8 +228,8 @@ def test_target_plugin_set_describes_saga_family_cutover():
         "discord-identity-assets",
     )
     assert TARGET_EXPECTED_PLUGINS["verified-workflows"] == {
-        "version": "1.0.0+codex.20260711160140",
-        "skills": ("run", "appsec-audit"),
+        "version": "1.0.1+codex.20260717220000",
+        "skills": ("run", "appsec-audit", "select-agent"),
     }
     assert "team-execution" not in TARGET_EXPECTED_PLUGINS
     assert {"blueprint-reviewer", "sdlc-manager"}.isdisjoint(TARGET_EXPECTED_PLUGINS)
@@ -295,16 +314,16 @@ def test_target_fixture_rejects_duplicate_plugin_entries():
         "plugins": [
             {
                 "name": "verified-workflows",
-                "version": "1.0.0+codex.20260711160140",
+                "version": "1.0.1+codex.20260717220000",
                 "publication_status": "released",
-                "skills": ["run", "appsec-audit"],
+                "skills": ["run", "appsec-audit", "select-agent"],
                 "forbidden_active_dirs": [".claude-plugin", "commands"],
             },
             {
                 "name": "verified-workflows",
-                "version": "1.0.0+codex.20260711160140",
+                "version": "1.0.1+codex.20260717220000",
                 "publication_status": "released",
-                "skills": ["run", "appsec-audit"],
+                "skills": ["run", "appsec-audit", "select-agent"],
                 "forbidden_active_dirs": [".claude-plugin", "commands"],
             },
         ],

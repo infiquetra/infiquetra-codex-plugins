@@ -9,6 +9,7 @@ Codex-native, root-owned workflow orchestration for Infiquetra work.
 
 - `verified-workflows:run` owns approved workflow DAG execution.
 - `verified-workflows:appsec-audit` performs focused application trust-boundary review.
+- `verified-workflows:select-agent` displays and launches one maintained native Codex agent profile.
 
 ## Codex Execution Shape
 
@@ -64,24 +65,21 @@ provide project-scoped Codex discovery during development; repository validation
 extra, symlinked, or byte-drifted copies. U8 later installs the same five profiles globally. Profile
 presence is expected configuration, not evidence that Codex selected one or used its model, effort,
 sandbox, or independent child. U4 provides the receipt boundary for a runtime that can select named
-profiles. Sol/Terra MultiAgent V2 requires this effective Codex configuration before the selector is
-available:
+profiles. Codex currently assigns Sol and Terra to unfinished MultiAgent V2 through the model
+catalog, even when the V2 feature flag is false. Restore the stable V1 selector with:
 
-```toml
-[features.multi_agent_v2]
-hide_spawn_agent_metadata = false
-tool_namespace = "agents"
+```bash
+python3 plugins/fleet-core/scripts/codex_v1_catalog.py install
 ```
 
-Use `agent_type=<runtime_agent_name>` with `fork_turns=none` or a positive bounded turn count. The
-default `fork_turns=all` inherits the parent agent type, model, and effort and rejects those
-overrides. Setting only `hide_spawn_agent_metadata=false` under the reserved `collaboration`
-namespace is rejected by the backend. A saved-config fresh-task proof selected `scan_low` from a
-Sol/xhigh parent and recorded a Luna/low, read-only child. That parent was also read-only. Current V2
-reapplies the live parent permission profile after role selection, so the TOML sandbox cannot narrow
-a more-powerful parent. Run scanner/reviewer/monitor profiles beneath a fresh read-only parent and
-`test_medium` beneath workspace-write, then verify the host-issued child rollout rather than child
-self-report.
+The generator preserves the complete live catalog, changes only Sol and Terra to V1, and configures
+`multi_agent=true` with `multi_agent_v2=false`. Restart Codex and open a fresh session after install.
+Use `verified-workflows:select-agent` for the pre-spawn catalog, then `/agent` to switch among spawned
+threads. Stable V1 profile selection uses `agent_type=<runtime_agent_name>` with a fresh child
+(`fork_context=false`; some host wrappers spell the equivalent as `fork_turns=none`). Verify the
+host-issued child role, model, and effort rather than child self-report. The profile sandbox remains
+configured intent and the effective child permission boundary must still be verified separately.
+Ultra automatic delegation is unverified under the V1 override.
 
 Validate the deterministic source bundle:
 
@@ -187,10 +185,10 @@ python3 scripts/prove_verified_workflows_runtime.py --pretty
 python3 scripts/validate_codex_plugins.py
 ```
 
-The tracked proof is deliberately a dry-run source characterization, not fresh-session release
-proof. It records the current spawn request fields plus source hook, profile, registry, and
-capability-snapshot hashes without reading the default Codex authentication file, installing the
-unpublished package, trusting hooks, or claiming a live child receipt. Optional live mode consumes
+The tracked proof is deliberately a historical V2 dry-run characterization, not current
+fresh-session release proof. It records the prior spawn request fields plus source hook, profile,
+registry, and capability-snapshot hashes without reading the default Codex authentication file,
+installing the unpublished package, trusting hooks, or claiming a live child receipt. Optional live mode consumes
 an isolated installed-byte readback envelope. That envelope proves only that isolated installed
 bytes match source; hook trust and task execution remain unobserved. The harness never launches a
 nested Codex process.
@@ -223,8 +221,8 @@ mutates profile state.
   not globally installed)
 - U4: dispatch, hook receipts, gates, and sanitized runtime characterization (complete in source;
   tracked non-live outcome `diagnostic`)
-- U4F: separate durable execution classes from Codex runtime agent names, bind `.codex/agents/`
-  discovery copies, bootstrap V2 named selection, and verify a differential fresh child before U5
+- U4F: historical V2 bootstrap evidence retained for the original port; current native agent use
+  applies the Fleet Core V1 catalog override until V2 is ready
 - U8: atomic marketplace/install cutover and rollback proof
 
 See [PORTABILITY.md](PORTABILITY.md) for the source mapping and

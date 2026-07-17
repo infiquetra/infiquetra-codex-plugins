@@ -135,7 +135,7 @@ PRE_CUTOVER_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
         "skills": ("discord-identity-assets",),
     },
     "fleet-core": {
-        "version": "0.8.4+codex.20260711134422",
+        "version": "0.8.5+codex.20260717220000",
         "skills": (),
         "library": True,
     },
@@ -151,8 +151,8 @@ TARGET_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
     if name != "team-execution"
 }
 TARGET_EXPECTED_PLUGINS["verified-workflows"] = {
-    "version": "1.0.0+codex.20260711160140",
-    "skills": ("run", "appsec-audit"),
+    "version": "1.0.1+codex.20260717220000",
+    "skills": ("run", "appsec-audit", "select-agent"),
 }
 CURRENT_ONLY_LEGACY_PLUGINS = {
     "team-execution": PRE_CUTOVER_EXPECTED_PLUGINS["team-execution"],
@@ -276,7 +276,7 @@ STAGED_MARKETPLACE_SHA256 = (
     "42803919b39b720599b9692bfdcd95bcfe8c31b06ebb2c976aacaa890fdfea8a"
 )
 LEGACY_WORKFLOW_HISTORICAL_INVENTORY_SHA256 = (
-    "1213af804e5d2432a0a7301451837b8689aaf2c38a0fd28a84c80db679cb2273"
+    "7237fe5f44efd7d9b90ba697dbdf15b12a9bce3e88323b9b317bb38003b3af17"
 )
 LEGACY_WORKFLOW_INVENTORY = Path(
     "docs/validation/verified-workflows-legacy-token-inventory.json"
@@ -292,6 +292,15 @@ LEGACY_WORKFLOW_EXCLUDED_TOP_LEVEL = {
     ".ruff_cache",
     ".codex",
     ".serena",
+}
+
+# The modernization cutover record is a frozen receipt from the July 11 cutover,
+# not a declaration of the repository's current plugin versions.
+MODERNIZATION_CUTOVER_VERSIONS = {
+    "fleet-core": "0.8.4+codex.20260711134422",
+    "saga": "0.75.17+codex.20260711160644",
+    "verified-workflows": "1.0.0+codex.20260711160140",
+    "retired-team-execution": "2.3.0",
 }
 LEGACY_WORKFLOW_EXACT_CLASSIFICATIONS = {
     Path(".agents/plugins/marketplace.json"): "temporary-active-marketplace",
@@ -1982,13 +1991,7 @@ def validate_modernization_cutover_record(
             errors.append(f"{path.relative_to(root)} source_head is unavailable")
         elif ancestor.returncode != 0:
             errors.append(f"{path.relative_to(root)} source_head is not current history")
-    expected_versions = {
-        "fleet-core": TARGET_EXPECTED_PLUGINS["fleet-core"]["version"],
-        "saga": TARGET_EXPECTED_PLUGINS["saga"]["version"],
-        "verified-workflows": TARGET_EXPECTED_PLUGINS["verified-workflows"]["version"],
-        "retired-team-execution": "2.3.0",
-    }
-    if payload.get("versions") != expected_versions:
+    if payload.get("versions") != MODERNIZATION_CUTOVER_VERSIONS:
         errors.append(f"{path.relative_to(root)} version readback is stale")
     rollback = payload.get("rollback_bundle")
     if not isinstance(rollback, dict) or rollback.get("sha256") != (

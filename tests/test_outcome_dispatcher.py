@@ -399,6 +399,7 @@ def test_cli_advance_uses_the_real_backend_seam(
 def test_cli_dispatch_dry_run(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
     _write_team_ref(tmp_path)
     monkeypatch.chdir(tmp_path)
     assert D.main(["ship-x", "build", "verified-workflow", "--orchestration-ref", TEAM_REF]) == 0

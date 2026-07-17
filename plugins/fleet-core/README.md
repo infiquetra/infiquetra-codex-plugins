@@ -11,6 +11,7 @@ byte-identical copy of `fleet_commons_shim.py` and load the shared modules throu
 |---|---|
 | `scripts/fleet_commons_shim.py` | Codex-native resolution ladder — how a plugin finds fleet-core at run time. Canonical copy; vendored byte-identical into consumers (guarded by `tests/test_shim_drift.py`). |
 | `scripts/fleet_commons/codex_model_catalog.py` | Bounded, allowlisted, immutable projection of `codex debug models`. |
+| `scripts/codex_v1_catalog.py` | Temporary full-catalog V1 override for GPT-5.6 Sol and Terra, with atomic install, backup, and readback. |
 | `scripts/fleet_commons/tier_palette.py` | Five Codex execution classes, scalar `low..max`, root-only Ultra policy, plus temporary lineage accessors. |
 | `scripts/fleet_commons/tier_resolver.py` | Resolves execution classes against one catalog snapshot; retains the old work-shape API only for migration compatibility. |
 | `scripts/fleet_commons/models.json` | Single static source for execution-class and root-orchestration policy. |
@@ -48,6 +49,39 @@ green until their planned migration. See `references/tier-palette.md`.
 `verified-workflows` is the active workflow consumer. Historical Team Execution values remain
 readable through one compatibility registry, but the retired package is no longer published or
 installed alongside it.
+
+## Temporary Sol And Terra V1 Override
+
+Codex 0.144.5 assigns Sol and Terra to MultiAgent V2 in the model catalog even when the V2 feature
+flag is disabled. Until V2 supports reliable named-profile model and effort selection, install a
+local full-catalog override:
+
+```bash
+python3 plugins/fleet-core/scripts/codex_v1_catalog.py install
+```
+
+The command prefers `$CODEX_HOME/models_cache.json`, removes only its cache-envelope metadata, and
+falls back to `codex debug models --bundled`. It does not use the ordinary refreshed command because
+that command may resolve the already-configured override on a later run. The generator preserves
+every model and model field, changes only the Sol and Terra `multi_agent_version` values to `v1`, and
+writes `$CODEX_HOME/model-catalogs/infiquetra-v1.json` as UTF-8 without BOM. It backs up an existing
+config once, points `model_catalog_json` at the absolute generated path, enables stable MultiAgent,
+disables V2, and removes the obsolete V2 metadata-namespace table. Restart Codex and open a fresh
+session because the catalog-selected tool schema is pinned at startup.
+
+Verify the installed bytes and config:
+
+```bash
+python3 plugins/fleet-core/scripts/codex_v1_catalog.py check
+```
+
+The override is a snapshot of the complete catalog. After a model-catalog update, first let Codex
+refresh `models_cache.json` or update the CLI's bundled catalog, then re-run `install`. A separately
+saved full catalog can be selected explicitly with `install --source-json <path>`. Sol and Terra
+advertise Ultra as automatic delegation; Ultra remains unverified while those models are forced to
+V1 and must not be used without a separate runtime proof. The first install's
+`config.toml.infiquetra-v1.bak` is the rollback source. Restore it safely with
+`python3 plugins/fleet-core/scripts/codex_v1_catalog.py rollback`, then restart Codex.
 
 ## Tests
 

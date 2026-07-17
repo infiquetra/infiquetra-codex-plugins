@@ -90,9 +90,9 @@ def test_operator_choice_documents_separate_codex_capability_dimensions() -> Non
         "Hooks",
     ):
         assert dimension in text
-    assert "V2 `agent_type` selects custom-agent TOML" in text
-    assert "`fork_turns=\"none\"`" in text
-    assert "permission-homogeneous parent tasks" in text
+    assert "stable V1 `agent_type` selects custom-agent TOML" in text
+    assert "`fork_context=false`" in text
+    assert "restart Codex" in text
     assert "host-issued child role/model/effort" in text
     assert "generic subagent output remains generic evidence" in text
     assert "Ultra is a root orchestration control" in text

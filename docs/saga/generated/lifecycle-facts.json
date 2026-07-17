@@ -282,9 +282,15 @@
           "name": "appsec-audit",
           "namespace": "verified-workflows:appsec-audit",
           "skill_path": "plugins/verified-workflows/skills/appsec-audit/SKILL.md"
+        },
+        {
+          "description": "Show and launch the five maintained Infiquetra Codex agent profiles. Use when the operator asks to list, choose, select, or start a review, test, scan, or monitor agent, or wants the pre-spawn agent-picker experience before using /agent to switch threads.",
+          "name": "select-agent",
+          "namespace": "verified-workflows:select-agent",
+          "skill_path": "plugins/verified-workflows/skills/select-agent/SKILL.md"
         }
       ],
-      "version": "1.0.0+codex.20260711160140"
+      "version": "1.0.1+codex.20260717220000"
     }
   },
   "saga_routing": {

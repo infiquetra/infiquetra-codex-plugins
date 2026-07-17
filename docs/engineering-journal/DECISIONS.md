@@ -1,5 +1,33 @@
 # Decisions
 
+## 2026-07-17: Force Sol And Terra Back To MultiAgent V1 Temporarily
+
+Codex 0.144.5 selects the subagent tool version from each model's catalog row. Sol and Terra remain
+assigned to MultiAgent V2 even when `features.multi_agent_v2=false`, so the feature flag alone does
+not restore named-agent, model, and effort controls. Until V2 exposes those controls reliably, Fleet
+Core generates a complete local catalog snapshot and changes only the Sol and Terra
+`multi_agent_version` fields to `v1`.
+
+The generated catalog lives under `$CODEX_HOME/model-catalogs/`, is written atomically as UTF-8
+without BOM, and is selected by an absolute `model_catalog_json` path. Installation preserves one
+rollback copy of the prior config, enables stable MultiAgent, disables V2, and removes the obsolete
+V2 namespace workaround. A restart and fresh session are mandatory because Codex pins the
+catalog-selected tool schema at startup. Re-run installation after upstream catalog changes.
+
+The five custom-agent profiles and their model/effort mappings remain canonical. Native interactive
+delegation uses `verified-workflows:select-agent` before spawn and `/agent` after spawn. Verified
+Workflow receipts and gates apply only when that workflow mode is explicitly selected; they do not
+block ordinary native agent use.
+
+Ultra is not approved under this workaround. Sol and Terra describe Ultra as automatic delegation,
+and no current evidence proves that behavior remains correct when their catalog rows are forced to
+V1. A separate runtime proof is required before Ultra can be re-enabled.
+
+This decision temporarily supersedes the 2026-07-11 V2 bootstrap as current runtime policy. The old
+capability snapshot and port artifacts remain immutable historical evidence.
+
+Plan: `docs/plans/2026-07-17-codex-v1-agent-compatibility-plan.md`.
+
 ## 2026-07-11: Bootstrap MultiAgent V2 For Named Verified Workflow Profiles
 
 Verified Workflows keeps its existing architecture: 25 logical role/lens definitions map through

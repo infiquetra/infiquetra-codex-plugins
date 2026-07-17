@@ -14,32 +14,31 @@ file, requested model, or caller boolean is not proof that a workflow or child e
 | Workflow mode | `inline`; `manual`; `verified-workflow`; legacy-readable `team-execution` | A root-owned method for steps, roles, gates, and receipts. Claude Workflow is unsupported. |
 | Step vehicle | `inline`; `deterministic-tool`; `generic-subagent`; runtime-selected `named-profile-subagent` | How one workflow step actually runs. A subagent is a vehicle, not a Saga backend. |
 | Role identity | `generic`; `named-profile-selected`; planned-unproved `logical-role-attested` | Whether evidence proves only a child, a selected profile, or the complete logical role/lens binding. |
-| Execution-class control | prompt steering is advisory; V2 `agent_type` selects custom-agent TOML; direct model/effort overrides are not workflow policy | Model, effort, sandbox, instructions, and tool policy belong to a reusable profile; effectiveness still needs child readback. |
+| Execution-class control | prompt steering is advisory; stable V1 `agent_type` selects custom-agent TOML; direct model/effort overrides are not workflow policy | Model, effort, sandbox, instructions, and tool policy belong to a reusable profile; effectiveness still needs child readback. |
 | Hooks | observe and bounded persistence are implemented; guarding is deferred | Hooks extend events. They are not workflow modes, continuation modes, or leaf executors. |
 
-The canonical live snapshot is
-`../../../docs/validation/codex-runtime-capability-snapshot.json`. Historical classifications are
-evidence only.
+The digest-bound snapshot at `../../../docs/validation/codex-runtime-capability-snapshot.json` is
+historical V2 port evidence. Current runtime truth comes from the active spawn schema, the generated
+Fleet Core V1 catalog readback, and child activity.
 
 ## Model, Effort, And Profile Truth
 
 Current custom-agent files configure `model`, `model_reasoning_effort`, `sandbox_mode`, and bounded
-instructions. Sol/Terra MultiAgent V2 exposes named selection only after effective configuration
-sets `hide_spawn_agent_metadata=false` and moves the expanded schema to the non-reserved
-`tool_namespace="agents"`. A fresh task can then dispatch `agent_type=<runtime_agent_name>` with
-`fork_turns="none"` or a positive bounded turn count. Omitted or `all` inherits the parent agent
-type, model, and effort and therefore cannot select a different profile.
+instructions. Current Sol/Terra sessions use the Fleet Core full-catalog override to select stable
+MultiAgent V1. A fresh task dispatches `agent_type=<runtime_agent_name>` with `fork_context=false`;
+some host wrappers spell that equivalent as `fork_turns="none"`. If the active schema omits
+`agent_type`, `model`, or `reasoning_effort`, install or refresh the V1 catalog, restart Codex, and
+start a new session rather than attempting the V2 namespace workaround.
 
 Therefore:
 
-- a prompt or `task_name` may request a class but cannot attest selection;
+- a prompt or task label may request a class but cannot attest selection;
 - an installed TOML proves configuration bytes, not that a child used the profile;
 - generic subagent output remains generic evidence;
 - profile selection requires the parent launch plus matching host-issued child role/model/effort
   readback;
-- current V2 reapplies the parent permission profile after role selection, so a profile cannot
-  narrow a more-powerful parent; enforce read-only and write-capable work through separate
-  permission-homogeneous parent tasks and verify effective permission independently;
+- a profile sandbox is configured intent, not proof that a child narrowed the live parent permission
+  boundary; verify effective permission independently;
 - gate-authoritative named workflow evidence additionally requires a receipt joining logical role,
   selected profile, active hook-reported model, installed-profile digest, child identity, and result
   vehicle;
