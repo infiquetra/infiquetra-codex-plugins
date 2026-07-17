@@ -44,8 +44,8 @@ tool-specific orchestration.
 - `team-execution` remains the only active workflow package before cutover. `verified-workflows` is the
   canonical target identity. U9 materializes its unpublished `1.0.0` source for target-fixture
   validation only; it must not be published or installed alongside the legacy package.
-- The target fixture exposes `verified-workflows:run` and
-  `verified-workflows:appsec-audit`. The Claude catalog retains one `team-execution` lineage row;
+- The target fixture exposes `verified-workflows:run`, `verified-workflows:appsec-audit`, and
+  `verified-workflows:select-agent`. The Claude catalog retains one `team-execution` lineage row;
   `verified-workflows` is not a second upstream identity.
 - The `sdlc-manager` rollout field named `claude_md` is retained because it is part of the existing SDLC tracking data model, not a Codex plugin host dependency.
 

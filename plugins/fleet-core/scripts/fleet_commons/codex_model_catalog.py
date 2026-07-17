@@ -82,6 +82,15 @@ class CatalogSnapshot:
         }
 
 
+@dataclass(frozen=True)
+class CatalogDocument:
+    """Validated full catalog bytes plus the bounded selection projection."""
+
+    source: Literal["refreshed", "bundled"]
+    raw_bytes: bytes
+    snapshot: CatalogSnapshot
+
+
 Run = Callable[[Sequence[str], float, int], CommandResult]
 
 
@@ -216,7 +225,7 @@ def normalize_catalog(
     )
 
 
-def _parse_result(result: CommandResult, source: Literal["refreshed", "bundled"]) -> CatalogSnapshot:
+def _parse_result(result: CommandResult, source: Literal["refreshed", "bundled"]) -> CatalogDocument:
     if len(result.stdout) + len(result.stderr) > MAX_OUTPUT_BYTES:
         raise CatalogCommandError(f"{source} catalog command exceeded the 16 MiB output ceiling")
     if result.returncode:
@@ -227,11 +236,15 @@ def _parse_result(result: CommandResult, source: Literal["refreshed", "bundled"]
         payload = json.loads(result.stdout)
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise CatalogError(f"{source} catalog command returned invalid JSON") from exc
-    return normalize_catalog(payload, source=source, input_bytes=result.stdout)
+    return CatalogDocument(
+        source=source,
+        raw_bytes=result.stdout,
+        snapshot=normalize_catalog(payload, source=source, input_bytes=result.stdout),
+    )
 
 
-def read_catalog(run: Run = _run_bounded) -> CatalogSnapshot:
-    """Read refreshed then bundled catalog state exactly once each, returning the first accepted one."""
+def read_catalog_document(run: Run = _run_bounded) -> CatalogDocument:
+    """Read and validate the first accepted full Codex catalog document."""
     failures: list[str] = []
     commands: tuple[tuple[Literal["refreshed", "bundled"], tuple[str, ...]], ...] = (
         ("refreshed", ("codex", "debug", "models")),
@@ -244,6 +257,24 @@ def read_catalog(run: Run = _run_bounded) -> CatalogSnapshot:
         except (CatalogError, OSError) as exc:
             failures.append(f"{source}: {exc}")
     raise CatalogError("both Codex model catalog sources failed: " + "; ".join(failures))
+
+
+def read_bundled_catalog_document(run: Run = _run_bounded) -> CatalogDocument:
+    """Read the bundled catalog without consulting a configured catalog override."""
+    try:
+        result = run(
+            ("codex", "debug", "models", "--bundled"),
+            COMMAND_TIMEOUT_SECONDS,
+            MAX_OUTPUT_BYTES,
+        )
+        return _parse_result(result, "bundled")
+    except OSError as exc:
+        raise CatalogError(f"bundled: {exc}") from exc
+
+
+def read_catalog(run: Run = _run_bounded) -> CatalogSnapshot:
+    """Read refreshed then bundled catalog state exactly once each, returning its projection."""
+    return read_catalog_document(run).snapshot
 
 
 capture_catalog = read_catalog

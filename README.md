@@ -10,8 +10,8 @@ Codex-ready plugin surface, currently:
 | `saga` | 0.75.17 | active |
 | `deploy` | 0.1.1 | active |
 | `mission-control` | 2.4.0 | active |
-| `verified-workflows` | 1.0.0 | active |
-| `fleet-core` | 0.8.4 | active (library) |
+| `verified-workflows` | 1.0.1 | active |
+| `fleet-core` | 0.8.5 | active (library) |
 | `discord-identity-assets` | 0.2.0 | proof port |
 | `home-lab-ops` | 1.0.0 | baseline |
 | `python-toolkit` | 1.0.0 | baseline |
@@ -25,6 +25,19 @@ Exact migration rows live in
 `docs/portability/saga-family-known-use-inventory.md`.
 
 The operator-facing Saga family guide lives in `docs/saga/README.md`.
+
+## GPT-5.6 Agent Compatibility
+
+Codex currently assigns Sol and Terra to unfinished MultiAgent V2 through the model catalog. Restore
+the stable named-agent model and effort controls with:
+
+```bash
+python3 plugins/fleet-core/scripts/codex_v1_catalog.py install
+```
+
+Restart Codex and open a fresh session, then invoke `verified-workflows:select-agent` to choose one
+of the five maintained profiles. `/agent` switches among threads after an agent is spawned. Re-run
+the install command after model-catalog updates; Ultra remains unverified under this override.
 
 ## Layout
 

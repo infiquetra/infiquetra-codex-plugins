@@ -3,6 +3,6 @@ approval_policy = "never"
 [agents]
 max_depth = 1
 
-[features.multi_agent_v2]
-hide_spawn_agent_metadata = false
-tool_namespace = "agents"
+[features]
+multi_agent = true
+multi_agent_v2 = false

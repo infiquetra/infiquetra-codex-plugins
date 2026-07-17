@@ -21,10 +21,10 @@ paths, and is idempotent on a second call. It is not an installer or profile syn
 ## Codex-Native Shape
 
 The Claude team runtime becomes a root-owned Codex workflow DAG. The root thread owns state,
-barriers, mutation, integration, and final adjudication. Sol/Terra MultiAgent V2 can select the five
-named execution profiles after the effective Codex config exposes spawn metadata in a non-reserved
-`agents` namespace. Profile-selected work uses `agent_type` plus `fork_turns=none` or a positive
-bounded value; task naming alone is never selection. Peer communication is not required.
+barriers, mutation, integration, and final adjudication. Current Sol/Terra sessions use a generated
+full-catalog override to select stable MultiAgent V1 until V2 is ready. Profile-selected work uses
+`agent_type` plus a fresh child (`fork_context=false`, or a host wrapper's equivalent
+`fork_turns=none`); task naming alone is never selection. Peer communication is not required.
 
 Logical roles are independent of compute profiles. U3 preserves all 25 role behaviors as agent
 lenses, records closed class transitions and role-level boundary caps, and renders exactly five
@@ -35,10 +35,10 @@ partitioned readback, exact rollback, and preparing/prepared/applying/committed 
 claiming runtime selection. Implicit `$CODEX_HOME` targets are real; isolated fixtures require an
 explicit target plus sentinel.
 
-U4F separates durable kebab-case execution classes from Codex-safe underscore runtime agent names
-and publishes byte-identical project discovery copies under `.codex/agents/`. Official Codex custom
-agent discovery can now load the five profile definitions, while workflow rows and receipts retain
-both identities. The first fresh CLI task used the default restricted V2 schema and proved that
+U4F historically separated durable kebab-case execution classes from Codex-safe underscore runtime
+agent names and published byte-identical project discovery copies under `.codex/agents/`. Official
+Codex custom agent discovery can load the five profile definitions, while workflow rows and receipts
+retain both identities. The first fresh CLI task used the default restricted V2 schema and proved that
 `task_name=review_high` produced `agent_role=null` and inherited parent effort. Source inspection then
 identified the required V2 bootstrap; a later fresh task with the saved configuration selected
 `scan_low` and recorded `agent_role=scan_low`, Luna/low, and read-only. The original negative receipt
@@ -57,9 +57,8 @@ mutation-audit, and root-verification evidence. A named-child claim additionally
 minimal start/stop pair and exact role, lens, profile, model, and child bindings. The evidence is an
 auditable root-accountability diagnostic, not same-user cryptographic or host-issued attestation,
 so it always blocks the gate. Expected effort and configured sandbox intent come from the profile
-digest; current hooks observe neither directly, and current V2 reapplies the live parent permission
-profile after role selection. Read-only profiles therefore run beneath a read-only parent and
-`test_medium` beneath workspace-write; host-issued child rollout proves effective permission.
+digest; current hooks observe neither directly. Native V1 child activity proves role, model, and
+effort, while effective permission remains a separate runtime fact.
 Gate evaluation requires all base reviewers plus one
 required validator, opens typed protected evidence, requires exact workflow step coverage and
 dependency chronology, rejects self-acceptance, stays severity first, and caps remediation at three

@@ -72,11 +72,12 @@
     },
     {
       "name": "verified-workflows",
-      "version": "1.0.0+codex.20260711160140",
+      "version": "1.0.1+codex.20260717220000",
       "publication_status": "released",
       "skills": [
         "run",
-        "appsec-audit"
+        "appsec-audit",
+        "select-agent"
       ],
       "forbidden_active_dirs": [
         ".claude-plugin",
@@ -152,7 +153,7 @@
     },
     {
       "name": "fleet-core",
-      "version": "0.8.4+codex.20260711134422",
+      "version": "0.8.5+codex.20260717220000",
       "skills": [],
       "library": true,
       "forbidden_active_dirs": [

@@ -2,6 +2,13 @@
 
 All notable changes to the Codex `fleet-core` plugin are documented here.
 
+## 0.8.5 — 2026-07-17
+
+- Add a bounded full-catalog generator that temporarily forces GPT-5.6 Sol and Terra to stable
+  MultiAgent V1 while preserving every other model field.
+- Add atomic config installation, one-time backup, rollback, readback, UTF-8-without-BOM enforcement,
+  and an explicit Ultra compatibility warning.
+
 ## 0.8.4 — 2026-07-11
 
 - Add Codex 5.6 model-catalog projection, five execution classes, scalar effort through `max`,

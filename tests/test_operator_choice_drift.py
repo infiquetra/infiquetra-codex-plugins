@@ -41,14 +41,14 @@ def test_codex_operator_choice_separates_runtime_dimensions() -> None:
         assert dimension in body
 
 
-def test_operator_choice_requires_configured_named_child_selection_and_readback() -> None:
+def test_operator_choice_requires_stable_v1_named_child_selection_and_readback() -> None:
     body = _read(OPERATOR_CHOICE)
 
-    assert "hide_spawn_agent_metadata=false" in body
-    assert 'tool_namespace="agents"' in body
+    assert "stable v1 `agent_type`" in body
+    assert "fleet core full-catalog override" in body
     assert "agent_type=<runtime_agent_name>" in body
-    assert 'fork_turns="none"' in body
-    assert "permission-homogeneous parent tasks" in body
+    assert "fork_context=false" in body
+    assert "restart codex" in body
     assert "host-issued child role/model/effort" in body
     assert "generic subagent output remains generic evidence" in body
 

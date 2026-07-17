@@ -1,5 +1,20 @@
 # Learnings
 
+## 2026-07-17: The Model Catalog Can Override The MultiAgent Feature Flag
+
+**Evidence:** Codex CLI 0.144.5 reported `multi_agent_v2` disabled while the live Sol and Terra model
+rows still reported `multi_agent_version: v2`; Luna reported V1. A generated full-catalog copy with
+only Sol and Terra changed to V1 produced V1 rows for all three models and retained UTF-8 without BOM.
+
+**Mechanism:** Feature state and model-selected tool version are separate configuration inputs. The
+catalog can select V2 even when the feature flag is false, and the resulting schema is pinned to the
+thread. Editing only feature flags or changing config inside an existing thread cannot restore V1.
+
+**Generalizable rule:** When Codex exposes a surprising tool schema, inspect both feature state and
+the active model catalog. Apply catalog changes to a complete refreshed snapshot, change only
+allowlisted fields, restart, and verify a fresh thread. Treat Ultra as a separate compatibility test
+because its automatic delegation may depend on V2.
+
 ## 2026-07-12
 
 ### Workflow approval needs a concrete preview  {#workflow-approval-needs-concrete-preview}

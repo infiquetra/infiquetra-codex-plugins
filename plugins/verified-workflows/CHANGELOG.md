@@ -2,6 +2,17 @@
 
 All notable changes to this plugin are documented here.
 
+## [1.0.1] - 2026-07-17
+
+### Changed
+
+- Use the temporary Fleet Core V1 catalog override for Sol and Terra instead of requiring the
+  unfinished MultiAgent V2 namespace workaround.
+- Add `select-agent` as the lightweight pre-spawn catalog for the five maintained profiles; keep
+  `/agent` as the spawned-thread switcher.
+- Keep Verified Workflow attestation and gates opt-in so ordinary native agent delegation remains
+  usable.
+
 ## [1.0.0] - 2026-07-11
 
 ### Added

@@ -62,9 +62,9 @@ def test_current_marketplace_and_target_fixture_expose_exactly_one_workflow_iden
         "verified-workflows"
     }
     target = targets["verified-workflows"]
-    assert target["version"] == "1.0.0+codex.20260711160140"
+    assert target["version"] == "1.0.1+codex.20260717220000"
     assert target["publication_status"] == "released"
-    assert set(target["skills"]) == {"run", "appsec-audit"}
+    assert set(target["skills"]) == {"run", "appsec-audit", "select-agent"}
     assert fixture["unpublished_plugins"] == []
     assert fixture["legacy_readable_plugins"] == ["team-execution"]
 
@@ -115,14 +115,15 @@ def test_target_manifest_skills_and_u4_runtime_surfaces_are_complete() -> None:
     )
 
     assert manifest["name"] == "verified-workflows"
-    assert manifest["version"] == "1.0.0+codex.20260711160140"
+    assert manifest["version"] == "1.0.1+codex.20260717220000"
     assert manifest["author"]["name"] == "Infiquetra"
     assert manifest["skills"] == "./skills/"
     assert set(path.name for path in (TARGET_ROOT / "skills").iterdir() if path.is_dir()) == {
         "run",
         "appsec-audit",
+        "select-agent",
     }
-    for skill in ("run", "appsec-audit"):
+    for skill in ("run", "appsec-audit", "select-agent"):
         body = (TARGET_ROOT / "skills" / skill / "SKILL.md").read_text(encoding="utf-8")
         assert f"name: {skill}" in body
         assert "TODO" not in body

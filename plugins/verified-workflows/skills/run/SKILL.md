@@ -26,9 +26,11 @@ Treat the approved role, model, effort, and permissions as a hard runtime contra
 runtime receipts cannot prove those settings, stop and render a revised workflow for approval.
 Never silently downgrade, upgrade, substitute, or fall back inline.
 
-Named agents remain directly switchable and retain visible host-issued runtime receipts after
-completion until the workflow or operator releases them. Retention does not weaken the fresh-context
-requirement for a new independent attempt.
+This hard contract applies only after the operator selects Verified Workflow mode. Ordinary native
+agent delegation uses `verified-workflows:select-agent` and does not need this workflow's receipt or
+gate ceremony. Spawned threads remain switchable through `/agent` until the workflow or operator
+releases them; `/agent` is not the pre-spawn profile catalog. Retention does not weaken the
+fresh-context requirement for a new independent attempt.
 
 ## Runtime Contract
 
@@ -81,14 +83,13 @@ bounded evidence only. Peer messaging is optional and never required.
    subject, declared evidence, role criteria, and output schema. Use fresh context for independent
    review when available. Agent-lens rows are evidence-only; workspace mutation remains root-owned.
 6. Map the durable kebab-case execution class to its exact underscore-form `runtime_agent_name`.
-   Before model-pinned work, require the active spawn schema to expose `agent_type`; Sol/Terra V2
-   normally needs `hide_spawn_agent_metadata=false` plus a non-reserved `tool_namespace="agents"`
-   in effective Codex config and a fresh task after that config changes. Dispatch with
-   `agent_type=<runtime_agent_name>` and `fork_turns="none"` by default. Current V2 reapplies the
-   live parent permission profile after role selection, so place read-only profiles beneath a fresh
-   read-only parent and `test_medium` beneath workspace-write. Verify host-issued child rollout
+   Before model-pinned work, require the stable V1 spawn schema to expose `agent_type`, `model`, and
+   `reasoning_effort`. When Sol or Terra still exposes the reduced V2 schema, run
+   `python3 plugins/fleet-core/scripts/codex_v1_catalog.py install`, restart Codex, and start a fresh
+   session. Dispatch with `agent_type=<runtime_agent_name>` and a fresh child (`fork_context=false`;
+   some host wrappers spell the equivalent as `fork_turns="none"`). Verify host-issued child rollout
    context reports the planned role, model, effort, and effective permission boundary; never accept
-   child self-report as that receipt. Task names and prompt text are
+   child self-report as that receipt. Profile sandbox remains configured intent. Task names and prompt text are
    not selection. Missing selector or mismatched readback stops execution and returns a revised
    workflow to the operator for approval. Inline execution is allowed only when the approved workflow
    explicitly selected it.
