@@ -16,7 +16,8 @@ an explicit rollback path.
 - **U3:** Added `verified-workflows:select-agent` for the five maintained profiles and kept ordinary
   native delegation independent of Verified Workflow gates.
 - **U4:** Completed focused tests, repository validation, isolated install/check/rollback proof,
-  code review, and the full suite. Fresh-session proof, PR, merge, and worktree cleanup remain.
+  code review, the full suite, local-profile installation, and fresh-session runtime proof. PR,
+  merge, and worktree cleanup remain.
 
 ## Decisions And Deviations
 
@@ -33,6 +34,7 @@ an explicit rollback path.
 
 - Review: `docs/code-reviews/2026-07-17-fix-codex-v1-agent-compatibility-code-review.md`
 - Reviewed working tree base: `38518d825330b44a8232a4e09938452905049d5d`
+- Reviewed implementation commit: `9ec46ca`
 - Result: no P0/P1 findings; one P2 documentation mismatch found and resolved.
 - External second opinion: not executed because the best-effort external action was not approved.
 
@@ -46,9 +48,13 @@ an explicit rollback path.
 - Bandit: no medium/high findings; low fixed-argv subprocess warnings only
 - Isolated catalog: source `bundled`, Sol/Terra/Luna `v1`, 292501 bytes, no BOM
 - Isolated rollback: restored the original config byte-for-byte
+- Local catalog: source `cache`, Sol/Terra/Luna `v1`, mode `0600`, no BOM; unrelated config data
+  matched the rollback backup after removing only the managed keys
+- Fresh runtime parent `019f7227-d15f-7921-963e-25acfd04f1f4`: Terra/medium/V1
+- Fresh named child `019f7227-f90f-75a0-822a-5e8466aad9c6`: `review_high`, Sol/high/V1,
+  read-only; returned `V1_REVIEW_OK`
 
 ## Next
 
-Commit the reviewed tree, install the override into the local Codex profile, verify fresh Sol and
-Terra sessions report the requested named child model and effort, then open and merge the PR after
-required checks pass.
+Open and merge the PR after required checks pass, verify merged `origin/main`, and remove the isolated
+worktree while preserving the primary checkout's pre-existing dirty paths.
