@@ -51,12 +51,13 @@ def test_target_fixture_facts_project_verified_workflows_without_changing_curren
     }
     assert "team-execution" not in facts["plugins"]
     assert facts["plugins"]["verified-workflows"]["version"] == (
-        "1.0.2+codex.20260718004419"
+        "1.0.3+codex.20260718134043"
     )
     assert {
         row["namespace"] for row in facts["plugins"]["verified-workflows"]["skills"]
     } == {
         "verified-workflows:run",
+        "verified-workflows:review-workflow",
         "verified-workflows:appsec-audit",
         "verified-workflows:select-agent",
     }

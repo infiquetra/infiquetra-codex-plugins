@@ -52,6 +52,7 @@ Verified Workflows owns reviewer and validator protocol.
 | Command | Purpose | Reads | Writes or mutates |
 |---|---|---|---|
 | `verified-workflows:run` | Plan and run reviewer consensus, selected validators, evidence capture, and guarded nonprod automation. | plan, repo, validator context | evidence and state; mutation requires root confirmation |
+| `verified-workflows:review-workflow` | Determine whether a Workflow Structure can satisfy root-inline or strict child evidence before execution. | plan, bounded capability snapshot | read-only feasibility result |
 | `verified-workflows:appsec-audit` | Audit URL and input trust boundaries. | app code and trust-boundary context | security findings |
 | `verified-workflows:select-agent` | List managed agent profiles or launch one with explicit model and reasoning controls. | `.codex/agents/*.toml`, active V1 runtime capability | a fresh child agent thread; no repository writes |
 

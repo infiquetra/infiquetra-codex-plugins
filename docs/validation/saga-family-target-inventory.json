@@ -72,10 +72,11 @@
     },
     {
       "name": "verified-workflows",
-      "version": "1.0.2+codex.20260718004419",
+      "version": "1.0.3+codex.20260718134043",
       "publication_status": "released",
       "skills": [
         "run",
+        "review-workflow",
         "appsec-audit",
         "select-agent"
       ],

@@ -278,6 +278,12 @@
           "skill_path": "plugins/verified-workflows/skills/run/SKILL.md"
         },
         {
+          "description": "Review an approved Workflow Structure for attainable root-inline, advisory-child, or strict-child evidence before workflow execution. Use when a plan contains `## Workflow Structure`, a workflow gate blocks unexpectedly, or the operator wants to confirm that named subagent profiles are not being mistaken for observed runtime proof.",
+          "name": "review-workflow",
+          "namespace": "verified-workflows:review-workflow",
+          "skill_path": "plugins/verified-workflows/skills/review-workflow/SKILL.md"
+        },
+        {
           "description": "Application security audit focused on URL and input trust boundaries, SSRF-style risks, redirects, metadata endpoints, allowlists, and evidence-backed findings. Use when reviewing code that accepts URLs, fetches remote resources, follows redirects, proxies requests, imports external data, parses user-controlled input, or touches network egress controls.",
           "name": "appsec-audit",
           "namespace": "verified-workflows:appsec-audit",
@@ -290,7 +296,7 @@
           "skill_path": "plugins/verified-workflows/skills/select-agent/SKILL.md"
         }
       ],
-      "version": "1.0.2+codex.20260718004419"
+      "version": "1.0.3+codex.20260718134043"
     }
   },
   "saga_routing": {

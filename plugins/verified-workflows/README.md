@@ -2,12 +2,13 @@
 
 Codex-native, root-owned workflow orchestration for Infiquetra work.
 
-> Release status: `1.0.0` is the active workflow package. Historical Team Execution vocabulary is
+> Release status: `1.0.3+codex.20260718134043` is the active workflow package. Historical Team Execution vocabulary is
 > read-only compatibility data; the retired package is not co-installed.
 
 ## Skills
 
 - `verified-workflows:run` owns approved workflow DAG execution.
+- `verified-workflows:review-workflow` checks whether a Workflow Structure can satisfy its selected evidence contract before execution.
 - `verified-workflows:appsec-audit` performs focused application trust-boundary review.
 - `verified-workflows:select-agent` displays and launches one maintained native Codex agent profile.
 
@@ -17,11 +18,16 @@ Codex-native, root-owned workflow orchestration for Infiquetra work.
                          +--> inline role/reviewer ------+
 approved Workflow DAG --> root thread                   +--> evidence --> root gate
                          +--> deterministic validator ---+
-                         +--> named profile child -------+  (root verifies runtime receipt)
+                         +--> advisory named child -------+  (strict receipt only with host attestation)
 
 root owns: state, scope, mutation, barriers, consolidation, Git, final decision
 child owns: one bounded task and its attributable result
 ```
+
+Run `review-workflow` before selecting a strict child-evidence workflow. It distinguishes root-inline
+gate evidence from advisory child work and blocks only an explicit required-independence contract that
+the available runtime cannot attest. Ordinary use of `select-agent` remains available outside a
+Verified Workflow gate.
 
 Logical role instructions are separate from model and effort profiles. Planning selects a role
 and an execution class; fleet-core resolves the class against one immutable Codex model-catalog
