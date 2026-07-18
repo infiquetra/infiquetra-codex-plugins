@@ -5,7 +5,7 @@
 - Upstream lineage: `team-execution` at frozen Claude commit
   `38742ece89880a6b140be237edad6d3f13c97b54`
 - Prior Codex adapter: `team-execution` `2.3.0`
-- Canonical Codex package: `verified-workflows` `1.0.2+codex.20260718004419`
+- Canonical Codex package: `verified-workflows` `1.0.3+codex.20260718134043`
 - Current status: released and active with 25 role lenses, five generated profiles, a root-owned DAG
   interpreter, closed hook receipts, severity-first gates, and one marketplace workflow identity
 

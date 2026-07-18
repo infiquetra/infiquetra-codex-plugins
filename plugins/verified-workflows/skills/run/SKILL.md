@@ -8,6 +8,8 @@ description: Run an approved Infiquetra plan as a root-owned Codex workflow DAG 
 Use this skill only after the plan contains one approved `## Workflow Structure` table matching
 [workflow-protocol.md](references/workflow-protocol.md).
 
+Before rendering the execution candidate, run `verified-workflows:review-workflow` against that table. A `requires-inline` result must be rendered as an inline workflow and re-approved; a `strict-unavailable` result blocks only the explicit strict-child contract. Do not use risk, file count, or profile presence as a substitute for that feasibility result.
+
 ## Operator Approval Contract
 
 Before starting any workflow work, render the complete proposed workflow:
@@ -22,9 +24,11 @@ render the complete updated workflow again. Do not require text editing and do n
 preview with a change-only diff. Repeat until the operator explicitly approves the exact candidate.
 Do not spawn agents, run validators, or begin workflow execution before that approval.
 
-Treat the approved role, model, effort, and permissions as a hard runtime contract. If host-issued
-runtime receipts cannot prove those settings, stop and render a revised workflow for approval.
-Never silently downgrade, upgrade, substitute, or fall back inline.
+Treat root authority, selected role lenses, deterministic validators, and all required evidence as hard
+workflow contracts. A strict child contract additionally requires host-issued runtime receipts for the
+selected role, model, effort, and effective permission boundary. If the feasibility review reports that
+such receipts are unavailable, render a root-inline workflow for approval when every affected lens has
+preferred independence; never silently downgrade a required-independence row.
 
 This hard contract applies only after the operator selects Verified Workflow mode. Ordinary native
 agent delegation uses `verified-workflows:select-agent` and does not need this workflow's receipt or
@@ -59,6 +63,9 @@ bounded evidence only. Peer messaging is optional and never required.
 
 ## Procedure
 
+0. Run `workflow_feasibility.py --plan <plan> --snapshot <capability-snapshot>`. A nonzero result is
+   an amendment requirement, not child evidence. `requires-inline` means render and approve inline
+   preferred-independence rows; `strict-unavailable` means halt the strict workflow contract.
 1. Parse the approved plan with `workflow_dispatch.py --plan <plan> --agents-dir <agents-dir>`.
    Production uses the explicit installed agents directory; committed profiles are fixture input.
    Reject stale role kind, lens, runtime agent name, profile, model, effort, deterministic contract,
@@ -82,7 +89,7 @@ bounded evidence only. Peer messaging is optional and never required.
 5. For each `agent-lens`, load the exact role file and provide only the bounded step, protected
    subject, declared evidence, role criteria, and output schema. Use fresh context for independent
    review when available. Agent-lens rows are evidence-only; workspace mutation remains root-owned.
-6. Map the durable kebab-case execution class to its exact underscore-form `runtime_agent_name`.
+6. For an explicitly feasible strict child row, map the durable kebab-case execution class to its exact underscore-form `runtime_agent_name`.
    Before model-pinned work, require the stable V1 spawn schema to expose `agent_type`, `model`, and
    `reasoning_effort`. When Sol or Terra still exposes the reduced V2 schema, run
    `python3 plugins/fleet-core/scripts/codex_v1_catalog.py install`, restart Codex, and start a fresh
@@ -101,9 +108,8 @@ bounded evidence only. Peer messaging is optional and never required.
 8. A named-child join may record installed hook readback, launch acknowledgement, and exact
    retained start/stop events as a root-accountability chain of diagnostic evidence. The launch acknowledgement may
    follow the hook start because native spawn returns only after launch. Reject broad permission
-   modes. Root-verified native child `turn_context` proves the configured runtime selection boundary;
-   the full hook/profile/result join remains required wherever the workflow contract demands
-   Verified Workflows receipt authority.
+   modes. The current hook/profile/result join does not prove a host-issued child runtime boundary;
+   it remains advisory until the runtime exposes that receipt.
 9. For deterministic validators, execute only the pinned argv, implementation and evidence-schema
    digests, repository-root cwd, timeout, and output ceiling. Persist stream hashes and byte counts
    plus the validated typed stdout projection; never persist raw stdout or stderr. Root-run tester

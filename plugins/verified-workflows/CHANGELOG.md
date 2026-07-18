@@ -2,6 +2,18 @@
 
 All notable changes to this plugin are documented here.
 
+## [1.0.3] - 2026-07-18
+
+### Added
+
+- Add `review-workflow`, a deterministic preflight that distinguishes root-inline gate evidence,
+  advisory child work, and an unavailable strict child-attestation contract.
+
+### Changed
+
+- Make root-inline the planning recommendation for root-owned high-risk work unless the operator
+  explicitly selects and proves independently attestable child execution.
+
 ## [1.0.2] - 2026-07-18
 
 ### Fixed

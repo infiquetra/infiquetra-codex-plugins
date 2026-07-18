@@ -279,16 +279,28 @@ nonprod-deploy**. This becomes the saga `--destination`.
 Offer the execution backend per `references/operator-choice.md` (the decision contract). There are
 exactly three active Codex backends — `inline | manual | verified-workflow`. Read the work shape,
 **recommend the cheapest-correct** backend and pre-select it, but always surface the alternatives so
-escalation is one step. Escalate to `verified-workflow` for risky/consensus work (>=8 files, >=4 phases,
-security, infra, cross-repo, deployment-sensitive, plus a needs-consensus signal) or broad independent
-fan-out. Use `manual` when automation is unsafe or unavailable and the next safe action is operator
-handoff. Never offer source-only workflow backends in Codex.
+escalation is one step. Recommend `inline` for root-owned work, including high-risk, cross-repository,
+or deployment-sensitive work: risk strengthens the selected logical lenses and deterministic validators,
+not the evidence vehicle. Recommend `verified-workflow` only when the operator explicitly needs
+independently attestable child execution and the rendered Workflow Structure passes
+`verified-workflows:review-workflow`. Use `manual` when automation is unsafe or unavailable and the
+next safe action is operator handoff. Never offer source-only workflow backends in Codex.
 Confirm with the operator and record what they picked via `--orchestration-operator-choice` and the
 effective backend via `--orchestration-mode`.
 
 If the operator selects `verified-workflow`, add `## Workflow Structure` or link a protected canonical
-artifact before saving the plan as ready, then validate the pointer
-with:
+artifact before saving the plan as ready. Run the feasibility review first:
+
+```bash
+python3 plugins/verified-workflows/scripts/workflow_feasibility.py \
+  --plan docs/plans/YYYY-MM-DD-<topic>-plan.md \
+  --snapshot docs/validation/codex-runtime-capability-snapshot.json \
+  --pretty
+```
+
+`requires-inline` requires an amended inline table and a new operator approval. `strict-unavailable`
+blocks the explicit strict-child choice rather than ordinary root-owned work. Only a `ready` result may
+then validate the canonical pointer with:
 
 ```bash
 python3 plugins/saga/scripts/verified_workflow_readiness.py validate \

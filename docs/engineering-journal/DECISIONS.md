@@ -1,5 +1,15 @@
 # Decisions
 
+## 2026-07-18: Feasibility Review Keeps Root-Owned Workflows Usable
+
+Verified Workflows must review an approved Workflow Structure against the available Codex capability projection before it is treated as executable. The root Codex session remains the owner of scope, mutation, integration, Git, gates, and completion; native child profiles remain bounded advisory workers unless a runtime can provide authenticated host-issued child attestation.
+
+Preferred-independence lenses use root-inline evidence for gate authority whenever strict child attestation is unavailable. Required-independence lenses remain blocked in that environment rather than being silently downgraded. Risk or file count alone does not justify selecting `verified-workflow`; strict independently attestable execution must be explicit and feasible.
+
+The review is deterministic and read-only. It composes the rendered workflow table with a bounded capability snapshot, reports the required correction by step, and does not launch children, modify runtime configuration, or turn requested model/effort selection into observed execution facts.
+
+Plan: `docs/plans/2026-07-18-workflow-feasibility-review-plan.md`.
+
 ## 2026-07-17: Normalize Subject-Exclusion Parent Links And Bootstrap Self-Hosting Fixes Manually
 
 Verified Workflows outside-scope projections will normalize only the raw directory link-count field for the immediate lexical parent of each authorized subject exclusion. APFS changes a directory's link count when an immediate file is added, so retaining that scalar makes an authorized new file look like outside-scope mutation; higher-ancestor links, device, inode, mode, path, visible-entry content, symlink handling, whole-workspace link counts, and unrelated-directory link counts remain strict.
