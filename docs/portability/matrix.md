@@ -1,6 +1,6 @@
 # Portability Matrix
 
-Verified: 2026-07-10
+Verified: 2026-07-18
 
 Source snapshot:
 
@@ -32,7 +32,7 @@ tool-specific orchestration.
 | `sdk-lifecycle` | deferred | yes | yes | Lifecycle automation needs design review for Codex usage model. | Inventory only for MVP. |
 | `slack` | deferred | yes | yes | Credentialed API client with workspace access; requires credential and dry-run policy review. | Do not port in MVP. |
 | `splunk` | deferred | yes | yes | Credentialed search client; requires separate auth and query-safety validation. | Do not port in MVP. |
-| `team-execution` | proof-port | yes | yes | Active legacy Codex package and frozen Claude lineage for the planned package migration. | Preserve the current package unchanged during development; adapt classified behavior into unpublished `verified-workflows`, then activate exactly one identity only after cutover proof. |
+| `team-execution` | proof-port | yes | yes | Retired Codex package and frozen Claude lineage for the completed workflow-package migration. | Preserve historical vocabulary and readable state roots; maintain only the active Codex-native `verified-workflows` package. |
 | `test-suite` | proof-port | yes | yes | Best first proof for skill plus bundled script packaging without external auth. | Port skill and runner, add dry-run and selected-check validation. |
 | `todoist-manager` | deferred | yes | yes | Credentialed productivity API client; not needed for MVP baseline. | Inventory only for MVP. |
 | `unifi` | included | yes | yes | Already visible in Codex cache and skill-plus-script payload is portable with confirmation gates. | Keep skills, references, and scripts. |
@@ -40,10 +40,9 @@ tool-specific orchestration.
 ## Notes
 
 - Count differences are intentional. The active Codex marketplace has 10 plugins, not the full portability catalog.
-- The prior SDLC and document-review plugin roots are superseded by `saga`, legacy `team-execution`, and `mission-control`.
-- `team-execution` remains the only active workflow package before cutover. `verified-workflows` is the
-  canonical target identity. U9 materializes its unpublished `1.0.0` source for target-fixture
-  validation only; it must not be published or installed alongside the legacy package.
+- The prior SDLC and document-review plugin roots are superseded by `saga`, `verified-workflows`, and `mission-control`.
+- `verified-workflows` `1.0.2+codex.20260718004419` is the released active workflow package.
+  `team-execution` remains only as frozen lineage and legacy-readable state vocabulary.
 - The target fixture exposes `verified-workflows:run`, `verified-workflows:appsec-audit`, and
   `verified-workflows:select-agent`. The Claude catalog retains one `team-execution` lineage row;
   `verified-workflows` is not a second upstream identity.
@@ -57,5 +56,5 @@ tool-specific orchestration.
 | Codex adapters and Codex-born plugins | This repository | Upstream commits are lineage inputs, not maintained Codex source. |
 | Shared execution policy and proof | `plugins/fleet-core` | Consumer shims remain synchronized derivatives. |
 | Saga lifecycle and continuation | `plugins/saga` | Preserve existing Codex behavior while applying classified upstream changes. |
-| Workflow package migration | Claude `team-execution` as input; Codex `verified-workflows` as target | Do not claim activation before the cutover gate. |
+| Workflow package | This repository's `verified-workflows`; frozen Claude `team-execution` lineage | Maintain exactly one active marketplace identity and preserve legacy reads without reviving legacy writers. |
 | Installed cache, profiles, and hook trust | Installed-state evidence only | Never edit or import them as maintained source. |

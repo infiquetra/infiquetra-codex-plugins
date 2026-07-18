@@ -1204,6 +1204,15 @@ def _read_workspace_file_at(
         os.close(descriptor)
 
 
+def _subject_exclusion_parent_paths(
+    normalized_exclusions: tuple[str, ...],
+) -> frozenset[str]:
+    return frozenset(
+        PurePosixPath(exclusion).parent.as_posix()
+        for exclusion in normalized_exclusions
+    )
+
+
 def _workspace_snapshot(
     workspace_root: Path,
     *,
@@ -1216,6 +1225,8 @@ def _workspace_snapshot(
         root_fd = hook_receipt._open_plugin_data(root)
     except (hook_receipt.AgentReceiptError, FileNotFoundError, OSError) as exc:
         raise DispatchReceiptError("workspace root is missing or unsafe") from exc
+    normalized_exclusions = tuple(_subject_path(value) for value in excluded_paths)
+    exclusion_parent_paths = _subject_exclusion_parent_paths(normalized_exclusions)
     root_metadata = os.fstat(root_fd)
     hasher = hashlib.sha256()
     file_count = 1
@@ -1228,13 +1239,11 @@ def _workspace_snapshot(
                 "mode": stat.S_IMODE(root_metadata.st_mode),
                 "device": root_metadata.st_dev,
                 "inode": root_metadata.st_ino,
-                "links": root_metadata.st_nlink,
+                "links": 0 if "." in exclusion_parent_paths else root_metadata.st_nlink,
                 "sha256": None,
             }
         )
     )
-
-    normalized_exclusions = tuple(_subject_path(value) for value in excluded_paths)
 
     def excluded(relative: str) -> bool:
         return any(
@@ -1275,7 +1284,12 @@ def _workspace_snapshot(
                             "mode": stat.S_IMODE(metadata.st_mode),
                             "device": metadata.st_dev,
                             "inode": metadata.st_ino,
-                            "links": metadata.st_nlink,
+                            "links": (
+                                0
+                                if kind == "directory"
+                                and relative in exclusion_parent_paths
+                                else metadata.st_nlink
+                            ),
                             "sha256": _sha256(content) if kind == "symlink" else None,
                         }
                     )

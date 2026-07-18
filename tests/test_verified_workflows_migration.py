@@ -62,7 +62,7 @@ def test_current_marketplace_and_target_fixture_expose_exactly_one_workflow_iden
         "verified-workflows"
     }
     target = targets["verified-workflows"]
-    assert target["version"] == "1.0.1+codex.20260717220000"
+    assert target["version"] == "1.0.2+codex.20260718004419"
     assert target["publication_status"] == "released"
     assert set(target["skills"]) == {"run", "appsec-audit", "select-agent"}
     assert fixture["unpublished_plugins"] == []
@@ -105,7 +105,7 @@ def test_legacy_token_inventory_is_exact_digest_bound_and_current() -> None:
     )
     assert sum(
         entry["classification"] == "historical-evidence" for entry in entries.values()
-    ) == 46
+    ) == 47
     assert all(len(entry["sha256"]) == 64 for entry in entries.values())
 
 
@@ -115,7 +115,7 @@ def test_target_manifest_skills_and_u4_runtime_surfaces_are_complete() -> None:
     )
 
     assert manifest["name"] == "verified-workflows"
-    assert manifest["version"] == "1.0.1+codex.20260717220000"
+    assert manifest["version"] == "1.0.2+codex.20260718004419"
     assert manifest["author"]["name"] == "Infiquetra"
     assert manifest["skills"] == "./skills/"
     assert set(path.name for path in (TARGET_ROOT / "skills").iterdir() if path.is_dir()) == {
