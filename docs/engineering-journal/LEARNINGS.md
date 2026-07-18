@@ -1,5 +1,21 @@
 # Learnings
 
+## 2026-07-18: Directory Link Counts Can Leak Authorized Child Creation
+
+**Evidence:** On APFS, both an authorized missing file and an authorized missing directory changed the
+outside-scope workspace digest when created. The excluded subject bytes, outside-scope file count,
+outside-scope byte count, repository identity, and Git-control digest remained stable; the immediate
+parent directory's raw `st_nlink` value was the changing input.
+
+**Mechanism:** Excluding a subject path from traversal does not exclude metadata already hashed for its
+parent. Filesystems may change a directory's link count when an immediate child appears, so raw parent
+link metadata can turn an authorized subject mutation into false outside-scope drift.
+
+**Generalizable rule:** When a projection excludes an authorized path, audit metadata dependencies on
+that path as well as the path entry itself. Normalize only the directly affected scalar on the immediate
+parent; keep higher ancestors, siblings, inode, device, mode, symlink, content, and full-snapshot evidence
+strict, and prove the boundary with both positive and negative tests.
+
 ## 2026-07-17: The Model Catalog Can Override The MultiAgent Feature Flag
 
 **Evidence:** Codex CLI 0.144.5 reported `multi_agent_v2` disabled while the live Sol and Terra model

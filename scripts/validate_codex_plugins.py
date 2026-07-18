@@ -151,7 +151,7 @@ TARGET_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
     if name != "team-execution"
 }
 TARGET_EXPECTED_PLUGINS["verified-workflows"] = {
-    "version": "1.0.1+codex.20260717220000",
+    "version": "1.0.2+codex.20260718004419",
     "skills": ("run", "appsec-audit", "select-agent"),
 }
 CURRENT_ONLY_LEGACY_PLUGINS = {
@@ -276,7 +276,7 @@ STAGED_MARKETPLACE_SHA256 = (
     "42803919b39b720599b9692bfdcd95bcfe8c31b06ebb2c976aacaa890fdfea8a"
 )
 LEGACY_WORKFLOW_HISTORICAL_INVENTORY_SHA256 = (
-    "7237fe5f44efd7d9b90ba697dbdf15b12a9bce3e88323b9b317bb38003b3af17"
+    "6c1e24b30aa1845ebefed057b4aca300c82947f13ccf132c1c60dcd7dd4f5e36"
 )
 LEGACY_WORKFLOW_INVENTORY = Path(
     "docs/validation/verified-workflows-legacy-token-inventory.json"

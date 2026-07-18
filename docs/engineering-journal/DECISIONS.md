@@ -4,6 +4,8 @@
 
 Verified Workflows outside-scope projections will normalize only the raw directory link-count field for the immediate lexical parent of each authorized subject exclusion. APFS changes a directory's link count when an immediate file is added, so retaining that scalar makes an authorized new file look like outside-scope mutation; higher-ancestor links, device, inode, mode, path, visible-entry content, symlink handling, whole-workspace link counts, and unrelated-directory link counts remain strict.
 
+The correction ships as `verified-workflows` `1.0.2+codex.20260718004419`. The manifest, validator expectations, target inventory, generated lifecycle facts, README, changelog, portability status, and direct version tests advance as one release unit.
+
 Verified Workflows cannot grant gate authority to changes in its own implementation. Self-hosting patches therefore use an operator-approved manual bootstrap sequence: root owns implementation, integration, Git, release, and installation; independent named children provide advisory trust-boundary review and platform-test evidence only. The repaired package can resume ordinary Verified Workflow authority after supported installation and source-to-cache readback.
 
 Existing v1 subject records store only an aggregate outside-scope digest and no projection-algorithm version or entry manifest. A chain recorded with the old projection is not retroactively converted; the failed run remains audit evidence and one replacement run replays a mode, size, status, and SHA-256 preservation manifest from its clean baseline without creating a new outcome dispatch. The original worktree remains available until the replacement root receipt seals.

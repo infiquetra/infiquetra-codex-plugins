@@ -10,7 +10,7 @@ Codex-ready plugin surface, currently:
 | `saga` | 0.75.17 | active |
 | `deploy` | 0.1.1 | active |
 | `mission-control` | 2.4.0 | active |
-| `verified-workflows` | 1.0.1 | active |
+| `verified-workflows` | 1.0.2 | active |
 | `fleet-core` | 0.8.5 | active (library) |
 | `discord-identity-assets` | 0.2.0 | proof port |
 | `home-lab-ops` | 1.0.0 | baseline |

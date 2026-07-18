@@ -72,7 +72,7 @@
     },
     {
       "name": "verified-workflows",
-      "version": "1.0.1+codex.20260717220000",
+      "version": "1.0.2+codex.20260718004419",
       "publication_status": "released",
       "skills": [
         "run",

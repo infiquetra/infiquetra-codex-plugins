@@ -2,6 +2,15 @@
 
 All notable changes to this plugin are documented here.
 
+## [1.0.2] - 2026-07-18
+
+### Fixed
+
+- Keep outside-scope subject ancestry stable when an authorized missing file or directory is created
+  on APFS by normalizing only the immediate subject-exclusion parent's directory link count.
+- Preserve strict higher-ancestor, sibling, inode, hardlink, mode, symlink, ignored-file, and Git-control
+  evidence while retaining readability of existing protected records.
+
 ## [1.0.1] - 2026-07-17
 
 ### Changed
