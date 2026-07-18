@@ -2,7 +2,7 @@
 date: 2026-07-18
 task: verified-workflows-apfs-subject-snapshot
 plan: docs/plans/2026-07-17-verified-workflows-apfs-subject-snapshot-plan.md
-status: in-progress
+status: review-complete
 ---
 
 # Verified Workflows APFS Subject Snapshot Work Session
@@ -17,6 +17,9 @@ status: in-progress
 - U2: advanced Verified Workflows to `1.0.2+codex.20260718004419` across the complete release unit.
 - U2: corrected stale portability status and regenerated lifecycle facts plus the digest-bound legacy
   workflow inventory after validation proved those generated dependencies.
+- U3: completed registry-bound advisory security review and APFS scenario validation with no P0-P3
+  findings and identical before/after worktree audits.
+- U3: passed the full detached repository suite and recorded durable code-review and QA evidence.
 
 ## Decisions
 
@@ -37,6 +40,9 @@ status: in-progress
 - Focused subject and trust-boundary tests: 15 passed, then 7 passed after sibling-directory coverage.
 - Verified Workflows plugin suite: 209 passed.
 - Direct release and document tests: 103 passed.
+- Replacement platform attempt: 12 passed on APFS; Linux semantics inspected but not executed.
+- Advisory trust review: accepted with no P0-P3 findings; 210 plugin and 74 release/document tests passed.
+- Full detached repository suite: 2,247 passed.
 - Ruff: changed Python implementation and release/test surfaces passed with `--no-cache`.
 - Repository validation: current, cutover, and target-fixture modes passed.
 - Generated checks: Saga lifecycle facts and legacy workflow inventory passed.
@@ -44,5 +50,5 @@ status: in-progress
 
 ## Next Step
 
-Run the approved no-mutation `review_high` trust-boundary review and `test_medium` platform-validation
-attempts against the clean implementation branch, then adjudicate findings in root.
+Commit the U3 evidence artifacts, then rerun report-only code review at the new HEAD and confirm the
+review has zero commits of staleness before offering the PR-open mutation.

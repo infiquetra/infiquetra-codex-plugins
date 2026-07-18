@@ -1,5 +1,18 @@
 # Learnings
 
+## 2026-07-18: Read-Only Validation Can Still Leave Lock Files
+
+**Evidence:** Repository validation and the code-review action-bundle read each created six zero-byte
+`.lock` files beside committed external-action release evidence. The product checks passed, but a strict
+workspace snapshot correctly saw the added ignored/untracked paths until they were removed.
+
+**Mechanism:** A read-only validation path can still acquire a filesystem lock in the maintained source
+tree. Logical read-only behavior and process-level file creation are separate mutation surfaces.
+
+**Generalizable rule:** For snapshot-sensitive gates, run validators with lock or cache side effects in a
+disposable worktree, compare porcelain state before and after, and remove the disposable worktree after
+capturing results. A successful validator exit code does not prove a no-mutation contract.
+
 ## 2026-07-18: Directory Link Counts Can Leak Authorized Child Creation
 
 **Evidence:** On APFS, both an authorized missing file and an authorized missing directory changed the
