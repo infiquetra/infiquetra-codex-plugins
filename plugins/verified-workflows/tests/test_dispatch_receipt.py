@@ -152,6 +152,28 @@ def workspace_snapshot(data: Path, created_at: str) -> str:
     )
 
 
+def missing_subject(
+    data: Path,
+    relative: str,
+) -> tuple[Path, str, str]:
+    workspace = workspace_repo(data)
+    workflow_run_ref = R.create_workflow_run_record(
+        data,
+        workflow(),
+        workspace_root=workspace,
+        created_at="2026-07-10T21:59:57Z",
+        nonce="9" * 32,
+    )
+    subject_ref = R.create_subject_record(
+        data,
+        workspace_root=workspace,
+        subject_paths=[relative],
+        workflow_run_ref=workflow_run_ref,
+        created_at="2026-07-10T21:59:58Z",
+    )
+    return workspace, workflow_run_ref, subject_ref
+
+
 def command_output(
     data: Path,
     active_workflow: W.Workflow,
@@ -1620,6 +1642,116 @@ def test_workspace_snapshot_detects_same_content_hardlink_replacement(
 
     assert before["tree_sha256"] != after["tree_sha256"]
     assert audit["mutation_observed"] is True
+
+
+def test_subject_chain_allows_authorized_missing_file_creation(tmp_path: Path) -> None:
+    data = plugin_data(tmp_path)
+    workspace = workspace_repo(data)
+    generated = workspace / "generated"
+    generated.mkdir()
+    workspace, workflow_run_ref, parent_ref = missing_subject(
+        data, "generated/output.json"
+    )
+
+    (generated / "output.json").write_text('{"status":"ready"}\n')
+    child_ref = R.create_subject_record(
+        data,
+        workspace_root=workspace,
+        subject_paths=["generated/output.json"],
+        workflow_run_ref=workflow_run_ref,
+        parent_refs=[parent_ref],
+        created_at="2026-07-10T21:59:59Z",
+    )
+    child, _child_bytes = R._load_subject_record(
+        data,
+        child_ref,
+        workspace_root=workspace,
+    )
+
+    assert child["paths"] == ["generated/output.json"]
+    assert [entry["path"] for entry in child["files"]] == ["generated/output.json"]
+
+
+def test_subject_chain_allows_authorized_missing_directory_creation(
+    tmp_path: Path,
+) -> None:
+    data = plugin_data(tmp_path)
+    workspace, workflow_run_ref, parent_ref = missing_subject(data, "generated")
+
+    generated = workspace / "generated"
+    generated.mkdir()
+    (generated / "output.json").write_text('{"status":"ready"}\n')
+    child_ref = R.create_subject_record(
+        data,
+        workspace_root=workspace,
+        subject_paths=["generated"],
+        workflow_run_ref=workflow_run_ref,
+        parent_refs=[parent_ref],
+        created_at="2026-07-10T21:59:59Z",
+    )
+    child, _child_bytes = R._load_subject_record(
+        data,
+        child_ref,
+        workspace_root=workspace,
+    )
+
+    assert child["paths"] == ["generated"]
+    assert [entry["path"] for entry in child["files"]] == ["generated/output.json"]
+
+
+def test_exact_file_subject_rejects_missing_intermediate_parent_creation(
+    tmp_path: Path,
+) -> None:
+    data = plugin_data(tmp_path)
+    workspace, workflow_run_ref, parent_ref = missing_subject(
+        data, "generated/output.json"
+    )
+
+    generated = workspace / "generated"
+    generated.mkdir()
+    (generated / "output.json").write_text('{"status":"ready"}\n')
+
+    with pytest.raises(R.DispatchReceiptError, match="outside-scope workspace"):
+        R.create_subject_record(
+            data,
+            workspace_root=workspace,
+            subject_paths=["generated/output.json"],
+            workflow_run_ref=workflow_run_ref,
+            parent_refs=[parent_ref],
+            created_at="2026-07-10T21:59:59Z",
+        )
+
+
+@pytest.mark.parametrize("sibling_kind", ["file", "directory"])
+def test_subject_chain_rejects_unauthorized_sibling_creation(
+    tmp_path: Path,
+    sibling_kind: str,
+) -> None:
+    data = plugin_data(tmp_path)
+    workspace = workspace_repo(data)
+    generated = workspace / "generated"
+    generated.mkdir()
+    workspace, workflow_run_ref, parent_ref = missing_subject(
+        data, "generated/output.json"
+    )
+
+    (generated / "output.json").write_text('{"status":"ready"}\n')
+    sibling = generated / "sibling"
+    if sibling_kind == "file":
+        sibling.write_text('{"status":"unauthorized"}\n')
+    else:
+        sibling.mkdir()
+        (sibling / "nested.json").write_text('{"status":"unauthorized"}\n')
+
+    with pytest.raises(R.DispatchReceiptError, match="outside-scope workspace"):
+        R.create_subject_record(
+            data,
+            workspace_root=workspace,
+            subject_paths=["generated/output.json"],
+            workflow_run_ref=workflow_run_ref,
+            parent_refs=[parent_ref],
+            created_at="2026-07-10T21:59:59Z",
+        )
 
 
 def test_subject_record_supports_the_maximum_file_count(tmp_path: Path) -> None:

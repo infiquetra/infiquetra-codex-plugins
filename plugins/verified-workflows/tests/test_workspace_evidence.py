@@ -20,3 +20,9 @@ def test_facade_preserves_workspace_evidence_api() -> None:
 
 def test_workspace_evidence_remains_bounded() -> None:
     assert len(Path(evidence.__file__).read_text(encoding="utf-8").splitlines()) < 1800
+
+
+def test_subject_exclusion_parents_are_immediate() -> None:
+    assert evidence._subject_exclusion_parent_paths(
+        ("top-level.txt", "docs/generated/output.json", "nested/tree")
+    ) == frozenset({".", "docs/generated", "nested"})
