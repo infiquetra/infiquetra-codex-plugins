@@ -1,7 +1,7 @@
 # Saga Family Codex Proof
 
-Generated: 2026-07-11T14:16:16.267355+00:00
-Run id: `20260711-u8-clean`
+Generated: 2026-07-19T18:42:02.099887+00:00
+Run id: `20260719T184202Z`
 
 ## Scope
 

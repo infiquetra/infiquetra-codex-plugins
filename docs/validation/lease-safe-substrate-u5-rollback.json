@@ -1,0 +1,18 @@
+{
+ "default_profile_list_sha256_after": "1ef891bdd1c233dd69b01b1c676e5927d52106e22bc9b1783e275196f46707eb",
+ "default_profile_list_sha256_before": "1ef891bdd1c233dd69b01b1c676e5927d52106e22bc9b1783e275196f46707eb",
+ "default_profile_mutated": false,
+ "exit_code": 0,
+ "kind": "rollback",
+ "recorded_at": "2026-07-19T18:55:00Z",
+ "repo_head": "c01611d62b3b20f399aaa85eef77cd1d66244b7e",
+ "run_id": "20260719T184202Z",
+ "schema_version": 1,
+ "steps": [
+  "codex plugin remove saga@infiquetra-saga-family-proof --json (isolated CODEX_HOME) -> removed",
+  "codex plugin remove fleet-core@infiquetra-saga-family-proof --json (isolated CODEX_HOME) -> removed",
+  "codex plugin list --json (isolated) -> saga and fleet-core absent; other family plugins untouched (targeted removal)",
+  "codex plugin list --json (default profile) -> sha256 identical to pre-proof baseline"
+ ],
+ "unit": "U5"
+}

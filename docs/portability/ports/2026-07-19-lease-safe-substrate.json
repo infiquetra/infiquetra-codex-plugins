@@ -1345,16 +1345,90 @@
       "recorded_at": "2026-07-19T17:50:54Z",
       "repo_head": "89c5477b97e107c6b8f536f820800c806f37b2b8",
       "unit": "U5"
+    },
+    {
+      "argv": [
+        "uv",
+        "run",
+        "python",
+        "scripts/prove_codex_plugin_profile.py",
+        "--install-mode",
+        "codex-cli",
+        "--write-docs"
+      ],
+      "artifact_path": "docs/validation/lease-safe-substrate-u5-install.json",
+      "artifact_sha256": "a7c833b86b1e549d26f12261761beaa0d2da333195d9c624cda83c62bf3357c6",
+      "cwd": ".",
+      "evidence_id": "u5-isolated-install-20260719",
+      "exit_code": 0,
+      "kind": "isolated-install",
+      "recorded_at": "2026-07-19T18:55:00Z",
+      "repo_head": "c01611d62b3b20f399aaa85eef77cd1d66244b7e",
+      "unit": "U5"
+    },
+    {
+      "argv": [
+        "python3",
+        "-I",
+        "-",
+        "<installed-cache-path>"
+      ],
+      "artifact_path": "docs/validation/lease-safe-substrate-u5-fresh-session.json",
+      "artifact_sha256": "30271af2ac827a18e6029aff7d462486b36265df1db54dc73e0c0b2fb1700971",
+      "cwd": ".",
+      "evidence_id": "u5-fresh-session-20260719",
+      "exit_code": 0,
+      "kind": "fresh-session",
+      "recorded_at": "2026-07-19T18:55:00Z",
+      "repo_head": "c01611d62b3b20f399aaa85eef77cd1d66244b7e",
+      "unit": "U5"
+    },
+    {
+      "argv": [
+        "codex",
+        "plugin",
+        "remove",
+        "<plugin>@infiquetra-saga-family-proof",
+        "--json"
+      ],
+      "artifact_path": "docs/validation/lease-safe-substrate-u5-rollback.json",
+      "artifact_sha256": "0c064bd2e4662039630b65738216e640d59ad009d6cf96f807f48f8f13161ee5",
+      "cwd": ".",
+      "evidence_id": "u5-rollback-20260719",
+      "exit_code": 0,
+      "kind": "rollback",
+      "recorded_at": "2026-07-19T18:55:00Z",
+      "repo_head": "c01611d62b3b20f399aaa85eef77cd1d66244b7e",
+      "unit": "U5"
+    },
+    {
+      "argv": [
+        "PYTHONPATH=.",
+        "uv",
+        "run",
+        "pytest",
+        "-q",
+        "tests/test_lease_safe_substrate_port_contract.py"
+      ],
+      "artifact_path": "docs/validation/lease-safe-substrate-u5-cutover.json",
+      "artifact_sha256": "586e4c1e2ada70c0104567ca5a852b2d483bc4a3c0fae93ffead28b65952e3e3",
+      "cwd": ".",
+      "evidence_id": "u5-cutover-20260719",
+      "exit_code": 0,
+      "kind": "cutover",
+      "recorded_at": "2026-07-19T18:55:00Z",
+      "repo_head": "c01611d62b3b20f399aaa85eef77cd1d66244b7e",
+      "unit": "U5"
     }
   ],
   "port_id": "lease-safe-substrate-2026-07-19",
   "refresh_changes": [],
   "release_evidence": {
-    "cutover": null,
-    "fresh_session": null,
-    "isolated_install": null,
+    "cutover": "u5-cutover-20260719",
+    "fresh_session": "u5-fresh-session-20260719",
+    "isolated_install": "u5-isolated-install-20260719",
     "review": "u5-code-review-20260719",
-    "rollback": null
+    "rollback": "u5-rollback-20260719"
   },
   "schema_version": 1,
   "source": {

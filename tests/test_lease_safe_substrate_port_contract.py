@@ -334,9 +334,19 @@ def test_release_surfaces_are_coherent_for_cutover() -> None:
         assert actual.split("+codex.")[0] == row["target_codex_version"], (plugin, actual)
 
     evidence = {entry["evidence_id"]: entry for entry in manifest["evidence"]}
-    review = evidence[manifest["release_evidence"]["review"]]
-    assert review["kind"] == "review" and review["unit"] == "U5" and review["exit_code"] == 0
-    assert _sha256(ROOT / review["artifact_path"]) == review["artifact_sha256"]
+    expected_kinds = {
+        "review": "review",
+        "isolated_install": "isolated-install",
+        "fresh_session": "fresh-session",
+        "rollback": "rollback",
+        "cutover": "cutover",
+    }
+    for key, kind in expected_kinds.items():
+        reference = manifest["release_evidence"][key]
+        assert reference, key
+        entry = evidence[reference]
+        assert entry["kind"] == kind and entry["unit"] == "U5" and entry["exit_code"] == 0, key
+        assert _sha256(ROOT / entry["artifact_path"]) == entry["artifact_sha256"], key
 
     codex_rows = {row["row_id"]: row for row in manifest["codex"]["rows"]}
     for row_id in ("codex-c44473857715d49d", "codex-ae2bfb19c195be7f"):
