@@ -1,0 +1,250 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://infiquetra.dev/schemas/codex-runtime-capability-snapshot-r2.json",
+  "title": "Codex Runtime Capability Snapshot",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "captured_at",
+    "refs",
+    "runtime",
+    "configured_defaults",
+    "catalog",
+    "features",
+    "custom_agents",
+    "collaboration",
+    "hook_capabilities",
+    "capability_dimensions",
+    "official_sources"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "captured_at": {"type": "string", "format": "date-time"},
+    "refs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["codex", "claude"],
+      "properties": {
+        "codex": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["historical_plan_base", "execution_base", "observed_origin_main"],
+          "properties": {
+            "historical_plan_base": {"$ref": "#/$defs/commit"},
+            "execution_base": {"$ref": "#/$defs/commit"},
+            "observed_origin_main": {"$ref": "#/$defs/commit"}
+          }
+        },
+        "claude": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["source_base", "source_target", "observed_head", "observed_main", "observed_origin_main", "target_reachable"],
+          "properties": {
+            "source_base": {"$ref": "#/$defs/commit"},
+            "source_target": {"$ref": "#/$defs/commit"},
+            "observed_head": {"$ref": "#/$defs/commit"},
+            "observed_main": {"$ref": "#/$defs/commit"},
+            "observed_origin_main": {"$ref": "#/$defs/commit"},
+            "target_reachable": {"type": "boolean"}
+          }
+        }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["codex_cli_version", "effective_parent_permission_mode", "configured_max_threads", "configured_max_threads_source", "configured_max_depth", "configured_max_depth_source", "host_total_slots", "effective_total_slots", "effective_max_children", "session_fact_source"],
+      "properties": {
+        "codex_cli_version": {"type": "string"},
+        "effective_parent_permission_mode": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["sandbox_mode", "approval_policy"],
+          "properties": {
+            "sandbox_mode": {"type": "string"},
+            "approval_policy": {"type": "string"}
+          }
+        },
+        "configured_max_threads": {"type": "integer", "minimum": 1},
+        "configured_max_threads_source": {"enum": ["config", "default"]},
+        "configured_max_depth": {"type": "integer", "minimum": 0},
+        "configured_max_depth_source": {"enum": ["config", "default"]},
+        "host_total_slots": {"description": "integer slot count from a session tool contract, or null when the active contract (v1) does not expose it"},
+        "effective_total_slots": {"description": "min(host, configured) when host slots are known, else null"},
+        "effective_max_children": {"description": "effective_total_slots - 1 when known, else null"},
+        "session_fact_source": {"enum": ["session-tool-contract", "operator-session-rollouts"]}
+      }
+    },
+    "configured_defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model", "model_reasoning_effort"],
+      "properties": {
+        "model": {"type": "string"},
+        "model_reasoning_effort": {"$ref": "#/$defs/effort"}
+      }
+    },
+    "catalog": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "normalized_sha256", "models"],
+      "properties": {
+        "source": {"enum": ["refreshed", "bundled"]},
+        "normalized_sha256": {"$ref": "#/$defs/sha256"},
+        "models": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["slug", "default_effort", "supported_efforts", "visibility", "supported_in_api"],
+            "properties": {
+              "slug": {"type": "string"},
+              "default_effort": {"$ref": "#/$defs/effort"},
+              "supported_efforts": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/effort"}},
+              "visibility": {"enum": ["list", "hide"]},
+              "supported_in_api": {"type": "boolean"}
+            }
+          }
+        }
+      }
+    },
+    "features": {"$ref": "#/$defs/featureMap"},
+    "custom_agents": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["builtins", "required_fields", "optional_config_fields", "repo_managed_source_count", "installed_custom_agent_count", "installed_team_execution_managed_count", "installed_verified_workflows_managed_count"],
+      "properties": {
+        "builtins": {"$ref": "#/$defs/stringList"},
+        "required_fields": {"$ref": "#/$defs/stringList"},
+        "optional_config_fields": {"$ref": "#/$defs/stringList"},
+        "repo_managed_source_count": {"type": "integer", "minimum": 0},
+        "installed_custom_agent_count": {"type": "integer", "minimum": 0},
+        "installed_team_execution_managed_count": {"type": "integer", "minimum": 0},
+        "installed_verified_workflows_managed_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "collaboration": {"$ref": "#/$defs/collaboration"},
+    "hook_capabilities": {"$ref": "#/$defs/hookCapabilities"},
+    "capability_dimensions": {"$ref": "#/$defs/capabilityDimensions"},
+    "official_sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["title", "url"],
+        "properties": {
+          "title": {"type": "string"},
+          "url": {"type": "string", "pattern": "^https://(learn\\.chatgpt\\.com|developers\\.openai\\.com)/"}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "effort": {"enum": ["none", "minimal", "low", "medium", "high", "xhigh", "max", "ultra"]},
+    "stringList": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+    "featureMap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["multi_agent", "hooks", "goals", "plugins"],
+      "properties": {
+        "multi_agent": {"$ref": "#/$defs/feature"},
+        "hooks": {"$ref": "#/$defs/feature"},
+        "goals": {"$ref": "#/$defs/feature"},
+        "plugins": {"$ref": "#/$defs/feature"}
+      }
+    },
+    "feature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stage", "enabled"],
+      "properties": {
+        "stage": {"type": "string"},
+        "enabled": {"type": "boolean"}
+      }
+    },
+    "collaboration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["spawn", "steer", "wait", "child_result_delivery"],
+      "properties": {
+        "spawn": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["available"],
+          "properties": {
+            "available": {"type": "boolean"},
+            "contract_version": {"enum": ["v1", "v2"]},
+            "spawn_receipt_fields": {"$ref": "#/$defs/stringList"},
+            "named_profile_selection": {"enum": ["rollout-attested", "unproved"]},
+            "tool_namespace": {"type": "string"},
+            "hide_spawn_agent_metadata": {"type": "boolean"},
+            "request_fields": {"$ref": "#/$defs/stringList"},
+            "default_fork_turns": {"type": "string"},
+            "profile_selection_fork_turns": {"$ref": "#/$defs/stringList"},
+            "per_child_agent_type": {"type": "boolean"},
+            "per_child_model": {"type": "boolean"},
+            "per_child_effort": {"type": "boolean"},
+            "per_child_sandbox": {"type": "boolean"},
+            "selection_readback_fields": {"$ref": "#/$defs/stringList"}
+          }
+        },
+        "steer": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["available", "operations"],
+          "properties": {"available": {"type": "boolean"}, "operations": {"$ref": "#/$defs/stringList"}}
+        },
+        "wait": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["available", "request_fields"],
+          "properties": {"available": {"type": "boolean"}, "request_fields": {"$ref": "#/$defs/stringList"}}
+        },
+        "child_result_delivery": {"type": "string"}
+      }
+    },
+    "hookCapabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["plugin_hooks_supported", "trust_required", "writable_data_environment", "subagent_event_allowlist", "observes_active_model", "observes_agent_type", "observes_reasoning_effort"],
+      "properties": {
+        "plugin_hooks_supported": {"type": "boolean"},
+        "trust_required": {"type": "boolean"},
+        "writable_data_environment": {"const": "PLUGIN_DATA"},
+        "subagent_event_allowlist": {"$ref": "#/$defs/stringList"},
+        "observes_active_model": {"type": "boolean"},
+        "observes_agent_type": {"type": "boolean"},
+        "observes_reasoning_effort": {"type": "boolean"}
+      }
+    },
+    "dimensionEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "status"],
+      "properties": {
+        "name": {"type": "string"},
+        "status": {"enum": ["available", "explicit-only", "legacy-current", "planned-unproved", "advisory-only", "unavailable", "unsupported", "rejected", "deferred", "configurable"]}
+      }
+    },
+    "dimensionList": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/dimensionEntry"}},
+    "capabilityDimensions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lifecycle_owner", "continuation", "workflow_modes", "step_vehicles", "role_identities", "execution_class_controls", "hook_roles"],
+      "properties": {
+        "lifecycle_owner": {"$ref": "#/$defs/dimensionList"},
+        "continuation": {"$ref": "#/$defs/dimensionList"},
+        "workflow_modes": {"$ref": "#/$defs/dimensionList"},
+        "step_vehicles": {"$ref": "#/$defs/dimensionList"},
+        "role_identities": {"$ref": "#/$defs/dimensionList"},
+        "execution_class_controls": {"$ref": "#/$defs/dimensionList"},
+        "hook_roles": {"$ref": "#/$defs/dimensionList"}
+      }
+    }
+  }
+}

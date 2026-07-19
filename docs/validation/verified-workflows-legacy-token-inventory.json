@@ -287,6 +287,14 @@
     },
     {
       "classification": "historical-evidence",
+      "path": "docs/plans/2026-07-15-codex-shared-runtime-substrate-plan.md",
+      "sha256": "ad681678c5fe4b4cd6c316c10ced4a09ca55e5b89c07dbe757ce5c6d27e0d26c",
+      "tokens": [
+        "Team Execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
       "path": "docs/plans/2026-07-17-verified-workflows-apfs-subject-snapshot-plan.md",
       "sha256": "33e164a7dd7b0ddffa8b49922bb779977cc1a994b807989f059c740b4827be0e",
       "tokens": [
@@ -512,6 +520,14 @@
       "classification": "historical-evidence",
       "path": "docs/validation/codex-runtime-capability-snapshot.json",
       "sha256": "800e81b32bf0922a3427cc4b49e09926b874850e49df3316a84ebd0f97ffdfa5",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-documentation",
+      "path": "docs/validation/lease-safe-substrate-runtime-capability-snapshot.json",
+      "sha256": "f529ed5695fa49615fcbdb12e6d7360d32f80e95898eb3a5a0f4e881943c1ea3",
       "tokens": [
         "team-execution"
       ]
@@ -952,7 +968,7 @@
     {
       "classification": "frozen-source-contract",
       "path": "scripts/port_contract.py",
-      "sha256": "eb5699b19828d0681c0c799a985b7126756e1f935a7ef1b99336624240229180",
+      "sha256": "a205cc4ed5c1eabab3e83eb603dc11f87e7594947d43d00d0986326305d9de65",
       "tokens": [
         "team-execution"
       ]
@@ -1111,7 +1127,7 @@
     {
       "classification": "migration-fixture",
       "path": "tests/test_verified_workflows_migration.py",
-      "sha256": "9ebef81c16198fc6e1c6498eb466ce459eb1e756c41f4a7290f2470a09716442",
+      "sha256": "60c1ad8dc174f8e71175cf3368d2c585a69f125ccc31d9755c5c2a33ccd214a6",
       "tokens": [
         "Team Execution",
         "team-execution"
@@ -1119,7 +1135,7 @@
     }
   ],
   "generated_by": "scripts/build_legacy_workflow_inventory.py",
-  "historical_inventory_sha256": "2055274e8672b3ed8835657c4b8f7c6715916e4c97cdb4f99dbd95610517f9a1",
+  "historical_inventory_sha256": "24f8e217e38803d15e2091d69e58dcaf5896c1a69ad786510ba2cfb9e8493257",
   "history_sentinels": {
     "docs/investigations/2026-06-30-team-execution-saga-orchestration-debug-report.md": {
       "sha256": "ecc08eceda3a67dc81d15b1930753fe236ca7c1ae9b3ad9dd506cdecfb0ac4fa",

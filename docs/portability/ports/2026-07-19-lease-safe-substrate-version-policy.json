@@ -1,0 +1,22 @@
+[
+  {
+    "current_codex_identity": "fleet-core",
+    "current_codex_version": "0.8.5+codex.20260717220000",
+    "policy": "lineage-with-codex-adaptation",
+    "release_unit": "U5",
+    "source_plugin": "fleet-core",
+    "source_version": "0.15.0",
+    "target_codex_identity": "fleet-core",
+    "target_codex_version": "0.9.0"
+  },
+  {
+    "current_codex_identity": "saga",
+    "current_codex_version": "0.75.17+codex.20260711160644",
+    "policy": "lineage-with-codex-adaptation",
+    "release_unit": "U5",
+    "source_plugin": "saga",
+    "source_version": "0.104.0",
+    "target_codex_identity": "saga",
+    "target_codex_version": "0.76.0"
+  }
+]

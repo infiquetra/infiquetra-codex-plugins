@@ -833,7 +833,19 @@ def _validate_capability_snapshot(root: Path, entry: Mapping[str, Any], errors: 
             if effective != min(configured, host) or children != effective - 1:
                 errors.append("capability snapshot thread capacity arithmetic is inconsistent")
     spawn = snapshot.get("collaboration", {}).get("spawn", {})
-    if isinstance(spawn, dict):
+    if isinstance(spawn, dict) and spawn.get("contract_version") == "v1":
+        # MultiAgent V2 retired to v1 (operator decision, 2026-07-19): nickname/role spawn with
+        # rollout-attested child receipts; no per-child sandbox override is claimable on v1.
+        if spawn.get("available") is not True:
+            errors.append("capability snapshot must record v1 spawn availability")
+        receipt_fields = set(spawn.get("spawn_receipt_fields") or [])
+        if not {"agent_nickname", "agent_role", "depth"}.issubset(receipt_fields):
+            errors.append("capability snapshot v1 spawn receipts must attest nickname, role, and depth")
+        if spawn.get("per_child_sandbox") is not False:
+            errors.append("capability snapshot must not claim direct per-child sandbox override")
+        if spawn.get("named_profile_selection") != "rollout-attested":
+            errors.append("capability snapshot v1 named-profile selection must be rollout-attested")
+    elif isinstance(spawn, dict):
         if spawn.get("tool_namespace") != "agents":
             errors.append("capability snapshot spawn namespace must be `agents`")
         if spawn.get("hide_spawn_agent_metadata") is not False:
