@@ -1288,6 +1288,25 @@
       "recorded_at": "2026-07-19T16:22:38Z",
       "repo_head": "3cdae8738024d00aacba9362e69769b694acf97f",
       "unit": "U3"
+    },
+    {
+      "argv": [
+        "PYTHONPATH=.",
+        "uv",
+        "run",
+        "pytest",
+        "-q",
+        "tests/test_lease_settlement_conformance.py"
+      ],
+      "artifact_path": "docs/validation/lease-safe-substrate-u4.json",
+      "artifact_sha256": "6b2fe3a7c50450c85e54c699daf605079cef63e3b78cddb4011db05650a95fff",
+      "cwd": ".",
+      "evidence_id": "u4-conformance-check-20260719",
+      "exit_code": 0,
+      "kind": "check",
+      "recorded_at": "2026-07-19T16:37:37Z",
+      "repo_head": "c1bb35ed0c40b20d7bade3c4c0cc070cd969b045",
+      "unit": "U4"
     }
   ],
   "port_id": "lease-safe-substrate-2026-07-19",
@@ -2035,7 +2054,9 @@
         "codex_invariant_refs": [
           "MAP-TEST"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u4-conformance-check-20260719"
+        ],
         "host_primitives": [],
         "new_path": "tests/test_concurrency_conformance.py",
         "old_path": null,
@@ -2048,7 +2069,7 @@
         "rationale": "Adapt the cross-runtime conformance matrix: identical neutral fixtures through both runtimes' broker/settlement modules with shared-root digest comparison.",
         "row_id": "src-7888762553c3dafa",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [

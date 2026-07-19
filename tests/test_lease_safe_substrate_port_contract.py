@@ -96,6 +96,8 @@ U3_SOURCE_ROWS = {
     "tests/test_run_ledger.py",
 }
 
+U4_SOURCE_ROWS = {"tests/test_concurrency_conformance.py"}
+
 
 def _assert_unit_rows_verified(unit: str, row_paths: set[str]) -> None:
     manifest = _manifest()
@@ -257,3 +259,7 @@ def test_u2_substrate_rows_are_verified_with_current_evidence() -> None:
 
 def test_u3_settlement_rows_are_verified_with_current_evidence() -> None:
     _assert_unit_rows_verified("U3", U3_SOURCE_ROWS)
+
+
+def test_u4_conformance_row_is_verified_with_current_evidence() -> None:
+    _assert_unit_rows_verified("U4", U4_SOURCE_ROWS)
