@@ -1243,7 +1243,30 @@
       }
     ]
   },
-  "evidence": [],
+  "evidence": [
+    {
+      "argv": [
+        "PYTHONPATH=.",
+        "uv",
+        "run",
+        "pytest",
+        "-q",
+        "plugins/fleet-core/tests/test_lease_broker.py",
+        "plugins/fleet-core/tests/test_orphan_evidence.py",
+        "plugins/fleet-core/tests/test_concurrency_policy.py",
+        "plugins/fleet-core/tests/test_audit_store.py"
+      ],
+      "artifact_path": "docs/validation/lease-safe-substrate-u2.json",
+      "artifact_sha256": "1a5efeb2753cfd73f70ea2d2ad88917e2c666a94c4ad09630640cf00c10ac756",
+      "cwd": ".",
+      "evidence_id": "u2-fleet-commons-check-20260719",
+      "exit_code": 0,
+      "kind": "check",
+      "recorded_at": "2026-07-19T15:58:42Z",
+      "repo_head": "e231770b7f8756b29b8942f8414ca74b75481005",
+      "unit": "U2"
+    }
+  ],
   "port_id": "lease-safe-substrate-2026-07-19",
   "refresh_changes": [],
   "release_evidence": {
@@ -1412,7 +1435,9 @@
         "codex_invariant_refs": [
           "MAP-SCRIPT-CONFIG"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u2-fleet-commons-check-20260719"
+        ],
         "host_primitives": [],
         "new_path": "plugins/fleet-core/scripts/fleet_commons/audit_store.py",
         "old_path": null,
@@ -1425,7 +1450,7 @@
         "rationale": "Adapt the guarded audit store consumed by the resource guard with runtime-neutral roots and containment tests.",
         "row_id": "src-bde2437c81c72efd",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -1438,7 +1463,9 @@
         "codex_invariant_refs": [
           "MAP-SCRIPT-CONFIG"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u2-fleet-commons-check-20260719"
+        ],
         "host_primitives": [],
         "new_path": "plugins/fleet-core/scripts/fleet_commons/concurrency_policy.py",
         "old_path": null,
@@ -1451,7 +1478,7 @@
         "rationale": "Adapt the pure concurrency slot policy consumed by broker admission; no host-specific behavior.",
         "row_id": "src-5d3506bac35d0847",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -1464,7 +1491,9 @@
         "codex_invariant_refs": [
           "MAP-SCRIPT-CONFIG"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u2-fleet-commons-check-20260719"
+        ],
         "host_primitives": [],
         "new_path": "plugins/fleet-core/scripts/fleet_commons/lease_broker.py",
         "old_path": null,
@@ -1477,7 +1506,7 @@
         "rationale": "Adapt the fleet_lease_registry.v1 TTL broker (TokenState, broker_epoch+fencing_sequence, atomic store, runtime-neutral root resolver) as the shared substrate authority.",
         "row_id": "src-c3b7822b9b827e12",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -1490,7 +1519,9 @@
         "codex_invariant_refs": [
           "MAP-SCRIPT-CONFIG"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u2-fleet-commons-check-20260719"
+        ],
         "host_primitives": [],
         "new_path": "plugins/fleet-core/scripts/fleet_commons/orphan_evidence.py",
         "old_path": null,
@@ -1503,7 +1534,7 @@
         "rationale": "Adapt the resource head and guarded-write checks (identity/owner/epoch-fence/non-closing/successor) behind every substrate mutation.",
         "row_id": "src-582cb6dd3e8172ff",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -2037,7 +2068,9 @@
         "codex_invariant_refs": [
           "MAP-TEST"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u2-fleet-commons-check-20260719"
+        ],
         "host_primitives": [],
         "new_path": "tests/test_fleet_lease_broker.py",
         "old_path": null,
@@ -2050,7 +2083,7 @@
         "rationale": "Adapt broker oracles: unit, multiprocess, permission, symlink, unsafe-root, corrupt-record, clock/fence.",
         "row_id": "src-a2e5d0e417c02227",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -2083,7 +2116,9 @@
         "codex_invariant_refs": [
           "MAP-TEST"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u2-fleet-commons-check-20260719"
+        ],
         "host_primitives": [],
         "new_path": "tests/test_orphan_fencing.py",
         "old_path": null,
@@ -2096,7 +2131,7 @@
         "rationale": "Adapt resource-guard fencing oracles including no-mutation rejection on stale fence and root mismatch.",
         "row_id": "src-4696af67505963ae",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
