@@ -3,7 +3,7 @@
     {
       "classification": "legacy-readable-state-root",
       "path": ".gitignore",
-      "sha256": "57bf65face2ed736f4c52f8b1856ac6d7040618cfb52795d4b8315c99b8f2fe5",
+      "sha256": "48dcbc657aa4f1156ff259962f86ef91f4a16cf7873f75f28ff60bbe8f4f9310",
       "tokens": [
         ".codex/team-execution/",
         "team-execution"
