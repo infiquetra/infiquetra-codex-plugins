@@ -67,3 +67,16 @@ Saga imports the source document-readability contract into `references/formattin
 ## Handoff Contract
 
 Saga emits structured handoff envelopes that name the receiving skill. It does not call private APIs in receiving plugins. Handoff payloads are untrusted context: receiving plugins must re-read and re-verify before mutation.
+
+## 2026-07-19 lease-safe substrate port (#33)
+
+- Port manifest: `docs/portability/ports/2026-07-19-lease-safe-substrate.json`; frozen source range
+  `a6f3bcff..cf15a09f`; codex release saga 0.76.0 alongside fleet-core 0.9.0 (release unit U5).
+- `dispatch_settlement.py` and the saga `lease_broker.py` adapter are verbatim ports;
+  `run_ledger.py` is reconciled to the post-range contract; `outcome_dispatcher.py` carries the
+  lease-preparation graft on the codex-native record-only `prepared` shape (`outcome.dispatch.v2`
+  acknowledgement semantics preserved — a shared settlement can never manufacture a Codex launch).
+  Coordinator-level lease enforcement activates with codex-parity (#34).
+- Gates: `tests/{test_dispatch_settlement,test_saga_lease_broker,test_outcome_dispatcher,
+  test_lease_settlement_conformance,test_lease_safe_substrate_port_contract}.py` plus
+  `plugins/saga/tests/test_run_ledger.py`; ceremony + unit evidence under `docs/validation/`.

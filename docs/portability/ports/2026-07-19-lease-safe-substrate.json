@@ -594,7 +594,9 @@
       },
       {
         "change": "M",
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u5-release-surface-check-20260719"
+        ],
         "invariant": "The single atomic substrate release re-bumps this surface on the current lineage without erasing post-planning drift.",
         "new_path": "plugins/fleet-core/.codex-plugin/plugin.json",
         "old_path": null,
@@ -603,7 +605,7 @@
         "rationale": "Release surface advanced since the historical plan base; U5 rebases the substrate release on the current package identity.",
         "row_id": "codex-c44473857715d49d",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "reconcile",
         "units": [
           "U5"
@@ -611,7 +613,9 @@
       },
       {
         "change": "M",
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u5-release-surface-check-20260719"
+        ],
         "invariant": "The single atomic substrate release re-bumps this surface on the current lineage without erasing post-planning drift.",
         "new_path": "plugins/fleet-core/CHANGELOG.md",
         "old_path": null,
@@ -620,7 +624,7 @@
         "rationale": "Release surface advanced since the historical plan base; U5 rebases the substrate release on the current package identity.",
         "row_id": "codex-ae2bfb19c195be7f",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "treatment": "reconcile",
         "units": [
           "U5"
@@ -1307,21 +1311,49 @@
       "recorded_at": "2026-07-19T16:37:37Z",
       "repo_head": "c1bb35ed0c40b20d7bade3c4c0cc070cd969b045",
       "unit": "U4"
+    },
+    {
+      "argv": [
+        "uv",
+        "run",
+        "python",
+        "scripts/validate_codex_plugins.py"
+      ],
+      "artifact_path": "docs/validation/lease-safe-substrate-u5.json",
+      "artifact_sha256": "4f518229d0253fb3c6d5787d07dfc4f633b8a12a9854bc30dfd92d77b03a999e",
+      "cwd": ".",
+      "evidence_id": "u5-release-surface-check-20260719",
+      "exit_code": 0,
+      "kind": "check",
+      "recorded_at": "2026-07-19T17:50:54Z",
+      "repo_head": "89c5477b97e107c6b8f536f820800c806f37b2b8",
+      "unit": "U5"
+    },
+    {
+      "argv": [
+        "saga:code-review",
+        "programmatic",
+        "--reviewed-sha",
+        "acc0d1dab9fa19fd9ada9461abd82b5e05dac0e4"
+      ],
+      "artifact_path": "docs/code-reviews/2026-07-19-lease-safe-substrate-code-review.md",
+      "artifact_sha256": "a78700dc45107144159af771229a36eff8a1fa4e535e98ccf3510240e003b9f3",
+      "cwd": ".",
+      "evidence_id": "u5-code-review-20260719",
+      "exit_code": 0,
+      "kind": "review",
+      "recorded_at": "2026-07-19T17:50:54Z",
+      "repo_head": "89c5477b97e107c6b8f536f820800c806f37b2b8",
+      "unit": "U5"
     }
   ],
   "port_id": "lease-safe-substrate-2026-07-19",
-  "refresh_changes": [
-    {
-      "change": "planned test path for the run-ledger rows refined from tests/test_run_ledger.py to plugins/saga/tests/test_run_ledger.py \u2014 the Codex repo already keeps its run-ledger suite plugin-local (survey-confirmed convention); reconciled in place rather than duplicating the suite at the repo root",
-      "changed_at": "2026-07-19T16:22:38Z",
-      "unit": "U3"
-    }
-  ],
+  "refresh_changes": [],
   "release_evidence": {
     "cutover": null,
     "fresh_session": null,
     "isolated_install": null,
-    "review": null,
+    "review": "u5-code-review-20260719",
     "rollback": null
   },
   "schema_version": 1,
@@ -1411,7 +1443,9 @@
           "MAP-MANIFEST",
           "MAP-METADATA"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u5-release-surface-check-20260719"
+        ],
         "host_primitives": [],
         "new_path": "plugins/fleet-core/.claude-plugin/plugin.json",
         "old_path": null,
@@ -1424,7 +1458,7 @@
         "rationale": "Recreate Codex fleet-core package metadata for the independently versioned 0.9.0 release after broker/guard behavior is proved.",
         "row_id": "src-c89dcbffa88c9a73",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "claude-manifest",
         "treatment": "codex-adapt",
         "units": [
@@ -1437,7 +1471,9 @@
         "codex_invariant_refs": [
           "MAP-METADATA"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u5-release-surface-check-20260719"
+        ],
         "host_primitives": [],
         "new_path": "plugins/fleet-core/CHANGELOG.md",
         "old_path": null,
@@ -1450,7 +1486,7 @@
         "rationale": "Describe the tested broker/resource/guard behavior in the independent Codex fleet-core lineage.",
         "row_id": "src-ae2bfb19c195be7f",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "changelog",
         "treatment": "codex-adapt",
         "units": [
@@ -1596,7 +1632,9 @@
           "MAP-MANIFEST",
           "MAP-METADATA"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u5-release-surface-check-20260719"
+        ],
         "host_primitives": [],
         "new_path": "plugins/saga/.claude-plugin/plugin.json",
         "old_path": null,
@@ -1609,7 +1647,7 @@
         "rationale": "Recreate Codex saga package metadata for the independently versioned 0.76.0 release after settlement behavior is proved.",
         "row_id": "src-48459813ea962414",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "claude-manifest",
         "treatment": "codex-adapt",
         "units": [
@@ -1622,7 +1660,9 @@
         "codex_invariant_refs": [
           "MAP-METADATA"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u5-release-surface-check-20260719"
+        ],
         "host_primitives": [],
         "new_path": "plugins/saga/CHANGELOG.md",
         "old_path": null,
@@ -1635,7 +1675,7 @@
         "rationale": "Describe the tested settlement-adapter behavior in the independent Codex saga lineage.",
         "row_id": "src-d9b93b161f476cd3",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "changelog",
         "treatment": "codex-adapt",
         "units": [
@@ -1998,7 +2038,7 @@
         "planned_tests": [
           "plugins/saga/tests/test_run_ledger.py"
         ],
-        "rationale": "Reconcile the existing Codex run-ledger lineage with the source strict-read/verified-prefix contract the settlement adapter requires. The reconciliation is wholesale (the full cf15a09f module), so it also carries forward-compat surface beyond the settlement slice — the liveness/teardown/benchmark fact kinds and append_fact_built_atomic — whose source consumers (liveness_events.py, team_teardown.py) are outside this port's scope; that surface is pinned by the plugin-local suite (full fact-kind schema coverage asserted against FACT_KINDS, plus atomic-builder smoke tests) rather than left unexercised.",
+        "rationale": "Reconcile the existing Codex run-ledger lineage with the source strict-read/verified-prefix contract the settlement adapter requires. The reconciliation is wholesale (the full cf15a09f module), so it also carries forward-compat surface beyond the settlement slice \u2014 the liveness/teardown/benchmark fact kinds and append_fact_built_atomic \u2014 whose source consumers (liveness_events.py, team_teardown.py) are outside this port's scope; that surface is pinned by the plugin-local suite (full fact-kind schema coverage asserted against FACT_KINDS, plus atomic-builder smoke tests) rather than left unexercised.",
         "row_id": "src-4493db98ed5be1de",
         "similarity": null,
         "state": "verified",

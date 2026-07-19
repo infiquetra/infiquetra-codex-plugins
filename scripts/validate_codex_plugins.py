@@ -78,7 +78,7 @@ LEGACY_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
 
 PRE_CUTOVER_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
     "saga": {
-        "version": "0.75.17+codex.20260711160644",
+        "version": "0.76.0+codex.20260719174556",
         "skills": (
             "office-hours",
             "ideate",
@@ -135,7 +135,7 @@ PRE_CUTOVER_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
         "skills": ("discord-identity-assets",),
     },
     "fleet-core": {
-        "version": "0.8.5+codex.20260717220000",
+        "version": "0.9.0+codex.20260719174556",
         "skills": (),
         "library": True,
     },
@@ -276,7 +276,7 @@ STAGED_MARKETPLACE_SHA256 = (
     "42803919b39b720599b9692bfdcd95bcfe8c31b06ebb2c976aacaa890fdfea8a"
 )
 LEGACY_WORKFLOW_HISTORICAL_INVENTORY_SHA256 = (
-    "24f8e217e38803d15e2091d69e58dcaf5896c1a69ad786510ba2cfb9e8493257"
+    "4c4323346f2574472de94bc0e512e745e9d67a337967b85a698fb58136165a7a"
 )
 LEGACY_WORKFLOW_INVENTORY = Path(
     "docs/validation/verified-workflows-legacy-token-inventory.json"

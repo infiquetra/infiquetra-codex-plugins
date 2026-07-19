@@ -310,3 +310,18 @@ presentation-ready assets.
 Rejected: one giant Saga README, Mermaid-only centerpiece visuals, and fully hand-drawn diagrams.
 Those options either hide ownership boundaries, fail the presentation-quality bar, or drift away from
 the routing/state contracts too easily.
+
+## 2026-07-19: Lease-Safe Substrate Ports Byte-Faithful, Gates Per-Port
+
+The #33 port copies the frozen-source lease/settlement modules byte-faithfully (the port manifest's
+inventory digest freezes what identifies each row; row state and evidence float underneath), with
+exactly two deliberate divergences: the audit-store default root moves to the runtime-neutral
+`~/.local/state/infiquetra/delegation-audit`, and the dispatcher lease graft is written codex-native
+around the record-only `prepared` seam instead of importing the source's authoritative-mint shape.
+Release gating runs through the per-port pytest contract (`tests/test_lease_safe_substrate_port_contract.py`)
+because `scripts/port_contract.py validate` is permanently pinned to the 2026-07-11 external-advisory
+port (its port_id, refs, row counts, and digests) — the mission-control ports set this precedent.
+
+Rejected: editing the shared CLI validator to accept multiple manifests (would unfreeze a sealed
+contract), scoping run_ledger down to the settlement slice (would fork the shared module lineage),
+and porting the source's dispatcher shape (would overwrite Codex's intent/ack machinery).

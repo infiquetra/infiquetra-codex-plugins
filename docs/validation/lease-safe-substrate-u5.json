@@ -1,0 +1,37 @@
+{
+ "adaptations": [
+  "refresh_changes drained to [] in the same unit: the recorded U3 run-ledger path refinement is fully reconciled into row src-4493db98ed5be1de (rationale + planned_tests); the field is a drain-queue by contract (QA-1, deferred-low from the QA gate).",
+  "release_evidence.review references the programmatic code-review artifact (CLEAN at REVIEWED_SHA acc0d1da); isolated_install/fresh_session/rollback/cutover land with the operator-gated install steps."
+ ],
+ "check": {
+  "argv": [
+   "uv",
+   "run",
+   "python",
+   "scripts/validate_codex_plugins.py"
+  ],
+  "exit_code": 0,
+  "suites": [
+   {
+    "argv": [
+     "PYTHONPATH=.",
+     "uv",
+     "run",
+     "pytest",
+     "-q",
+     "tests/test_validate_codex_plugins.py",
+     "tests/test_verified_workflows_migration.py",
+     "plugins/saga/tests/test_codex_operator_choice.py",
+     "plugins/mission-control/tests/test_prompt_alignment.py"
+    ],
+    "exit_code": 0,
+    "result": "73 passed"
+   }
+  ],
+  "summary": "Release surfaces updated in one unit per the version policy: fleet-core 0.8.5+codex.20260717220000 -> 0.9.0+codex.20260719174556 and saga 0.75.17+codex.20260711160644 -> 0.76.0+codex.20260719174556. Parity surfaces updated together: validator PRE_CUTOVER_EXPECTED_PLUGINS, saga-family target fixture, operator-choice version pin, regenerated lifecycle facts and atlas. CHANGELOG entries for both plugins, PORTABILITY sections, portability matrix note, and an engineering-journal decision recorded. Legacy token inventory rebuilt; historical pin re-bound to 4c4323346f2574472de94bc0e512e745e9d67a337967b85a698fb58136165a7a. Repository validator green; parity suites (validate/migration/operator-choice/prompt-alignment) 73 passed."
+ },
+ "recorded_at": "2026-07-19T17:50:54Z",
+ "repo_head": "89c5477b97e107c6b8f536f820800c806f37b2b8",
+ "schema_version": 1,
+ "unit": "U5"
+}
