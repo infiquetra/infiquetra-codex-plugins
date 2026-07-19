@@ -5,6 +5,9 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+from typing import Any
+
+import pytest
 
 from scripts import port_contract
 
@@ -251,6 +254,43 @@ def test_capability_snapshot_records_retired_v2_as_v1_contract() -> None:
     assert snapshot["runtime"]["session_fact_source"] == "operator-session-rollouts"
     assert snapshot["refs"]["claude"]["source_target"] == SOURCE_TARGET
     assert snapshot["refs"]["codex"]["execution_base"] == CODEX_EXECUTION_BASE
+
+
+@pytest.mark.parametrize(
+    ("mutation", "expected_error"),
+    [
+        ({"available": False}, "must record v1 spawn availability"),
+        (
+            {"spawn_receipt_fields": ["agent_nickname", "agent_role"]},
+            "must attest nickname, role, and depth",
+        ),
+        ({"per_child_sandbox": True}, "must not claim direct per-child sandbox override"),
+        (
+            {"named_profile_selection": "unproved"},
+            "named-profile selection must be rollout-attested",
+        ),
+    ],
+)
+def test_capability_snapshot_validator_rejects_each_dishonest_v1_claim(
+    tmp_path: Path, mutation: dict[str, Any], expected_error: str
+) -> None:
+    """Deletion-mutation guard: each v1 honesty assertion must individually reject a dishonest
+    snapshot — the honest-artifact test alone cannot catch a deleted validator branch."""
+    manifest = _manifest()
+    capability = manifest["authority"]["capability_snapshot"]
+    snapshot = json.loads((ROOT / capability["path"]).read_text(encoding="utf-8"))
+    snapshot["collaboration"]["spawn"].update(mutation)
+    (tmp_path / "snapshot.json").write_text(json.dumps(snapshot), encoding="utf-8")
+    (tmp_path / "schema.json").write_text(
+        (ROOT / capability["schema_path"]).read_text(encoding="utf-8"), encoding="utf-8"
+    )
+
+    errors: list[str] = []
+    port_contract._validate_capability_snapshot(
+        tmp_path, {"path": "snapshot.json", "schema_path": "schema.json"}, errors
+    )
+
+    assert any(expected_error in error for error in errors), errors
 
 
 def test_u2_substrate_rows_are_verified_with_current_evidence() -> None:
