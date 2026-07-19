@@ -484,6 +484,15 @@
       ]
     },
     {
+      "classification": "historical-evidence",
+      "path": "docs/reviews/2026-07-12-codex-plugins-improvement-review.md",
+      "sha256": "0d6daa44f896d837f486f77e485ff23322760f3ab5b1a864b4958844b55f104f",
+      "tokens": [
+        "Team Execution",
+        "team-execution"
+      ]
+    },
+    {
       "classification": "migration-documentation",
       "path": "docs/validation/codex-plugin-modernization-cutover.json",
       "sha256": "7112c7336bfa9cd442c99f56e2a02548d557cfa4d692cb99c9568076061cbeab",
@@ -1110,7 +1119,7 @@
     }
   ],
   "generated_by": "scripts/build_legacy_workflow_inventory.py",
-  "historical_inventory_sha256": "8704143951ad1b6f7a3c4e9c12bcc2a0f114366fe6e6cfc16c0e846da0aed31c",
+  "historical_inventory_sha256": "2055274e8672b3ed8835657c4b8f7c6715916e4c97cdb4f99dbd95610517f9a1",
   "history_sentinels": {
     "docs/investigations/2026-06-30-team-execution-saga-orchestration-debug-report.md": {
       "sha256": "ecc08eceda3a67dc81d15b1930753fe236ca7c1ae9b3ad9dd506cdecfb0ac4fa",
