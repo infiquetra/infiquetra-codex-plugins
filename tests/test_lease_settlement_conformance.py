@@ -248,8 +248,9 @@ def test_conflicting_resettle_mutates_zero_ledger_bytes(tmp_path: Path) -> None:
     assert ledger.path.read_bytes() == before
 
 
-def _race_spawn(path: Path, outcomes: Any) -> None:
+def _race_spawn(path: Path, start: Any, outcomes: Any) -> None:
     ledger = DS.run_ledger.RunLedger(path=path)
+    start.wait()
     try:
         DS.append_spawn(ledger, _spawn_fact())
         outcomes.put("appended")
@@ -262,10 +263,12 @@ def test_two_process_spawn_race_yields_exactly_one_position(tmp_path: Path) -> N
     ledger = _ledger_scenario(path, spawn=False, settle=False)
 
     context = multiprocessing.get_context("fork")
+    start = context.Event()
     outcomes = context.Queue()
-    workers = [context.Process(target=_race_spawn, args=(path, outcomes)) for _ in range(2)]
+    workers = [context.Process(target=_race_spawn, args=(path, start, outcomes)) for _ in range(2)]
     for worker in workers:
         worker.start()
+    start.set()
     for worker in workers:
         worker.join(timeout=30)
     results = sorted(outcomes.get(timeout=5) for _ in workers)

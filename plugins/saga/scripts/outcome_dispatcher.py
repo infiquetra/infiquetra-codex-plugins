@@ -210,6 +210,8 @@ def make_dispatcher(
     """A lease-aware record-only production adapter; it never fabricates launch truth.
 
     ``lease_authority=None`` preserves the injected compatibility paths (no lease is taken).
+    The lease brackets dispatch preparation only — the synchronous ``dispatch()`` admission
+    window — not the backend agent's execution lifetime, which begins after this returns.
     """
 
     def _dispatch(req: Any) -> dict[str, Any]:

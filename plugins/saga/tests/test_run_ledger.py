@@ -361,3 +361,44 @@ def test_rollup_includes_engine_net_savings_fields(tmp_path: Path) -> None:
     assert roll["net_savings_tokens"]["sum"] == 800.0
     assert roll["external_cost_usd"]["sum"] == 0.004
     assert "net_savings_status" not in roll
+
+
+# --------------------------------------------------------------------------- atomic builder seam
+
+
+def test_append_fact_built_atomic_builds_from_verified_snapshot(tmp_path: Path) -> None:
+    ledger = _ledger(tmp_path)
+    RL.append_fact(ledger, _spend("s0", tokens=10, cached=5, fresh=5))
+
+    fact = RL.append_fact_built_atomic(
+        ledger,
+        lambda snapshot: RL.build_fact(
+            "liveness",
+            subplot_id="s0",
+            at="t",
+            event="heartbeat",
+            subject_id=f"subject-{len(snapshot.records)}",
+        ),
+    )
+
+    assert fact["subject_id"] == "subject-1"  # builder saw the one prior record
+    assert [f["kind"] for f in RL.read_facts(ledger)] == ["spend", "liveness"]
+    assert RL.verify_chain(ledger).ok
+
+
+def test_append_fact_built_atomic_refuses_non_dict_and_broken_chain(tmp_path: Path) -> None:
+    ledger = _ledger(tmp_path)
+    RL.append_fact(ledger, _spend("s0", tokens=1, cached=0, fresh=1))
+    with pytest.raises(RL.RunLedgerError, match="must return a dict"):
+        RL.append_fact_built_atomic(ledger, lambda _snapshot: cast(Any, "not-a-dict"))
+
+    RL.append_fact(ledger, _spend("s1", tokens=2, cached=0, fresh=2))
+    lines = ledger.path.read_text().splitlines()
+    rec0 = json.loads(lines[0])
+    rec0["tokens"] = 999999  # tamper with a prior record, leave its this_hash intact
+    lines[0] = json.dumps(rec0, sort_keys=True, separators=(",", ":"))
+    ledger.path.write_text("\n".join(lines) + "\n")
+    with pytest.raises(RL.RunLedgerError, match="broken run-fact chain"):
+        RL.append_fact_built_atomic(
+            ledger, lambda _snapshot: _spend("s2", tokens=3, cached=0, fresh=3)
+        )

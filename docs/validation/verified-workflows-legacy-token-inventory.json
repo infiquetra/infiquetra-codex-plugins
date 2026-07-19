@@ -853,7 +853,7 @@
     {
       "classification": "legacy-parser",
       "path": "plugins/saga/scripts/outcome_dispatcher.py",
-      "sha256": "5621abcff3d562e7a927b832956cbc0db422d208da95979a6f526560ab222b70",
+      "sha256": "4025929fa4c18f87eb6eeac59aefa414187fe9351838e001690cba542aa47ced",
       "tokens": [
         "team-execution"
       ]
@@ -1050,7 +1050,7 @@
     {
       "classification": "migration-fixture",
       "path": "tests/test_outcome_dispatcher.py",
-      "sha256": "54bf51aa4531e80eb62fe5094360e75c455465716b72395e8a74461784bd4e16",
+      "sha256": "4afa0a54f1eff130086d375fd45039aaa57af855aca27e60ffac59be05a62ee0",
       "tokens": [
         "#team-structure",
         "team_execution_ref"

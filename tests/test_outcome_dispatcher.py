@@ -411,6 +411,8 @@ def test_cli_dispatch_dry_run(
     assert D.main(["ship-x", "build", "fork"]) == 0
     halt = json.loads(capsys.readouterr().out)
     assert halt["status"] == "halt"
+
+
 # --------------------------------------------------------------------------- lease-aware seam (#33 U3)
 
 
@@ -501,6 +503,53 @@ def test_make_dispatcher_preserves_primary_failure_when_release_also_fails(
         "lease settlement refused: cleanup exploded" in note
         for note in getattr(exc.value, "__notes__", ())
     )
+
+
+def test_make_dispatcher_releases_lease_before_halt_propagates(tmp_path: Path) -> None:
+    authority = D.fleet_commons_shim.load("lease_broker")
+    selected = authority.LeaseBroker(tmp_path / "authority")
+
+    with pytest.raises(D.BackendHaltError) as exc:
+        D.make_dispatcher(lease_authority=selected)(_req("fork"))
+
+    assert exc.value.receipt.backend == "fork"
+    assert selected.inspect()["leases"] == []
+
+
+def test_make_dispatcher_releases_lease_when_renew_fails() -> None:
+    class ExpiringAuthority:
+        def __init__(self) -> None:
+            self.released = False
+
+        def acquire_agent(self, **_kwargs: Any) -> Any:
+            return SimpleNamespace(lease_id="lease-1", token=SimpleNamespace())
+
+        def renew(self, *_args: Any, **_kwargs: Any) -> None:
+            raise RuntimeError("lease gone")
+
+        def release(self, *_args: Any, **_kwargs: Any) -> bool:
+            self.released = True
+            return True
+
+    selected = ExpiringAuthority()
+    with pytest.raises(D.DispatcherError, match="lease expired before settlement"):
+        D.make_dispatcher(lease_authority=selected)(_req("inline"))
+    assert selected.released is True
+
+
+def test_make_dispatcher_fails_when_lease_disappears_before_settlement() -> None:
+    class VanishingAuthority:
+        def acquire_agent(self, **_kwargs: Any) -> Any:
+            return SimpleNamespace(lease_id="lease-1", token=SimpleNamespace())
+
+        def renew(self, *_args: Any, **_kwargs: Any) -> None:
+            return None
+
+        def release(self, *_args: Any, **_kwargs: Any) -> bool:
+            return False
+
+    with pytest.raises(D.DispatcherError, match="disappeared before authoritative settlement"):
+        D.make_dispatcher(lease_authority=VanishingAuthority())(_req("inline"))
 
 
 @pytest.mark.parametrize("version", [1, 99])
