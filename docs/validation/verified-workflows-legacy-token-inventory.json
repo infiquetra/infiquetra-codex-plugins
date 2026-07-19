@@ -692,6 +692,30 @@
       ]
     },
     {
+      "classification": "frozen-source-contract",
+      "path": "plugins/fleet-core/scripts/fleet_commons/audit_store.py",
+      "sha256": "3f2d49e255da04d2acc14b4d3c56c5ff3e0f268029e74ea52acffc0a181f101c",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "frozen-source-contract",
+      "path": "plugins/fleet-core/scripts/fleet_commons/lease_broker.py",
+      "sha256": "55112f23c1d122805392ae611be19e010ace582f3295f001de8532072c93e3ec",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "frozen-source-contract",
+      "path": "plugins/fleet-core/scripts/fleet_commons/orphan_evidence.py",
+      "sha256": "dcb1f5d74b8070e1becb533596aa1740bdf9bcdc451035fb1e5c5ae4c37e9016",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
       "classification": "legacy-parser",
       "path": "plugins/fleet-core/scripts/fleet_commons/tier_palette.py",
       "sha256": "c21b3092009a5f597107ae4c387e3c6918aa6445f87341c8f08ee2b3e4417858",
