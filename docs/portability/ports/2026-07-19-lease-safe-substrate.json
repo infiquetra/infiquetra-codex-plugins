@@ -1998,7 +1998,7 @@
         "planned_tests": [
           "plugins/saga/tests/test_run_ledger.py"
         ],
-        "rationale": "Reconcile the existing Codex run-ledger lineage with the source strict-read/verified-prefix contract the settlement adapter requires. The reconciliation is wholesale (the full cf15a09f module), so it also carries forward-compat surface beyond the settlement slice — the liveness/teardown/benchmark fact kinds and append_fact_built_atomic — whose source consumers (liveness_events.py, team_teardown.py) are outside this port's scope; that surface is pinned by the plugin-local suite (eight-kind schema coverage plus atomic-builder smoke tests) rather than left unexercised.",
+        "rationale": "Reconcile the existing Codex run-ledger lineage with the source strict-read/verified-prefix contract the settlement adapter requires. The reconciliation is wholesale (the full cf15a09f module), so it also carries forward-compat surface beyond the settlement slice — the liveness/teardown/benchmark fact kinds and append_fact_built_atomic — whose source consumers (liveness_events.py, team_teardown.py) are outside this port's scope; that surface is pinned by the plugin-local suite (full fact-kind schema coverage asserted against FACT_KINDS, plus atomic-builder smoke tests) rather than left unexercised.",
         "row_id": "src-4493db98ed5be1de",
         "similarity": null,
         "state": "verified",

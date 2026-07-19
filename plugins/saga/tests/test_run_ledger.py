@@ -48,7 +48,7 @@ def _spend(sub: str, *, tokens: int, cached: int, fresh: int, wall: float = 1.0)
 # --------------------------------------------------------------------------- U1: schema
 
 
-def test_schema_covers_all_eight_kinds(tmp_path: Path) -> None:
+def test_schema_covers_every_fact_kind(tmp_path: Path) -> None:
     ledger = _ledger(tmp_path)
     RL.append_fact(ledger, _spend("s1", tokens=100, cached=60, fresh=40))
     RL.append_fact(ledger, RL.build_fact("cache", subplot_id="s1", at="t", cached=3, fresh=1))
@@ -111,6 +111,16 @@ def test_schema_covers_all_eight_kinds(tmp_path: Path) -> None:
             dispatch_id="dispatch-1",
         ),
     )
+    RL.append_fact(
+        ledger,
+        RL.build_fact(
+            "teardown",
+            subplot_id="s1",
+            at="t",
+            event="reclaimed",
+            run_id="run-1",
+        ),
+    )
     facts = RL.read_facts(ledger)
     assert [f["kind"] for f in facts] == [
         "spend",
@@ -121,7 +131,10 @@ def test_schema_covers_all_eight_kinds(tmp_path: Path) -> None:
         "reconciliation",
         "benchmark",
         "dispatch-settlement",
+        "teardown",
     ]
+    # Drift guard: every declared kind is exercised above — a new FACT_KINDS member breaks this.
+    assert {f["kind"] for f in facts} == set(RL.FACT_KINDS)
     assert all(f["schema"] == "run_fact.v1" for f in facts)
     assert facts[2]["engine"] == "gemini" and facts[4]["evidence"] == "ptr://run/abc"
 
