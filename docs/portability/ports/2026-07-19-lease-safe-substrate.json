@@ -1265,10 +1265,39 @@
       "recorded_at": "2026-07-19T15:58:42Z",
       "repo_head": "e231770b7f8756b29b8942f8414ca74b75481005",
       "unit": "U2"
+    },
+    {
+      "argv": [
+        "PYTHONPATH=.",
+        "uv",
+        "run",
+        "pytest",
+        "-q",
+        "tests/test_dispatch_settlement.py",
+        "tests/test_saga_lease_broker.py",
+        "tests/test_outcome_dispatcher.py",
+        "plugins/saga/tests/test_run_ledger.py",
+        "tests/test_outcome_store.py"
+      ],
+      "artifact_path": "docs/validation/lease-safe-substrate-u3.json",
+      "artifact_sha256": "cbbcafe3a676937abf879b4730c3e72be2d208aa6cd8531fa037a8950a42182b",
+      "cwd": ".",
+      "evidence_id": "u3-saga-settlement-check-20260719",
+      "exit_code": 0,
+      "kind": "check",
+      "recorded_at": "2026-07-19T16:22:38Z",
+      "repo_head": "3cdae8738024d00aacba9362e69769b694acf97f",
+      "unit": "U3"
     }
   ],
   "port_id": "lease-safe-substrate-2026-07-19",
-  "refresh_changes": [],
+  "refresh_changes": [
+    {
+      "change": "planned test path for the run-ledger rows refined from tests/test_run_ledger.py to plugins/saga/tests/test_run_ledger.py \u2014 the Codex repo already keeps its run-ledger suite plugin-local (survey-confirmed convention); reconciled in place rather than duplicating the suite at the repo root",
+      "changed_at": "2026-07-19T16:22:38Z",
+      "unit": "U3"
+    }
+  ],
   "release_evidence": {
     "cutover": null,
     "fresh_session": null,
@@ -1706,7 +1735,9 @@
         "codex_invariant_refs": [
           "MAP-SCRIPT-CONFIG"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u3-saga-settlement-check-20260719"
+        ],
         "host_primitives": [],
         "new_path": "plugins/saga/scripts/dispatch_settlement.py",
         "old_path": null,
@@ -1719,7 +1750,7 @@
         "rationale": "Adapt shared dispatch facts, settlement lookup, and re-drive with outcome.dispatch.v2 preserved: only protected ack_kind=launched proves dispatch; receipts correlate by identity and are never copied.",
         "row_id": "src-a7ff68b7109ab548",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -1772,7 +1803,9 @@
         "codex_invariant_refs": [
           "MAP-SCRIPT-CONFIG"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u3-saga-settlement-check-20260719"
+        ],
         "host_primitives": [],
         "new_path": "plugins/saga/scripts/lease_broker.py",
         "old_path": null,
@@ -1785,7 +1818,7 @@
         "rationale": "Adapt the saga-side broker adapter that presents current token+fence to the dispatch effect seam.",
         "row_id": "src-b892af8cda2f6d98",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -1838,7 +1871,9 @@
         "codex_invariant_refs": [
           "MAP-SCRIPT-CONFIG"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u3-saga-settlement-check-20260719"
+        ],
         "host_primitives": [],
         "new_path": "plugins/saga/scripts/outcome_dispatcher.py",
         "old_path": null,
@@ -1851,7 +1886,7 @@
         "rationale": "Thread broker token/fence and shared attempt identity through the Codex dispatch seam immediately before the backend effect; stale/superseded/closing writers HALT with zero mutation.",
         "row_id": "src-8881971894e7734c",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -1864,7 +1899,9 @@
         "codex_invariant_refs": [
           "MAP-SCRIPT-CONFIG"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u3-saga-settlement-check-20260719"
+        ],
         "host_primitives": [],
         "new_path": "plugins/saga/scripts/outcome_store.py",
         "old_path": null,
@@ -1877,7 +1914,7 @@
         "rationale": "Guard Codex outcome-store writes behind the resource head so a fenced-out writer cannot mutate spec or completion state.",
         "row_id": "src-2a1e9c02821296a4",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -1930,7 +1967,9 @@
         "codex_invariant_refs": [
           "MAP-SCRIPT-CONFIG"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u3-saga-settlement-check-20260719"
+        ],
         "host_primitives": [],
         "new_path": "plugins/saga/scripts/run_ledger.py",
         "old_path": null,
@@ -1938,12 +1977,12 @@
           "plugins/saga/scripts/run_ledger.py"
         ],
         "planned_tests": [
-          "tests/test_run_ledger.py"
+          "plugins/saga/tests/test_run_ledger.py"
         ],
         "rationale": "Reconcile the existing Codex run-ledger lineage with the source strict-read/verified-prefix contract the settlement adapter requires.",
         "row_id": "src-4493db98ed5be1de",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -2042,7 +2081,9 @@
         "codex_invariant_refs": [
           "MAP-TEST"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u3-saga-settlement-check-20260719"
+        ],
         "host_primitives": [],
         "new_path": "tests/test_dispatch_settlement.py",
         "old_path": null,
@@ -2055,7 +2096,7 @@
         "rationale": "Adapt settlement oracles: launched, handed-off never launch proof, legacy-unverified, crash windows, casualty/dead-letter, already-settled retry.",
         "row_id": "src-6c0cca4e88a3c81c",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -2144,7 +2185,9 @@
         "codex_invariant_refs": [
           "MAP-TEST"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u3-saga-settlement-check-20260719"
+        ],
         "host_primitives": [],
         "new_path": "tests/test_outcome_dispatcher.py",
         "old_path": null,
@@ -2157,7 +2200,7 @@
         "rationale": "Adapt dispatch-seam oracles for fail-before-effect: every HALT edge proves zero mutation.",
         "row_id": "src-b5590bb6af8afc99",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [
@@ -2250,20 +2293,22 @@
         "codex_invariant_refs": [
           "MAP-TEST"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u3-saga-settlement-check-20260719"
+        ],
         "host_primitives": [],
         "new_path": "tests/test_run_ledger.py",
         "old_path": null,
         "planned_targets": [
-          "tests/test_run_ledger.py"
+          "plugins/saga/tests/test_run_ledger.py"
         ],
         "planned_tests": [
-          "tests/test_run_ledger.py"
+          "plugins/saga/tests/test_run_ledger.py"
         ],
         "rationale": "Adapt strict-read, verified-prefix, and cap oracles onto the reconciled Codex run ledger.",
         "row_id": "src-0dd7c0c07ad25cf4",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [

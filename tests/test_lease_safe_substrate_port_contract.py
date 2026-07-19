@@ -85,6 +85,38 @@ U2_SOURCE_ROWS = {
     "tests/test_orphan_fencing.py",
 }
 
+U3_SOURCE_ROWS = {
+    "plugins/saga/scripts/dispatch_settlement.py",
+    "plugins/saga/scripts/lease_broker.py",
+    "plugins/saga/scripts/outcome_dispatcher.py",
+    "plugins/saga/scripts/outcome_store.py",
+    "plugins/saga/scripts/run_ledger.py",
+    "tests/test_dispatch_settlement.py",
+    "tests/test_outcome_dispatcher.py",
+    "tests/test_run_ledger.py",
+}
+
+
+def _assert_unit_rows_verified(unit: str, row_paths: set[str]) -> None:
+    manifest = _manifest()
+    rows = {row["new_path"]: row for row in manifest["source"]["rows"]}
+    evidence = {entry["evidence_id"]: entry for entry in manifest["evidence"]}
+
+    for path in row_paths:
+        row = rows[path]
+        assert row["state"] == "verified", path
+        assert row["evidence_refs"], path
+        for ref in row["evidence_refs"]:
+            entry = evidence[ref]
+            assert entry["unit"] == unit
+            assert entry["kind"] in port_contract.EVIDENCE_KINDS
+            assert entry["exit_code"] == 0
+            assert _sha256(ROOT / entry["artifact_path"]) == entry["artifact_sha256"]
+        for target in row["planned_targets"]:
+            assert (ROOT / target).is_file(), target
+        for test_path in row["planned_tests"]:
+            assert (ROOT / test_path).is_file(), test_path
+
 
 def _manifest() -> dict:
     return json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
@@ -220,21 +252,8 @@ def test_capability_snapshot_records_retired_v2_as_v1_contract() -> None:
 
 
 def test_u2_substrate_rows_are_verified_with_current_evidence() -> None:
-    manifest = _manifest()
-    rows = {row["new_path"]: row for row in manifest["source"]["rows"]}
-    evidence = {entry["evidence_id"]: entry for entry in manifest["evidence"]}
+    _assert_unit_rows_verified("U2", U2_SOURCE_ROWS)
 
-    for path in U2_SOURCE_ROWS:
-        row = rows[path]
-        assert row["state"] == "verified", path
-        assert row["evidence_refs"], path
-        for ref in row["evidence_refs"]:
-            entry = evidence[ref]
-            assert entry["unit"] == "U2"
-            assert entry["kind"] in port_contract.EVIDENCE_KINDS
-            assert entry["exit_code"] == 0
-            assert _sha256(ROOT / entry["artifact_path"]) == entry["artifact_sha256"]
-        for target in row["planned_targets"]:
-            assert (ROOT / target).is_file(), target
-        for test_path in row["planned_tests"]:
-            assert (ROOT / test_path).is_file(), test_path
+
+def test_u3_settlement_rows_are_verified_with_current_evidence() -> None:
+    _assert_unit_rows_verified("U3", U3_SOURCE_ROWS)

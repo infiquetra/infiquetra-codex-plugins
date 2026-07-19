@@ -1,0 +1,40 @@
+{
+  "adaptations": [
+    {
+      "change": "in-range lease threading grafted onto the Codex prepared/proposed_leaf_saga_id dispatch shape; outcome.dispatch.v2 record-only semantics preserved",
+      "path": "plugins/saga/scripts/outcome_dispatcher.py"
+    },
+    {
+      "change": "11 in-range coordinator-integration oracles (settlement cohorts, harvest, casualty, retry) not ported \u2014 they exercise the deferred outcome.py row; the 5 dispatch-seam oracles ported",
+      "path": "tests/test_outcome_dispatcher.py"
+    }
+  ],
+  "check": {
+    "argv": [
+      "PYTHONPATH=.",
+      "uv",
+      "run",
+      "pytest",
+      "-q",
+      "tests/test_dispatch_settlement.py",
+      "tests/test_saga_lease_broker.py",
+      "tests/test_outcome_dispatcher.py",
+      "plugins/saga/tests/test_run_ledger.py",
+      "tests/test_outcome_store.py"
+    ],
+    "exit_code": 0,
+    "suites": {
+      "plugins/saga/tests/test_run_ledger.py": "reconciled to the post-range source suite under the plugin-local bootstrap; no codex oracle removed (19 passed)",
+      "tests/test_dispatch_settlement.py": "ported verbatim from cf15a09f (45 passed, zero edits)",
+      "tests/test_outcome_dispatcher.py": "codex-native suite + five in-range dispatch-seam lease oracles adapted to the prepared-dict shape (28 passed)",
+      "tests/test_outcome_store.py": "pre-existing byte-synced suite re-run over the docstring-reconciled module (31 passed)",
+      "tests/test_saga_lease_broker.py": "authored for the port \u2014 no source test exercises the adapter directly (9 passed)"
+    },
+    "summary": "132 passed"
+  },
+  "port_id": "lease-safe-substrate-2026-07-19",
+  "recorded_at": "2026-07-19T16:22:38Z",
+  "repo_head": "3cdae8738024d00aacba9362e69769b694acf97f",
+  "schema_version": 1,
+  "unit": "U3"
+}
