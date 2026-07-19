@@ -7,7 +7,7 @@ import json
 import sys
 from pathlib import Path
 from types import ModuleType
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
@@ -48,7 +48,7 @@ def _spend(sub: str, *, tokens: int, cached: int, fresh: int, wall: float = 1.0)
 # --------------------------------------------------------------------------- U1: schema
 
 
-def test_schema_covers_all_four_kinds(tmp_path: Path) -> None:
+def test_schema_covers_all_eight_kinds(tmp_path: Path) -> None:
     ledger = _ledger(tmp_path)
     RL.append_fact(ledger, _spend("s1", tokens=100, cached=60, fresh=40))
     RL.append_fact(ledger, RL.build_fact("cache", subplot_id="s1", at="t", cached=3, fresh=1))
@@ -67,13 +67,63 @@ def test_schema_covers_all_four_kinds(tmp_path: Path) -> None:
     RL.append_fact(
         ledger,
         RL.build_fact(
+            "liveness",
+            subplot_id="s1",
+            at="t",
+            event="heartbeat",
+            subject_id="subject-1",
+        ),
+    )
+    RL.append_fact(
+        ledger,
+        RL.build_fact(
             "delegation", subplot_id="s1", at="t", evidence="ptr://run/abc", engine="agy"
         ),
     )
+    RL.append_fact(
+        ledger,
+        RL.build_fact("reconciliation", subplot_id="s1", at="t", reconciliation_id="recon-1"),
+    )
+    RL.append_fact(
+        ledger,
+        RL.build_fact(
+            "benchmark",
+            subplot_id="s1",
+            at="t",
+            engine="codex",
+            variant="gpt-5.5-xhigh",
+            capability="adversarial-review",
+            suite_id="adversarial-review-v1",
+            probes_total=4,
+            probes_passed=1,
+            measured_rating="WEAK",
+            claimed_rating="STRONG",
+            contradicts=True,
+        ),
+    )
+    RL.append_fact(
+        ledger,
+        RL.build_fact(
+            "dispatch-settlement",
+            subplot_id="s1",
+            at="t",
+            event="manifest",
+            dispatch_id="dispatch-1",
+        ),
+    )
     facts = RL.read_facts(ledger)
-    assert [f["kind"] for f in facts] == ["spend", "cache", "engine", "delegation"]
+    assert [f["kind"] for f in facts] == [
+        "spend",
+        "cache",
+        "engine",
+        "liveness",
+        "delegation",
+        "reconciliation",
+        "benchmark",
+        "dispatch-settlement",
+    ]
     assert all(f["schema"] == "run_fact.v1" for f in facts)
-    assert facts[2]["engine"] == "gemini" and facts[3]["evidence"] == "ptr://run/abc"
+    assert facts[2]["engine"] == "gemini" and facts[4]["evidence"] == "ptr://run/abc"
 
 
 def test_build_fact_rejects_unknown_kind_and_reserved_fields() -> None:
@@ -94,6 +144,32 @@ def test_second_append_chains_onto_the_first(tmp_path: Path) -> None:
     second = RL.append_fact(ledger, _spend("s2", tokens=20, cached=0, fresh=20))
     assert first["prev_hash"] == ""  # genesis
     assert second["prev_hash"] == first["this_hash"]  # chained
+    assert RL.verify_chain(ledger).ok
+
+
+def test_append_fsyncs_after_writing_before_return(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    ledger = RL.RunLedger(tmp_path / "new-parent" / "run-facts.jsonl")
+    events: list[str] = []
+    original_write = RL.os.write
+    original_fsync = RL.os.fsync
+
+    def tracked_write(fd: int, payload: Any) -> int:
+        events.append("write")
+        return cast(int, original_write(fd, payload))
+
+    def tracked_fsync(fd: int) -> None:
+        events.append("fsync")
+        original_fsync(fd)
+
+    monkeypatch.setattr(RL.os, "write", tracked_write)
+    monkeypatch.setattr(RL.os, "fsync", tracked_fsync)
+
+    RL.append_fact(ledger, _spend("s1", tokens=10, cached=0, fresh=10))
+
+    last_write = max(index for index, event in enumerate(events) if event == "write")
+    assert "fsync" in events[last_write + 1 :]
     assert RL.verify_chain(ledger).ok
 
 
@@ -155,10 +231,39 @@ def test_torn_trailing_line_is_tolerated_not_a_chain_break(tmp_path: Path) -> No
     assert RL.verify_chain(ledger).ok and len(RL.read_facts(ledger)) == 2
 
 
+def test_read_only_snapshot_of_absent_ledger_creates_no_parent_or_lock(tmp_path: Path) -> None:
+    ledger = RL.RunLedger(tmp_path / "missing" / "run-facts.jsonl")
+
+    assert RL.read_snapshot(ledger).records == ()
+    assert RL.read_facts(ledger) == []
+    assert RL.verify_chain(ledger).ok
+    assert not ledger.path.parent.exists()
+    assert not ledger.path.exists()
+    assert not RL._lock_path(ledger).exists()
+
+
+def test_read_only_torn_tail_snapshot_never_repairs_or_creates_lock(tmp_path: Path) -> None:
+    ledger = _ledger(tmp_path)
+    RL.append_fact(ledger, _spend("s0", tokens=10, cached=5, fresh=5))
+    lock_path = RL._lock_path(ledger)
+    lock_path.unlink()
+    with ledger.path.open("a", encoding="utf-8") as handle:
+        handle.write('{"schema": "run_fact.v1", "kind": "spend"')
+    before = ledger.path.read_bytes()
+
+    assert len(RL.read_snapshot(ledger).records) == 1
+    assert len(RL.read_facts(ledger)) == 1
+    assert RL.verify_chain(ledger).ok
+    assert ledger.path.read_bytes() == before
+    assert not lock_path.exists()
+
+
 def test_empty_and_absent_ledger(tmp_path: Path) -> None:
     ledger = _ledger(tmp_path)
     assert RL.read_facts(ledger) == []
     assert RL.verify_chain(ledger).ok  # vacuously
+    assert not ledger.path.exists()
+    assert not ledger.path.with_suffix(f"{ledger.path.suffix}.lock").exists()
 
 
 def test_corrupt_non_trailing_line_raises_not_silently_skipped(tmp_path: Path) -> None:
@@ -229,3 +334,30 @@ def test_rollup_aggregates_numeric_fields_no_committed_summary(tmp_path: Path) -
     assert roll["wall_seconds"]["sum"] == 6.0
     # derive-on-read: nothing is persisted as a summary — the ledger file holds only the 2 facts.
     assert len(ledger.path.read_text().splitlines()) == 2
+
+
+def test_rollup_includes_engine_net_savings_fields(tmp_path: Path) -> None:
+    ledger = _ledger(tmp_path)
+    RL.append_fact(
+        ledger,
+        RL.build_fact(
+            "engine",
+            subplot_id="s1",
+            at="2026-07-09T00:00:00Z",
+            engine="codex",
+            cost=0.004,
+            engine_tokens_avoided=1000,
+            chaperone_tokens_spent=200,
+            net_savings_tokens=800,
+            net_savings_status="positive",
+            external_cost_usd=0.004,
+        ),
+    )
+
+    roll = RL.rollup(ledger, "engine")
+
+    assert roll["engine_tokens_avoided"]["sum"] == 1000.0
+    assert roll["chaperone_tokens_spent"]["sum"] == 200.0
+    assert roll["net_savings_tokens"]["sum"] == 800.0
+    assert roll["external_cost_usd"]["sum"] == 0.004
+    assert "net_savings_status" not in roll

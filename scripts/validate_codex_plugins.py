@@ -324,6 +324,8 @@ LEGACY_WORKFLOW_EXACT_CLASSIFICATIONS = {
     Path("plugins/fleet-core/scripts/fleet_commons/workflow_compat.py"): "compat-registry",
     Path("plugins/saga/CHANGELOG.md"): "lineage-documentation",
     Path("plugins/saga/PORTABILITY.md"): "lineage-documentation",
+    Path("plugins/saga/scripts/dispatch_settlement.py"): "frozen-source-contract",
+    Path("plugins/saga/scripts/lease_broker.py"): "frozen-source-contract",
     Path("plugins/saga/README.md"): "migration-documentation",
     Path("plugins/verified-workflows/README.md"): "migration-documentation",
     Path("plugins/verified-workflows/PORTABILITY.md"): "lineage-documentation",

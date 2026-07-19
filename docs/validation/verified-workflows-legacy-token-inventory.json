@@ -819,6 +819,22 @@
       ]
     },
     {
+      "classification": "frozen-source-contract",
+      "path": "plugins/saga/scripts/dispatch_settlement.py",
+      "sha256": "7ac6aa28a51d4b85fb0080ed1b9a07c7357699d62c43ac9f95a9aaf71c592f19",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "frozen-source-contract",
+      "path": "plugins/saga/scripts/lease_broker.py",
+      "sha256": "9268b9b3dd9815d390acfd8b5fca8ed657ca10d2081a68b7459f553af3643e49",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
       "classification": "legacy-parser",
       "path": "plugins/saga/scripts/lifecycle_state.py",
       "sha256": "653599c7bd3c9a5a7924efd2380acdd655bfc02180be07e05fffdec40d4070da",
@@ -837,7 +853,7 @@
     {
       "classification": "legacy-parser",
       "path": "plugins/saga/scripts/outcome_dispatcher.py",
-      "sha256": "ff0bc8d4e0db47e6e7e5e2835a13894fdb27353f5decc29ff15714b959f9aec9",
+      "sha256": "5621abcff3d562e7a927b832956cbc0db422d208da95979a6f526560ab222b70",
       "tokens": [
         "team-execution"
       ]
@@ -1016,6 +1032,14 @@
     },
     {
       "classification": "migration-fixture",
+      "path": "tests/test_dispatch_settlement.py",
+      "sha256": "11166cd05b80a059efdd8574f5a2f269e211f3411d3788a7c50c5782dbbd42da",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-fixture",
       "path": "tests/test_operator_choice_drift.py",
       "sha256": "0285284aaebd2b84233396bd6f3bbae2aa8233e2a0fe879d8e34d81d80a103f1",
       "tokens": [
@@ -1026,7 +1050,7 @@
     {
       "classification": "migration-fixture",
       "path": "tests/test_outcome_dispatcher.py",
-      "sha256": "8ecc80e9b33e419fbfb9053409107a7abd9e0aa1166000fcd486eed7eee48a9d",
+      "sha256": "54bf51aa4531e80eb62fe5094360e75c455465716b72395e8a74461784bd4e16",
       "tokens": [
         "#team-structure",
         "team_execution_ref"
