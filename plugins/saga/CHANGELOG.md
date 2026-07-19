@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.76.0 - 2026-07-19
+
+### Added
+
+- Port dispatch settlement (`dispatch_settlement.py`) and the fleet lease-broker adapter
+  (`lease_broker.py`) verbatim from the frozen source range `a6f3bcff..cf15a09f` (#33); reconcile
+  `run_ledger.py` to the post-range contract (dispatch-settlement, liveness, teardown, and
+  benchmark fact kinds; fsync-on-create; atomic built-fact append).
+- Graft lease-aware dispatch preparation onto `outcome_dispatcher.make_dispatcher`: admission
+  against fleet concurrency policy, renew before settlement, fail-closed release. The lease brackets
+  dispatch preparation only and stays inert in production until the coordinator wires a lease
+  authority (#34); the record-only `prepared` acknowledgement seam is unchanged.
+
 ## 0.75.17 - 2026-07-11
 
 ### Changed

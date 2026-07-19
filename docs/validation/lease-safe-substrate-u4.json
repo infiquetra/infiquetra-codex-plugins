@@ -1,0 +1,38 @@
+{
+  "adaptations": [
+    {
+      "change": "source file guards Claude-host Workflow emitters (rejected/deferred rows); the row's planned target is this authored conformance matrix, not a port of that guard",
+      "path": "tests/test_concurrency_conformance.py"
+    }
+  ],
+  "check": {
+    "argv": [
+      "PYTHONPATH=.",
+      "uv",
+      "run",
+      "pytest",
+      "-q",
+      "tests/test_lease_settlement_conformance.py"
+    ],
+    "exit_code": 0,
+    "oracles": [
+      "root-independent + pinned broker registry digest (acquire/renew/release)",
+      "root-independent + pinned settlement ledger digest (manifest/spawn/delivered settle)",
+      "read views project shared attempt identity",
+      "fenced-out release/renew: zero registry-byte mutation",
+      "duplicate spawn replay: zero ledger-byte mutation",
+      "conflicting re-settle: zero ledger-byte mutation",
+      "fork-context two-process first-spawn race: one appended, one refused, one position"
+    ],
+    "pinned_digests": {
+      "broker_registry_sha256": "f60fd482bba4ed5744e4ad590595f9ab92654f66f6371e57350dbc88c75a4b9d",
+      "settlement_ledger_sha256": "34804e26ad77eb96eb877d0c5bf3432018c60d739c49f7891aa79e13803a963a"
+    },
+    "summary": "7 passed"
+  },
+  "port_id": "lease-safe-substrate-2026-07-19",
+  "recorded_at": "2026-07-19T16:37:37Z",
+  "repo_head": "c1bb35ed0c40b20d7bade3c4c0cc070cd969b045",
+  "schema_version": 1,
+  "unit": "U4"
+}

@@ -57,3 +57,17 @@ byte-identically.
 `plugins/{saga,team-execution,verified-workflows,mission-control}/scripts/fleet_commons_shim.py` and
 `plugins/unifi/skills/unifi-{network,protect}/scripts/fleet_commons_shim.py` are byte-identical
 vendored copies of this plugin's shim, guarded by `plugins/fleet-core/tests/test_shim_drift.py`.
+
+## 2026-07-19 lease-safe substrate port (#33)
+
+- Port manifest: `docs/portability/ports/2026-07-19-lease-safe-substrate.json` (v3 runbook);
+  frozen source range `a6f3bcff..cf15a09f` of `infiquetra-claude-plugins` (#351 dispatch
+  settlement, #356 TTL lease broker, #355 resource guard); source versions fleet-core 0.15.0 /
+  saga 0.104.0; codex release fleet-core 0.9.0 / saga 0.76.0 (release unit U5).
+- `fleet_commons/{lease_broker,orphan_evidence,concurrency_policy}.py` are byte-faithful to the
+  frozen source; `audit_store.py` differs only by the runtime-neutral default root. The fleet state
+  root resolves via `INFIQUETRA_FLEET_STATE_DIR` → `$XDG_STATE_HOME/infiquetra/fleet-leases` →
+  `~/.local/state/infiquetra/fleet-leases` — never `~/.claude`, `~/.codex`, or installed caches.
+- Gates: per-port pytest contract `tests/test_lease_safe_substrate_port_contract.py`; six-lens
+  ceremony record `docs/validation/lease-safe-substrate-ceremony.md`; unit evidence
+  `docs/validation/lease-safe-substrate-u{2,3,4}.json`.

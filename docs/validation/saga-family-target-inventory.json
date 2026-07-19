@@ -5,7 +5,7 @@
   "plugins": [
     {
       "name": "saga",
-      "version": "0.75.17+codex.20260711160644",
+      "version": "0.76.0+codex.20260719174556",
       "skills": [
         "office-hours",
         "ideate",
@@ -154,7 +154,7 @@
     },
     {
       "name": "fleet-core",
-      "version": "0.8.5+codex.20260717220000",
+      "version": "0.9.0+codex.20260719174556",
       "skills": [],
       "library": true,
       "forbidden_active_dirs": [

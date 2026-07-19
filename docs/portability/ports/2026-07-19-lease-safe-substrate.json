@@ -1,0 +1,2599 @@
+{
+  "authority": {
+    "capability_snapshot": {
+      "path": "docs/validation/lease-safe-substrate-runtime-capability-snapshot.json",
+      "schema_path": "docs/validation/codex-runtime-capability-snapshot.schema-r2.json",
+      "schema_sha256": "f5400fc62b9a10e21aad0772724802055b41c32e890fa4136264df23c0ab10dc",
+      "schema_version": 1,
+      "sha256": "f529ed5695fa49615fcbdb12e6d7360d32f80e95898eb3a5a0f4e881943c1ea3"
+    },
+    "classification_path": "docs/portability/classifications/2026-07-19-lease-safe-substrate.md",
+    "plan": {
+      "path": "docs/plans/2026-07-15-codex-shared-runtime-substrate-plan.md",
+      "sha256": "ad681678c5fe4b4cd6c316c10ced4a09ca55e5b89c07dbe757ce5c6d27e0d26c"
+    },
+    "reviews": [
+      {
+        "path": "docs/reviews/2026-07-11-codex-external-advisory-execution-contract-plan-review.md",
+        "sha256": "41def3318162e78779ccdf08900b2502222e65316d785b38c4b729114da8e616"
+      },
+      {
+        "path": "docs/reviews/2026-07-15-codex-shared-runtime-substrate-plan-doc-review.md",
+        "sha256": "dbb89251c087b6739355c3a97d18ff99907bba59364137be4999623c409162c0"
+      }
+    ],
+    "runbook": {
+      "path": "docs/portability/claude-to-codex-plugin-port-runbook.md",
+      "sha256": "8dc16667009b745a1d0f8e8f45e0542a5a5744dc40cc16e16930648509d24678",
+      "version": 3
+    }
+  },
+  "codex": {
+    "evidence_ref": "refs/tags/evidence/external-advisory-execution-20260711",
+    "execution_base": "19a3610e2db8d0f850fa18ecbbb8f16c74842ba4",
+    "expected_count": 80,
+    "historical_plan_base": "739fb34e27f2e045e28cf5d420bbc2fc004115a0",
+    "inventory_sha256": "656bf596f67e4e65baa97648e8fea2fc39dcd306c5d5b059cbdc4b3a628276f3",
+    "observed_origin_main": "19a3610e2db8d0f850fa18ecbbb8f16c74842ba4",
+    "repository_id": "infiquetra/infiquetra-codex-plugins",
+    "rows": [
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": ".codex/config.toml",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-ca378bbbee014b93",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": ".github/ISSUE_TEMPLATE/capability.yml",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-cf5b3a75bbc3c4d5",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": ".github/ISSUE_TEMPLATE/context-update.yml",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-9f423a68f64e3a90",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": ".github/ISSUE_TEMPLATE/defect.yml",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-f0346f67958146fa",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": ".github/ISSUE_TEMPLATE/enhancement.yml",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-6cb9ea863032bc75",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": ".github/ISSUE_TEMPLATE/exploration.yml",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-429ab2353267ed86",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": ".gitignore",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-6f711a6fa5217914",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "README.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-5581be3f47302dfd",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "docs/baseline/codex-visible-plugins.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-9c2ae6e2940758dc",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "docs/code-reviews/2026-07-16-issue-35-board-move-code-review.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-e155bad56080e021",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "docs/code-reviews/2026-07-17-fix-codex-v1-agent-compatibility-code-review.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-97920d67588c3725",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "docs/code-reviews/2026-07-18-verified-workflows-apfs-subject-snapshot-code-review.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-fc2b6821d6fb7020",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "docs/code-reviews/2026-07-18-workflow-feasibility-review-code-review.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-0e8672ac217c2b80",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "docs/engineering-journal/DECISIONS.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-313d2cf5a21dbc54",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "docs/engineering-journal/LEARNINGS.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-e3ee6795314331b6",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "docs/plans/2026-07-16-mission-control-board-move-fail-loud-port-plan.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-45effd8f01e657a5",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "docs/plans/2026-07-17-codex-v1-agent-compatibility-plan.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-30e2275cd81e48aa",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "docs/plans/2026-07-17-verified-workflows-apfs-subject-snapshot-plan.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-dd0e02bc0e5529dd",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "docs/plans/2026-07-18-workflow-feasibility-review-plan.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-348d6c4865af3f1a",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "docs/portability/classifications/2026-07-16-mission-control-2101.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-871720be3a13fd1b",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "docs/portability/matrix.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-f960b3e9903b5ff8",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "docs/portability/ports/2026-07-16-mission-control-2101.json",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-1c5af862d9041122",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "docs/qa/qa-issue-35-board-move-2026-07-16.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-3f43729a77074247",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "docs/qa/qa-task-verified-workflows-apfs-subject-snapshot-2026-07-18.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-41ba5bbb06da6f4c",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "docs/reviews/2026-07-12-codex-plugins-improvement-review.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-c8841377f5af0889",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "docs/reviews/2026-07-16-mission-control-board-move-fail-loud-port-plan-review.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-c89f35953e1490ed",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "docs/reviews/2026-07-17-verified-workflows-apfs-subject-snapshot-plan-doc-review.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-27a42357fd9a8a92",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "docs/reviews/2026-07-18-workflow-feasibility-review-plan-doc-review.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-eee6a6e91af80e72",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "docs/saga/command-catalog.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-f133e03918ea2d6c",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "docs/saga/generated/lifecycle-facts.json",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-89cc453421bad4a4",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "docs/saga/visual-assets/saga-lifecycle-atlas.pdf",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-861899c367607e2e",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "docs/validation/mission-control-2101-runtime-capability-snapshot.json",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-bb42021f657fde01",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "docs/validation/mission-control-2101-unit-evidence.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-1f9a2aa31459070e",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "docs/validation/saga-family-target-inventory.json",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-0c981857df7dde08",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "docs/validation/verified-workflows-legacy-token-inventory.json",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-07f0601e027de251",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "docs/work-sessions/2026-07-17-codex-v1-agent-compatibility.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-0222831a51c2a990",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "docs/work-sessions/2026-07-18-verified-workflows-apfs-subject-snapshot.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-0e0cff298d48aacb",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [
+          "u5-release-surface-check-20260719"
+        ],
+        "invariant": "The single atomic substrate release re-bumps this surface on the current lineage without erasing post-planning drift.",
+        "new_path": "plugins/fleet-core/.codex-plugin/plugin.json",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Release surface advanced since the historical plan base; U5 rebases the substrate release on the current package identity.",
+        "row_id": "codex-c44473857715d49d",
+        "similarity": null,
+        "state": "verified",
+        "treatment": "reconcile",
+        "units": [
+          "U5"
+        ]
+      },
+      {
+        "change": "M",
+        "evidence_refs": [
+          "u5-release-surface-check-20260719"
+        ],
+        "invariant": "The single atomic substrate release re-bumps this surface on the current lineage without erasing post-planning drift.",
+        "new_path": "plugins/fleet-core/CHANGELOG.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Release surface advanced since the historical plan base; U5 rebases the substrate release on the current package identity.",
+        "row_id": "codex-ae2bfb19c195be7f",
+        "similarity": null,
+        "state": "verified",
+        "treatment": "reconcile",
+        "units": [
+          "U5"
+        ]
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "plugins/fleet-core/README.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-2508f1578ce61023",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "plugins/fleet-core/scripts/codex_v1_catalog.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-16c3cf5e7c8e6e5c",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "plugins/fleet-core/scripts/fleet_commons/codex_model_catalog.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-4a626db8dc2fa3ba",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "plugins/fleet-core/tests/test_codex_model_catalog.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-cf937c10adb2809c",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "plugins/fleet-core/tests/test_codex_v1_catalog.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-5c92542d05d04f83",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "plugins/mission-control/.codex-plugin/plugin.json",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-6c255b1d62ef3718",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "plugins/mission-control/CHANGELOG.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-97172da2308bf99e",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "plugins/mission-control/PORTABILITY.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-778dc3c0ff0606b8",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "plugins/mission-control/scripts/sdlc_manager.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-8568d1b391a031f3",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "plugins/mission-control/tests/test_board_move_exit.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-6653531248eb6c51",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "plugins/mission-control/tests/test_prompt_alignment.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-7acce98f94485e48",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "plugins/saga/references/operator-choice.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-4275dff937698602",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "plugins/saga/skills/plan/SKILL.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-c471baea790a3b70",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "plugins/saga/tests/test_codex_operator_choice.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-4b72b04bb9ba214a",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "plugins/verified-workflows/.codex-plugin/plugin.json",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-e0aec09df7405bed",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "plugins/verified-workflows/CHANGELOG.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-c4f28f6ed2099e82",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "plugins/verified-workflows/PORTABILITY.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-242db32425dd1057",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "plugins/verified-workflows/README.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-c79a8a2a4c6923d2",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "plugins/verified-workflows/scripts/workflow_feasibility.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-368bcc2dee98fd89",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "plugins/verified-workflows/scripts/workspace_evidence.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-e5a742dfd490e012",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "plugins/verified-workflows/skills/review-workflow/SKILL.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-2e652debb26b365a",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "plugins/verified-workflows/skills/run/SKILL.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-c3500f2c8347c325",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "plugins/verified-workflows/skills/run/references/workflow-protocol.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-adf316412d5b7ce5",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "plugins/verified-workflows/skills/select-agent/SKILL.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-b1b08e11afd6cf88",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "plugins/verified-workflows/skills/select-agent/agents/openai.yaml",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-fb6608a4b69b484c",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "plugins/verified-workflows/tests/test_dispatch_receipt.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-de20c2d8a41d764a",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "plugins/verified-workflows/tests/test_workflow_feasibility.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-8cbb1075c0c5abe2",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "plugins/verified-workflows/tests/test_workspace_evidence.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-05c52c35a1630520",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "scripts/validate_codex_plugins.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-8e22b8117027b34a",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "tests/test_codex_v1_agent_compatibility.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-c9b0e8c1e2a8194e",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "tests/test_mission_control_board_move_port_contract.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-d548861a01c08c9e",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "tests/test_operator_choice_drift.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-ff431aa23a5b884b",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "tests/test_outcome_backends.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-220fe0c7ffd45d6a",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "tests/test_outcome_dispatcher.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-b5590bb6af8afc99",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "tests/test_prove_codex_plugin_profile.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-48b584755b565091",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "tests/test_saga_docs_package.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-e0cffa8e33c93aa1",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "tests/test_validate_codex_plugins.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-50f812c2993eb45a",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": "tests/test_verified_workflows_migration.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-a6e9a7e54b8ce9df",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "D",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": null,
+        "old_path": ".serena/.gitignore",
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-e387ce433fb5f386",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "D",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": null,
+        "old_path": ".serena/memories/memory_maintenance.md",
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-4118bbf03d51897a",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "D",
+        "evidence_refs": [],
+        "invariant": "Current Codex behavior stands; this port must not modify it.",
+        "new_path": null,
+        "old_path": ".serena/project.yml",
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Post-planning Codex work outside the substrate write-set; the port builds on this state.",
+        "row_id": "codex-fc04646484ed457a",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "argv": [
+        "PYTHONPATH=.",
+        "uv",
+        "run",
+        "pytest",
+        "-q",
+        "plugins/fleet-core/tests/test_lease_broker.py",
+        "plugins/fleet-core/tests/test_orphan_evidence.py",
+        "plugins/fleet-core/tests/test_concurrency_policy.py",
+        "plugins/fleet-core/tests/test_audit_store.py"
+      ],
+      "artifact_path": "docs/validation/lease-safe-substrate-u2.json",
+      "artifact_sha256": "1a5efeb2753cfd73f70ea2d2ad88917e2c666a94c4ad09630640cf00c10ac756",
+      "cwd": ".",
+      "evidence_id": "u2-fleet-commons-check-20260719",
+      "exit_code": 0,
+      "kind": "check",
+      "recorded_at": "2026-07-19T15:58:42Z",
+      "repo_head": "e231770b7f8756b29b8942f8414ca74b75481005",
+      "unit": "U2"
+    },
+    {
+      "argv": [
+        "PYTHONPATH=.",
+        "uv",
+        "run",
+        "pytest",
+        "-q",
+        "tests/test_dispatch_settlement.py",
+        "tests/test_saga_lease_broker.py",
+        "tests/test_outcome_dispatcher.py",
+        "plugins/saga/tests/test_run_ledger.py",
+        "tests/test_outcome_store.py"
+      ],
+      "artifact_path": "docs/validation/lease-safe-substrate-u3.json",
+      "artifact_sha256": "cbbcafe3a676937abf879b4730c3e72be2d208aa6cd8531fa037a8950a42182b",
+      "cwd": ".",
+      "evidence_id": "u3-saga-settlement-check-20260719",
+      "exit_code": 0,
+      "kind": "check",
+      "recorded_at": "2026-07-19T16:22:38Z",
+      "repo_head": "3cdae8738024d00aacba9362e69769b694acf97f",
+      "unit": "U3"
+    },
+    {
+      "argv": [
+        "PYTHONPATH=.",
+        "uv",
+        "run",
+        "pytest",
+        "-q",
+        "tests/test_lease_settlement_conformance.py"
+      ],
+      "artifact_path": "docs/validation/lease-safe-substrate-u4.json",
+      "artifact_sha256": "6b2fe3a7c50450c85e54c699daf605079cef63e3b78cddb4011db05650a95fff",
+      "cwd": ".",
+      "evidence_id": "u4-conformance-check-20260719",
+      "exit_code": 0,
+      "kind": "check",
+      "recorded_at": "2026-07-19T16:37:37Z",
+      "repo_head": "c1bb35ed0c40b20d7bade3c4c0cc070cd969b045",
+      "unit": "U4"
+    },
+    {
+      "argv": [
+        "uv",
+        "run",
+        "python",
+        "scripts/validate_codex_plugins.py"
+      ],
+      "artifact_path": "docs/validation/lease-safe-substrate-u5.json",
+      "artifact_sha256": "4f518229d0253fb3c6d5787d07dfc4f633b8a12a9854bc30dfd92d77b03a999e",
+      "cwd": ".",
+      "evidence_id": "u5-release-surface-check-20260719",
+      "exit_code": 0,
+      "kind": "check",
+      "recorded_at": "2026-07-19T17:50:54Z",
+      "repo_head": "89c5477b97e107c6b8f536f820800c806f37b2b8",
+      "unit": "U5"
+    },
+    {
+      "argv": [
+        "saga:code-review",
+        "programmatic",
+        "--reviewed-sha",
+        "acc0d1dab9fa19fd9ada9461abd82b5e05dac0e4"
+      ],
+      "artifact_path": "docs/code-reviews/2026-07-19-lease-safe-substrate-code-review.md",
+      "artifact_sha256": "a78700dc45107144159af771229a36eff8a1fa4e535e98ccf3510240e003b9f3",
+      "cwd": ".",
+      "evidence_id": "u5-code-review-20260719",
+      "exit_code": 0,
+      "kind": "review",
+      "recorded_at": "2026-07-19T17:50:54Z",
+      "repo_head": "89c5477b97e107c6b8f536f820800c806f37b2b8",
+      "unit": "U5"
+    },
+    {
+      "argv": [
+        "uv",
+        "run",
+        "python",
+        "scripts/prove_codex_plugin_profile.py",
+        "--install-mode",
+        "codex-cli",
+        "--write-docs"
+      ],
+      "artifact_path": "docs/validation/lease-safe-substrate-u5-install.json",
+      "artifact_sha256": "a7c833b86b1e549d26f12261761beaa0d2da333195d9c624cda83c62bf3357c6",
+      "cwd": ".",
+      "evidence_id": "u5-isolated-install-20260719",
+      "exit_code": 0,
+      "kind": "isolated-install",
+      "recorded_at": "2026-07-19T18:55:00Z",
+      "repo_head": "c01611d62b3b20f399aaa85eef77cd1d66244b7e",
+      "unit": "U5"
+    },
+    {
+      "argv": [
+        "python3",
+        "-I",
+        "-",
+        "<installed-cache-path>"
+      ],
+      "artifact_path": "docs/validation/lease-safe-substrate-u5-fresh-session.json",
+      "artifact_sha256": "30271af2ac827a18e6029aff7d462486b36265df1db54dc73e0c0b2fb1700971",
+      "cwd": ".",
+      "evidence_id": "u5-fresh-session-20260719",
+      "exit_code": 0,
+      "kind": "fresh-session",
+      "recorded_at": "2026-07-19T18:55:00Z",
+      "repo_head": "c01611d62b3b20f399aaa85eef77cd1d66244b7e",
+      "unit": "U5"
+    },
+    {
+      "argv": [
+        "codex",
+        "plugin",
+        "remove",
+        "<plugin>@infiquetra-saga-family-proof",
+        "--json"
+      ],
+      "artifact_path": "docs/validation/lease-safe-substrate-u5-rollback.json",
+      "artifact_sha256": "0c064bd2e4662039630b65738216e640d59ad009d6cf96f807f48f8f13161ee5",
+      "cwd": ".",
+      "evidence_id": "u5-rollback-20260719",
+      "exit_code": 0,
+      "kind": "rollback",
+      "recorded_at": "2026-07-19T18:55:00Z",
+      "repo_head": "c01611d62b3b20f399aaa85eef77cd1d66244b7e",
+      "unit": "U5"
+    },
+    {
+      "argv": [
+        "PYTHONPATH=.",
+        "uv",
+        "run",
+        "pytest",
+        "-q",
+        "tests/test_lease_safe_substrate_port_contract.py"
+      ],
+      "artifact_path": "docs/validation/lease-safe-substrate-u5-cutover.json",
+      "artifact_sha256": "586e4c1e2ada70c0104567ca5a852b2d483bc4a3c0fae93ffead28b65952e3e3",
+      "cwd": ".",
+      "evidence_id": "u5-cutover-20260719",
+      "exit_code": 0,
+      "kind": "cutover",
+      "recorded_at": "2026-07-19T18:55:00Z",
+      "repo_head": "c01611d62b3b20f399aaa85eef77cd1d66244b7e",
+      "unit": "U5"
+    }
+  ],
+  "port_id": "lease-safe-substrate-2026-07-19",
+  "refresh_changes": [],
+  "release_evidence": {
+    "cutover": "u5-cutover-20260719",
+    "fresh_session": "u5-fresh-session-20260719",
+    "isolated_install": "u5-isolated-install-20260719",
+    "review": "u5-code-review-20260719",
+    "rollback": "u5-rollback-20260719"
+  },
+  "schema_version": 1,
+  "source": {
+    "base_ref": "a6f3bcff0fe9df213e2d2947afca99d5e7516393",
+    "expected_count": 46,
+    "inventory_sha256": "60d5875752cff31e9f9e1900bff4a942f319e21b2b13e8c4f29c829fc3080afa",
+    "observed_refs": {
+      "head": "cf15a09f8ffe9bf7c6f1218b2c72a8143d60ab49",
+      "local_main": "cf15a09f8ffe9bf7c6f1218b2c72a8143d60ab49",
+      "origin_main": "cf15a09f8ffe9bf7c6f1218b2c72a8143d60ab49"
+    },
+    "pathspecs": [
+      "plugins/fleet-core/scripts/fleet_commons/lease_broker.py",
+      "plugins/fleet-core/scripts/fleet_commons/orphan_evidence.py",
+      "plugins/fleet-core/scripts/fleet_commons/concurrency_policy.py",
+      "plugins/fleet-core/scripts/fleet_commons/audit_store.py",
+      "plugins/fleet-core/.claude-plugin/plugin.json",
+      "plugins/fleet-core/CHANGELOG.md",
+      "plugins/fleet-core/README.md",
+      "plugins/saga/scripts/dispatch_settlement.py",
+      "plugins/saga/scripts/run_ledger.py",
+      "plugins/saga/scripts/lease_broker.py",
+      "plugins/saga/scripts/outcome_dispatcher.py",
+      "plugins/saga/scripts/outcome_store.py",
+      "plugins/saga/scripts/outcome.py",
+      "plugins/saga/scripts/outcome_worktrees.py",
+      "plugins/saga/scripts/execution_spec.py",
+      "plugins/saga/scripts/concurrency_governor.py",
+      "plugins/saga/scripts/engine_dispatch.py",
+      "plugins/saga/scripts/manifest_store.py",
+      "plugins/saga/scripts/reap_orphans.py",
+      "plugins/saga/scripts/second_opinion.py",
+      "plugins/saga/scripts/workflow_emitter.py",
+      "plugins/saga/hooks/hooks.json",
+      "plugins/saga/hooks/lease_lifecycle_hook.py",
+      "plugins/saga/hooks/lease_mutation_hook.py",
+      "plugins/saga/.claude-plugin/plugin.json",
+      "plugins/saga/CHANGELOG.md",
+      "plugins/saga/README.md",
+      ".claude-plugin/marketplace.json",
+      "tests/test_dispatch_settlement.py",
+      "tests/test_run_ledger.py",
+      "tests/test_fleet_lease_broker.py",
+      "tests/test_orphan_fencing.py",
+      "tests/test_outcome_dispatcher.py",
+      "tests/test_outcome_worktrees.py",
+      "tests/test_concurrency_conformance.py",
+      "tests/test_saga_hooks.py",
+      "tests/test_reap_orphans.py",
+      "tests/test_manifest_store.py",
+      "tests/test_saga_engine_dispatch.py",
+      "tests/test_saga_workflow_emitter.py",
+      "tests/test_saga_plugin.py",
+      "tests/test_saga_execution_spec.py",
+      "tests/test_delegation_tripwire.py",
+      "tests/test_review_second_opinion.py",
+      "tests/test_work_second_opinion.py",
+      "tests/test_pulse_telemetry.py"
+    ],
+    "repository_id": "infiquetra/infiquetra-claude-plugins",
+    "rows": [
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [],
+        "evidence_refs": [],
+        "host_primitives": [
+          "ClaudeCommand"
+        ],
+        "new_path": ".claude-plugin/marketplace.json",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Reject the Claude marketplace version row: the Codex marketplace has no per-entry version; package identity stays manifest-owned.",
+        "row_id": "src-63823a1533d83eba",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "claude-manifest",
+        "treatment": "reject",
+        "units": []
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-MANIFEST",
+          "MAP-METADATA"
+        ],
+        "evidence_refs": [
+          "u5-release-surface-check-20260719"
+        ],
+        "host_primitives": [],
+        "new_path": "plugins/fleet-core/.claude-plugin/plugin.json",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/fleet-core/.codex-plugin/plugin.json"
+        ],
+        "planned_tests": [
+          "tests/test_validate_codex_plugins.py"
+        ],
+        "rationale": "Recreate Codex fleet-core package metadata for the independently versioned 0.9.0 release after broker/guard behavior is proved.",
+        "row_id": "src-c89dcbffa88c9a73",
+        "similarity": null,
+        "state": "verified",
+        "surface_kind": "claude-manifest",
+        "treatment": "codex-adapt",
+        "units": [
+          "U5"
+        ]
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-METADATA"
+        ],
+        "evidence_refs": [
+          "u5-release-surface-check-20260719"
+        ],
+        "host_primitives": [],
+        "new_path": "plugins/fleet-core/CHANGELOG.md",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/fleet-core/CHANGELOG.md"
+        ],
+        "planned_tests": [
+          "tests/test_validate_codex_plugins.py"
+        ],
+        "rationale": "Describe the tested broker/resource/guard behavior in the independent Codex fleet-core lineage.",
+        "row_id": "src-ae2bfb19c195be7f",
+        "similarity": null,
+        "state": "verified",
+        "surface_kind": "changelog",
+        "treatment": "codex-adapt",
+        "units": [
+          "U5"
+        ]
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-DOC"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "plugins/fleet-core/README.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Codex fleet-core README documents the adapter surface; the substrate boundary lands in PORTABILITY.md as a U5 Codex-born surface, not a ported row.",
+        "row_id": "src-2508f1578ce61023",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "documentation",
+        "treatment": "defer",
+        "units": []
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-SCRIPT-CONFIG"
+        ],
+        "evidence_refs": [
+          "u2-fleet-commons-check-20260719"
+        ],
+        "host_primitives": [],
+        "new_path": "plugins/fleet-core/scripts/fleet_commons/audit_store.py",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/fleet-core/scripts/fleet_commons/audit_store.py"
+        ],
+        "planned_tests": [
+          "plugins/fleet-core/tests/test_audit_store.py"
+        ],
+        "rationale": "Adapt the guarded audit store consumed by the resource guard with runtime-neutral roots and containment tests.",
+        "row_id": "src-bde2437c81c72efd",
+        "similarity": null,
+        "state": "verified",
+        "surface_kind": "script",
+        "treatment": "codex-adapt",
+        "units": [
+          "U2"
+        ]
+      },
+      {
+        "capability_refs": [],
+        "change": "A",
+        "codex_invariant_refs": [
+          "MAP-SCRIPT-CONFIG"
+        ],
+        "evidence_refs": [
+          "u2-fleet-commons-check-20260719"
+        ],
+        "host_primitives": [],
+        "new_path": "plugins/fleet-core/scripts/fleet_commons/concurrency_policy.py",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/fleet-core/scripts/fleet_commons/concurrency_policy.py"
+        ],
+        "planned_tests": [
+          "plugins/fleet-core/tests/test_concurrency_policy.py"
+        ],
+        "rationale": "Adapt the pure concurrency slot policy consumed by broker admission; no host-specific behavior.",
+        "row_id": "src-5d3506bac35d0847",
+        "similarity": null,
+        "state": "verified",
+        "surface_kind": "script",
+        "treatment": "codex-adapt",
+        "units": [
+          "U2"
+        ]
+      },
+      {
+        "capability_refs": [],
+        "change": "A",
+        "codex_invariant_refs": [
+          "MAP-SCRIPT-CONFIG"
+        ],
+        "evidence_refs": [
+          "u2-fleet-commons-check-20260719"
+        ],
+        "host_primitives": [],
+        "new_path": "plugins/fleet-core/scripts/fleet_commons/lease_broker.py",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/fleet-core/scripts/fleet_commons/lease_broker.py"
+        ],
+        "planned_tests": [
+          "plugins/fleet-core/tests/test_lease_broker.py"
+        ],
+        "rationale": "Adapt the fleet_lease_registry.v1 TTL broker (TokenState, broker_epoch+fencing_sequence, atomic store, runtime-neutral root resolver) as the shared substrate authority.",
+        "row_id": "src-c3b7822b9b827e12",
+        "similarity": null,
+        "state": "verified",
+        "surface_kind": "script",
+        "treatment": "codex-adapt",
+        "units": [
+          "U2"
+        ]
+      },
+      {
+        "capability_refs": [],
+        "change": "A",
+        "codex_invariant_refs": [
+          "MAP-SCRIPT-CONFIG"
+        ],
+        "evidence_refs": [
+          "u2-fleet-commons-check-20260719"
+        ],
+        "host_primitives": [],
+        "new_path": "plugins/fleet-core/scripts/fleet_commons/orphan_evidence.py",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/fleet-core/scripts/fleet_commons/orphan_evidence.py"
+        ],
+        "planned_tests": [
+          "plugins/fleet-core/tests/test_orphan_evidence.py"
+        ],
+        "rationale": "Adapt the resource head and guarded-write checks (identity/owner/epoch-fence/non-closing/successor) behind every substrate mutation.",
+        "row_id": "src-582cb6dd3e8172ff",
+        "similarity": null,
+        "state": "verified",
+        "surface_kind": "script",
+        "treatment": "codex-adapt",
+        "units": [
+          "U2"
+        ]
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-MANIFEST",
+          "MAP-METADATA"
+        ],
+        "evidence_refs": [
+          "u5-release-surface-check-20260719"
+        ],
+        "host_primitives": [],
+        "new_path": "plugins/saga/.claude-plugin/plugin.json",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/saga/.codex-plugin/plugin.json"
+        ],
+        "planned_tests": [
+          "tests/test_validate_codex_plugins.py"
+        ],
+        "rationale": "Recreate Codex saga package metadata for the independently versioned 0.76.0 release after settlement behavior is proved.",
+        "row_id": "src-48459813ea962414",
+        "similarity": null,
+        "state": "verified",
+        "surface_kind": "claude-manifest",
+        "treatment": "codex-adapt",
+        "units": [
+          "U5"
+        ]
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-METADATA"
+        ],
+        "evidence_refs": [
+          "u5-release-surface-check-20260719"
+        ],
+        "host_primitives": [],
+        "new_path": "plugins/saga/CHANGELOG.md",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/saga/CHANGELOG.md"
+        ],
+        "planned_tests": [
+          "tests/test_validate_codex_plugins.py"
+        ],
+        "rationale": "Describe the tested settlement-adapter behavior in the independent Codex saga lineage.",
+        "row_id": "src-d9b93b161f476cd3",
+        "similarity": null,
+        "state": "verified",
+        "surface_kind": "changelog",
+        "treatment": "codex-adapt",
+        "units": [
+          "U5"
+        ]
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-DOC"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "plugins/saga/README.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Codex saga README documents the adapter surface; substrate boundary notes land in PORTABILITY.md as a U5 Codex-born surface.",
+        "row_id": "src-5dc5548ac7a6ac18",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "documentation",
+        "treatment": "defer",
+        "units": []
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-HOOK"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [
+          "ClaudeHook"
+        ],
+        "new_path": "plugins/saga/hooks/hooks.json",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Claude hook wiring is a host primitive (KTD3); Codex lease observation would require a verified Codex event contract and is outside substrate scope.",
+        "row_id": "src-92e754ebd9a44f7d",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "hook",
+        "treatment": "reject",
+        "units": []
+      },
+      {
+        "capability_refs": [],
+        "change": "A",
+        "codex_invariant_refs": [
+          "MAP-HOOK"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [
+          "ClaudeHook"
+        ],
+        "new_path": "plugins/saga/hooks/lease_lifecycle_hook.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Claude lifecycle hook body; host-event trust and shape are Claude-only (KTD3).",
+        "row_id": "src-52ae1b83d575c933",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "hook",
+        "treatment": "reject",
+        "units": []
+      },
+      {
+        "capability_refs": [],
+        "change": "A",
+        "codex_invariant_refs": [
+          "MAP-HOOK"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [
+          "ClaudeHook"
+        ],
+        "new_path": "plugins/saga/hooks/lease_mutation_hook.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Claude mutation hook body; host-event trust and shape are Claude-only (KTD3).",
+        "row_id": "src-12e6765ebf396d23",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "hook",
+        "treatment": "reject",
+        "units": []
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-SCRIPT-CONFIG"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "plugins/saga/scripts/concurrency_governor.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Claude spawn-site governor consumes broker slots at Claude host seams; Codex admission integration is codex-parity (#34) scope.",
+        "row_id": "src-5ad61996a297c842",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "script",
+        "treatment": "defer",
+        "units": []
+      },
+      {
+        "capability_refs": [],
+        "change": "A",
+        "codex_invariant_refs": [
+          "MAP-SCRIPT-CONFIG"
+        ],
+        "evidence_refs": [
+          "u3-saga-settlement-check-20260719"
+        ],
+        "host_primitives": [],
+        "new_path": "plugins/saga/scripts/dispatch_settlement.py",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/saga/scripts/dispatch_settlement.py"
+        ],
+        "planned_tests": [
+          "tests/test_dispatch_settlement.py"
+        ],
+        "rationale": "Adapt shared dispatch facts, settlement lookup, and re-drive with outcome.dispatch.v2 preserved: only protected ack_kind=launched proves dispatch; receipts correlate by identity and are never copied.",
+        "row_id": "src-a7ff68b7109ab548",
+        "similarity": null,
+        "state": "verified",
+        "surface_kind": "script",
+        "treatment": "codex-adapt",
+        "units": [
+          "U3"
+        ]
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-SCRIPT-CONFIG"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "plugins/saga/scripts/engine_dispatch.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Claude engine-dispatch surface; Codex has its own engine_dispatch lineage outside substrate scope.",
+        "row_id": "src-cbb6105ea6b5030f",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "script",
+        "treatment": "defer",
+        "units": []
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-SCRIPT-CONFIG"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "plugins/saga/scripts/execution_spec.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Claude ceremony execution-spec emitter; workflow vehicles are not ported (KTD3).",
+        "row_id": "src-6d2a1f892989ae64",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "script",
+        "treatment": "defer",
+        "units": []
+      },
+      {
+        "capability_refs": [],
+        "change": "A",
+        "codex_invariant_refs": [
+          "MAP-SCRIPT-CONFIG"
+        ],
+        "evidence_refs": [
+          "u3-saga-settlement-check-20260719"
+        ],
+        "host_primitives": [],
+        "new_path": "plugins/saga/scripts/lease_broker.py",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/saga/scripts/lease_broker.py"
+        ],
+        "planned_tests": [
+          "tests/test_saga_lease_broker.py"
+        ],
+        "rationale": "Adapt the saga-side broker adapter that presents current token+fence to the dispatch effect seam.",
+        "row_id": "src-b892af8cda2f6d98",
+        "similarity": null,
+        "state": "verified",
+        "surface_kind": "script",
+        "treatment": "codex-adapt",
+        "units": [
+          "U3"
+        ]
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-SCRIPT-CONFIG"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "plugins/saga/scripts/manifest_store.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Provenance manifest store is delegation-integrity scope; the substrate correlates by settlement identity only.",
+        "row_id": "src-b4fc1497a5a9b8ab",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "script",
+        "treatment": "defer",
+        "units": []
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-SCRIPT-CONFIG"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "plugins/saga/scripts/outcome.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Coordinator-level substrate consumption is codex-parity (#34) scope; the dispatch effect seam ships via outcome_dispatcher in U3.",
+        "row_id": "src-3b34fc68149a7c76",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "script",
+        "treatment": "defer",
+        "units": []
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-SCRIPT-CONFIG"
+        ],
+        "evidence_refs": [
+          "u3-saga-settlement-check-20260719"
+        ],
+        "host_primitives": [],
+        "new_path": "plugins/saga/scripts/outcome_dispatcher.py",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/saga/scripts/outcome_dispatcher.py"
+        ],
+        "planned_tests": [
+          "tests/test_outcome_dispatcher.py"
+        ],
+        "rationale": "Thread broker token/fence and shared attempt identity through the Codex dispatch seam immediately before the backend effect; stale/superseded/closing writers HALT with zero mutation.",
+        "row_id": "src-8881971894e7734c",
+        "similarity": null,
+        "state": "verified",
+        "surface_kind": "script",
+        "treatment": "codex-adapt",
+        "units": [
+          "U3"
+        ]
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-SCRIPT-CONFIG"
+        ],
+        "evidence_refs": [
+          "u3-saga-settlement-check-20260719"
+        ],
+        "host_primitives": [],
+        "new_path": "plugins/saga/scripts/outcome_store.py",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/saga/scripts/outcome_store.py"
+        ],
+        "planned_tests": [
+          "tests/test_outcome_store.py"
+        ],
+        "rationale": "Guard Codex outcome-store writes behind the resource head so a fenced-out writer cannot mutate spec or completion state.",
+        "row_id": "src-2a1e9c02821296a4",
+        "similarity": null,
+        "state": "verified",
+        "surface_kind": "script",
+        "treatment": "codex-adapt",
+        "units": [
+          "U3"
+        ]
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-SCRIPT-CONFIG"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "plugins/saga/scripts/outcome_worktrees.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Worktree reconciliation consumes the guard at Claude seams; Codex worktree parity is #34 scope.",
+        "row_id": "src-b63c5ebf1ea04461",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "script",
+        "treatment": "defer",
+        "units": []
+      },
+      {
+        "capability_refs": [],
+        "change": "A",
+        "codex_invariant_refs": [
+          "MAP-SCRIPT-CONFIG"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "plugins/saga/scripts/reap_orphans.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Orphan-reaping CLI is Claude-host tooling; the ported resource guard (U2) carries the fencing invariants it depends on.",
+        "row_id": "src-9b1c529dcf1a8f82",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "script",
+        "treatment": "defer",
+        "units": []
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-SCRIPT-CONFIG"
+        ],
+        "evidence_refs": [
+          "u3-saga-settlement-check-20260719"
+        ],
+        "host_primitives": [],
+        "new_path": "plugins/saga/scripts/run_ledger.py",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/saga/scripts/run_ledger.py"
+        ],
+        "planned_tests": [
+          "plugins/saga/tests/test_run_ledger.py"
+        ],
+        "rationale": "Reconcile the existing Codex run-ledger lineage with the source strict-read/verified-prefix contract the settlement adapter requires. The reconciliation is wholesale (the full cf15a09f module), so it also carries forward-compat surface beyond the settlement slice \u2014 the liveness/teardown/benchmark fact kinds and append_fact_built_atomic \u2014 whose source consumers (liveness_events.py, team_teardown.py) are outside this port's scope; that surface is pinned by the plugin-local suite (full fact-kind schema coverage asserted against FACT_KINDS, plus atomic-builder smoke tests) rather than left unexercised.",
+        "row_id": "src-4493db98ed5be1de",
+        "similarity": null,
+        "state": "verified",
+        "surface_kind": "script",
+        "treatment": "codex-adapt",
+        "units": [
+          "U3"
+        ]
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-SCRIPT-CONFIG"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "plugins/saga/scripts/second_opinion.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Review-engine surface unrelated to the substrate write-set.",
+        "row_id": "src-6b2e7343cc464c30",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "script",
+        "treatment": "defer",
+        "units": []
+      },
+      {
+        "capability_refs": [],
+        "change": "A",
+        "codex_invariant_refs": [
+          "MAP-WORKFLOW"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "plugins/saga/scripts/workflow_emitter.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Claude Workflow JS emitter is a host primitive (KTD3); Codex ceremonies are Verified Workflows-owned.",
+        "row_id": "src-06e9cd39fc556a79",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "script",
+        "treatment": "reject",
+        "units": []
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-TEST"
+        ],
+        "evidence_refs": [
+          "u4-conformance-check-20260719"
+        ],
+        "host_primitives": [],
+        "new_path": "tests/test_concurrency_conformance.py",
+        "old_path": null,
+        "planned_targets": [
+          "tests/test_lease_settlement_conformance.py"
+        ],
+        "planned_tests": [
+          "tests/test_lease_settlement_conformance.py"
+        ],
+        "rationale": "Adapt the cross-runtime conformance matrix: identical neutral fixtures through both runtimes' broker/settlement modules with shared-root digest comparison.",
+        "row_id": "src-7888762553c3dafa",
+        "similarity": null,
+        "state": "verified",
+        "surface_kind": "test",
+        "treatment": "codex-adapt",
+        "units": [
+          "U4"
+        ]
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-TEST"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "tests/test_delegation_tripwire.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Delegation-integrity oracle outside substrate scope.",
+        "row_id": "src-70dcd3a1447dec6b",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "test",
+        "treatment": "defer",
+        "units": []
+      },
+      {
+        "capability_refs": [],
+        "change": "A",
+        "codex_invariant_refs": [
+          "MAP-TEST"
+        ],
+        "evidence_refs": [
+          "u3-saga-settlement-check-20260719"
+        ],
+        "host_primitives": [],
+        "new_path": "tests/test_dispatch_settlement.py",
+        "old_path": null,
+        "planned_targets": [
+          "tests/test_dispatch_settlement.py"
+        ],
+        "planned_tests": [
+          "tests/test_dispatch_settlement.py"
+        ],
+        "rationale": "Adapt settlement oracles: launched, handed-off never launch proof, legacy-unverified, crash windows, casualty/dead-letter, already-settled retry.",
+        "row_id": "src-6c0cca4e88a3c81c",
+        "similarity": null,
+        "state": "verified",
+        "surface_kind": "test",
+        "treatment": "codex-adapt",
+        "units": [
+          "U3"
+        ]
+      },
+      {
+        "capability_refs": [],
+        "change": "A",
+        "codex_invariant_refs": [
+          "MAP-TEST"
+        ],
+        "evidence_refs": [
+          "u2-fleet-commons-check-20260719"
+        ],
+        "host_primitives": [],
+        "new_path": "tests/test_fleet_lease_broker.py",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/fleet-core/tests/test_lease_broker.py"
+        ],
+        "planned_tests": [
+          "plugins/fleet-core/tests/test_lease_broker.py"
+        ],
+        "rationale": "Adapt broker oracles: unit, multiprocess, permission, symlink, unsafe-root, corrupt-record, clock/fence.",
+        "row_id": "src-a2e5d0e417c02227",
+        "similarity": null,
+        "state": "verified",
+        "surface_kind": "test",
+        "treatment": "codex-adapt",
+        "units": [
+          "U2"
+        ]
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-TEST"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "tests/test_manifest_store.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Provenance-manifest oracle outside substrate scope.",
+        "row_id": "src-cc5cdbca9694e5ca",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "test",
+        "treatment": "defer",
+        "units": []
+      },
+      {
+        "capability_refs": [],
+        "change": "A",
+        "codex_invariant_refs": [
+          "MAP-TEST"
+        ],
+        "evidence_refs": [
+          "u2-fleet-commons-check-20260719"
+        ],
+        "host_primitives": [],
+        "new_path": "tests/test_orphan_fencing.py",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/fleet-core/tests/test_orphan_evidence.py"
+        ],
+        "planned_tests": [
+          "plugins/fleet-core/tests/test_orphan_evidence.py"
+        ],
+        "rationale": "Adapt resource-guard fencing oracles including no-mutation rejection on stale fence and root mismatch.",
+        "row_id": "src-4696af67505963ae",
+        "similarity": null,
+        "state": "verified",
+        "surface_kind": "test",
+        "treatment": "codex-adapt",
+        "units": [
+          "U2"
+        ]
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-TEST"
+        ],
+        "evidence_refs": [
+          "u3-saga-settlement-check-20260719"
+        ],
+        "host_primitives": [],
+        "new_path": "tests/test_outcome_dispatcher.py",
+        "old_path": null,
+        "planned_targets": [
+          "tests/test_outcome_dispatcher.py"
+        ],
+        "planned_tests": [
+          "tests/test_outcome_dispatcher.py"
+        ],
+        "rationale": "Adapt dispatch-seam oracles for fail-before-effect: every HALT edge proves zero mutation.",
+        "row_id": "src-b5590bb6af8afc99",
+        "similarity": null,
+        "state": "verified",
+        "surface_kind": "test",
+        "treatment": "codex-adapt",
+        "units": [
+          "U3"
+        ]
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-TEST"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "tests/test_outcome_worktrees.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Claude worktree-reconciliation oracle; #34 scope.",
+        "row_id": "src-cfa1aa6b86772f6b",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "test",
+        "treatment": "defer",
+        "units": []
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-TEST"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "tests/test_pulse_telemetry.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Telemetry oracle outside substrate scope.",
+        "row_id": "src-2f3564e38c23f0f1",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "test",
+        "treatment": "defer",
+        "units": []
+      },
+      {
+        "capability_refs": [],
+        "change": "A",
+        "codex_invariant_refs": [
+          "MAP-TEST"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "tests/test_reap_orphans.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Reaper CLI oracle; Claude-host tooling.",
+        "row_id": "src-d34a5d9238e9b1a6",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "test",
+        "treatment": "defer",
+        "units": []
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-TEST"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "tests/test_review_second_opinion.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Review-engine oracle outside substrate scope.",
+        "row_id": "src-33557dbe71f862bf",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "test",
+        "treatment": "defer",
+        "units": []
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-TEST"
+        ],
+        "evidence_refs": [
+          "u3-saga-settlement-check-20260719"
+        ],
+        "host_primitives": [],
+        "new_path": "tests/test_run_ledger.py",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/saga/tests/test_run_ledger.py"
+        ],
+        "planned_tests": [
+          "plugins/saga/tests/test_run_ledger.py"
+        ],
+        "rationale": "Adapt strict-read, verified-prefix, and cap oracles onto the reconciled Codex run ledger.",
+        "row_id": "src-0dd7c0c07ad25cf4",
+        "similarity": null,
+        "state": "verified",
+        "surface_kind": "test",
+        "treatment": "codex-adapt",
+        "units": [
+          "U3"
+        ]
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-TEST"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "tests/test_saga_engine_dispatch.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Engine-dispatch oracle outside substrate scope.",
+        "row_id": "src-1aa85e2cbf6033b9",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "test",
+        "treatment": "defer",
+        "units": []
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-TEST"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "tests/test_saga_execution_spec.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Ceremony emitter oracle; workflow vehicles are not ported (KTD3).",
+        "row_id": "src-748823d450228e0c",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "test",
+        "treatment": "defer",
+        "units": []
+      },
+      {
+        "capability_refs": [],
+        "change": "A",
+        "codex_invariant_refs": [
+          "MAP-TEST"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "tests/test_saga_hooks.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Oracle proves Claude host-event hooks only (KTD3).",
+        "row_id": "src-e2d698d75ab2b4f1",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "test",
+        "treatment": "reject",
+        "units": []
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-TEST"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "tests/test_saga_plugin.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Claude release-surface guard; Codex guards live in validate_codex_plugins and its tests.",
+        "row_id": "src-47a006317748a1e9",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "test",
+        "treatment": "defer",
+        "units": []
+      },
+      {
+        "capability_refs": [],
+        "change": "A",
+        "codex_invariant_refs": [
+          "MAP-TEST"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "tests/test_saga_workflow_emitter.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Oracle proves the Claude Workflow emitter host primitive (KTD3).",
+        "row_id": "src-18ab3f43c5ad5db0",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "test",
+        "treatment": "reject",
+        "units": []
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [
+          "MAP-TEST"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "tests/test_work_second_opinion.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Review-engine oracle outside substrate scope.",
+        "row_id": "src-1df16795bb08b268",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "test",
+        "treatment": "defer",
+        "units": []
+      }
+    ],
+    "target_reachable": true,
+    "target_ref": "cf15a09f8ffe9bf7c6f1218b2c72a8143d60ab49"
+  },
+  "version_policy": [
+    {
+      "current_codex_identity": "fleet-core",
+      "current_codex_version": "0.8.5+codex.20260717220000",
+      "policy": "lineage-with-codex-adaptation",
+      "release_unit": "U5",
+      "source_plugin": "fleet-core",
+      "source_version": "0.15.0",
+      "target_codex_identity": "fleet-core",
+      "target_codex_version": "0.9.0"
+    },
+    {
+      "current_codex_identity": "saga",
+      "current_codex_version": "0.75.17+codex.20260711160644",
+      "policy": "lineage-with-codex-adaptation",
+      "release_unit": "U5",
+      "source_plugin": "saga",
+      "source_version": "0.104.0",
+      "target_codex_identity": "saga",
+      "target_codex_version": "0.76.0"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+ "exit_code": 0,
+ "gates": {
+  "full_suite": "2449 passed",
+  "per_port_gate": "tests/test_lease_safe_substrate_port_contract.py \u2014 15 passed",
+  "repository_validator": "scripts/validate_codex_plugins.py \u2014 green"
+ },
+ "kind": "cutover",
+ "recorded_at": "2026-07-19T18:55:00Z",
+ "repo_head": "c01611d62b3b20f399aaa85eef77cd1d66244b7e",
+ "schema_version": 1,
+ "summary": "Cutover anchor: the installed payload (isolated CODEX_HOME cache) reproduces the pinned cross-runtime conformance digests byte-exactly (broker f60fd482\u2026, ledger 34804e26\u2026) under a hermetic interpreter \u2014 the same digests the in-repo suite pins and the frozen Claude source reproduces. Per-port gate 15/15 (classification + U2/U3/U4/U5 rows verified with current evidence, release surfaces coherent, refresh queue drained); repository validator green; full suite 2449 passed at the release-surface head.",
+ "unit": "U5"
+}

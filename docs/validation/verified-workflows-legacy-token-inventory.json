@@ -82,7 +82,7 @@
     {
       "classification": "historical-evidence",
       "path": "docs/engineering-journal/DECISIONS.md",
-      "sha256": "d70b7fd0140d0448a28a3086838b79c5330635471e8659950b1a8ec3fceebbcd",
+      "sha256": "df19f839d7a81f6b24f456cc6964c0c2a8ca01fe6420109bf10500d9ecfa5458",
       "tokens": [
         "## Team Structure",
         "Team Execution",
@@ -287,6 +287,14 @@
     },
     {
       "classification": "historical-evidence",
+      "path": "docs/plans/2026-07-15-codex-shared-runtime-substrate-plan.md",
+      "sha256": "ad681678c5fe4b4cd6c316c10ced4a09ca55e5b89c07dbe757ce5c6d27e0d26c",
+      "tokens": [
+        "Team Execution"
+      ]
+    },
+    {
+      "classification": "historical-evidence",
       "path": "docs/plans/2026-07-17-verified-workflows-apfs-subject-snapshot-plan.md",
       "sha256": "33e164a7dd7b0ddffa8b49922bb779977cc1a994b807989f059c740b4827be0e",
       "tokens": [
@@ -354,7 +362,7 @@
     {
       "classification": "lineage-documentation",
       "path": "docs/portability/matrix.md",
-      "sha256": "229feaefa4476a3e7749ea751773f2f162e4684ceadf40235551852c41335b2d",
+      "sha256": "038055ba86e9b16a6cdfc4ad008915978402a8e90dccbd835791c724126a4524",
       "tokens": [
         "team-execution"
       ]
@@ -518,6 +526,14 @@
     },
     {
       "classification": "migration-documentation",
+      "path": "docs/validation/lease-safe-substrate-runtime-capability-snapshot.json",
+      "sha256": "f529ed5695fa49615fcbdb12e6d7360d32f80e95898eb3a5a0f4e881943c1ea3",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-documentation",
       "path": "docs/validation/mission-control-2100-runtime-capability-snapshot.json",
       "sha256": "b5bedf55181cfb8984976d02da55e5daeff0a59f9df9c4b9b2c0069eb4878d30",
       "tokens": [
@@ -535,7 +551,7 @@
     {
       "classification": "migration-documentation",
       "path": "docs/validation/saga-family-codex-proof.md",
-      "sha256": "8b4b7d92a662b6ab27456c50d83303a4976c0e96c47cc8440a7093408ed7f396",
+      "sha256": "64ef29a16e3f59ce24fc411f50da4970dd7616e78b10fd676ff1377858a1de86",
       "tokens": [
         ".codex/team-execution/",
         "team-execution"
@@ -544,7 +560,7 @@
     {
       "classification": "legacy-read-metadata",
       "path": "docs/validation/saga-family-target-inventory.json",
-      "sha256": "23fd2832c00fbfd430d70e391e3c289332d20abcf51eed8b9c76e96214ce6d39",
+      "sha256": "2525999fc079c3a6e3c3a843a660ed3d7b23078b852e28452827016cda557403",
       "tokens": [
         ".codex/team-execution/",
         "team-execution"
@@ -645,7 +661,7 @@
     {
       "classification": "lineage-documentation",
       "path": "plugins/fleet-core/CHANGELOG.md",
-      "sha256": "8061bb1fe8f7e78c20f0855f59f3e5206dd5a6c45c985ba998fce66380ac75fc",
+      "sha256": "66e2842f2e4f20c9ad11b11a82b62aee0a37e5905c1e62cbd35c04b4b10b571a",
       "tokens": [
         "Team Execution"
       ]
@@ -653,7 +669,7 @@
     {
       "classification": "lineage-documentation",
       "path": "plugins/fleet-core/PORTABILITY.md",
-      "sha256": "eb1929571cc0cb8a009210a534c3d3f9a25ac1423e6d1584e38b9395efd6d15f",
+      "sha256": "ef3e55796062f920e665a3486bfe956153bf25bb73d29daf559ce7bd5664140a",
       "tokens": [
         "Team Execution",
         "team-execution"
@@ -673,6 +689,30 @@
       "sha256": "afb49b3280ee6b7b4da40e0494b9802438ce2f7bf311912a2e8f2b0395c4716b",
       "tokens": [
         "Team Execution"
+      ]
+    },
+    {
+      "classification": "frozen-source-contract",
+      "path": "plugins/fleet-core/scripts/fleet_commons/audit_store.py",
+      "sha256": "3f2d49e255da04d2acc14b4d3c56c5ff3e0f268029e74ea52acffc0a181f101c",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "frozen-source-contract",
+      "path": "plugins/fleet-core/scripts/fleet_commons/lease_broker.py",
+      "sha256": "55112f23c1d122805392ae611be19e010ace582f3295f001de8532072c93e3ec",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "frozen-source-contract",
+      "path": "plugins/fleet-core/scripts/fleet_commons/orphan_evidence.py",
+      "sha256": "dcb1f5d74b8070e1becb533596aa1740bdf9bcdc451035fb1e5c5ae4c37e9016",
+      "tokens": [
+        "team-execution"
       ]
     },
     {
@@ -737,7 +777,7 @@
     {
       "classification": "lineage-documentation",
       "path": "plugins/saga/CHANGELOG.md",
-      "sha256": "23567bbddc444f405a580d6840cfa7029459902e45ce8e2578c30e8cb2ffeeb7",
+      "sha256": "fb2bd45f51fb6c1b775b61de1ed41ffce62bdab260584da8dad1f9e9df93b3c9",
       "tokens": [
         "Team Execution",
         "team-execution"
@@ -746,7 +786,7 @@
     {
       "classification": "lineage-documentation",
       "path": "plugins/saga/PORTABILITY.md",
-      "sha256": "6e88e6a1d1aceb1fcfc58f1d33cfbb11ea7b23942bb94d78eadc0702cc9fdee6",
+      "sha256": "d6c22fe3041dd208a9b43ced24422c9a6a6c1e3a8bb5106dcb7c666717f82203",
       "tokens": [
         "team-execution"
       ]
@@ -779,6 +819,22 @@
       ]
     },
     {
+      "classification": "frozen-source-contract",
+      "path": "plugins/saga/scripts/dispatch_settlement.py",
+      "sha256": "7ac6aa28a51d4b85fb0080ed1b9a07c7357699d62c43ac9f95a9aaf71c592f19",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "frozen-source-contract",
+      "path": "plugins/saga/scripts/lease_broker.py",
+      "sha256": "9268b9b3dd9815d390acfd8b5fca8ed657ca10d2081a68b7459f553af3643e49",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
       "classification": "legacy-parser",
       "path": "plugins/saga/scripts/lifecycle_state.py",
       "sha256": "653599c7bd3c9a5a7924efd2380acdd655bfc02180be07e05fffdec40d4070da",
@@ -797,7 +853,7 @@
     {
       "classification": "legacy-parser",
       "path": "plugins/saga/scripts/outcome_dispatcher.py",
-      "sha256": "ff0bc8d4e0db47e6e7e5e2835a13894fdb27353f5decc29ff15714b959f9aec9",
+      "sha256": "4025929fa4c18f87eb6eeac59aefa414187fe9351838e001690cba542aa47ced",
       "tokens": [
         "team-execution"
       ]
@@ -952,7 +1008,7 @@
     {
       "classification": "frozen-source-contract",
       "path": "scripts/port_contract.py",
-      "sha256": "eb5699b19828d0681c0c799a985b7126756e1f935a7ef1b99336624240229180",
+      "sha256": "a205cc4ed5c1eabab3e83eb603dc11f87e7594947d43d00d0986326305d9de65",
       "tokens": [
         "team-execution"
       ]
@@ -976,6 +1032,14 @@
     },
     {
       "classification": "migration-fixture",
+      "path": "tests/test_dispatch_settlement.py",
+      "sha256": "11166cd05b80a059efdd8574f5a2f269e211f3411d3788a7c50c5782dbbd42da",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-fixture",
       "path": "tests/test_operator_choice_drift.py",
       "sha256": "0285284aaebd2b84233396bd6f3bbae2aa8233e2a0fe879d8e34d81d80a103f1",
       "tokens": [
@@ -986,7 +1050,7 @@
     {
       "classification": "migration-fixture",
       "path": "tests/test_outcome_dispatcher.py",
-      "sha256": "8ecc80e9b33e419fbfb9053409107a7abd9e0aa1166000fcd486eed7eee48a9d",
+      "sha256": "4afa0a54f1eff130086d375fd45039aaa57af855aca27e60ffac59be05a62ee0",
       "tokens": [
         "#team-structure",
         "team_execution_ref"
@@ -1111,7 +1175,7 @@
     {
       "classification": "migration-fixture",
       "path": "tests/test_verified_workflows_migration.py",
-      "sha256": "9ebef81c16198fc6e1c6498eb466ce459eb1e756c41f4a7290f2470a09716442",
+      "sha256": "60c1ad8dc174f8e71175cf3368d2c585a69f125ccc31d9755c5c2a33ccd214a6",
       "tokens": [
         "Team Execution",
         "team-execution"
@@ -1119,7 +1183,7 @@
     }
   ],
   "generated_by": "scripts/build_legacy_workflow_inventory.py",
-  "historical_inventory_sha256": "2055274e8672b3ed8835657c4b8f7c6715916e4c97cdb4f99dbd95610517f9a1",
+  "historical_inventory_sha256": "4c4323346f2574472de94bc0e512e745e9d67a337967b85a698fb58136165a7a",
   "history_sentinels": {
     "docs/investigations/2026-06-30-team-execution-saga-orchestration-debug-report.md": {
       "sha256": "ecc08eceda3a67dc81d15b1930753fe236ca7c1ae9b3ad9dd506cdecfb0ac4fa",

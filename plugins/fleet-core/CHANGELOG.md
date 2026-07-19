@@ -2,6 +2,17 @@
 
 All notable changes to the Codex `fleet-core` plugin are documented here.
 
+## 0.9.0 — 2026-07-19
+
+- Port the lease-safe fleet substrate from the frozen Claude source range `a6f3bcff..cf15a09f`
+  (#33): `fleet_commons/lease_broker.py` (fleet_lease_registry.v1 protocol 2, TTL/renew/reclaim,
+  monotonic epoch and fencing, dead-owner proof), `orphan_evidence.py` (orphan fencing and closing
+  fences), `concurrency_policy.py` (admission limits), and `audit_store.py` adapted to a
+  runtime-neutral default root (`~/.local/state/infiquetra/delegation-audit`).
+- Add the ported broker, orphan-evidence, and audit-store suites plus an authored admission-policy
+  contract suite under `plugins/fleet-core/tests/`; cross-runtime state digests are pinned by the
+  repo-level conformance matrix.
+
 ## 0.8.5 — 2026-07-17
 
 - Add a bounded full-catalog generator that temporarily forces GPT-5.6 Sol and Terra to stable

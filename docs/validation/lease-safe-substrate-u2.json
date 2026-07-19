@@ -1,0 +1,35 @@
+{
+  "adaptations": [
+    {
+      "change": "DEFAULT_AUDIT_STORE_ROOT ~/.claude/delegation-audit -> ~/.local/state/infiquetra/delegation-audit",
+      "manifest_rationale": "runtime-neutral roots",
+      "path": "plugins/fleet-core/scripts/fleet_commons/audit_store.py"
+    }
+  ],
+  "check": {
+    "argv": [
+      "PYTHONPATH=.",
+      "uv",
+      "run",
+      "pytest",
+      "-q",
+      "plugins/fleet-core/tests/test_lease_broker.py",
+      "plugins/fleet-core/tests/test_orphan_evidence.py",
+      "plugins/fleet-core/tests/test_concurrency_policy.py",
+      "plugins/fleet-core/tests/test_audit_store.py"
+    ],
+    "exit_code": 0,
+    "suites": {
+      "plugins/fleet-core/tests/test_audit_store.py": "ported from cf15a09f:tests/test_audit_store.py (ROOT retarget + runtime-neutral default-root assertion)",
+      "plugins/fleet-core/tests/test_concurrency_policy.py": "new dedicated AdmissionLimits contract test (source file of that name covers saga #350 governor)",
+      "plugins/fleet-core/tests/test_lease_broker.py": "ported from cf15a09f:tests/test_fleet_lease_broker.py (ROOT retarget only)",
+      "plugins/fleet-core/tests/test_orphan_evidence.py": "ported from cf15a09f:tests/test_orphan_fencing.py (ROOT + FIXTURES retarget)"
+    },
+    "summary": "100 passed in 2.63s"
+  },
+  "port_id": "lease-safe-substrate-2026-07-19",
+  "recorded_at": "2026-07-19T15:58:42Z",
+  "repo_head": "e231770b7f8756b29b8942f8414ca74b75481005",
+  "schema_version": 1,
+  "unit": "U2"
+}

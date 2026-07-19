@@ -1,0 +1,17 @@
+{
+ "exit_code": 0,
+ "kind": "fresh-session",
+ "probe": "python -I (isolated interpreter: no site-packages, no user paths) importing ONLY the installed cache payload",
+ "recorded_at": "2026-07-19T18:55:00Z",
+ "repo_head": "c01611d62b3b20f399aaa85eef77cd1d66244b7e",
+ "results": {
+  "installed_broker_registry_sha256": "f60fd482bba4ed5744e4ad590595f9ab92654f66f6371e57350dbc88c75a4b9d",
+  "installed_settlement_ledger_sha256": "34804e26ad77eb96eb877d0c5bf3432018c60d739c49f7891aa79e13803a963a",
+  "matches_pinned_conformance_digests": true,
+  "protocol_version": 2,
+  "shared_root_resolution": "INFIQUETRA_FLEET_STATE_DIR override honored; resolved root contains no .claude/.codex segment"
+ },
+ "run_id": "20260719T184202Z",
+ "schema_version": 1,
+ "unit": "U5"
+}

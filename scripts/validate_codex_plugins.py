@@ -78,7 +78,7 @@ LEGACY_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
 
 PRE_CUTOVER_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
     "saga": {
-        "version": "0.75.17+codex.20260711160644",
+        "version": "0.76.0+codex.20260719174556",
         "skills": (
             "office-hours",
             "ideate",
@@ -135,7 +135,7 @@ PRE_CUTOVER_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
         "skills": ("discord-identity-assets",),
     },
     "fleet-core": {
-        "version": "0.8.5+codex.20260717220000",
+        "version": "0.9.0+codex.20260719174556",
         "skills": (),
         "library": True,
     },
@@ -276,7 +276,7 @@ STAGED_MARKETPLACE_SHA256 = (
     "42803919b39b720599b9692bfdcd95bcfe8c31b06ebb2c976aacaa890fdfea8a"
 )
 LEGACY_WORKFLOW_HISTORICAL_INVENTORY_SHA256 = (
-    "2055274e8672b3ed8835657c4b8f7c6715916e4c97cdb4f99dbd95610517f9a1"
+    "4c4323346f2574472de94bc0e512e745e9d67a337967b85a698fb58136165a7a"
 )
 LEGACY_WORKFLOW_INVENTORY = Path(
     "docs/validation/verified-workflows-legacy-token-inventory.json"
@@ -316,11 +316,16 @@ LEGACY_WORKFLOW_EXACT_CLASSIFICATIONS = {
     Path("plugins/fleet-core/PORTABILITY.md"): "lineage-documentation",
     Path("plugins/fleet-core/README.md"): "migration-documentation",
     Path("plugins/fleet-core/references/effort-convention.md"): "lineage-documentation",
+    Path("plugins/fleet-core/scripts/fleet_commons/audit_store.py"): "frozen-source-contract",
+    Path("plugins/fleet-core/scripts/fleet_commons/lease_broker.py"): "frozen-source-contract",
+    Path("plugins/fleet-core/scripts/fleet_commons/orphan_evidence.py"): "frozen-source-contract",
     Path("plugins/fleet-core/scripts/fleet_commons/tier_palette.py"): "legacy-parser",
     Path("plugins/fleet-core/scripts/fleet_commons/tier_resolver.py"): "legacy-parser",
     Path("plugins/fleet-core/scripts/fleet_commons/workflow_compat.py"): "compat-registry",
     Path("plugins/saga/CHANGELOG.md"): "lineage-documentation",
     Path("plugins/saga/PORTABILITY.md"): "lineage-documentation",
+    Path("plugins/saga/scripts/dispatch_settlement.py"): "frozen-source-contract",
+    Path("plugins/saga/scripts/lease_broker.py"): "frozen-source-contract",
     Path("plugins/saga/README.md"): "migration-documentation",
     Path("plugins/verified-workflows/README.md"): "migration-documentation",
     Path("plugins/verified-workflows/PORTABILITY.md"): "lineage-documentation",

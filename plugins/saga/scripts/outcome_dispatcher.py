@@ -28,6 +28,7 @@ no I/O at import.
 from __future__ import annotations
 
 import importlib.util
+import os
 import sys
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
@@ -36,6 +37,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import fleet_commons_shim  # noqa: E402  (after the sys.path shim, by design)
 import outcome_spec  # noqa: E402  (after the sys.path shim, by design)
 
 # The always-available floor (R6): the agent can always run inline, use a verified workflow, or
@@ -53,9 +55,20 @@ DEFAULT_AVAILABLE: tuple[str, ...] = ALWAYS_AVAILABLE
 # silently substituting (R5). Mirrors lifecycle_state.ORCHESTRATION_TIERS.
 DEGRADE_LADDER: tuple[str, ...] = ("verified-workflow", "inline")
 
+_REQUIRED_LEASE_PROTOCOL_VERSION = 2
+
 
 class DispatcherError(ValueError):
     """A dispatch was rejected for a malformed request (unknown backend vocabulary, etc.)."""
+
+
+def _require_lease_protocol(authority: Any) -> None:
+    observed = getattr(authority, "PROTOCOL_VERSION", None)
+    if observed != _REQUIRED_LEASE_PROTOCOL_VERSION:
+        raise DispatcherError(
+            "outcome dispatch requires fleet-core lease broker protocol "
+            f"{_REQUIRED_LEASE_PROTOCOL_VERSION} (found {observed!r}); install/update fleet-core"
+        )
 
 
 @dataclass(frozen=True)
@@ -165,19 +178,120 @@ def dispatch(req: Any, *, available: Sequence[str] = DEFAULT_AVAILABLE) -> dict[
         # Compatibility-only reservation. It is not a launch acknowledgement and cannot create a
         # re-entry target until a skill/runtime adapter supplies authoritative launch evidence.
         "proposed_leaf_saga_id": leaf_saga_id,
+        # Keep settlement identity visible to concrete backend adapters. getattr keeps legacy
+        # duck-typed dispatch callers compatible with the expanded request shape.
+        "dispatch_id": str(getattr(req, "dispatch_id", "")),
+        "attempt": int(getattr(req, "attempt", 1)),
+        "idempotency_key": str(getattr(req, "idempotency_key", "")),
     }
     if backend == "verified-workflow":
         result["orchestration_ref"] = orchestration_ref
     return result
 
 
+def default_lease_authority() -> Any:
+    """Resolve the canonical fleet lease authority or fail closed with install guidance."""
+
+    try:
+        authority = fleet_commons_shim.load("lease_broker")
+        _require_lease_protocol(authority)
+        return authority.LeaseBroker()
+    except Exception as exc:  # noqa: BLE001 - plugin skew must be named at the runtime boundary
+        raise DispatcherError(
+            f"outcome dispatch requires lease-capable fleet-core; install/update fleet-core: {exc}"
+        ) from exc
+
+
 def make_dispatcher(
-    *, available: Sequence[str] = DEFAULT_AVAILABLE
+    *,
+    available: Sequence[str] = DEFAULT_AVAILABLE,
+    lease_authority: Any | None = None,
 ) -> Callable[[Any], dict[str, Any]]:
-    """Return the record-only production adapter; it never fabricates launch truth."""
+    """A lease-aware record-only production adapter; it never fabricates launch truth.
+
+    ``lease_authority=None`` preserves the injected compatibility paths (no lease is taken).
+    The lease brackets dispatch preparation only — the synchronous ``dispatch()`` admission
+    window — not the backend agent's execution lifetime, which begins after this returns.
+    """
 
     def _dispatch(req: Any) -> dict[str, Any]:
-        result = dispatch(req, available=available)
+        selected = lease_authority
+        lease: Any | None = None
+        owner_id = f"outcome-dispatch:{req.outcome_id}:{req.subplot_id}"
+        if selected is not None:
+            try:
+                authority = fleet_commons_shim.load("lease_broker")
+                _require_lease_protocol(authority)
+                policy = fleet_commons_shim.load("concurrency_policy")
+                limits = policy.AdmissionLimits()
+                dispatch_identity = str(getattr(req, "dispatch_id", "")) or str(
+                    getattr(req, "attempt", 1)
+                )
+                lease = selected.acquire_agent(
+                    owner_id=owner_id,
+                    owner_pid=os.getpid(),
+                    session_id=f"outcome:{req.outcome_id}",
+                    policy_sha256=limits.policy_sha256(),
+                    session_limit=limits.max_concurrent,
+                    aggregate_limit=limits.aggregate_max_concurrent,
+                    mutation="none",
+                    ttl_seconds=authority.DEFAULT_TTL_SECONDS,
+                    resource_ref={
+                        "logical_unit_id": (
+                            f"outcome:{req.outcome_id}:{req.subplot_id}:{dispatch_identity}"
+                        )
+                    },
+                    agent_type="outcome-dispatch",
+                )
+            except Exception as exc:  # noqa: BLE001 - normalize fleet version/admission failures
+                raise DispatcherError(f"outcome dispatch lease admission refused: {exc}") from exc
+        primary_error: BaseException | None = None
+        try:
+            result = dispatch(req, available=available)
+            if lease is not None:
+                if selected is None:
+                    raise DispatcherError("outcome dispatch lost its lease authority")
+                try:
+                    selected.renew(lease.lease_id, owner_id=owner_id, token=lease.token)
+                except Exception as exc:  # noqa: BLE001 - normalize fleet version/expiry failures
+                    raise DispatcherError(
+                        f"outcome dispatch lease expired before settlement: {exc}"
+                    ) from exc
+        except BaseException as exc:
+            primary_error = exc
+            raise
+        finally:
+            if lease is not None:
+                if selected is None:
+                    cleanup_error = DispatcherError(
+                        "outcome dispatch lost its lease authority during settlement"
+                    )
+                    if primary_error is not None:
+                        primary_error.add_note(str(cleanup_error))
+                    else:
+                        raise cleanup_error
+                else:
+                    try:
+                        released = selected.release(
+                            lease.lease_id, owner_id=owner_id, token=lease.token
+                        )
+                    except Exception as exc:  # noqa: BLE001 - wrong token must fail closed
+                        cleanup_error = DispatcherError(
+                            f"outcome dispatch lease settlement refused: {exc}"
+                        )
+                        if primary_error is not None:
+                            primary_error.add_note(str(cleanup_error))
+                        else:
+                            raise cleanup_error from exc
+                    else:
+                        if not released:
+                            cleanup_error = DispatcherError(
+                                "outcome dispatch lease disappeared before authoritative settlement"
+                            )
+                            if primary_error is not None:
+                                primary_error.add_note(str(cleanup_error))
+                            else:
+                                raise cleanup_error
         if result["status"] == "halt":
             raise BackendHaltError(HaltReceipt(**_receipt_kwargs(result["receipt"])))
         return result
