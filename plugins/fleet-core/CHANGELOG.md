@@ -13,9 +13,13 @@ All notable changes to the Codex `fleet-core` plugin are documented here.
   out-of-home roots (e.g. sticky system temp directories used by test fixtures) are exempt.
   Group-writable ancestors remain permitted by design, pinned by test.
 - Reach differs per branch because `Store.for_root` canonicalizes the root with `resolve()`:
-  mode bits survive resolution so the world-writable refusal covers every caller, while symlink
-  identity does not, so the symlink refusal covers direct callers and the post-resolve window.
-  The docstring states this rather than promising blanket symlink protection.
+  mode bits survive resolution, so the world-writable refusal covers every caller whose resolved
+  root stays lexically below home — resolution that lands the root outside home (a symlinked
+  home component onto another volume, an out-of-home clone) skips the walk entirely by the scope
+  exemption. Symlink identity does not survive resolution, so the symlink refusal covers direct
+  callers and the post-resolve window. The scope boundary is routed upstream for adjudication
+  (the guard is byte-identical to its infiquetra-claude-plugins source and stays byte-faithful
+  here).
 
 ## 0.9.0 — 2026-07-19
 

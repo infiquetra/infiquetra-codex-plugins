@@ -371,6 +371,43 @@ def test_halt_does_not_starve_other_runnable_leaves(repo: Path) -> None:
     assert [h["subplot_id"] for h in result.halted] == ["b"]
 
 
+def test_advance_records_lease_refusal_as_halt_and_continues(repo: Path) -> None:
+    # A DispatcherError mid-tick (lease admission refusal / renew failure — the cross-runtime
+    # conflict signal the activated seam raises) must take the backend-HALT recovery posture: the
+    # other runnable leaf still dispatches, the refusal lands durably as a (dispatch, halt) ledger
+    # record the reducer derives as halted — never an acknowledgement, which would settle the leaf
+    # as permanently done — and the per-subplot lock releases rather than leaking until TTL.
+    _write_team_ref(repo)
+    OUTCOME.start(
+        repo,
+        "ship-x",
+        "Ship X",
+        nodes=[
+            {
+                "subplot_id": "a",
+                "title": "A",
+                "backend": "verified-workflow",
+                "evidence": {"orchestration_ref": TEAM_REF},
+            },
+            {"subplot_id": "b", "title": "B", "backend": "inline"},
+        ],
+    )
+
+    def refusing(req: Any) -> dict[str, str]:
+        if req.subplot_id == "a":
+            return _launch_ack(req)
+        raise D.DispatcherError("lease admission refused: leaf held by another runtime")
+
+    result = OUTCOME.advance(repo, "ship-x", dispatcher=refusing)
+    assert result.dispatched == ["a"]
+    assert [h["subplot_id"] for h in result.halted] == ["b"]
+    assert "lease admission refused" in result.halted[0]["reason"]
+    store = STORE.Store.for_outcome("ship-x", repo)
+    reduced = STORE.reduce_dispatch_ledger(store)
+    assert reduced["b"]["halted"] is True
+    assert reduced["b"]["settled"] is False
+
+
 def test_cli_advance_uses_the_real_backend_seam(
     repo: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -458,8 +495,12 @@ def test_default_lease_authority_takes_and_releases_a_real_lease(
     """Activation pin (#43, plan KTD8): the CLI wires `default_lease_authority()` into every
     dispatcher it builds, so that resolver must yield an authority that actually brackets
     dispatch — a lease held while the backend prepares and gone once it settles. The port gate
-    pins the wiring text; this pins the behavior behind it.
+    pins the wiring; this pins the behavior behind it.
     """
+    # resolve_state_root consults INFIQUETRA_FLEET_STATE_DIR, then XDG_STATE_HOME, before falling
+    # back to HOME — pin the highest-precedence root or, on hosts where either is set, this test
+    # escapes tmp_path and writes into the real fleet lease registry.
+    monkeypatch.setenv("INFIQUETRA_FLEET_STATE_DIR", str(tmp_path / "leases"))
     monkeypatch.setenv("HOME", str(tmp_path / "home"))
     selected = D.default_lease_authority()
     original_dispatch = D.dispatch
@@ -477,6 +518,116 @@ def test_default_lease_authority_takes_and_releases_a_real_lease(
 
     assert result["status"] == "prepared"
     assert selected.inspect()["leases"] == [], "the lease outlived dispatch settlement"
+
+
+def test_cli_advance_wires_default_lease_authority_into_dispatch(
+    repo: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Differential oracle for the KTD8 activation (#43): the plain `advance` CLI arm passes the
+    default-resolved authority into the dispatcher it builds. At the pre-activation base, where
+    `make_dispatcher` was built without `lease_authority`, this fails.
+    """
+    authority = D.fleet_commons_shim.load("lease_broker")
+    sentinel = authority.LeaseBroker(repo / "authority")
+    monkeypatch.setattr(D, "default_lease_authority", lambda: sentinel)
+    captured: dict[str, Any] = {}
+
+    def recording_make_dispatcher(**kwargs: Any) -> Any:
+        captured.update(kwargs)
+        return lambda req: {"status": "prepared"}
+
+    monkeypatch.setattr(D, "make_dispatcher", recording_make_dispatcher)
+    OUTCOME.start(
+        repo,
+        "ship-x",
+        "Ship X",
+        nodes=[{"subplot_id": "build", "title": "Build", "backend": "fork"}],
+    )
+    assert OUTCOME.main(["--repo-root", str(repo), "approve", "ship-x"]) == 0
+    capsys.readouterr()
+    assert OUTCOME.main(["--repo-root", str(repo), "advance", "ship-x"]) == 0
+    assert captured.get("lease_authority") is sentinel
+
+
+def test_cli_attach_advance_reuses_the_handoff_broker_for_dispatch(
+    repo: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The attach --advance arm passes the SAME broker that carries the handoff acceptance into
+    the dispatcher it builds, so a `--broker-root` override scopes coordination and dispatch
+    leases to one registry — a default-root authority here would silently split them.
+    """
+    authority = D.fleet_commons_shim.load("lease_broker")
+    sentinel = authority.LeaseBroker(repo / "cli-broker")
+    monkeypatch.setattr(OUTCOME, "_cli_broker", lambda root: sentinel)
+    captured: dict[str, Any] = {}
+
+    def recording_make_dispatcher(**kwargs: Any) -> Any:
+        captured.update(kwargs)
+        return lambda req: {"status": "prepared"}
+
+    monkeypatch.setattr(D, "make_dispatcher", recording_make_dispatcher)
+    monkeypatch.setattr(OUTCOME, "attached_advance", lambda *args, **kwargs: {"ok": True})
+    OUTCOME.start(
+        repo,
+        "ship-x",
+        "Ship X",
+        nodes=[{"subplot_id": "build", "title": "Build", "backend": "inline"}],
+    )
+    capsys.readouterr()
+    rc = OUTCOME.main(
+        [
+            "--repo-root",
+            str(repo),
+            "attach",
+            "ship-x",
+            "--advance",
+            "--handoff-id",
+            "h-1",
+            "--subplot",
+            "build",
+            "--session-id",
+            "sess-cli",
+            "--policy-sha256",
+            "c" * 64,
+            "--session-limit",
+            "2",
+            "--aggregate-limit",
+            "4",
+        ]
+    )
+    assert rc == 0
+    assert captured.get("lease_authority") is sentinel
+
+
+def test_cli_advance_reports_unavailable_lease_authority(
+    repo: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """`default_lease_authority()` is evaluated eagerly while the CLI builds the dispatcher,
+    before any dispatch decision — fleet-core skew must surface as the structured fail-closed
+    receipt (exit 1, ``{"ok": false, ...}`` on stderr), never a traceback.
+    """
+
+    def unavailable() -> Any:
+        raise D.DispatcherError(
+            "outcome dispatch requires lease-capable fleet-core; "
+            "install/update fleet-core: no fleet-core"
+        )
+
+    monkeypatch.setattr(D, "default_lease_authority", unavailable)
+    OUTCOME.start(
+        repo,
+        "ship-x",
+        "Ship X",
+        nodes=[{"subplot_id": "build", "title": "Build", "backend": "fork"}],
+    )
+    assert OUTCOME.main(["--repo-root", str(repo), "approve", "ship-x"]) == 0
+    capsys.readouterr()
+    rc = OUTCOME.main(["--repo-root", str(repo), "advance", "ship-x"])
+    err = capsys.readouterr().err
+    assert rc == 1
+    payload = json.loads(err.strip().splitlines()[-1])
+    assert payload["ok"] is False
+    assert "lease-capable fleet-core" in payload["error"]
 
 
 def test_make_dispatcher_refuses_capacity_before_backend_call(

@@ -5,13 +5,24 @@
 ### Changed - Dispatcher lease seam activated (#43, PA-2 of infiquetra-claude-plugins#605)
 
 - Both `outcome_dispatcher.make_dispatcher(...)` call sites in `outcome.py` — the `advance` arm
-  and the native attached-advance dispatch path — now pass
-  `lease_authority=outcome_dispatcher.default_lease_authority()`. The #34 port deliberately left
-  this seam dormant under its KTD6 operator deferral; cross-runtime acceptance is where that
-  deferral resolves, because without lease authority a Codex `advance` can dispatch a leaf
-  another runtime already holds. `test_dispatcher_lease_seam_stays_dormant_ktd6` is replaced by
-  an activation pin that compares dispatcher-site and wiring counts (so a new unwired site
-  fails), plus a behavioral test that a real lease is taken during dispatch and released after.
+  and the native attached-advance dispatch path — now pass a lease authority: the `advance` arm
+  wires `outcome_dispatcher.default_lease_authority()`, and the attached-advance path reuses the
+  same broker that carries the handoff acceptance, so a `--broker-root` override scopes
+  coordination and dispatch leases to one registry. The #34 port deliberately left this seam
+  dormant under its KTD6 operator deferral; cross-runtime acceptance is where that deferral
+  resolves. What the seam provides is admission accounting plus post-hoc conflict detection —
+  the fleet lease registry records which runtime most recently claimed a leaf, and a racing
+  runtime that was superseded learns of the conflict when its renew fails, which the reconcile
+  loop now records as a durable dispatch HALT (a new `DispatcherError` arm mirrors the
+  `BackendHaltError` recovery posture: release the per-subplot lock, append the halt receipt,
+  continue the tick). It is NOT mutual exclusion — acquisition supersedes rather than refuses a
+  live conflicting lease — and it is NOT a cross-clone one-effect guarantee: the settlement
+  ledger stays scoped per git-common-dir, so two separate clones share the lease registry but
+  not the ledger. `test_dispatcher_lease_seam_stays_dormant_ktd6` is replaced by an activation
+  pin that walks the parsed AST requiring a `lease_authority` keyword on every
+  `make_dispatcher(...)` call, plus differential CLI oracles that a real authority is consulted
+  on both arms and a behavioral test that a real lease is taken during dispatch and released
+  after.
 
 ### Fixed - Retired-bundle CLI surface re-ported (#43, from infiquetra-claude-plugins#624)
 

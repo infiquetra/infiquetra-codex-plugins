@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import hashlib
 import json
 from pathlib import Path
@@ -312,16 +313,31 @@ def test_release_version_pins_are_coherent() -> None:
 def test_dispatcher_lease_seam_is_active_ktd8() -> None:
     """Plan KTD8 (#43): cross-runtime acceptance resolves the #34 KTD6 deferral.
 
-    Every dispatcher this CLI builds now carries lease authority, so a codex `advance` — the
-    plain one or the attached one — cannot dispatch a leaf another runtime holds. Comparing the
-    two counts rather than pinning a literal means a newly added dispatcher site fails here
-    unless it is wired too.
+    Every dispatcher this CLI builds must pass a ``lease_authority`` keyword, wiring admission
+    accounting and post-hoc conflict detection into dispatch (the seam is not mutual exclusion —
+    acquisition supersedes a live conflicting lease, and the loser learns via renew failure).
+    The walk is over the parsed AST, not text counts, so a commented-out wiring line, a
+    docstring occurrence, or an aliased constructor cannot satisfy it; any live
+    ``make_dispatcher`` call without the keyword fails, including newly added sites.
     """
     outcome_py = (ROOT / "plugins/saga/scripts/outcome.py").read_text(encoding="utf-8")
-    built = outcome_py.count("outcome_dispatcher.make_dispatcher(")
-    wired = outcome_py.count("lease_authority=outcome_dispatcher.default_lease_authority()")
-    assert built == 2, f"expected 2 dispatcher sites, found {built}"
-    assert wired == built, f"{built} dispatcher sites but only {wired} wire lease authority"
+    tree = ast.parse(outcome_py)
+    built = 0
+    wired = 0
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        func = node.func
+        is_make_dispatcher = (isinstance(func, ast.Attribute) and func.attr == "make_dispatcher") or (
+            isinstance(func, ast.Name) and func.id == "make_dispatcher"
+        )
+        if not is_make_dispatcher:
+            continue
+        built += 1
+        if any(kw.arg == "lease_authority" for kw in node.keywords):
+            wired += 1
+    assert built >= 2, f"expected at least the advance + attached-advance dispatcher sites, found {built}"
+    assert wired == built, f"{built} live dispatcher call(s) but only {wired} pass lease_authority"
 
 
 def test_release_surfaces_are_coherent_for_cutover() -> None:
