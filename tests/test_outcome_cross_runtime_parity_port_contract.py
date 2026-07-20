@@ -314,3 +314,40 @@ def test_dispatcher_lease_seam_stays_dormant_ktd6() -> None:
     dispatcher lease seam; `default_lease_authority` wiring belongs to cross-runtime-acceptance."""
     outcome_py = (ROOT / "plugins/saga/scripts/outcome.py").read_text(encoding="utf-8")
     assert "default_lease_authority" not in outcome_py
+
+
+def test_release_surfaces_are_coherent_for_cutover() -> None:
+    """Cutover gate (U5): drained refresh queue, floor-safe release versions, bound release evidence."""
+    manifest = _manifest()
+    assert manifest["refresh_changes"] == []
+
+    for row in manifest["version_policy"]:
+        plugin = row["target_codex_identity"]
+        actual = json.loads(
+            (ROOT / f"plugins/{plugin}/.codex-plugin/plugin.json").read_text(encoding="utf-8")
+        )["version"]
+        # The #34 atomic release is a historical fact: the changelog must record it, and the live
+        # version may be newer but never behind it. Pinning the current version here would break on
+        # the first legitimate release after #34 (release-event-guard-floor precedent,
+        # infiquetra-claude-plugins#604).
+        released = row["target_codex_version"]
+        changelog = (ROOT / f"plugins/{plugin}/CHANGELOG.md").read_text(encoding="utf-8")
+        assert f"## {released} " in changelog, (plugin, released)
+        live = tuple(int(part) for part in actual.split("+codex.")[0].split("."))
+        floor = tuple(int(part) for part in released.split("."))
+        assert live >= floor, (plugin, actual)
+
+    evidence = {entry["evidence_id"]: entry for entry in manifest["evidence"]}
+    expected_kinds = {
+        "review": "review",
+        "isolated_install": "isolated-install",
+        "fresh_session": "fresh-session",
+        "rollback": "rollback",
+        "cutover": "cutover",
+    }
+    for key, kind in expected_kinds.items():
+        reference = manifest["release_evidence"][key]
+        assert reference, key
+        entry = evidence[reference]
+        assert entry["kind"] == kind and entry["unit"] == "U5" and entry["exit_code"] == 0, key
+        assert _sha256(ROOT / entry["artifact_path"]) == entry["artifact_sha256"], key

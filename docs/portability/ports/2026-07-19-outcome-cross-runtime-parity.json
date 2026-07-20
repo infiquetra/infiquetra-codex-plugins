@@ -107,16 +107,107 @@
       "recorded_at": "2026-07-20T03:15:27Z",
       "repo_head": "b8b627a69e3909efc241e09a4dc2a716c3f6b2d5",
       "unit": "U5"
+    },
+    {
+      "argv": [
+        "saga:code-review",
+        "programmatic",
+        "--reviewed-sha",
+        "aef1dea18a7dfb8216711d6ed3d5403f97f30f45"
+      ],
+      "artifact_path": "docs/code-reviews/2026-07-19-outcome-cross-runtime-parity-code-review.md",
+      "artifact_sha256": "73f3f1f02af3b3b339f416c44dad55cdad304d9d4393e2c1bbca1b1ee86c0584",
+      "cwd": ".",
+      "evidence_id": "u5-code-review",
+      "exit_code": 0,
+      "kind": "review",
+      "recorded_at": "2026-07-20T04:06:21Z",
+      "repo_head": "35f3f4c7545adca4651ce20da65816fe4586d6a0",
+      "unit": "U5"
+    },
+    {
+      "argv": [
+        "uv",
+        "run",
+        "python",
+        "scripts/prove_codex_plugin_profile.py",
+        "--install-mode",
+        "codex-cli",
+        "--write-docs"
+      ],
+      "artifact_path": "docs/validation/outcome-cross-runtime-parity-u5-install.json",
+      "artifact_sha256": "043b47323844ba41c8e178f97e601be86ec2a535745ca003aaa539c37b79ee06",
+      "cwd": ".",
+      "evidence_id": "u5-isolated-install",
+      "exit_code": 0,
+      "kind": "isolated-install",
+      "recorded_at": "2026-07-20T04:06:21Z",
+      "repo_head": "35f3f4c7545adca4651ce20da65816fe4586d6a0",
+      "unit": "U5"
+    },
+    {
+      "argv": [
+        "python3",
+        "-I",
+        "-",
+        "<installed-cache outcome_compat.py>"
+      ],
+      "artifact_path": "docs/validation/outcome-cross-runtime-parity-u5-fresh-session.json",
+      "artifact_sha256": "d8f088cd019a622f07d05d9bb356c7a06dce341dcd2589baee4a5fbf6d2ec416",
+      "cwd": ".",
+      "evidence_id": "u5-fresh-session",
+      "exit_code": 0,
+      "kind": "fresh-session",
+      "recorded_at": "2026-07-20T04:06:21Z",
+      "repo_head": "35f3f4c7545adca4651ce20da65816fe4586d6a0",
+      "unit": "U5"
+    },
+    {
+      "argv": [
+        "codex",
+        "plugin",
+        "remove",
+        "saga@infiquetra-saga-family-proof",
+        "--json"
+      ],
+      "artifact_path": "docs/validation/outcome-cross-runtime-parity-u5-rollback.json",
+      "artifact_sha256": "872be7c4fdb73abbeac09b1cc2aea792f32b259282c82c6ee6e24579f9532041",
+      "cwd": ".",
+      "evidence_id": "u5-rollback",
+      "exit_code": 0,
+      "kind": "rollback",
+      "recorded_at": "2026-07-20T04:06:21Z",
+      "repo_head": "35f3f4c7545adca4651ce20da65816fe4586d6a0",
+      "unit": "U5"
+    },
+    {
+      "argv": [
+        "PYTHONPATH=.",
+        "uv",
+        "run",
+        "pytest",
+        "-q",
+        "tests/test_outcome_cross_runtime_parity_port_contract.py"
+      ],
+      "artifact_path": "docs/validation/outcome-cross-runtime-parity-u5-cutover.json",
+      "artifact_sha256": "1b2fe31e3c8163838058f5a6d432a7fbcdf58666c7773c87de7ac396caf0315b",
+      "cwd": ".",
+      "evidence_id": "u5-cutover",
+      "exit_code": 0,
+      "kind": "cutover",
+      "recorded_at": "2026-07-20T04:06:21Z",
+      "repo_head": "35f3f4c7545adca4651ce20da65816fe4586d6a0",
+      "unit": "U5"
     }
   ],
   "port_id": "outcome-cross-runtime-parity-2026-07-19",
   "refresh_changes": [],
   "release_evidence": {
-    "cutover": null,
-    "fresh_session": null,
-    "isolated_install": null,
-    "review": null,
-    "rollback": null
+    "cutover": "u5-cutover",
+    "fresh_session": "u5-fresh-session",
+    "isolated_install": "u5-isolated-install",
+    "review": "u5-code-review",
+    "rollback": "u5-rollback"
   },
   "schema_version": 1,
   "source": {

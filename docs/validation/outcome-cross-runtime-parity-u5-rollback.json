@@ -1,0 +1,17 @@
+{
+ "default_profile_list_sha256_after": "7d61f9e96d6afb94b97705dc3ac74e65cce4cabc4d98a55c3da4677fe7bde5f6",
+ "default_profile_list_sha256_before": "7d61f9e96d6afb94b97705dc3ac74e65cce4cabc4d98a55c3da4677fe7bde5f6",
+ "default_profile_mutated": false,
+ "exit_code": 0,
+ "kind": "rollback",
+ "recorded_at": "2026-07-20T04:06:21Z",
+ "repo_head": "35f3f4c7545adca4651ce20da65816fe4586d6a0",
+ "run_id": "20260720T040411Z",
+ "schema_version": 1,
+ "steps": [
+  "codex plugin remove saga@infiquetra-saga-family-proof --json (isolated CODEX_HOME) -> removed",
+  "codex plugin list --json (isolated) -> saga absent; the other nine family plugins untouched (targeted removal)",
+  "codex plugin list --json (default profile) -> sha256 identical to the pre-rollback capture"
+ ],
+ "unit": "U5"
+}
