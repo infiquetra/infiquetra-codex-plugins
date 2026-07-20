@@ -60,7 +60,6 @@ import fleet_commons_shim  # noqa: E402
 
 _workflow_compat = fleet_commons_shim.load("workflow_compat")
 MAX_LAUNCH_RECEIPT_AGE_SECONDS = 24 * 60 * 60
-DISPATCH_AUDIT_KIND = "outcome.dispatch.audit.v1"
 
 # Where the canonical spec lives on the outcome's own branch (KTD1/R26). The committed spec is the
 # structural source of truth; the store under the git-common-dir is its performance cache.
@@ -1673,13 +1672,6 @@ def import_bundle(
         "in this clone for read-only canonical reconstruction; same-clone mutation requires "
         "a protected handoff (`outcome handoff` then `outcome attach --advance`)."
     )
-
-
-def _dispatch_audit_digest(record: dict[str, Any]) -> str:
-    """Return the stable identity for one inert, non-authoritative audit record."""
-
-    payload = json.dumps(record, sort_keys=True, separators=(",", ":"), allow_nan=False)
-    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 def graph_mermaid(repo_root: Path, outcome_id: str, *, store: Any | None = None) -> str:

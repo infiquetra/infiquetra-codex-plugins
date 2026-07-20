@@ -34,6 +34,9 @@
 - Legacy bundle import chain-validation machinery (`_validate_import_dispatch_ledger`,
   `_validate_import_dispatch_audit`) — the wholesale refusal subsumes record-level validation;
   the migration and command suites now pin rejection oracles instead of round-trips.
+- The dispatch-audit helpers those validators orphaned (`DISPATCH_AUDIT_KIND`,
+  `_dispatch_audit_digest`): codex-only symbols whose last callers were the retired bundle
+  export/import paths (code-review finding; never present in the frozen Claude source).
 
 ## 0.76.0 - 2026-07-19
 

@@ -785,7 +785,7 @@
     {
       "classification": "lineage-documentation",
       "path": "plugins/saga/CHANGELOG.md",
-      "sha256": "688a68f3afc2d396a7d0588bb85604b2c6563ed15f93c9d292169f7b194e5546",
+      "sha256": "1b27a5709300db50ee58592175c3b2448b919a3405eb57b40ea01ed12c199653",
       "tokens": [
         "Team Execution",
         "team-execution"
@@ -853,7 +853,7 @@
     {
       "classification": "legacy-parser",
       "path": "plugins/saga/scripts/outcome.py",
-      "sha256": "a7daec14bd765b8c62ced805c9e9dd79bd7ea9727a4fab9bfccf3135e8665dac",
+      "sha256": "9ced677674ec95076d634ae25be8cf5298b408fc844dd232a843735409e88349",
       "tokens": [
         "team-execution"
       ]

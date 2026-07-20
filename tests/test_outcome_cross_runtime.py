@@ -1113,6 +1113,83 @@ class TestCliVerbs:
         assert result.returncode == 2
         assert "not allowed with" in result.stderr
 
+    def test_cli_attach_advance_missing_admission_flags_fails_closed(
+        self, outcome_repo: Path, tmp_path: Path
+    ) -> None:
+        # The attach path is the only one where the session-admission flags default to None
+        # (handoff makes them argparse-required), so the never-defaulted guard must reject
+        # here rather than inventing admission values.
+        broker_root = tmp_path / "cli-broker"
+        broker_root.mkdir(mode=0o700)
+        result = _cli(
+            outcome_repo,
+            "attach",
+            OUTCOME_ID,
+            "--advance",
+            "--handoff-id",
+            "0" * 32,
+            "--subplot",
+            SUBPLOT,
+            "--broker-root",
+            str(broker_root),
+        )
+        assert result.returncode == 1
+        assert "missing session-admission flags" in result.stderr
+        assert "--session-id" in result.stderr
+        assert "never defaulted" in result.stderr
+
+    def test_cli_attach_attend_prints_the_native_resume_command(
+        self, tmp_path: Path, broker: Any, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # End-to-end attended_handoff: a validly sealed attend reference becomes the native
+        # /resume pointer only after every acceptance binding validates. The leaf is first
+        # dispatched through the real protected launched-ack path so attend has a record.
+        repo = _single_node_repo(tmp_path)
+        offer, _ = _offer(repo, broker, _issuer_lease(broker))
+        dispatched = OCLI.attached_advance(
+            repo,
+            OUTCOME_ID,
+            SUBPLOT,
+            handoff_id=offer["handoff_id"],
+            receiver_owner_id="receiver-codex",
+            admission=dict(ADMISSION),
+            broker=broker,
+            dispatcher=_launching_dispatcher(monkeypatch, tmp_path / "home"),
+        )
+        assert dispatched["advance"]["dispatched"] == [SUBPLOT]
+        attend_offer, _ = _offer(
+            repo,
+            broker,
+            _issuer_lease(broker, attempt=2),
+            operation="attend",
+            dispatch_id="",
+            attempt=2,
+        )
+        result = _cli(
+            repo,
+            "attach",
+            OUTCOME_ID,
+            "--attend",
+            "--handoff-id",
+            attend_offer["handoff_id"],
+            "--subplot",
+            SUBPLOT,
+            "--receiver",
+            "receiver-codex",
+            "--session-id",
+            ADMISSION["session_id"],
+            "--policy-sha256",
+            ADMISSION["policy_sha256"],
+            "--session-limit",
+            str(ADMISSION["session_limit"]),
+            "--aggregate-limit",
+            str(ADMISSION["aggregate_limit"]),
+            "--broker-root",
+            str(tmp_path / "fleet-leases"),
+        )
+        assert result.returncode == 0, result.stderr
+        assert result.stdout.strip() == f"/resume leaf-{SUBPLOT}"
+
 
 def _launching_dispatcher(monkeypatch: pytest.MonkeyPatch, home: Path) -> Any:
     """A codex-native launching backend: writes a real owner-user-state launch receipt and
@@ -1169,6 +1246,55 @@ def _launching_dispatcher(monkeypatch: pytest.MonkeyPatch, home: Path) -> Any:
         }
 
     return dispatcher
+
+
+class TestSettledLookupFactory:
+    """The production #351-backed settled-attempt query the CLI wires into attach --advance.
+
+    attached_advance suites inject fakes; these pin the real factory: empty dispatch identity
+    and unprovable settlement both fail CLOSED (False -> the advance layer still dedups, R7),
+    and a terminal settled attempt reports True.
+    """
+
+    def test_empty_dispatch_id_is_never_settled(self, tmp_path: Path) -> None:
+        repo = _single_node_repo(tmp_path)
+        lookup = OCLI._settled_lookup(repo)
+        assert lookup("", "unit-x", 1) is False
+
+    def test_unprovable_settlement_fails_closed_on_an_empty_ledger(self, tmp_path: Path) -> None:
+        # A fresh repo has no run-ledger facts for the dispatch, so the settlement layer
+        # cannot prove anything about it — the lookup must answer False, never raise.
+        repo = _single_node_repo(tmp_path)
+        lookup = OCLI._settled_lookup(repo)
+        assert lookup("outcome:demo:frontier:abc", "unit-x", 1) is False
+
+    def test_settlement_error_fails_closed(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import dispatch_settlement as DS
+
+        repo = _single_node_repo(tmp_path)
+        lookup = OCLI._settled_lookup(repo)
+
+        def _unprovable(ledger: Any, *, dispatch_id: str, unit_id: str) -> None:
+            raise DS.DispatchSettlementError("unprovable settlement")
+
+        monkeypatch.setattr(DS, "terminal_attempt_status", _unprovable)
+        assert lookup("outcome:demo:frontier:abc", "unit-x", 1) is False
+
+    def test_settled_terminal_attempt_reports_true(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import dispatch_settlement as DS
+
+        repo = _single_node_repo(tmp_path)
+        lookup = OCLI._settled_lookup(repo)
+        monkeypatch.setattr(
+            DS,
+            "terminal_attempt_status",
+            lambda ledger, *, dispatch_id, unit_id: {"classification": "success"},
+        )
+        assert lookup("outcome:demo:frontier:abc", "unit-x", 1) is True
 
 
 class TestAttachedAdvance:

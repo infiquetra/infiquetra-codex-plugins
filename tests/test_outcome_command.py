@@ -339,6 +339,8 @@ def test_export_is_a_discovery_envelope_alias(repo: Path, monkeypatch: pytest.Mo
     # envelope requires, so the alias HALTs closed instead of minting a bundle — proving the
     # bundle path is gone. (The real-git envelope path is proven end-to-end in
     # tests/test_outcome_cross_runtime.py::TestLegacyExportAlias.)
+    assert type(exc.value).__name__ == "CompatibilityHaltError"
+    assert str(getattr(exc.value, "code", "")).startswith("repo-identity")
     assert "outcome-bundle" not in str(exc.value)
 
 
