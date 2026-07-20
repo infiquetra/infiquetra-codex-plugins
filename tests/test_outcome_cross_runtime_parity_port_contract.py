@@ -306,7 +306,7 @@ def test_release_version_pins_are_coherent() -> None:
     saga_rows = [entry["version"] for entry in inventory["plugins"] if entry.get("name") == "saga"]
     assert saga_rows == [manifest_version]
     changelog = (ROOT / "plugins/saga/CHANGELOG.md").read_text(encoding="utf-8")
-    assert "## 0.77.0 - 2026-07-19" in changelog
+    assert "## 0.77.0 - 2026-07-20" in changelog
 
 
 def test_dispatcher_lease_seam_stays_dormant_ktd6() -> None:

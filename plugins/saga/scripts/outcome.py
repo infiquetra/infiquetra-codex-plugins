@@ -1545,6 +1545,11 @@ def attached_advance(
     form; the coordinator's per-subplot locks, the native ``outcome.dispatch.v2`` intent, and the
     protected launched acknowledgement (KTD2) stay in force — a handoff acceptance is never
     substituted for launch evidence.
+
+    Acceptance deliberately commits BEFORE the revision/frontier re-checks: consuming the one-use
+    handoff on a stale binding is fail-closed (the record cannot be replayed later at the right
+    revision), and the re-checks then gate the actual advance. A HALT here has exactly one prior
+    side effect — the handoff is spent — and that is the intended containment.
     """
     import outcome_compat
 

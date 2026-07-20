@@ -82,7 +82,7 @@
     {
       "classification": "historical-evidence",
       "path": "docs/engineering-journal/DECISIONS.md",
-      "sha256": "a4315eb7801319649ea27d65e2fc715207d75e723445e6ce19e011b3d761888e",
+      "sha256": "ed5af1b1081d12be4a551bb08f6f069d5645b44982fe4e4a0ef3444ae330b25b",
       "tokens": [
         "## Team Structure",
         "Team Execution",
@@ -785,7 +785,7 @@
     {
       "classification": "lineage-documentation",
       "path": "plugins/saga/CHANGELOG.md",
-      "sha256": "bab7985d7bf6e13dffe1db316d5b95ac23852dec0c1e98ead17375e852f521bb",
+      "sha256": "688a68f3afc2d396a7d0588bb85604b2c6563ed15f93c9d292169f7b194e5546",
       "tokens": [
         "Team Execution",
         "team-execution"
@@ -853,7 +853,7 @@
     {
       "classification": "legacy-parser",
       "path": "plugins/saga/scripts/outcome.py",
-      "sha256": "d8434412a82729b4d868131eaf72b1fbfb85a8d9ae500c343ce19f80a36538b5",
+      "sha256": "a7daec14bd765b8c62ced805c9e9dd79bd7ea9727a4fab9bfccf3135e8665dac",
       "tokens": [
         "team-execution"
       ]
@@ -1191,7 +1191,7 @@
     }
   ],
   "generated_by": "scripts/build_legacy_workflow_inventory.py",
-  "historical_inventory_sha256": "f0ca63db27f673b389e04c202c65295898aad9aea37391ee5face0992484e444",
+  "historical_inventory_sha256": "42c16a25a764c3939008c473f20d458b108469c1af7ad971df76f217165e2eac",
   "history_sentinels": {
     "docs/investigations/2026-06-30-team-execution-saga-orchestration-debug-report.md": {
       "sha256": "ecc08eceda3a67dc81d15b1930753fe236ca7c1ae9b3ad9dd506cdecfb0ac4fa",

@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -46,8 +47,11 @@ ORIGIN_HTTPS = "https://github.com/infiquetra/demo-repo.git"
 
 
 def _git(repo: Path, *args: str) -> str:
+    # Hermetic: never inherit the runner's global/system git config (CI-only failures from
+    # non-hermetic git fixtures are a known pattern — repo-scoped identity is set explicitly).
+    env = dict(os.environ, GIT_CONFIG_GLOBAL="/dev/null", GIT_CONFIG_SYSTEM="/dev/null")
     result = subprocess.run(
-        ["git", *args], cwd=str(repo), capture_output=True, text=True, check=True
+        ["git", *args], cwd=str(repo), capture_output=True, text=True, check=True, env=env
     )
     return result.stdout.strip()
 

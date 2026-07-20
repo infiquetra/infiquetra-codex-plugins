@@ -99,12 +99,12 @@
         "scripts/validate_codex_plugins.py"
       ],
       "artifact_path": "docs/validation/outcome-cross-runtime-parity-u5.json",
-      "artifact_sha256": "6867fb23ca45fb6dddae73a29dfdb52cb6a31d555d00a81beea3559dd2136697",
+      "artifact_sha256": "444313ac797f3f1e20478530e2e629b0f5eb194bdbd992047d13d6d64f4c099a",
       "cwd": ".",
       "evidence_id": "u5-release-surface-check",
       "exit_code": 0,
       "kind": "check",
-      "recorded_at": "2026-07-20T02:33:13Z",
+      "recorded_at": "2026-07-20T02:59:39Z",
       "repo_head": "fc9975566fa4277c07fd216fe7fc5451b23c195e",
       "unit": "U5"
     }
