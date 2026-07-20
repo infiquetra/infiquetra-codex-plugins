@@ -853,7 +853,7 @@
     {
       "classification": "legacy-parser",
       "path": "plugins/saga/scripts/outcome.py",
-      "sha256": "68be26516d59c5d2cc06dc5d3057f5900b8b078dd10a4717ce31a085912cb46e",
+      "sha256": "d8434412a82729b4d868131eaf72b1fbfb85a8d9ae500c343ce19f80a36538b5",
       "tokens": [
         "team-execution"
       ]

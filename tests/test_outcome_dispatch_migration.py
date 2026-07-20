@@ -221,7 +221,13 @@ def test_expired_launch_receipt_is_rejected(repo: Path) -> None:
 
 
 @pytest.mark.parametrize("timestamp", [float("nan"), float("inf"), float("-inf")])
-def test_nonfinite_receipt_and_import_times_are_rejected(repo: Path, timestamp: float) -> None:
+def test_nonfinite_receipt_times_are_rejected(repo: Path, timestamp: float) -> None:
+    """Live-dispatch ack law: a launch receipt with a nonfinite issued_at halts the leaf.
+
+    The old import-time half of this oracle is gone with the machinery it tested — legacy
+    bundle import now refuses every bundle before reading records (#604 R7; see
+    tests/test_outcome_command.py::test_legacy_bundle_import_is_refused_with_zero_writes).
+    """
     OUTCOME.start(repo, "nonfinite", "U5", nodes=[{"subplot_id": "leaf", "title": "leaf"}])
 
     def invalid(req: Any) -> dict[str, str]:
@@ -240,20 +246,6 @@ def test_nonfinite_receipt_and_import_times_are_rejected(repo: Path, timestamp: 
     result = OUTCOME.advance(repo, "nonfinite", dispatcher=invalid)
     assert result.dispatched == []
     assert "issued_at" in result.halted[0]["reason"]
-
-    intent = next(
-        record
-        for record in OUTCOME.outcome_store.read_ledger(OUTCOME._store(repo, "nonfinite"))
-        if record.get("phase") == "intent"
-    )
-    imported = dict(intent, at=timestamp)
-    with pytest.raises(OUTCOME.OutcomeError, match="incomplete"):
-        OUTCOME._validate_import_dispatch_ledger(
-            repo,
-            OUTCOME.load_spec(repo, "nonfinite"),
-            [imported],
-            {},
-        )
 
 
 def test_self_consistent_workspace_receipt_cannot_authorize_launch(repo: Path) -> None:

@@ -44,7 +44,7 @@ import time
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 # Make sibling scripts importable when loaded by path (tests, CLI).
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -1460,6 +1460,171 @@ def attend(repo_root: Path, outcome_id: str, subplot_id: str) -> str:
     return f"/resume {leaf}"
 
 
+def _saga_version() -> str:
+    """The installed saga plugin version, for the discovery envelope's producer block."""
+    manifest = Path(__file__).resolve().parent.parent / ".codex-plugin" / "plugin.json"
+    try:
+        data = json.loads(manifest.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return "0"
+    return str(data.get("version", "0")) if isinstance(data, dict) else "0"
+
+
+def _cli_broker(broker_root: str | None) -> Any:
+    """The production #356 broker (host state root), or an explicit root for tests."""
+    lease_broker = fleet_commons_shim.load("lease_broker")
+    return (
+        lease_broker.LeaseBroker(Path(broker_root)) if broker_root else lease_broker.LeaseBroker()
+    )
+
+
+def _cli_broker_error() -> type[Exception]:
+    """The #356 broker's error root, resolved lazily so broker-free verbs never load fleet-core."""
+    return cast("type[Exception]", fleet_commons_shim.load("lease_broker").LeaseBrokerError)
+
+
+def _cli_admission(args: Any) -> dict[str, Any]:
+    """The session-admission snapshot (resolved by the caller, never invented here)."""
+    values = {
+        "session_id": args.session_id,
+        "policy_sha256": args.policy_sha256,
+        "session_limit": args.session_limit,
+        "aggregate_limit": args.aggregate_limit,
+    }
+    missing = sorted(key for key, value in values.items() if value in (None, ""))
+    if missing:
+        raise OutcomeError(
+            f"missing session-admission flags: {', '.join('--' + k.replace('_', '-') for k in missing)}"
+            " (pass the canonical resolved snapshot; admission values are never defaulted)"
+        )
+    return values
+
+
+def _settled_lookup(repo_root: Path):
+    """A #351-backed settled-attempt query for handoff acceptance (R5) — never a new ledger."""
+    import dispatch_settlement
+    import run_ledger
+
+    ledger = run_ledger.RunLedger.resolve(repo_root)
+
+    def lookup(dispatch_id: str, unit_id: str, attempt: int) -> bool:
+        del attempt  # terminal_attempt_status resolves the latest attempt itself
+        if not dispatch_id:
+            return False
+        try:
+            return (
+                dispatch_settlement.terminal_attempt_status(
+                    ledger, dispatch_id=dispatch_id, unit_id=unit_id
+                )
+                is not None
+            )
+        except dispatch_settlement.DispatchSettlementError:
+            return False  # cannot prove settled -> the advance layer still dedups (R7)
+
+    return lookup
+
+
+def attached_advance(
+    repo_root: Path,
+    outcome_id: str,
+    subplot_id: str,
+    *,
+    handoff_id: str,
+    receiver_owner_id: str,
+    admission: dict[str, Any],
+    broker: Any,
+    settled_lookup: Callable[[str, str, int], bool] | None = None,
+    dispatcher: Dispatcher | None = None,
+) -> dict[str, Any]:
+    """Accept an ``advance-one`` handoff, then run ONE allowlisted one-subplot tick (R5/R6).
+
+    The handoff authorizes exactly one subplot: after acceptance this re-checks the committed
+    revision and the ready frontier (a moved spec or a frontier that no longer offers this leaf
+    HALTs loudly rather than silently broadening or shrinking the authorization), then enters the
+    existing ``advance`` behind a one-subplot gate. There is no ``--loop`` and no frontier-wide
+    form; the coordinator's per-subplot locks, the native ``outcome.dispatch.v2`` intent, and the
+    protected launched acknowledgement (KTD2) stay in force — a handoff acceptance is never
+    substituted for launch evidence.
+    """
+    import outcome_compat
+
+    accepted = outcome_compat.accept_handoff(
+        repo_root,
+        outcome_id,
+        handoff_id,
+        operation="advance-one",
+        subplot_id=subplot_id,
+        receiver_owner_id=receiver_owner_id,
+        receiver_runtime=outcome_compat.RUNTIME_LABEL,
+        admission=admission,
+        broker=broker,
+        settled_lookup=settled_lookup,
+    )
+    binding = outcome_compat.resolve_committed_spec(repo_root, outcome_id)
+    if int(binding["spec_revision"]) != int(accepted["offer"]["spec_revision"]):
+        raise outcome_compat.CompatibilityHaltError(
+            "handoff-wrong-revision",
+            unsupported=(
+                f"an advance under a handoff bound to revision {accepted['offer']['spec_revision']}"
+            ),
+            supported=f"the committed spec revision {binding['spec_revision']}",
+            next_action="re-discover the outcome and request a fresh handoff at this revision",
+        )
+    spec = load_spec(repo_root, outcome_id)
+    store = _store(repo_root, outcome_id)
+    frontier = outcome_spec.ready_frontier(spec, outcome_store.completed_subplots(store))
+    if subplot_id not in frontier:
+        raise outcome_compat.CompatibilityHaltError(
+            "handoff-frontier-changed",
+            unsupported=f"an advance for {subplot_id!r} which is no longer on the ready frontier",
+            supported="an advance for a leaf still on the dependency-derived ready frontier",
+            next_action="re-discover the outcome; the frontier moved since the handoff was issued",
+        )
+    result = advance(
+        repo_root,
+        outcome_id,
+        dispatcher=dispatcher,
+        gate_factory=lambda _spec, _store: lambda sid: sid == subplot_id,
+    )
+    return {
+        "handoff_id": handoff_id,
+        "subplot_id": subplot_id,
+        "successor_lease_id": accepted["lease"].lease_id,
+        "advance": result.to_dict(),
+    }
+
+
+def attended_handoff(
+    repo_root: Path,
+    outcome_id: str,
+    subplot_id: str,
+    *,
+    handoff_id: str,
+    receiver_owner_id: str,
+    admission: dict[str, Any],
+    broker: Any,
+) -> str:
+    """Accept an ``attend`` handoff, then derive the native resume command.
+
+    The printable command is derived only AFTER every binding validates — a copied or replayed
+    reference never turns into operator guidance.
+    """
+    import outcome_compat
+
+    outcome_compat.accept_handoff(
+        repo_root,
+        outcome_id,
+        handoff_id,
+        operation="attend",
+        subplot_id=subplot_id,
+        receiver_owner_id=receiver_owner_id,
+        receiver_runtime=outcome_compat.RUNTIME_LABEL,
+        admission=admission,
+        broker=broker,
+    )
+    return attend(repo_root, outcome_id, subplot_id)
+
+
 # ---------------------------------------------------------------------------
 # export / import — portable bundle across machines/worktrees (R14)
 # ---------------------------------------------------------------------------
@@ -1468,102 +1633,41 @@ def attend(repo_root: Path, outcome_id: str, subplot_id: str) -> str:
 def export_bundle(
     repo_root: Path, outcome_id: str, *, runner: Callable[..., Any] | None = None
 ) -> dict[str, Any]:
-    """A self-contained, portable snapshot: canonical spec + completion events + dispatch records.
+    """DEPRECATED alias of ``discover`` (#604 R7 — legacy portable authority is retired).
 
-    This is the R14 cross-machine/worktree story — the structural truth plus the completion/dispatch
-    facts needed to resume elsewhere. The cache itself is never exported (it is rebuildable).
+    The old ``outcome-bundle/1`` snapshot copied cache completion and dispatch records across
+    repositories and wrote the bundled spec on import — exactly the second authority path the
+    cross-runtime contract retires. This entrypoint now returns the ``outcome.discovery.v1``
+    envelope byte-for-byte (the same JSON ``discover`` prints): committed/GitHub references and
+    digests only, never a mutable cache fact. Import-side authority transfer is refused entirely
+    (:func:`import_bundle`).
     """
-    spec = load_spec(repo_root, outcome_id)
-    store = _store(repo_root, outcome_id, runner=runner)
-    events: list[dict[str, Any]] = []
-    for node in spec.nodes:
-        for ev in outcome_store.read_completion_events(store, node.subplot_id):
-            events.append(ev.to_dict())
-    ledger_records = outcome_store.read_ledger(store)
-    all_dispatch_records = [
-        record
-        for record in ledger_records
-        if record.get("kind") in {"dispatch", "outcome.dispatch.v2"}
-    ]
-    dispatch_ledger = [
-        record
-        for record in all_dispatch_records
-        if record.get("phase") not in {"ack", "authority-ack"}
-    ]
-    direct_dispatch_audit = [
-        record for record in all_dispatch_records if record.get("phase") in {"ack", "authority-ack"}
-    ]
-    archived_dispatch_audit = [
-        record["record"]
-        for record in ledger_records
-        if record.get("kind") == DISPATCH_AUDIT_KIND
-        and record.get("phase") == "archive"
-        and isinstance(record.get("record"), dict)
-    ]
-    dispatch_audit: list[dict[str, Any]] = []
-    seen_audit: set[str] = set()
-    for record in [*direct_dispatch_audit, *archived_dispatch_audit]:
-        digest = _dispatch_audit_digest(record)
-        if digest in seen_audit:
-            continue
-        seen_audit.add(digest)
-        dispatch_audit.append(record)
-    return {
-        "schema": "outcome-bundle/1",
-        "spec": spec.to_dict(),
-        "completion_events": events,
-        "dispatch_ledger": dispatch_ledger,
-        "dispatch_audit": dispatch_audit,
-        "dispatch_receipts": {},
-    }
+    import outcome_compat
+
+    return outcome_compat.build_discovery_envelope(
+        Path(repo_root), outcome_id, saga_version=_saga_version(), runner=runner
+    )
 
 
 def import_bundle(
     repo_root: Path, bundle: dict[str, Any], *, runner: Callable[..., Any] | None = None
 ) -> outcome_spec.OutcomeSpec:
-    """Reconstruct an outcome from a bundle: write the spec to the branch + replay events/records.
+    """REFUSED (#604 R7): a copied bundle is not authority and cannot write or replay state.
 
-    Fully **idempotent** — re-importing the same bundle does not duplicate state: completion events
-    replay through the write-once, idempotency-keyed store; active dispatch records are deduped by
-    ``(phase, key)`` and inert audit records by their content digest.
+    Raises with the exact migration commands; nothing is read from ``bundle`` beyond its schema
+    label and nothing is written to the spec path, the store, or any ledger. Cross-clone
+    reconstruction is ``attach`` (read-only, from committed spec + GitHub); same-clone mutation
+    requires a protected handoff — there is no escape hatch that copies a cache between hosts.
     """
-    if bundle.get("schema") != "outcome-bundle/1":
-        raise OutcomeError(f"unrecognized bundle schema {bundle.get('schema')!r}")
-    spec = outcome_spec.OutcomeSpec.from_dict(bundle["spec"])
-    spec.validate()
-    records = bundle.get("dispatch_ledger", [])
-    receipt_writes = _validate_import_dispatch_ledger(
-        repo_root,
-        spec,
-        records,
-        bundle.get("dispatch_receipts", {}),
+    del repo_root, runner
+    schema = bundle.get("schema") if isinstance(bundle, dict) else None
+    raise OutcomeError(
+        f"legacy bundle import is retired (#604 R7): a copied bundle (schema {schema!r}) "
+        "carries no authority. Migrate: run `outcome discover <outcome-id>` in the source "
+        "clone to emit the outcome.discovery.v1 envelope; run `outcome attach <outcome-id>` "
+        "in this clone for read-only canonical reconstruction; same-clone mutation requires "
+        "a protected handoff (`outcome handoff` then `outcome attach --advance`)."
     )
-    audit_wrappers = _validate_import_dispatch_audit(
-        spec,
-        records,
-        bundle.get("dispatch_audit", []),
-    )
-    raw_events = bundle.get("completion_events", [])
-    if not isinstance(raw_events, list) or len(raw_events) > 10000:
-        raise OutcomeError("completion_events must be a bounded list")
-    completion_events = [outcome_store.CompletionEvent.from_dict(event) for event in raw_events]
-    for path, content in receipt_writes:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        temporary = path.with_suffix(path.suffix + ".import.tmp")
-        temporary.write_bytes(content)
-        os.replace(temporary, path)
-    save_spec(repo_root, spec)
-    store = _store(repo_root, spec.outcome_id, runner=runner)
-    for event in completion_events:
-        outcome_store.write_completion_event(store, event)
-    existing = {(str(r.get("phase")), str(r.get("key"))) for r in outcome_store.read_ledger(store)}
-    for rec in [*records, *audit_wrappers]:
-        ident = (str(rec.get("phase")), str(rec.get("key")))
-        if ident in existing:
-            continue  # already present -> skip so re-import does not grow the ledger
-        outcome_store.append_ledger(store, rec)
-        existing.add(ident)
-    return spec
 
 
 def _dispatch_audit_digest(record: dict[str, Any]) -> str:
@@ -1571,185 +1675,6 @@ def _dispatch_audit_digest(record: dict[str, Any]) -> str:
 
     payload = json.dumps(record, sort_keys=True, separators=(",", ":"), allow_nan=False)
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
-
-
-def _validate_import_dispatch_audit(
-    spec: outcome_spec.OutcomeSpec,
-    dispatch_records: object,
-    audit_records: object,
-) -> list[dict[str, Any]]:
-    """Validate and wrap imported acknowledgements so they remain visible but never authoritative."""
-
-    if not isinstance(audit_records, list) or len(audit_records) > 10000:
-        raise OutcomeError("dispatch_audit must contain bounded non-authoritative acknowledgements")
-    if not isinstance(dispatch_records, list):
-        raise OutcomeError("dispatch_ledger must be a bounded list")
-    subplot_ids = {node.subplot_id for node in spec.nodes}
-    intents = {
-        str(record.get("key")): record
-        for record in dispatch_records
-        if isinstance(record, dict)
-        and record.get("kind") == "outcome.dispatch.v2"
-        and record.get("phase") == "intent"
-    }
-    allowed = {
-        "phase",
-        "kind",
-        "key",
-        "dispatch_intent_id",
-        "subplot_id",
-        "backend",
-        "ack_kind",
-        "dispatch_ack_ref",
-        "producer_kind",
-        "run_identity",
-        "receipt_sha256",
-        "receipt_authority",
-        "leaf_saga_id",
-        "orchestration_ref",
-        "at",
-    }
-    seen: set[str] = set()
-    wrappers: list[dict[str, Any]] = []
-    for record in audit_records:
-        if not isinstance(record, dict) or not set(record).issubset(allowed):
-            raise OutcomeError(
-                "dispatch_audit must contain bounded non-authoritative acknowledgements"
-            )
-        phase = str(record.get("phase", ""))
-        key = str(record.get("key", ""))
-        subplot_id = str(record.get("subplot_id", ""))
-        intent_id = f"dispatch-intent:{spec.outcome_id}:{subplot_id}"
-        at = record.get("at")
-        intent = intents.get(intent_id)
-        if (
-            record.get("kind") != "outcome.dispatch.v2"
-            or phase not in {"ack", "authority-ack"}
-            or subplot_id not in subplot_ids
-            or key != intent_id
-            or record.get("dispatch_intent_id") != intent_id
-            or intent is None
-            or record.get("backend") != intent.get("backend")
-            or record.get("ack_kind") not in {"launched", "handed-off"}
-            or not isinstance(record.get("dispatch_ack_ref"), str)
-            or not record["dispatch_ack_ref"]
-            or len(record["dispatch_ack_ref"]) > 4096
-            or isinstance(at, bool)
-            or not isinstance(at, (int, float))
-            or not math.isfinite(float(at))
-        ):
-            raise OutcomeError(
-                "dispatch_audit must contain bounded non-authoritative acknowledgements"
-            )
-        digest = _dispatch_audit_digest(record)
-        if digest in seen:
-            raise OutcomeError(
-                "dispatch_audit must contain bounded non-authoritative acknowledgements"
-            )
-        seen.add(digest)
-        wrappers.append(
-            {
-                "kind": DISPATCH_AUDIT_KIND,
-                "phase": "archive",
-                "key": f"dispatch-audit:{digest}",
-                "record": record,
-            }
-        )
-    return wrappers
-
-
-def _validate_import_dispatch_ledger(
-    repo_root: Path,
-    spec: outcome_spec.OutcomeSpec,
-    records: object,
-    receipt_payloads: object,
-) -> list[tuple[Path, bytes]]:
-    """Validate portable dispatch authority before import performs any writes."""
-
-    if not isinstance(records, list) or len(records) > 10000:
-        raise OutcomeError("dispatch_ledger must be a bounded list")
-    if not isinstance(receipt_payloads, dict) or len(receipt_payloads) > len(records):
-        raise OutcomeError("dispatch_receipts must be a bounded object")
-    subplot_ids = {node.subplot_id for node in spec.nodes}
-    intents: dict[str, dict[str, Any]] = {}
-    seen: set[tuple[str, str]] = set()
-
-    for raw in records:
-        if not isinstance(raw, dict):
-            raise OutcomeError("dispatch_ledger records must be objects")
-        kind = raw.get("kind")
-        phase = raw.get("phase")
-        key = str(raw.get("key", ""))
-        subplot_id = str(raw.get("subplot_id", ""))
-        if subplot_id not in subplot_ids or not key or (str(phase), key) in seen:
-            raise OutcomeError("dispatch_ledger contains an invalid or duplicate record")
-        seen.add((str(phase), key))
-        if kind == "dispatch":
-            if phase not in {"commit", "halt"}:
-                raise OutcomeError("legacy dispatch record has an invalid phase")
-            continue
-        if kind != "outcome.dispatch.v2" or phase not in {"intent", "ack", "authority-ack"}:
-            raise OutcomeError("dispatch_ledger contains an unsupported record")
-        allowed = {
-            "phase",
-            "kind",
-            "key",
-            "dispatch_intent_id",
-            "subplot_id",
-            "backend",
-            "run_identity",
-            "at",
-            "migration_from_key",
-            "migration_from_backend",
-        }
-        if phase in {"ack", "authority-ack"}:
-            allowed = {
-                "phase",
-                "kind",
-                "key",
-                "dispatch_intent_id",
-                "subplot_id",
-                "backend",
-                "ack_kind",
-                "dispatch_ack_ref",
-                "producer_kind",
-                "run_identity",
-                "receipt_sha256",
-                "receipt_authority",
-                "leaf_saga_id",
-                "orchestration_ref",
-                "at",
-            }
-        if not set(raw).issubset(allowed):
-            raise OutcomeError("dispatch record contains unrecognized fields")
-        intent_id = f"dispatch-intent:{spec.outcome_id}:{subplot_id}"
-        if key != intent_id or raw.get("dispatch_intent_id") != intent_id:
-            raise OutcomeError("dispatch record does not bind the outcome intent")
-        if phase == "intent":
-            if (
-                intent_id in intents
-                or raw.get("backend") not in outcome_spec.NODE_BACKENDS
-                or not re.fullmatch(
-                    r"[A-Za-z0-9][A-Za-z0-9._:-]{0,159}", str(raw.get("run_identity", ""))
-                )
-                or isinstance(raw.get("at"), bool)
-                or not isinstance(raw.get("at"), (int, float))
-                or not math.isfinite(float(raw["at"]))
-            ):
-                raise OutcomeError("dispatch intent is duplicate or incomplete")
-            intents[intent_id] = raw
-            continue
-        raise OutcomeError(
-            "authoritative dispatch acknowledgements are not portable; reconcile them locally"
-        )
-    if receipt_payloads:
-        raise OutcomeError("dispatch_receipts require a local authoritative acknowledgement")
-    return []
-
-
-# ---------------------------------------------------------------------------
-# graph — Mermaid topology (KTD12 one-glance frontier; full report is U8)
-# ---------------------------------------------------------------------------
 
 
 def graph_mermaid(repo_root: Path, outcome_id: str, *, store: Any | None = None) -> str:
@@ -1943,6 +1868,47 @@ def main(argv: list[str] | None = None) -> int:
     p_attend.add_argument("outcome_id")
     p_attend.add_argument("subplot_id", nargs="?", default=None)
 
+    p_discover = sub.add_parser(
+        "discover",
+        help="emit the outcome.discovery.v1 envelope from the COMMITTED spec (#604, read-only)",
+    )
+    p_discover.add_argument("outcome_id")
+
+    p_handoff = sub.add_parser(
+        "handoff",
+        help="offer a protected one-subplot cross-runtime handoff (#604; closes issuer authority)",
+    )
+    p_handoff.add_argument("outcome_id")
+    p_handoff.add_argument("subplot_id")
+    p_handoff.add_argument("--operation", choices=("advance-one", "attend"), required=True)
+    p_handoff.add_argument("--attempt", type=int, default=1)
+    p_handoff.add_argument("--dispatch-id", default="")
+    p_handoff.add_argument("--ttl-seconds", type=int, default=300)
+    for flag_parser in (p_handoff,):
+        flag_parser.add_argument("--session-id", required=True)
+        flag_parser.add_argument("--policy-sha256", required=True)
+        flag_parser.add_argument("--session-limit", type=int, required=True)
+        flag_parser.add_argument("--aggregate-limit", type=int, required=True)
+        flag_parser.add_argument("--broker-root", default=None)
+
+    p_attach = sub.add_parser(
+        "attach",
+        help="attach to a discovered outcome: read-only canonical status by default; "
+        "--advance/--attend require a validated protected handoff (#604)",
+    )
+    p_attach.add_argument("outcome_id")
+    attach_mode = p_attach.add_mutually_exclusive_group()
+    attach_mode.add_argument("--advance", action="store_true")
+    attach_mode.add_argument("--attend", dest="attach_attend", action="store_true")
+    p_attach.add_argument("--handoff-id", default=None)
+    p_attach.add_argument("--subplot", default=None)
+    p_attach.add_argument("--receiver", default=None)
+    p_attach.add_argument("--session-id", default=None)
+    p_attach.add_argument("--policy-sha256", default=None)
+    p_attach.add_argument("--session-limit", type=int, default=None)
+    p_attach.add_argument("--aggregate-limit", type=int, default=None)
+    p_attach.add_argument("--broker-root", default=None)
+
     p_report = sub.add_parser(
         "report", help="regenerate docs/outcomes/<id>/report.md from state (R19)"
     )
@@ -2103,6 +2069,98 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(status(root, args.outcome_id)))
         elif args.command == "graph":
             print(graph_mermaid(root, args.outcome_id))
+        elif args.command in ("discover", "handoff", "attach"):
+            import outcome_compat
+
+            try:
+                if args.command == "discover":
+                    envelope = outcome_compat.build_discovery_envelope(
+                        root, args.outcome_id, saga_version=_saga_version()
+                    )
+                    print(outcome_compat.canonical_json(envelope))
+                elif args.command == "handoff":
+                    broker = _cli_broker(args.broker_root)
+                    admission = _cli_admission(args)
+                    identity = outcome_compat.repository_identity(root)
+                    lease = broker.acquire_agent(
+                        owner_id=f"outcome-handoff-{os.getpid()}-{time.monotonic_ns()}",
+                        session_id=admission["session_id"],
+                        policy_sha256=admission["policy_sha256"],
+                        session_limit=admission["session_limit"],
+                        aggregate_limit=admission["aggregate_limit"],
+                        mutation="read-write",
+                        resource_ref=outcome_compat.outcome_dispatch_resource(
+                            identity, args.outcome_id, args.subplot_id, args.attempt
+                        ),
+                    )
+                    _offer, reference = outcome_compat.offer_handoff(
+                        root,
+                        args.outcome_id,
+                        args.subplot_id,
+                        operation=args.operation,
+                        attempt=args.attempt,
+                        broker=broker,
+                        lease=lease,
+                        dispatch_id=args.dispatch_id,
+                        ttl_seconds=args.ttl_seconds,
+                    )
+                    print(outcome_compat.canonical_json(reference))
+                else:  # attach
+                    if args.advance or args.attach_attend:
+                        if not args.handoff_id or not args.subplot:
+                            raise OutcomeError(
+                                "attach --advance/--attend requires --handoff-id and --subplot"
+                            )
+                        broker = _cli_broker(args.broker_root)
+                        admission = _cli_admission(args)
+                        receiver = args.receiver or (
+                            f"outcome-attach-{os.getpid()}-{time.monotonic_ns()}"
+                        )
+                        if args.advance:
+                            outcome_result = attached_advance(
+                                root,
+                                args.outcome_id,
+                                args.subplot,
+                                handoff_id=args.handoff_id,
+                                receiver_owner_id=receiver,
+                                admission=admission,
+                                broker=broker,
+                                settled_lookup=_settled_lookup(root),
+                                # The native dispatch path (KTD2): the same protected
+                                # launched-acknowledgement dispatcher the `advance` CLI uses,
+                                # built WITHOUT lease authority (KTD6 — the seam stays dormant).
+                                dispatcher=outcome_dispatcher.make_dispatcher(
+                                    available=outcome_spec.NODE_BACKENDS
+                                ),
+                            )
+                            print(json.dumps(outcome_result))
+                        else:
+                            print(
+                                attended_handoff(
+                                    root,
+                                    args.outcome_id,
+                                    args.subplot,
+                                    handoff_id=args.handoff_id,
+                                    receiver_owner_id=receiver,
+                                    admission=admission,
+                                    broker=broker,
+                                )
+                            )
+                    else:
+                        canonical = outcome_compat.build_canonical_status(root, args.outcome_id)
+                        print(outcome_compat.canonical_json(canonical))
+            except outcome_compat.CompatibilityHaltError as halt:
+                print(json.dumps(halt.receipt()))
+                return 3
+            except _cli_broker_error() as exc:
+                # A broker rejection (capacity, policy, registry) is an operational failure of
+                # this clone's coordination authority, not a cross-runtime compatibility halt —
+                # exit 1 with the standard structured error, never a bare traceback.
+                print(
+                    json.dumps({"ok": False, "error": f"{type(exc).__name__}: {exc}"}),
+                    file=sys.stderr,
+                )
+                return 1
         elif args.command == "attend":
             if args.subplot_id:
                 print(attend(root, args.outcome_id, args.subplot_id))
@@ -2128,7 +2186,18 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 print(json.dumps(outcome_projection.project(spec, store)))
         elif args.command == "export":
-            print(json.dumps(export_bundle(root, args.outcome_id)))
+            import outcome_compat
+
+            print(
+                "WARNING: `outcome export` is a deprecated alias of `outcome discover` "
+                "(#604 R7); the outcome-bundle/1 authority path is retired.",
+                file=sys.stderr,
+            )
+            try:
+                print(outcome_compat.canonical_json(export_bundle(root, args.outcome_id)))
+            except outcome_compat.CompatibilityHaltError as halt:
+                print(json.dumps(halt.receipt()))
+                return 3
         elif args.command == "import":
             bundle = json.loads(Path(args.path).read_text(encoding="utf-8"))
             spec = import_bundle(root, bundle)

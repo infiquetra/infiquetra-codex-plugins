@@ -12,7 +12,6 @@ with no real git repo; repo_root is a tmp dir that holds the branch-local spec.
 
 from __future__ import annotations
 
-import copy
 import hashlib
 import importlib.util
 import json
@@ -297,23 +296,22 @@ def test_resume_reconstructs_with_cache_deleted(repo: Path) -> None:
 # --------------------------------------------------------------------------- export / import (R14)
 
 
-def test_export_import_roundtrips_across_repos(
+def test_legacy_bundle_import_is_refused_with_zero_writes(
     repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    M.start(repo, "ship-x", "Ship feature X")
-    M.advance(repo, "ship-x", dispatcher=_runtime_ack)  # typed launch for design
-    store = STORE.Store.for_outcome("ship-x", repo)
-    STORE.write_completion_event(
-        store, STORE.CompletionEvent(subplot_id="design", state="done", idempotency_key="kd")
-    )
-    M.advance(repo, "ship-x", dispatcher=_runtime_ack)  # typed launch for build
-    bundle = M.export_bundle(repo, "ship-x")
-    assert bundle["schema"] == "outcome-bundle/1"
-    assert any(e["subplot_id"] == "design" for e in bundle["completion_events"])
-    assert any(r.get("subplot_id") == "build" for r in bundle["dispatch_ledger"])
-    assert any(r.get("subplot_id") == "build" for r in bundle["dispatch_audit"])
+    """#604 R7: outcome-bundle/1 is retired as an authority-transfer path.
 
-    # import into a DIFFERENT repo (fresh common dir)
+    A copied bundle must not write a spec, replay completion events, or replay dispatch
+    records into another repository — the refusal names the discover/attach migration.
+    The old chain-validation rejections are subsumed: import writes nothing for ANY bundle.
+    """
+    M.start(repo, "ship-x", "Ship feature X")
+    bundle = {
+        "schema": "outcome-bundle/1",
+        "spec": {"outcome_id": "ship-x"},
+        "completion_events": [{"subplot_id": "design", "state": "done"}],
+        "dispatch_ledger": [{"phase": "commit", "key": "dispatch:build"}],
+    }
     dest = tmp_path / "dest"
     dest.mkdir()
     common2 = dest / ".git"
@@ -323,63 +321,25 @@ def test_export_import_roundtrips_across_repos(
         "run",
         lambda args, **kw: SimpleNamespace(returncode=0, stdout=str(common2) + "\n", stderr=""),
     )
-    spec = M.import_bundle(dest, bundle)
-    assert spec.outcome_id == "ship-x"
-    # Completion and intents are portable, but launch authority must be reconciled locally.
-    st = M.status(dest, "ship-x")
-    assert st["states"]["design"] == "done" and st["states"]["build"] == "intent-created"
-    reexported = M.export_bundle(dest, "ship-x")
-    assert reexported["dispatch_audit"] == bundle["dispatch_audit"]
-    assert M.status(dest, "ship-x")["states"]["build"] == "intent-created"
-    assert any(
-        record.get("kind") == M.DISPATCH_AUDIT_KIND
-        for record in STORE.read_ledger(STORE.Store.for_outcome("ship-x", dest))
-    )
-
-    # re-import is idempotent: the dispatch ledger does not grow on a second import
-    dest_store = STORE.Store.for_outcome("ship-x", dest)
-    ledger_before = len(STORE.read_ledger(dest_store))
-    M.import_bundle(dest, bundle)
-    assert len(STORE.read_ledger(dest_store)) == ledger_before
-
-
-@pytest.mark.parametrize("mutation", ["producer", "missing-receipt", "orphan", "backend"])
-def test_import_rejects_unverified_dispatch_chains_before_writes(
-    repo: Path,
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-    mutation: str,
-) -> None:
-    M.start(repo, "untrusted", "Untrusted bundle")
-    M.advance(repo, "untrusted", dispatcher=_runtime_ack)
-    bundle = copy.deepcopy(M.export_bundle(repo, "untrusted"))
-    acknowledgement = copy.deepcopy(bundle["dispatch_audit"][0])
-    bundle["dispatch_ledger"].append(acknowledgement)
-    if mutation == "producer":
-        acknowledgement["producer_kind"] = "forged"
-    elif mutation == "missing-receipt":
-        bundle["dispatch_receipts"] = {}
-    elif mutation == "orphan":
-        bundle["dispatch_ledger"] = [
-            acknowledgement,
-            *[record for record in bundle["dispatch_ledger"] if record is not acknowledgement],
-        ]
-    else:
-        acknowledgement["backend"] = "manual"
-
-    dest = tmp_path / f"dest-{mutation}"
-    dest.mkdir()
-    common = dest / ".git"
-    common.mkdir()
-    monkeypatch.setattr(
-        M.outcome_store.subprocess,
-        "run",
-        lambda args, **kw: SimpleNamespace(returncode=0, stdout=f"{common}\n", stderr=""),
-    )
-    with pytest.raises(M.OutcomeError):
+    with pytest.raises(M.OutcomeError) as exc:
         M.import_bundle(dest, bundle)
-    assert not M.spec_path(dest, "untrusted").exists()
-    assert not (dest / ".codex/verified-workflows/dispatch-receipts").exists()
+    message = str(exc.value)
+    assert "retired" in message and "discover" in message and "attach" in message
+    assert not (dest / "docs").exists()  # no spec write
+    assert not (common2 / "saga-outcomes").exists()  # no store/ledger write
+
+
+def test_export_is_a_discovery_envelope_alias(repo: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """#604 R7: export no longer builds outcome-bundle/1 — it returns the discovery envelope."""
+    del monkeypatch
+    M.start(repo, "ship-x", "Ship feature X")
+    with pytest.raises(Exception) as exc:
+        M.export_bundle(repo, "ship-x")
+    # The monkeypatched fake git common dir cannot answer the fixed-argv identity probes the
+    # envelope requires, so the alias HALTs closed instead of minting a bundle — proving the
+    # bundle path is gone. (The real-git envelope path is proven end-to-end in
+    # tests/test_outcome_cross_runtime.py::TestLegacyExportAlias.)
+    assert "outcome-bundle" not in str(exc.value)
 
 
 # --------------------------------------------------------------------------- graph + CLI
