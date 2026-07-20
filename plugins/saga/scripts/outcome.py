@@ -1316,6 +1316,25 @@ def _reconcile_once(
             _append_ledger_once(store, {"phase": "halt", "kind": "dispatch", "key": key, **receipt})
             halted.append(receipt)
             continue
+        except outcome_dispatcher.DispatcherError as refusal:
+            # A lease-authority refusal (admission conflict with another runtime, renew failure) — the
+            # cross-runtime conflict signal the activated seam exists to raise. Same recovery posture as
+            # a backend HALT: release the lock so a later tick re-attempts, record the refusal durably,
+            # never abort the tick. This must NOT be recorded as an acknowledgement — the ledger reducer
+            # marks any ack settled, which would strand the leaf as permanently done. The explicit
+            # "kind" sits AFTER the receipt spread: the reducer's halt arm matches (dispatch, halt), and
+            # a receipt-spread "kind" of "halt" would hide this record from the derived report.
+            outcome_store.release_lease(store, f"dispatch-{sid}", holder)
+            receipt = {
+                "kind": "halt",
+                "outcome_id": spec.outcome_id,
+                "subplot_id": sid,
+                "backend": resolved_backend,
+                "reason": str(refusal),
+            }
+            _append_ledger_once(store, {"phase": "halt", "key": key, **receipt, "kind": "dispatch"})
+            halted.append(receipt)
+            continue
         if degrade_receipt is not None:
             # A visible downgrade receipt (R23) — surfaced in the report's Degradations section.
             # Append-once on (degrade, key) so a crash in the degrade->commit window (recovery re-runs the
@@ -1630,7 +1649,8 @@ def attended_handoff(
 
 
 # ---------------------------------------------------------------------------
-# export / import — portable bundle across machines/worktrees (R14)
+# export / import — retired outcome-bundle/1 surface (#604 R7: export aliases discover;
+# import always refuses)
 # ---------------------------------------------------------------------------
 
 
@@ -1665,8 +1685,9 @@ def import_bundle(
     """
     del repo_root, runner
     schema = bundle.get("schema") if isinstance(bundle, dict) else None
+    label = f" (schema {schema!r})" if schema else ""
     raise OutcomeError(
-        f"legacy bundle import is retired (#604 R7): a copied bundle (schema {schema!r}) "
+        f"legacy bundle import is retired (#604 R7): a copied bundle{label} "
         "carries no authority. Migrate: run `outcome discover <outcome-id>` in the source "
         "clone to emit the outcome.discovery.v1 envelope; run `outcome attach <outcome-id>` "
         "in this clone for read-only canonical reconstruction; same-clone mutation requires "
@@ -1923,10 +1944,16 @@ def main(argv: list[str] | None = None) -> int:
     p_commit.add_argument("outcome_id")
     p_commit.add_argument("--push", action="store_true")
 
-    p_export = sub.add_parser("export", help="print a portable bundle (spec + completion)")
+    p_export = sub.add_parser(
+        "export",
+        help="deprecated read-only alias of `discover` (#604 R7); prints the discovery envelope",
+    )
     p_export.add_argument("outcome_id")
 
-    p_import = sub.add_parser("import", help="reconstruct an outcome from a bundle file")
+    p_import = sub.add_parser(
+        "import",
+        help="retired (#604 R7): always refuses with discover/attach migration guidance",
+    )
     p_import.add_argument("path")
 
     p_approve = sub.add_parser(
@@ -2008,7 +2035,17 @@ def main(argv: list[str] | None = None) -> int:
                 root,
                 args.outcome_id,
                 loop=args.loop,
-                dispatcher=outcome_dispatcher.make_dispatcher(available=outcome_spec.NODE_BACKENDS),
+                # Lease authority is wired (#43, plan KTD8): the #34 port left this seam dormant
+                # under the KTD6 operator deferral, and cross-runtime acceptance is where that
+                # deferral resolves. The seam provides admission accounting and post-hoc conflict
+                # detection — a racing runtime's supersede-on-acquire is surfaced when this side's
+                # renew fails, landing on the DispatcherError halt arm — not mutual exclusion, and
+                # the settlement ledger stays scoped per git-common-dir (separate clones do not
+                # share it). Matches the Claude source's `advance` arm.
+                dispatcher=outcome_dispatcher.make_dispatcher(
+                    available=outcome_spec.NODE_BACKENDS,
+                    lease_authority=outcome_dispatcher.default_lease_authority(),
+                ),
                 harvester=production_harvester(root),
                 merge_processor=production_merge_processor(),
                 worktree_processor=production_worktree_processor(root),
@@ -2125,9 +2162,17 @@ def main(argv: list[str] | None = None) -> int:
                                 settled_lookup=_settled_lookup(root),
                                 # The native dispatch path (KTD2): the same protected
                                 # launched-acknowledgement dispatcher the `advance` CLI uses,
-                                # built WITHOUT lease authority (KTD6 — the seam stays dormant).
+                                # now built WITH lease authority (#43, plan KTD8 — the KTD6
+                                # deferral resolves at cross-runtime acceptance). The authority
+                                # is the SAME broker carrying the handoff acceptance above, so a
+                                # `--broker-root` override scopes coordination and dispatch
+                                # leases to one registry — a default-root authority here would
+                                # silently split them. The seam is admission accounting plus
+                                # post-hoc conflict detection (renew failure after a peer's
+                                # supersede-on-acquire), not mutual exclusion.
                                 dispatcher=outcome_dispatcher.make_dispatcher(
-                                    available=outcome_spec.NODE_BACKENDS
+                                    available=outcome_spec.NODE_BACKENDS,
+                                    lease_authority=broker,
                                 ),
                             )
                             print(json.dumps(outcome_result))
@@ -2196,9 +2241,11 @@ def main(argv: list[str] | None = None) -> int:
                 print(json.dumps(halt.receipt()))
                 return 3
         elif args.command == "import":
-            bundle = json.loads(Path(args.path).read_text(encoding="utf-8"))
-            spec = import_bundle(root, bundle)
-            print(json.dumps({"imported": spec.outcome_id, "nodes": len(spec.nodes)}))
+            # Refuses without reading args.path (#604 R7): the retirement receipt must not
+            # depend on the file existing or parsing, or a missing/malformed bundle would
+            # surface an I/O error instead of the migration guidance. The top-level handler
+            # prints the receipt. No success path exists.
+            import_bundle(root, {})
         elif args.command == "reconcile-dispatch":
             print(
                 json.dumps(

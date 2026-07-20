@@ -34,7 +34,7 @@
     "expected_count": 0,
     "historical_plan_base": "3723a8183e3ea9c372ad9f34fd18f4170c36d26f",
     "inventory_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
-    "observed_origin_main": "3723a8183e3ea9c372ad9f34fd18f4170c36d26f",
+    "observed_origin_main": "d29e75fdcd693528741c8ea38a8b9cbd22340ff6",
     "repository_id": "infiquetra/infiquetra-codex-plugins",
     "rows": []
   },
@@ -217,7 +217,7 @@
     "observed_refs": {
       "head": "1a7b145a395235b36c803113f30e4de9f7f035a5",
       "local_main": "1a7b145a395235b36c803113f30e4de9f7f035a5",
-      "origin_main": "cf15a09f8ffe9bf7c6f1218b2c72a8143d60ab49"
+      "origin_main": "794b4da6971a5df3ba57ab7d15cb3deca2ec0ce3"
     },
     "pathspecs": [
       ".claude-plugin/marketplace.json",

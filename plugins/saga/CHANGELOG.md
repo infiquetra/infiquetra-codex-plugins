@@ -1,5 +1,46 @@
 # Changelog
 
+## 0.78.0 - 2026-07-20
+
+### Changed - Dispatcher lease seam activated (#43, PA-2 of infiquetra-claude-plugins#605)
+
+- Both `outcome_dispatcher.make_dispatcher(...)` call sites in `outcome.py` — the `advance` arm
+  and the native attached-advance dispatch path — now pass a lease authority: the `advance` arm
+  wires `outcome_dispatcher.default_lease_authority()`, and the attached-advance path reuses the
+  same broker that carries the handoff acceptance, so a `--broker-root` override scopes
+  coordination and dispatch leases to one registry. The #34 port deliberately left this seam
+  dormant under its KTD6 operator deferral; cross-runtime acceptance is where that deferral
+  resolves. What the seam provides is admission accounting plus post-hoc conflict detection —
+  the fleet lease registry records which runtime most recently claimed a leaf, and a racing
+  runtime that was superseded learns of the conflict when its renew fails, which the reconcile
+  loop now records as a durable dispatch HALT (a new `DispatcherError` arm mirrors the
+  `BackendHaltError` recovery posture: release the per-subplot lock, append the halt receipt,
+  continue the tick). It is NOT mutual exclusion — acquisition supersedes rather than refuses a
+  live conflicting lease — and it is NOT a cross-clone one-effect guarantee: the settlement
+  ledger stays scoped per git-common-dir, so two separate clones share the lease registry but
+  not the ledger. `test_dispatcher_lease_seam_stays_dormant_ktd6` is replaced by an activation
+  pin that walks the parsed AST requiring a `lease_authority` keyword on every
+  `make_dispatcher(...)` call, plus differential CLI oracles that a real authority is consulted
+  on both arms and a behavioral test that a real lease is taken during dispatch and released
+  after.
+
+### Fixed - Retired-bundle CLI surface re-ported (#43, from infiquetra-claude-plugins#624)
+
+- `outcome export`/`import` `--help` strings describe the live #604 R7 semantics instead of the
+  retired `outcome-bundle/1` flow, and the section comment matches.
+- `outcome import` refuses without reading its path argument, so a missing or malformed bundle
+  yields the migration guidance rather than an uncaught `FileNotFoundError` traceback or a bare
+  JSON parse error.
+
+### Security - Protected handoff-store directory re-ported (#43, from infiquetra-claude-plugins#624)
+
+- `outcome_compat.py` is re-frozen byte-faithful to its Claude source at `794b4da6`, with
+  `RUNTIME_LABEL = "codex"` the only divergence (re-proved by diff). It carries the handoff-store
+  hardening: directories are created `0o700`, a pre-existing symlinked/foreign-owned/permissive
+  directory is refused, existing ancestors below `$HOME` are refused when symlinked,
+  world-writable, or uninspectable, and `handoff-store-unsafe` receipts carry no absolute path
+  (R12 — callers print them verbatim).
+
 ## 0.77.0 - 2026-07-20
 
 ### Added

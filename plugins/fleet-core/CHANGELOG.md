@@ -2,6 +2,25 @@
 
 All notable changes to the Codex `fleet-core` plugin are documented here.
 
+## 0.10.0 — 2026-07-20
+
+### Security - Audit-store ancestor hardening (#43, re-ported from infiquetra-claude-plugins#624)
+
+- `audit_store._ensure_private_dir` now refuses symlinked, world-writable, or uninspectable
+  existing path components strictly below the user's home (typed `AuditStoreError`, no silent
+  fallback) before creating anything — closing the walk that could previously `mkdir` through a
+  symlinked ancestor. The scope test is lexical on the expanded absolute path; home itself and
+  out-of-home roots (e.g. sticky system temp directories used by test fixtures) are exempt.
+  Group-writable ancestors remain permitted by design, pinned by test.
+- Reach differs per branch because `Store.for_root` canonicalizes the root with `resolve()`:
+  mode bits survive resolution, so the world-writable refusal covers every caller whose resolved
+  root stays lexically below home — resolution that lands the root outside home (a symlinked
+  home component onto another volume, an out-of-home clone) skips the walk entirely by the scope
+  exemption. Symlink identity does not survive resolution, so the symlink refusal covers direct
+  callers and the post-resolve window. The scope boundary is routed upstream for adjudication
+  (the guard is byte-identical to its infiquetra-claude-plugins source and stays byte-faithful
+  here).
+
 ## 0.9.0 — 2026-07-19
 
 - Port the lease-safe fleet substrate from the frozen Claude source range `a6f3bcff..cf15a09f`

@@ -267,7 +267,7 @@
           "skill_path": "plugins/saga/skills/loop/SKILL.md"
         }
       ],
-      "version": "0.77.0+codex.20260720023112"
+      "version": "0.78.0+codex.20260720120109"
     },
     "verified-workflows": {
       "skills": [

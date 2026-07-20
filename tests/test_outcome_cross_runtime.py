@@ -16,6 +16,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
+import stat
 import subprocess
 import sys
 from pathlib import Path
@@ -1465,3 +1466,202 @@ class TestLegacyExportAlias:
         assert result.returncode == 1
         assert "retired" in result.stderr and "discover" in result.stderr
         assert _store_namespace_absent(outcome_repo)
+
+    @pytest.mark.parametrize("body", [None, "{not valid json"])
+    def test_cli_import_refuses_before_reading_the_bundle(
+        self, outcome_repo: Path, tmp_path: Path, body: str | None
+    ) -> None:
+        """Re-ported from PA-1 (#624): a missing or malformed bundle still yields the migration
+        guidance. The arm refuses without touching the path, so an unreadable file cannot
+        pre-empt it with a traceback or a JSON parse error."""
+        bundle_path = tmp_path / "bundle.json"
+        if body is not None:
+            bundle_path.write_text(body, encoding="utf-8")
+
+        result = _cli(outcome_repo, "import", str(bundle_path))
+
+        assert result.returncode == 1
+        assert "retired" in result.stderr and "discover" in result.stderr
+        assert "attach" in result.stderr
+        assert _store_namespace_absent(outcome_repo)
+
+
+class TestHandoffStorePrivacy:
+    """Re-ported from PA-1 (#624): the handoff store is owner-only and refuses unsafe paths."""
+
+    def test_write_once_creates_private_handoffs_dir(self, tmp_path: Path) -> None:
+        target = tmp_path / "store" / "handoffs" / "h1.offer.json"
+        # The O_CREAT 0o600 file mode is masked by the process umask (the directories are not —
+        # they get an explicit chmod), so pin the umask or an owner-bit-clearing value on the
+        # runner fails the 0o600 assertion below.
+        previous = os.umask(0o022)
+        try:
+            assert OC._write_once(target, {"schema": "x"}) is True
+        finally:
+            os.umask(previous)
+        for directory in (target.parent, target.parent.parent):
+            assert stat.S_IMODE(directory.lstat().st_mode) == 0o700
+        assert stat.S_IMODE(target.lstat().st_mode) == 0o600
+
+    def test_write_once_refuses_permissive_preexisting_dir(self, tmp_path: Path) -> None:
+        handoffs = tmp_path / "handoffs"
+        handoffs.mkdir()
+        os.chmod(handoffs, 0o755)
+        with pytest.raises(OC.CompatibilityHaltError) as exc:
+            OC._write_once(handoffs / "h1.offer.json", {"schema": "x"})
+        assert exc.value.receipt()["code"] == "handoff-store-unsafe"
+        assert not (handoffs / "h1.offer.json").exists()
+
+    def test_write_once_refuses_symlinked_handoffs_dir(self, tmp_path: Path) -> None:
+        real = tmp_path / "real"
+        real.mkdir(mode=0o700)
+        link = tmp_path / "handoffs"
+        link.symlink_to(real)
+        with pytest.raises(OC.CompatibilityHaltError) as exc:
+            OC._write_once(link / "h1.offer.json", {"schema": "x"})
+        assert exc.value.receipt()["code"] == "handoff-store-unsafe"
+        assert list(real.iterdir()) == []
+
+    def test_receipt_carries_no_absolute_path(self, tmp_path: Path) -> None:
+        """R12: callers print the receipt verbatim, so no field may leak the store path."""
+        handoffs = tmp_path / "handoffs"
+        handoffs.mkdir()
+        os.chmod(handoffs, 0o755)
+        with pytest.raises(OC.CompatibilityHaltError) as exc:
+            OC._write_once(handoffs / "h1.offer.json", {"schema": "x"})
+        for field, value in exc.value.receipt().items():
+            assert str(tmp_path) not in value, f"receipt[{field!r}] leaks the store path"
+            assert str(Path.home()) not in value, f"receipt[{field!r}] leaks the home directory"
+
+    def test_refuses_symlinked_ancestor_below_home(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        home = tmp_path / "fake-home"
+        home.mkdir()
+        monkeypatch.setenv("HOME", str(home))
+        real = home / "real-target"
+        real.mkdir(mode=0o700)
+        link = home / "link"
+        link.symlink_to(real)
+        with pytest.raises(OC.CompatibilityHaltError) as exc:
+            OC._ensure_private_dir(link / "handoffs")
+        assert exc.value.receipt()["code"] == "handoff-store-unsafe"
+        assert list(real.iterdir()) == []
+
+    def test_refuses_world_writable_ancestor_below_home(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        home = tmp_path / "fake-home"
+        home.mkdir()
+        monkeypatch.setenv("HOME", str(home))
+        loose = home / "loose"
+        loose.mkdir()
+        os.chmod(loose, 0o777)
+        with pytest.raises(OC.CompatibilityHaltError) as exc:
+            OC._ensure_private_dir(loose / "handoffs")
+        assert exc.value.receipt()["code"] == "handoff-store-unsafe"
+        assert not (loose / "handoffs").exists()
+
+    def test_creates_fresh_below_home_path(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        home = tmp_path / "fake-home"
+        home.mkdir()
+        monkeypatch.setenv("HOME", str(home))
+        target = home / "fresh" / "handoffs"
+        OC._ensure_private_dir(target)
+        assert stat.S_IMODE(target.lstat().st_mode) == 0o700
+
+    def test_refuses_uninspectable_ancestor_below_home(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """An ancestor this user cannot stat fails typed, not as a raw PermissionError."""
+        if os.geteuid() == 0:  # root bypasses the permission check the test depends on
+            pytest.skip("root can traverse any directory")
+        home = tmp_path / "fake-home"
+        home.mkdir()
+        monkeypatch.setenv("HOME", str(home))
+        blocked = home / "blocked"
+        blocked.mkdir()
+        (blocked / "child").mkdir()
+        os.chmod(blocked, 0o000)
+        try:
+            with pytest.raises(OC.CompatibilityHaltError) as exc:
+                OC._ensure_private_dir(blocked / "child" / "handoffs")
+        finally:
+            os.chmod(blocked, 0o700)  # restore so tmp_path teardown can clean up
+        receipt = exc.value.receipt()
+        assert receipt["code"] == "handoff-store-unsafe"
+        assert "cannot inspect" in receipt["unsupported"]
+
+    def test_accepts_group_writable_ancestor_below_home(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """Scope guard, not a change detector: the refusal is world-writable, not group-writable —
+        a shared-group ancestor stays usable, mirroring the twin audit-store boundary pin."""
+        home = tmp_path / "fake-home"
+        home.mkdir()
+        monkeypatch.setenv("HOME", str(home))
+        shared = home / "shared"
+        shared.mkdir()
+        os.chmod(shared, 0o770)
+        target = shared / "handoffs"
+        OC._ensure_private_dir(target)
+        assert stat.S_IMODE(target.lstat().st_mode) == 0o700
+
+    def test_walk_exempts_home_itself(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """The candidate == home early return: home's own mode is never a refusal reason — the
+        walk covers components strictly below it."""
+        home = tmp_path / "fake-home"
+        home.mkdir()
+        monkeypatch.setenv("HOME", str(home))
+        os.chmod(home, 0o777)
+        try:
+            OC._refuse_unsafe_handoff_ancestors(home)  # no raise: exempted before the walk
+        finally:
+            os.chmod(home, 0o700)
+
+    def test_relative_path_is_normalized_before_the_walk(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """A relative candidate is expanded with abspath (not resolve) before the scope test, so
+        a world-writable ancestor reached via a relative path is still refused."""
+        home = tmp_path / "fake-home"
+        home.mkdir()
+        monkeypatch.setenv("HOME", str(home))
+        loose = home / "loose"
+        loose.mkdir()
+        os.chmod(loose, 0o777)
+        monkeypatch.chdir(home)
+        with pytest.raises(OC.CompatibilityHaltError) as exc:
+            OC._ensure_private_dir(Path("loose") / "handoffs")
+        assert exc.value.receipt()["code"] == "handoff-store-unsafe"
+        assert not (loose / "handoffs").exists()
+
+    def test_refuses_regular_file_at_store_path(self, tmp_path: Path) -> None:
+        """A regular file where the handoff directory should be fails the private-store
+        predicate, not a downstream mkdir/open error."""
+        occupied = tmp_path / "handoffs"
+        occupied.write_text("not a directory\n", encoding="utf-8")
+        with pytest.raises(OC.CompatibilityHaltError) as exc:
+            OC._ensure_private_dir(occupied)
+        receipt = exc.value.receipt()
+        assert receipt["code"] == "handoff-store-unsafe"
+        assert "private-store predicate" in receipt["unsupported"]
+
+    def test_refuses_store_dir_owned_by_another_user(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """An existing store directory owned by a different uid is refused rather than adopted."""
+        store = tmp_path / "handoffs"
+        store.mkdir(mode=0o700)
+        os.chmod(store, 0o700)
+        owner = os.geteuid()
+        monkeypatch.setattr(OC.os, "geteuid", lambda: owner + 1)
+        with pytest.raises(OC.CompatibilityHaltError) as exc:
+            OC._ensure_private_dir(store)
+        receipt = exc.value.receipt()
+        assert receipt["code"] == "handoff-store-unsafe"
+        assert "private-store predicate" in receipt["unsupported"]

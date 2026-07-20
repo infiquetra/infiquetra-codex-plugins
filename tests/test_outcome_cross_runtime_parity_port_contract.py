@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import hashlib
 import json
 from pathlib import Path
@@ -295,25 +296,48 @@ def test_u5_release_rows_are_verified_with_current_evidence() -> None:
 
 
 def test_release_version_pins_are_coherent() -> None:
-    """Every surface pinning the saga release tells the same 0.77.0 story."""
+    """Every surface pinning the saga release tells the same 0.78.0 story."""
     manifest_version = json.loads(
         (ROOT / "plugins/saga/.codex-plugin/plugin.json").read_text(encoding="utf-8")
     )["version"]
-    assert manifest_version.split("+codex.")[0] == "0.77.0"
+    assert manifest_version.split("+codex.")[0] == "0.78.0"
     inventory = json.loads(
         (ROOT / "docs/validation/saga-family-target-inventory.json").read_text(encoding="utf-8")
     )
     saga_rows = [entry["version"] for entry in inventory["plugins"] if entry.get("name") == "saga"]
     assert saga_rows == [manifest_version]
     changelog = (ROOT / "plugins/saga/CHANGELOG.md").read_text(encoding="utf-8")
-    assert "## 0.77.0 - 2026-07-20" in changelog
+    assert "## 0.78.0 - 2026-07-20" in changelog
 
 
-def test_dispatcher_lease_seam_stays_dormant_ktd6() -> None:
-    """Operator decision 2026-07-19 (plan KTD6): this port must not activate the repository-wide
-    dispatcher lease seam; `default_lease_authority` wiring belongs to cross-runtime-acceptance."""
+def test_dispatcher_lease_seam_is_active_ktd8() -> None:
+    """Plan KTD8 (#43): cross-runtime acceptance resolves the #34 KTD6 deferral.
+
+    Every dispatcher this CLI builds must pass a ``lease_authority`` keyword, wiring admission
+    accounting and post-hoc conflict detection into dispatch (the seam is not mutual exclusion —
+    acquisition supersedes a live conflicting lease, and the loser learns via renew failure).
+    The walk is over the parsed AST, not text counts, so a commented-out wiring line, a
+    docstring occurrence, or an aliased constructor cannot satisfy it; any live
+    ``make_dispatcher`` call without the keyword fails, including newly added sites.
+    """
     outcome_py = (ROOT / "plugins/saga/scripts/outcome.py").read_text(encoding="utf-8")
-    assert "default_lease_authority" not in outcome_py
+    tree = ast.parse(outcome_py)
+    built = 0
+    wired = 0
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        func = node.func
+        is_make_dispatcher = (isinstance(func, ast.Attribute) and func.attr == "make_dispatcher") or (
+            isinstance(func, ast.Name) and func.id == "make_dispatcher"
+        )
+        if not is_make_dispatcher:
+            continue
+        built += 1
+        if any(kw.arg == "lease_authority" for kw in node.keywords):
+            wired += 1
+    assert built >= 2, f"expected at least the advance + attached-advance dispatcher sites, found {built}"
+    assert wired == built, f"{built} live dispatcher call(s) but only {wired} pass lease_authority"
 
 
 def test_release_surfaces_are_coherent_for_cutover() -> None:
