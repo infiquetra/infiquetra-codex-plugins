@@ -80,3 +80,22 @@ Saga emits structured handoff envelopes that name the receiving skill. It does n
 - Gates: `tests/{test_dispatch_settlement,test_saga_lease_broker,test_outcome_dispatcher,
   test_lease_settlement_conformance,test_lease_safe_substrate_port_contract}.py` plus
   `plugins/saga/tests/test_run_ledger.py`; ceremony + unit evidence under `docs/validation/`.
+
+## 2026-07-19 outcome cross-runtime parity port (#34)
+
+- Port manifest: `docs/portability/ports/2026-07-19-outcome-cross-runtime-parity.json`; frozen
+  source `30bde209..97d2fb15` (the infiquetra-claude-plugins#604 squash); codex release saga
+  0.77.0 (release unit U5); codex preservation drift empty by construction (plan re-grounded at
+  execution base `3723a818`).
+- `outcome_compat.py` is byte-faithful except `RUNTIME_LABEL = "codex"`; fixtures byte-verbatim;
+  `outcome.py` grafts discover/handoff/attach and retires `outcome-bundle/1` (export aliases
+  discover; import refuses with zero writes). `attach --advance` uses the native protected
+  launched-acknowledgement dispatcher built WITHOUT lease authority — the #33 note that
+  coordinator-level lease enforcement "activates with codex-parity (#34)" is superseded by the
+  2026-07-19 operator decision: activation (plus the deferred `audit_store` ancestor hardening)
+  belongs to the cross-runtime-acceptance leaf.
+- Gates: `tests/test_outcome_cross_runtime.py` (adapted #604 contract suite),
+  `tests/test_outcome_dispatch_migration.py` (rejection oracles replace import round-trips),
+  `tests/test_outcome_command.py`, and the per-port
+  `tests/test_outcome_cross_runtime_parity_port_contract.py` (classification, unit evidence,
+  capability-snapshot honesty, KTD6 seam-dormancy pin).

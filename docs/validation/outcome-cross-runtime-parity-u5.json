@@ -1,0 +1,22 @@
+{
+ "claim": "release surfaces coherent for saga 0.77.0+codex.20260720023112",
+ "command": "python3 scripts/validate_codex_plugins.py",
+ "recorded_at": "2026-07-20T02:33:13Z",
+ "repo_head": "fc9975566fa4277c07fd216fe7fc5451b23c195e",
+ "result": "Codex plugin validation passed (current)",
+ "surfaces": {
+  "changelog": "plugins/saga/CHANGELOG.md 0.77.0 - 2026-07-19",
+  "generated": [
+   "docs/saga/generated/lifecycle-facts.json",
+   "docs/saga/visual-assets/saga-lifecycle-atlas.pdf"
+  ],
+  "operator_choice_pin": "plugins/saga/tests/test_codex_operator_choice.py",
+  "plugin_manifest": "0.77.0+codex.20260720023112",
+  "portability": "plugins/saga/PORTABILITY.md #34 section (supersedes the #33 seam-activation pointer)",
+  "reference": "plugins/saga/references/outcome-cross-runtime.md",
+  "skill": "plugins/saga/skills/outcome/SKILL.md",
+  "target_inventory": "docs/validation/saga-family-target-inventory.json",
+  "validator_pre_cutover_pin": "scripts/validate_codex_plugins.py PRE_CUTOVER_EXPECTED_PLUGINS"
+ },
+ "unit": "U5"
+}

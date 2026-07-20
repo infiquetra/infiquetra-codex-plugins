@@ -325,3 +325,28 @@ port (its port_id, refs, row counts, and digests) — the mission-control ports 
 Rejected: editing the shared CLI validator to accept multiple manifests (would unfreeze a sealed
 contract), scoping run_ledger down to the settlement slice (would fork the shared module lineage),
 and porting the source's dispatcher shape (would overwrite Codex's intent/ack machinery).
+
+## 2026-07-19: Cross-Runtime Parity Port — Zero-Drift Inventory, Refusal Subsumes Validation
+
+**Decision.** The #34 outcome cross-runtime parity port (manifest
+`docs/portability/ports/2026-07-19-outcome-cross-runtime-parity.json`) makes four pattern choices:
+(1) the codex preservation inventory is **empty by construction** — the plan's 2026-07-19 refresh
+re-grounded it at the execution base `3723a818`, so `historical_plan_base == execution_base` and
+there is no drift window to classify (the per-port gate pins this equality so the emptiness is a
+provable construction, not an omission); (2) `RUNTIME_LABEL = "codex"` is the **single deliberate
+byte divergence** in `outcome_compat.py` — every other byte tracks the frozen Claude source so
+future diff-against-upstream stays one-line; (3) legacy `outcome-bundle/1` import is retired by
+**wholesale refusal before reading records**, and the record-level chain validators are deleted
+with the machinery — a rejection oracle that proves zero writes subsumes per-record validation
+that can only run after parsing attacker-supplied bytes; (4) the operator's lease-seam deferral
+(KTD6) is pinned as a **test** (`test_dispatcher_lease_seam_stays_dormant_ktd6`), so activating
+the seam in this repo requires editing a named guard, not just wiring a call.
+
+**Rejected alternatives.** Enumerating the full #33 substrate diff as preservation rows (59 files
+of already-merged, already-gated content — busywork with no new invariant); keeping the import
+validators "for reference" (dead code that implies a live path); recording the seam deferral only
+in prose (silently reversible).
+
+**Revisit when.** The cross-runtime-acceptance leaf activates the seam (the KTD6 guard test moves
+to assert the wired form), or a future port needs a non-empty preservation inventory again (the
+zero-drift shape is a special case, not the new default).

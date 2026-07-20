@@ -82,7 +82,7 @@
     {
       "classification": "historical-evidence",
       "path": "docs/engineering-journal/DECISIONS.md",
-      "sha256": "df19f839d7a81f6b24f456cc6964c0c2a8ca01fe6420109bf10500d9ecfa5458",
+      "sha256": "a4315eb7801319649ea27d65e2fc715207d75e723445e6ce19e011b3d761888e",
       "tokens": [
         "## Team Structure",
         "Team Execution",
@@ -362,7 +362,7 @@
     {
       "classification": "lineage-documentation",
       "path": "docs/portability/matrix.md",
-      "sha256": "038055ba86e9b16a6cdfc4ad008915978402a8e90dccbd835791c724126a4524",
+      "sha256": "d993249965671596749804679ddb4a79ef6dde4197b0693e0c868cad208c50bf",
       "tokens": [
         "team-execution"
       ]
@@ -568,7 +568,7 @@
     {
       "classification": "legacy-read-metadata",
       "path": "docs/validation/saga-family-target-inventory.json",
-      "sha256": "2525999fc079c3a6e3c3a843a660ed3d7b23078b852e28452827016cda557403",
+      "sha256": "db9958cbe96e9e4c1aaabe72f8a15ba6c4eef579b3ee30e0fd3caa5c8eb6ead8",
       "tokens": [
         ".codex/team-execution/",
         "team-execution"
@@ -785,7 +785,7 @@
     {
       "classification": "lineage-documentation",
       "path": "plugins/saga/CHANGELOG.md",
-      "sha256": "fb2bd45f51fb6c1b775b61de1ed41ffce62bdab260584da8dad1f9e9df93b3c9",
+      "sha256": "bab7985d7bf6e13dffe1db316d5b95ac23852dec0c1e98ead17375e852f521bb",
       "tokens": [
         "Team Execution",
         "team-execution"
@@ -794,7 +794,7 @@
     {
       "classification": "lineage-documentation",
       "path": "plugins/saga/PORTABILITY.md",
-      "sha256": "d6c22fe3041dd208a9b43ced24422c9a6a6c1e3a8bb5106dcb7c666717f82203",
+      "sha256": "a3c4f2a2c3ab011f005c6d90fcc60e8b7adc90c1c05756e94717b86d8d2bd9d7",
       "tokens": [
         "team-execution"
       ]
@@ -1191,7 +1191,7 @@
     }
   ],
   "generated_by": "scripts/build_legacy_workflow_inventory.py",
-  "historical_inventory_sha256": "4c4323346f2574472de94bc0e512e745e9d67a337967b85a698fb58136165a7a",
+  "historical_inventory_sha256": "f0ca63db27f673b389e04c202c65295898aad9aea37391ee5face0992484e444",
   "history_sentinels": {
     "docs/investigations/2026-06-30-team-execution-saga-orchestration-debug-report.md": {
       "sha256": "ecc08eceda3a67dc81d15b1930753fe236ca7c1ae9b3ad9dd506cdecfb0ac4fa",

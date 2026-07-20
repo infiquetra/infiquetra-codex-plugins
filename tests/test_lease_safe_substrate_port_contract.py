@@ -331,7 +331,16 @@ def test_release_surfaces_are_coherent_for_cutover() -> None:
         actual = json.loads(
             (ROOT / f"plugins/{plugin}/.codex-plugin/plugin.json").read_text(encoding="utf-8")
         )["version"]
-        assert actual.split("+codex.")[0] == row["target_codex_version"], (plugin, actual)
+        # The #33 atomic release is a historical fact: the changelog must record it, and the
+        # live manifest may be newer but never behind it. Pinning the current version here would
+        # break on the first legitimate release after #33 (release-event-guard-floor precedent,
+        # infiquetra-claude-plugins#604).
+        released = row["target_codex_version"]
+        changelog = (ROOT / f"plugins/{plugin}/CHANGELOG.md").read_text(encoding="utf-8")
+        assert f"## {released} " in changelog, (plugin, released)
+        live = tuple(int(part) for part in actual.split("+codex.")[0].split("."))
+        floor = tuple(int(part) for part in released.split("."))
+        assert live >= floor, (plugin, actual)
 
     evidence = {entry["evidence_id"]: entry for entry in manifest["evidence"]}
     expected_kinds = {

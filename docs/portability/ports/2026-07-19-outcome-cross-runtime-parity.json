@@ -92,6 +92,21 @@
       "recorded_at": "2026-07-20T02:28:27Z",
       "repo_head": "fe063e14737b630c62be9a36a08b682a15b12683",
       "unit": "U4"
+    },
+    {
+      "argv": [
+        "python3",
+        "scripts/validate_codex_plugins.py"
+      ],
+      "artifact_path": "docs/validation/outcome-cross-runtime-parity-u5.json",
+      "artifact_sha256": "6867fb23ca45fb6dddae73a29dfdb52cb6a31d555d00a81beea3559dd2136697",
+      "cwd": ".",
+      "evidence_id": "u5-release-surface-check",
+      "exit_code": 0,
+      "kind": "check",
+      "recorded_at": "2026-07-20T02:33:13Z",
+      "repo_head": "fc9975566fa4277c07fd216fe7fc5451b23c195e",
+      "unit": "U5"
     }
   ],
   "port_id": "outcome-cross-runtime-parity-2026-07-19",
@@ -310,7 +325,9 @@
         "capability_refs": [],
         "change": "M",
         "codex_invariant_refs": [],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u5-release-surface-check"
+        ],
         "host_primitives": [],
         "new_path": "plugins/saga/.claude-plugin/plugin.json",
         "old_path": null,
@@ -323,7 +340,7 @@
         "rationale": "Recreate Codex saga package metadata for the independently versioned 0.77.0 release after parity behavior is proved.",
         "row_id": "src-48459813ea962414",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "claude-manifest",
         "treatment": "codex-adapt",
         "units": [
@@ -334,7 +351,9 @@
         "capability_refs": [],
         "change": "M",
         "codex_invariant_refs": [],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u5-release-surface-check"
+        ],
         "host_primitives": [],
         "new_path": "plugins/saga/CHANGELOG.md",
         "old_path": null,
@@ -347,7 +366,7 @@
         "rationale": "Write the Codex-native 0.77.0 changelog entry; Claude's 0.103.0 entry is lineage reference only.",
         "row_id": "src-d9b93b161f476cd3",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "changelog",
         "treatment": "codex-adapt",
         "units": [
@@ -358,7 +377,9 @@
         "capability_refs": [],
         "change": "A",
         "codex_invariant_refs": [],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u5-release-surface-check"
+        ],
         "host_primitives": [],
         "new_path": "plugins/saga/references/outcome-cross-runtime.md",
         "old_path": null,
@@ -371,7 +392,7 @@
         "rationale": "Port the cross-runtime reference with Codex-native command examples and dispatch-v2 acknowledgement semantics.",
         "row_id": "src-3de95cf9d28e9441",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "reference",
         "treatment": "codex-adapt",
         "units": [
@@ -382,7 +403,9 @@
         "capability_refs": [],
         "change": "M",
         "codex_invariant_refs": [],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u5-release-surface-check"
+        ],
         "host_primitives": [],
         "new_path": "plugins/saga/scripts/outcome.py",
         "old_path": null,
@@ -397,7 +420,7 @@
         "rationale": "Graft discover/status/handoff/attach commands and legacy import/export retirement onto the Codex-native outcome CLI; preserves outcome.dispatch.v2 launched-ack semantics (KTD2) and leaves the dispatcher lease seam dormant (KTD6); completes with U5 legacy retirement.",
         "row_id": "src-3b34fc68149a7c76",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -435,7 +458,9 @@
         "capability_refs": [],
         "change": "M",
         "codex_invariant_refs": [],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u5-release-surface-check"
+        ],
         "host_primitives": [],
         "new_path": "plugins/saga/skills/outcome/SKILL.md",
         "old_path": null,
@@ -448,7 +473,7 @@
         "rationale": "Adapt the outcome skill's cross-runtime guidance to the Codex command surface.",
         "row_id": "src-b6ceaf447672f765",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "skill",
         "treatment": "codex-adapt",
         "units": [
@@ -633,7 +658,9 @@
         "capability_refs": [],
         "change": "M",
         "codex_invariant_refs": [],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u5-release-surface-check"
+        ],
         "host_primitives": [],
         "new_path": "tests/test_outcome_command.py",
         "old_path": null,
@@ -646,7 +673,7 @@
         "rationale": "Adapt command-surface deltas (discover wiring, export alias, import rejection) onto the Codex-native outcome command suite.",
         "row_id": "src-08fc41f249e1d710",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [

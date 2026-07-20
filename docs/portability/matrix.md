@@ -41,7 +41,8 @@ tool-specific orchestration.
 
 - 2026-07-19: the lease-safe substrate port (#33) lands the frozen `a6f3bcff..cf15a09f`
   fleet_commons broker/orphan/policy/audit modules and the saga settlement adapter inside the
-  already-included `fleet-core` and `saga` identities (fleet-core 0.9.0, saga 0.76.0) — no new
+  already-included `fleet-core` and `saga` identities (fleet-core 0.9.0, saga 0.77.0
+  after the #34 cross-runtime parity port) — no new
   portability identity; contract at `docs/portability/ports/2026-07-19-lease-safe-substrate.json`.
 
 - Count differences are intentional. The active Codex marketplace has 10 plugins, not the full portability catalog.

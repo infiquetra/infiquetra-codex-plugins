@@ -290,6 +290,25 @@ def test_u4_handoff_rows_are_verified_with_current_evidence() -> None:
     _assert_unit_rows_verified("U4", U4_SOURCE_ROWS)
 
 
+def test_u5_release_rows_are_verified_with_current_evidence() -> None:
+    _assert_unit_rows_verified("U5", U5_SOURCE_ROWS)
+
+
+def test_release_version_pins_are_coherent() -> None:
+    """Every surface pinning the saga release tells the same 0.77.0 story."""
+    manifest_version = json.loads(
+        (ROOT / "plugins/saga/.codex-plugin/plugin.json").read_text(encoding="utf-8")
+    )["version"]
+    assert manifest_version.split("+codex.")[0] == "0.77.0"
+    inventory = json.loads(
+        (ROOT / "docs/validation/saga-family-target-inventory.json").read_text(encoding="utf-8")
+    )
+    saga_rows = [entry["version"] for entry in inventory["plugins"] if entry.get("name") == "saga"]
+    assert saga_rows == [manifest_version]
+    changelog = (ROOT / "plugins/saga/CHANGELOG.md").read_text(encoding="utf-8")
+    assert "## 0.77.0 - 2026-07-19" in changelog
+
+
 def test_dispatcher_lease_seam_stays_dormant_ktd6() -> None:
     """Operator decision 2026-07-19 (plan KTD6): this port must not activate the repository-wide
     dispatcher lease seam; `default_lease_authority` wiring belongs to cross-runtime-acceptance."""
