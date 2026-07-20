@@ -1,0 +1,12 @@
+[
+  {
+    "source_plugin": "saga",
+    "source_version": "0.103.0",
+    "current_codex_identity": "saga",
+    "current_codex_version": "0.76.0+codex.20260719174556",
+    "target_codex_identity": "saga",
+    "target_codex_version": "0.77.0",
+    "policy": "lineage-with-codex-adaptation",
+    "release_unit": "U5"
+  }
+]

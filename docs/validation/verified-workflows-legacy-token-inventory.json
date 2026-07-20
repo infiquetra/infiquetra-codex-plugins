@@ -550,6 +550,14 @@
     },
     {
       "classification": "migration-documentation",
+      "path": "docs/validation/outcome-cross-runtime-parity-runtime-capability-snapshot.json",
+      "sha256": "e2650dd19b2241f94f819fecda2c90fb237ec95fe2f95adbd0178649e376ae8d",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-documentation",
       "path": "docs/validation/saga-family-codex-proof.md",
       "sha256": "64ef29a16e3f59ce24fc411f50da4970dd7616e78b10fd676ff1377858a1de86",
       "tokens": [
