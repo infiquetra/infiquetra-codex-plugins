@@ -1,0 +1,8 @@
+{
+ "claim": "canonical cross-clone status: byte-equivalent projection, mutation_allowed:false, unknown reduces",
+ "command": "PYTHONPATH=. uv run pytest tests/test_outcome_cross_runtime.py -q -k 'CanonicalStatus or canonical'",
+ "recorded_at": "2026-07-20T02:28:27Z",
+ "repo_head": "fe063e14737b630c62be9a36a08b682a15b12683",
+ "result": "all canonical-status oracles green inside the 103-test contract suite (full suite 2561 green at this head)",
+ "unit": "U3"
+}

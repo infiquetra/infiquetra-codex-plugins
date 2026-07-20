@@ -38,7 +38,62 @@
     "repository_id": "infiquetra/infiquetra-codex-plugins",
     "rows": []
   },
-  "evidence": [],
+  "evidence": [
+    {
+      "argv": [
+        "python3",
+        "-",
+        "sha256-fixture-compare"
+      ],
+      "artifact_path": "docs/validation/outcome-cross-runtime-parity-u2.json",
+      "artifact_sha256": "740df7514b8cd8689d6d013773d6fac0e923d813ce23520777aa07e955df530a",
+      "cwd": ".",
+      "evidence_id": "u2-fixture-byte-parity",
+      "exit_code": 0,
+      "kind": "check",
+      "recorded_at": "2026-07-20T02:28:27Z",
+      "repo_head": "fe063e14737b630c62be9a36a08b682a15b12683",
+      "unit": "U2"
+    },
+    {
+      "argv": [
+        "uv",
+        "run",
+        "pytest",
+        "tests/test_outcome_cross_runtime.py",
+        "-q"
+      ],
+      "artifact_path": "docs/validation/outcome-cross-runtime-parity-u3.json",
+      "artifact_sha256": "9a219a68dff1519c56a3e51293831421aa89df865677e7f2e0dd6bbe1b67fe38",
+      "cwd": ".",
+      "evidence_id": "u3-canonical-status-oracles",
+      "exit_code": 0,
+      "kind": "check",
+      "recorded_at": "2026-07-20T02:28:27Z",
+      "repo_head": "fe063e14737b630c62be9a36a08b682a15b12683",
+      "unit": "U3"
+    },
+    {
+      "argv": [
+        "uv",
+        "run",
+        "pytest",
+        "tests/test_outcome_cross_runtime.py",
+        "tests/test_outcome_dispatch_migration.py",
+        "tests/test_outcome_command.py",
+        "-q"
+      ],
+      "artifact_path": "docs/validation/outcome-cross-runtime-parity-u4.json",
+      "artifact_sha256": "4b283a455b6419ae7f4143247160bfea779c1189a161b144f84b40a387be6ace",
+      "cwd": ".",
+      "evidence_id": "u4-handoff-advance-oracles",
+      "exit_code": 0,
+      "kind": "check",
+      "recorded_at": "2026-07-20T02:28:27Z",
+      "repo_head": "fe063e14737b630c62be9a36a08b682a15b12683",
+      "unit": "U4"
+    }
+  ],
   "port_id": "outcome-cross-runtime-parity-2026-07-19",
   "refresh_changes": [],
   "release_evidence": {
@@ -353,7 +408,9 @@
         "capability_refs": [],
         "change": "A",
         "codex_invariant_refs": [],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u4-handoff-advance-oracles"
+        ],
         "host_primitives": [],
         "new_path": "plugins/saga/scripts/outcome_compat.py",
         "old_path": null,
@@ -367,7 +424,7 @@
         "rationale": "Adapt the closed cross-runtime module (envelope/status/handoff/HALT parsers-serializers, bounded deterministic JSON, fixed-argv repository identity) onto Codex Saga imports and store roots; byte-faithful where runtime-neutral (KTD5); completes when handoff validation lands in U4.",
         "row_id": "src-e716e1a820766783",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -402,7 +459,9 @@
         "capability_refs": [],
         "change": "A",
         "codex_invariant_refs": [],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u2-fixture-byte-parity"
+        ],
         "host_primitives": [],
         "new_path": "tests/fixtures/outcome-cross-runtime/v1/canonical-status.json",
         "old_path": null,
@@ -415,7 +474,7 @@
         "rationale": "Copy the neutral golden fixture bytes unchanged; byte parity with the merged Claude contract is the acceptance oracle (KTD5).",
         "row_id": "src-e75bb1eee6ea1cc5",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "config",
         "treatment": "direct-port",
         "units": [
@@ -426,7 +485,9 @@
         "capability_refs": [],
         "change": "A",
         "codex_invariant_refs": [],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u2-fixture-byte-parity"
+        ],
         "host_primitives": [],
         "new_path": "tests/fixtures/outcome-cross-runtime/v1/compatibility-halt.json",
         "old_path": null,
@@ -439,7 +500,7 @@
         "rationale": "Copy the neutral golden fixture bytes unchanged; byte parity with the merged Claude contract is the acceptance oracle (KTD5).",
         "row_id": "src-7234b00c6b20cbae",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "config",
         "treatment": "direct-port",
         "units": [
@@ -450,7 +511,9 @@
         "capability_refs": [],
         "change": "A",
         "codex_invariant_refs": [],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u2-fixture-byte-parity"
+        ],
         "host_primitives": [],
         "new_path": "tests/fixtures/outcome-cross-runtime/v1/discovery-envelope.json",
         "old_path": null,
@@ -463,7 +526,7 @@
         "rationale": "Copy the neutral golden fixture bytes unchanged; byte parity with the merged Claude contract is the acceptance oracle (KTD5).",
         "row_id": "src-cce7b987c557375f",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "config",
         "treatment": "direct-port",
         "units": [
@@ -474,7 +537,9 @@
         "capability_refs": [],
         "change": "A",
         "codex_invariant_refs": [],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u2-fixture-byte-parity"
+        ],
         "host_primitives": [],
         "new_path": "tests/fixtures/outcome-cross-runtime/v1/handoff-reference.json",
         "old_path": null,
@@ -487,7 +552,7 @@
         "rationale": "Copy the neutral golden fixture bytes unchanged; byte parity with the merged Claude contract is the acceptance oracle (KTD5).",
         "row_id": "src-d29aa1d0b5091720",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "config",
         "treatment": "direct-port",
         "units": [
@@ -498,7 +563,9 @@
         "capability_refs": [],
         "change": "A",
         "codex_invariant_refs": [],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u2-fixture-byte-parity"
+        ],
         "host_primitives": [],
         "new_path": "tests/fixtures/outcome-cross-runtime/v1/invalid/future-protocol-envelope.json",
         "old_path": null,
@@ -511,7 +578,7 @@
         "rationale": "Copy the invalid-fixture bytes unchanged; negative-path parity with the merged Claude contract (KTD5).",
         "row_id": "src-87f2fc79fa34edae",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "config",
         "treatment": "direct-port",
         "units": [
@@ -522,7 +589,9 @@
         "capability_refs": [],
         "change": "A",
         "codex_invariant_refs": [],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u2-fixture-byte-parity"
+        ],
         "host_primitives": [],
         "new_path": "tests/fixtures/outcome-cross-runtime/v1/invalid/unknown-field-envelope.json",
         "old_path": null,
@@ -535,7 +604,7 @@
         "rationale": "Copy the invalid-fixture bytes unchanged; negative-path parity with the merged Claude contract (KTD5).",
         "row_id": "src-b7d757c65fb513b6",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "config",
         "treatment": "direct-port",
         "units": [
@@ -588,7 +657,9 @@
         "capability_refs": [],
         "change": "A",
         "codex_invariant_refs": [],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u4-handoff-advance-oracles"
+        ],
         "host_primitives": [],
         "new_path": "tests/test_outcome_cross_runtime_contract.py",
         "old_path": null,
@@ -603,7 +674,7 @@
         "rationale": "Adapt the merged contract suite to Codex-native store/dispatch-v2 shapes, split per plan into cross-runtime and dispatch-migration suites; both-runtime-order and no-mutation oracles preserved; completes with U4.",
         "row_id": "src-21c2f741bfd03452",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [

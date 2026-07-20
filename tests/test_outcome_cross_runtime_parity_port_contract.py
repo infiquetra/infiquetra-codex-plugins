@@ -270,6 +270,26 @@ def test_capability_snapshot_validator_rejects_each_dishonest_v1_claim(
     assert any(expected_error in error for error in errors), errors
 
 
+def test_u2_fixture_rows_are_verified_with_current_evidence() -> None:
+    _assert_unit_rows_verified("U2", U2_SOURCE_ROWS)
+
+
+def test_u3_canonical_status_evidence_is_recorded() -> None:
+    """U3 has no dedicated source row (status logic lives inside the U4-completing module);
+    its acceptance evidence is still a required, digest-current manifest entry."""
+    manifest = _manifest()
+    entries = [entry for entry in manifest["evidence"] if entry["unit"] == "U3"]
+    assert entries, "U3 evidence missing"
+    for entry in entries:
+        assert entry["kind"] in port_contract.EVIDENCE_KINDS
+        assert entry["exit_code"] == 0
+        assert _sha256(ROOT / entry["artifact_path"]) == entry["artifact_sha256"]
+
+
+def test_u4_handoff_rows_are_verified_with_current_evidence() -> None:
+    _assert_unit_rows_verified("U4", U4_SOURCE_ROWS)
+
+
 def test_dispatcher_lease_seam_stays_dormant_ktd6() -> None:
     """Operator decision 2026-07-19 (plan KTD6): this port must not activate the repository-wide
     dispatcher lease seam; `default_lease_authority` wiring belongs to cross-runtime-acceptance."""

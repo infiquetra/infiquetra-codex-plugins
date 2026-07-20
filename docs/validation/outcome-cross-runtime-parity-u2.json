@@ -1,0 +1,45 @@
+{
+ "claim": "golden + invalid fixture bytes are byte-identical to the frozen Claude source (KTD5)",
+ "fixtures": [
+  {
+   "frozen_source_sha256": "c56504f3901bec1d8f628a1304bf9f78b6a294450603bc22ce858e827a5d9e1d",
+   "local_sha256": "c56504f3901bec1d8f628a1304bf9f78b6a294450603bc22ce858e827a5d9e1d",
+   "path": "tests/fixtures/outcome-cross-runtime/v1/canonical-status.json",
+   "verdict": "MATCH"
+  },
+  {
+   "frozen_source_sha256": "6c69db903a2f80afddcf99fd0cb7e6c540c047222c4af7ffb1933f98a472e54c",
+   "local_sha256": "6c69db903a2f80afddcf99fd0cb7e6c540c047222c4af7ffb1933f98a472e54c",
+   "path": "tests/fixtures/outcome-cross-runtime/v1/compatibility-halt.json",
+   "verdict": "MATCH"
+  },
+  {
+   "frozen_source_sha256": "03cf3ccb818bcf3c868208720f4736df065cfb6626f9c2a9526963943216e33d",
+   "local_sha256": "03cf3ccb818bcf3c868208720f4736df065cfb6626f9c2a9526963943216e33d",
+   "path": "tests/fixtures/outcome-cross-runtime/v1/discovery-envelope.json",
+   "verdict": "MATCH"
+  },
+  {
+   "frozen_source_sha256": "108a2a624662b22eaa32e3953e2069004b9bd9525eeba62d39a7b27fccac887f",
+   "local_sha256": "108a2a624662b22eaa32e3953e2069004b9bd9525eeba62d39a7b27fccac887f",
+   "path": "tests/fixtures/outcome-cross-runtime/v1/handoff-reference.json",
+   "verdict": "MATCH"
+  },
+  {
+   "frozen_source_sha256": "7fe2b7c8a6031a82f9ca660a521b21e313b8ff4310fa08d049c61ac2e9560fd5",
+   "local_sha256": "7fe2b7c8a6031a82f9ca660a521b21e313b8ff4310fa08d049c61ac2e9560fd5",
+   "path": "tests/fixtures/outcome-cross-runtime/v1/invalid/future-protocol-envelope.json",
+   "verdict": "MATCH"
+  },
+  {
+   "frozen_source_sha256": "3fe491fa66463475efbd3acd9088696b21c69301eb9a31d05fb651d4561f1520",
+   "local_sha256": "3fe491fa66463475efbd3acd9088696b21c69301eb9a31d05fb651d4561f1520",
+   "path": "tests/fixtures/outcome-cross-runtime/v1/invalid/unknown-field-envelope.json",
+   "verdict": "MATCH"
+  }
+ ],
+ "method": "sha256(local worktree bytes) vs sha256(`git show 97d2fb15:<path>` in the source clone)",
+ "recorded_at": "2026-07-20T02:28:27Z",
+ "repo_head": "fe063e14737b630c62be9a36a08b682a15b12683",
+ "unit": "U2"
+}

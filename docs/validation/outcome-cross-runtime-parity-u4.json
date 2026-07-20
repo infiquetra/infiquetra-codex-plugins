@@ -1,0 +1,8 @@
+{
+ "claim": "protected handoff + one-leaf native advance: single successor, replay dedup, frontier/revision HALTs, launched-ack law (KTD2), dispatcher lease seam dormant (KTD6)",
+ "command": "PYTHONPATH=. uv run pytest tests/test_outcome_cross_runtime.py tests/test_outcome_dispatch_migration.py tests/test_outcome_command.py -q",
+ "recorded_at": "2026-07-20T02:28:27Z",
+ "repo_head": "fe063e14737b630c62be9a36a08b682a15b12683",
+ "result": "142 passed, 0 failed; KTD6 pinned by test_dispatcher_lease_seam_stays_dormant_ktd6",
+ "unit": "U4"
+}
