@@ -1,0 +1,23 @@
+{
+ "claim": "release surfaces coherent for saga 0.77.0+codex.20260720023112",
+ "command": "python3 scripts/validate_codex_plugins.py",
+ "provenance_note": "re-recorded at b8b627a after ceremony r2 devils P3: the prior repo_head (fc99755) predated the committed 0.77.0 surfaces (they were working-tree edits at recording time); at this head the surfaces are committed and the claim reproduces from the tree",
+ "recorded_at": "2026-07-20T03:15:27Z",
+ "repo_head": "b8b627a69e3909efc241e09a4dc2a716c3f6b2d5",
+ "result": "Codex plugin validation passed (current)",
+ "surfaces": {
+  "changelog": "plugins/saga/CHANGELOG.md 0.77.0 - 2026-07-20",
+  "generated": [
+   "docs/saga/generated/lifecycle-facts.json",
+   "docs/saga/visual-assets/saga-lifecycle-atlas.pdf"
+  ],
+  "operator_choice_pin": "plugins/saga/tests/test_codex_operator_choice.py",
+  "plugin_manifest": "0.77.0+codex.20260720023112",
+  "portability": "plugins/saga/PORTABILITY.md #34 section (supersedes the #33 seam-activation pointer)",
+  "reference": "plugins/saga/references/outcome-cross-runtime.md",
+  "skill": "plugins/saga/skills/outcome/SKILL.md",
+  "target_inventory": "docs/validation/saga-family-target-inventory.json",
+  "validator_pre_cutover_pin": "scripts/validate_codex_plugins.py PRE_CUTOVER_EXPECTED_PLUGINS"
+ },
+ "unit": "U5"
+}

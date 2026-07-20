@@ -78,7 +78,7 @@ LEGACY_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
 
 PRE_CUTOVER_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
     "saga": {
-        "version": "0.76.0+codex.20260719174556",
+        "version": "0.77.0+codex.20260720023112",
         "skills": (
             "office-hours",
             "ideate",
@@ -276,7 +276,7 @@ STAGED_MARKETPLACE_SHA256 = (
     "42803919b39b720599b9692bfdcd95bcfe8c31b06ebb2c976aacaa890fdfea8a"
 )
 LEGACY_WORKFLOW_HISTORICAL_INVENTORY_SHA256 = (
-    "4c4323346f2574472de94bc0e512e745e9d67a337967b85a698fb58136165a7a"
+    "42c16a25a764c3939008c473f20d458b108469c1af7ad971df76f217165e2eac"
 )
 LEGACY_WORKFLOW_INVENTORY = Path(
     "docs/validation/verified-workflows-legacy-token-inventory.json"

@@ -1,5 +1,43 @@
 # Changelog
 
+## 0.77.0 - 2026-07-20
+
+### Added
+
+- Cross-runtime Outcome contract (#34; port of infiquetra-claude-plugins#604, frozen source
+  `30bde209..97d2fb15`): `outcome_compat.py` with the four closed `outcome.*.v1` schemas
+  (discovery envelope, canonical status, handoff reference, compatibility halt), canonical
+  `github.com/<owner>/<repo>` repository identity from fixed-argv git, committed-blob spec
+  resolution, protocol negotiation, and redacted halt receipts; golden + invalid fixtures under
+  `tests/fixtures/outcome-cross-runtime/v1/` consumed byte-verbatim (`RUNTIME_LABEL = "codex"` is
+  the one deliberate divergence).
+- CLI verbs `discover` (committed-envelope emit, read-only), `attach` (read-only
+  `outcome.canonical-status.v1` reconstruction; `--advance`/`--attend` behind a validated
+  protected handoff), and `handoff` (broker-admitted protected one-subplot offer through the
+  settlement-close protected write).
+- `attached_advance`/`attended_handoff`: accept exactly one `advance-one`/`attend` handoff,
+  re-check committed revision + ready frontier (HALT on drift), then enter the native `advance`
+  behind a one-subplot gate wired to the protected launched-acknowledgement dispatcher built
+  WITHOUT lease authority — a handoff acceptance never counts as launched, and the
+  repository-wide dispatcher lease seam stays dormant (activation moved to
+  cross-runtime-acceptance by operator decision 2026-07-19).
+
+### Changed
+
+- `outcome export` is a deprecated byte-identical alias of `discover` (stderr warning); the
+  `outcome-bundle/1` snapshot is no longer produced.
+- `outcome import` refuses every bundle with the exact `discover`/`attach` migration commands and
+  writes nothing (no spec save, no event replay, no ledger append).
+
+### Removed
+
+- Legacy bundle import chain-validation machinery (`_validate_import_dispatch_ledger`,
+  `_validate_import_dispatch_audit`) — the wholesale refusal subsumes record-level validation;
+  the migration and command suites now pin rejection oracles instead of round-trips.
+- The dispatch-audit helpers those validators orphaned (`DISPATCH_AUDIT_KIND`,
+  `_dispatch_audit_digest`): codex-only symbols whose last callers were the retired bundle
+  export/import paths (code-review finding; never present in the frozen Claude source).
+
 ## 0.76.0 - 2026-07-19
 
 ### Added

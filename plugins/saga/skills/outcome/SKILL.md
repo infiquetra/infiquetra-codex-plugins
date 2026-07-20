@@ -1,6 +1,6 @@
 ---
 name: outcome
-description: Coordinate a whole outcome as a durable Codex Saga DAG. Use for start, load, status, report, graph, advance, attend, export, and import of outcome subplots. The coordinator routes work and records receipts; it does not execute leaf work in-context.
+description: Coordinate a whole outcome as a durable Codex Saga DAG. Use for start, load, status, report, graph, advance, attend, discover, handoff, and attach of outcome subplots. The coordinator routes work and records receipts; it does not execute leaf work in-context.
 ---
 
 # Outcome
@@ -34,8 +34,10 @@ python3 plugins/saga/scripts/outcome.py reconcile-dispatch <id> <subplot-id> --a
 python3 plugins/saga/scripts/outcome.py reconcile-dispatch <id> <subplot-id> --ack-kind handed-off --dispatch-ack-ref operator:<reference>
 python3 plugins/saga/scripts/outcome.py attend <id> <subplot-id>
 python3 plugins/saga/scripts/outcome.py reconcile <id> [--resolve <drift-id> --action <accept-board|re-assert|hold>]
-python3 plugins/saga/scripts/outcome.py export <id>
-python3 plugins/saga/scripts/outcome.py import <bundle>
+python3 plugins/saga/scripts/outcome.py discover <id>
+python3 plugins/saga/scripts/outcome.py attach <id>
+python3 plugins/saga/scripts/outcome.py handoff <id> <subplot-id> --operation advance-one|attend --dispatch-id <D> --session-id <S> --policy-sha256 <P> --session-limit <N> --aggregate-limit <N>
+python3 plugins/saga/scripts/outcome.py attach <id> --advance --handoff-id <H> --subplot <S> --session-id <S> --policy-sha256 <P> --session-limit <N> --aggregate-limit <N>
 ```
 
 `advance` creates a durable v2 dispatch intent and may return `intent-created`; it never treats the
@@ -48,9 +50,22 @@ duplicating leaf side effects.
 Launch receipts live only under the owner-controlled canonical user-state root and bind the
 unpredictable run identity plus issuance time from the current intent. Repository-local receipts,
 stale receipts, and receipts from a prior run cannot authorize dispatch. A dispatcher cannot claim
-`handed-off`; only the explicit operator `reconcile-dispatch` path may record that state. Portable
-bundles carry acknowledgements for audit, but imports must reconcile launch or handoff authority
-locally rather than treating copied evidence as authorization.
+`handed-off`; only the explicit operator `reconcile-dispatch` path may record that state.
+
+Cross-runtime discovery and handoff (#604 -> #34): `discover` emits the closed
+`outcome.discovery.v1` envelope from the **committed** spec blob (read-only, never the cache);
+`attach` reconstructs the read-only `outcome.canonical-status.v1` projection from committed spec +
+GitHub (`mutation_allowed: false` — unknown evidence reduces, never fabricates); `handoff` offers a
+protected one-use, one-subplot authority transfer through the broker's settlement-close protected
+write, and `attach --advance`/`--attend` accept it after revalidating every binding locally. A
+handoff acceptance is never launch evidence — the native dispatch intent and protected
+`ack_kind=launched` acknowledgement stay mandatory. See
+`references/outcome-cross-runtime.md` for the full contract.
+
+The legacy `outcome-bundle/1` path is retired (#604 R7): `export` is a deprecated alias that emits
+the same `outcome.discovery.v1` bytes as `discover` (with a stderr warning), and `import` refuses
+every bundle with the exact `discover`/`attach` migration and writes nothing — a copied bundle or
+cache is never authority.
 
 `start --from-parent-issue <owner>/<repo>#<N>` seeds the DAG directly from a GitHub issue's
 direct sub-issues instead of the two-node design/build starter: one node per sub-issue (`kind` from a

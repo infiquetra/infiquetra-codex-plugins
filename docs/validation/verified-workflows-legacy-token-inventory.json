@@ -82,7 +82,7 @@
     {
       "classification": "historical-evidence",
       "path": "docs/engineering-journal/DECISIONS.md",
-      "sha256": "df19f839d7a81f6b24f456cc6964c0c2a8ca01fe6420109bf10500d9ecfa5458",
+      "sha256": "ed5af1b1081d12be4a551bb08f6f069d5645b44982fe4e4a0ef3444ae330b25b",
       "tokens": [
         "## Team Structure",
         "Team Execution",
@@ -362,7 +362,7 @@
     {
       "classification": "lineage-documentation",
       "path": "docs/portability/matrix.md",
-      "sha256": "038055ba86e9b16a6cdfc4ad008915978402a8e90dccbd835791c724126a4524",
+      "sha256": "d993249965671596749804679ddb4a79ef6dde4197b0693e0c868cad208c50bf",
       "tokens": [
         "team-execution"
       ]
@@ -550,8 +550,16 @@
     },
     {
       "classification": "migration-documentation",
+      "path": "docs/validation/outcome-cross-runtime-parity-runtime-capability-snapshot.json",
+      "sha256": "e2650dd19b2241f94f819fecda2c90fb237ec95fe2f95adbd0178649e376ae8d",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-documentation",
       "path": "docs/validation/saga-family-codex-proof.md",
-      "sha256": "64ef29a16e3f59ce24fc411f50da4970dd7616e78b10fd676ff1377858a1de86",
+      "sha256": "ed597979ea7f795e70c2e7d80626d3da9c0fac798deb7f92b3b7040b13581d7c",
       "tokens": [
         ".codex/team-execution/",
         "team-execution"
@@ -560,7 +568,7 @@
     {
       "classification": "legacy-read-metadata",
       "path": "docs/validation/saga-family-target-inventory.json",
-      "sha256": "2525999fc079c3a6e3c3a843a660ed3d7b23078b852e28452827016cda557403",
+      "sha256": "db9958cbe96e9e4c1aaabe72f8a15ba6c4eef579b3ee30e0fd3caa5c8eb6ead8",
       "tokens": [
         ".codex/team-execution/",
         "team-execution"
@@ -777,7 +785,7 @@
     {
       "classification": "lineage-documentation",
       "path": "plugins/saga/CHANGELOG.md",
-      "sha256": "fb2bd45f51fb6c1b775b61de1ed41ffce62bdab260584da8dad1f9e9df93b3c9",
+      "sha256": "1b27a5709300db50ee58592175c3b2448b919a3405eb57b40ea01ed12c199653",
       "tokens": [
         "Team Execution",
         "team-execution"
@@ -786,7 +794,7 @@
     {
       "classification": "lineage-documentation",
       "path": "plugins/saga/PORTABILITY.md",
-      "sha256": "d6c22fe3041dd208a9b43ced24422c9a6a6c1e3a8bb5106dcb7c666717f82203",
+      "sha256": "a3c4f2a2c3ab011f005c6d90fcc60e8b7adc90c1c05756e94717b86d8d2bd9d7",
       "tokens": [
         "team-execution"
       ]
@@ -845,7 +853,7 @@
     {
       "classification": "legacy-parser",
       "path": "plugins/saga/scripts/outcome.py",
-      "sha256": "68be26516d59c5d2cc06dc5d3057f5900b8b078dd10a4717ce31a085912cb46e",
+      "sha256": "9ced677674ec95076d634ae25be8cf5298b408fc844dd232a843735409e88349",
       "tokens": [
         "team-execution"
       ]
@@ -1183,7 +1191,7 @@
     }
   ],
   "generated_by": "scripts/build_legacy_workflow_inventory.py",
-  "historical_inventory_sha256": "4c4323346f2574472de94bc0e512e745e9d67a337967b85a698fb58136165a7a",
+  "historical_inventory_sha256": "42c16a25a764c3939008c473f20d458b108469c1af7ad971df76f217165e2eac",
   "history_sentinels": {
     "docs/investigations/2026-06-30-team-execution-saga-orchestration-debug-report.md": {
       "sha256": "ecc08eceda3a67dc81d15b1930753fe236ca7c1ae9b3ad9dd506cdecfb0ac4fa",

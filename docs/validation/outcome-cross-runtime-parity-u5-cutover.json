@@ -1,0 +1,14 @@
+{
+ "exit_code": 0,
+ "gates": {
+  "full_suite": "2573 passed",
+  "per_port_gate": "tests/test_outcome_cross_runtime_parity_port_contract.py — 18 passed",
+  "repository_validator": "scripts/validate_codex_plugins.py — green"
+ },
+ "kind": "cutover",
+ "recorded_at": "2026-07-20T04:06:21Z",
+ "repo_head": "35f3f4c7545adca4651ce20da65816fe4586d6a0",
+ "schema_version": 1,
+ "summary": "Cutover anchor: the installed payload (isolated CODEX_HOME cache) byte-matches the in-repo outcome_compat.py (sha256 272312cc…) under a hermetic python -I probe, and its divergence from the frozen Claude source 97d2fb15 is exactly the one authorized line pair (RUNTIME_LABEL claude→codex) — the same single-divergence contract the port manifest freezes. Per-port gate 18/18 (classification + zero-drift codex inventory + U2/U4/U5 rows verified with current evidence + KTD6 dormancy + release surfaces coherent + refresh queue drained + five release_evidence bindings digest-verified); repository validator green; full suite 2573 passed at the release-surface head.",
+ "unit": "U5"
+}

@@ -1,4 +1,4 @@
-"""Gate the lease-safe substrate port contract (#33): #351 settlement, #356 broker, #355 guard."""
+"""Gate the outcome cross-runtime parity port contract (#34): #604 discovery/status/handoff."""
 
 from __future__ import annotations
 
@@ -12,101 +12,81 @@ import pytest
 from scripts import port_contract
 
 ROOT = Path(__file__).resolve().parents[1]
-MANIFEST_PATH = ROOT / "docs/portability/ports/2026-07-19-lease-safe-substrate.json"
-CLASSIFICATION_PATH = ROOT / "docs/portability/classifications/2026-07-19-lease-safe-substrate.md"
+MANIFEST_PATH = ROOT / "docs/portability/ports/2026-07-19-outcome-cross-runtime-parity.json"
+CLASSIFICATION_PATH = (
+    ROOT / "docs/portability/classifications/2026-07-19-outcome-cross-runtime-parity.md"
+)
+VERSION_POLICY_PATH = (
+    ROOT / "docs/portability/ports/2026-07-19-outcome-cross-runtime-parity-version-policy.json"
+)
 
-SOURCE_BASE = "a6f3bcff0fe9df213e2d2947afca99d5e7516393"
-SOURCE_TARGET = "cf15a09f8ffe9bf7c6f1218b2c72a8143d60ab49"
-CODEX_PLAN_BASE = "739fb34e27f2e045e28cf5d420bbc2fc004115a0"
-CODEX_EXECUTION_BASE = "19a3610e2db8d0f850fa18ecbbb8f16c74842ba4"
-SOURCE_INVENTORY_SHA256 = "60d5875752cff31e9f9e1900bff4a942f319e21b2b13e8c4f29c829fc3080afa"
-CODEX_INVENTORY_SHA256 = "656bf596f67e4e65baa97648e8fea2fc39dcd306c5d5b059cbdc4b3a628276f3"
+SOURCE_BASE = "30bde209a5f56822366e0bb9005317798576338d"
+SOURCE_TARGET = "97d2fb15dbed7ea210391e3fc293fb0de31dc95e"
+CODEX_PLAN_BASE = "3723a8183e3ea9c372ad9f34fd18f4170c36d26f"
+CODEX_EXECUTION_BASE = "3723a8183e3ea9c372ad9f34fd18f4170c36d26f"
+SOURCE_INVENTORY_SHA256 = "b0bdb4758882fcc39e47c3f9c6554875ba0af49661e80f6c3f67a2935d6d2f3e"
+CODEX_INVENTORY_SHA256 = "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
 
-# Frozen treatment per source row (KTD3: Claude host primitives are reject/defer, never
-# direct-port). Adapted rows must carry planned targets and tests; defer/reject rows must not
-# claim implementation units.
+# Frozen treatment per source row. Ported rows (direct-port/codex-adapt) must carry planned
+# targets, tests, and units; reject rows must not claim any implementation surface.
 SOURCE_TREATMENTS = {
     ".claude-plugin/marketplace.json": "reject",
-    "plugins/fleet-core/.claude-plugin/plugin.json": "codex-adapt",
-    "plugins/fleet-core/CHANGELOG.md": "codex-adapt",
-    "plugins/fleet-core/README.md": "defer",
-    "plugins/fleet-core/scripts/fleet_commons/audit_store.py": "codex-adapt",
-    "plugins/fleet-core/scripts/fleet_commons/concurrency_policy.py": "codex-adapt",
-    "plugins/fleet-core/scripts/fleet_commons/lease_broker.py": "codex-adapt",
-    "plugins/fleet-core/scripts/fleet_commons/orphan_evidence.py": "codex-adapt",
+    "docs/engineering-journal/LEARNINGS.md": "reject",
+    "docs/evidence/issue-604/artifacts/2f16c54c3da662f9a45b0c9e27b1bd8498928a0ce2641a9265d1d9392c659eed.md": "reject",
+    "docs/evidence/issue-604/artifacts/3b2503ad96f47855eca2e80fbe794a0208300281ca17f51d3d5af01d35c60f38.md": "reject",
+    "docs/evidence/issue-604/artifacts/52124b8c55aa638a70d24839ee1562d4b221bd71ee36ea440543de8f6cea5c5e.md": "reject",
+    "docs/evidence/issue-604/criteria-qa-85e67b15fd8785f7ab6b5e635673ef20edd332c7.json": "reject",
+    "docs/evidence/issue-604/ledger.head": "reject",
+    "docs/evidence/issue-604/ledger.jsonl": "reject",
+    "docs/work-sessions/2026-07-18-issue-604-cross-runtime-contract.md": "reject",
     "plugins/saga/.claude-plugin/plugin.json": "codex-adapt",
     "plugins/saga/CHANGELOG.md": "codex-adapt",
-    "plugins/saga/README.md": "defer",
-    "plugins/saga/hooks/hooks.json": "reject",
-    "plugins/saga/hooks/lease_lifecycle_hook.py": "reject",
-    "plugins/saga/hooks/lease_mutation_hook.py": "reject",
-    "plugins/saga/scripts/concurrency_governor.py": "defer",
-    "plugins/saga/scripts/dispatch_settlement.py": "codex-adapt",
-    "plugins/saga/scripts/engine_dispatch.py": "defer",
-    "plugins/saga/scripts/execution_spec.py": "defer",
-    "plugins/saga/scripts/lease_broker.py": "codex-adapt",
-    "plugins/saga/scripts/manifest_store.py": "defer",
-    "plugins/saga/scripts/outcome.py": "defer",
-    "plugins/saga/scripts/outcome_dispatcher.py": "codex-adapt",
-    "plugins/saga/scripts/outcome_store.py": "codex-adapt",
-    "plugins/saga/scripts/outcome_worktrees.py": "defer",
-    "plugins/saga/scripts/reap_orphans.py": "defer",
-    "plugins/saga/scripts/run_ledger.py": "codex-adapt",
-    "plugins/saga/scripts/second_opinion.py": "defer",
-    "plugins/saga/scripts/workflow_emitter.py": "reject",
-    "tests/test_concurrency_conformance.py": "codex-adapt",
-    "tests/test_delegation_tripwire.py": "defer",
-    "tests/test_dispatch_settlement.py": "codex-adapt",
-    "tests/test_fleet_lease_broker.py": "codex-adapt",
-    "tests/test_manifest_store.py": "defer",
-    "tests/test_orphan_fencing.py": "codex-adapt",
-    "tests/test_outcome_dispatcher.py": "codex-adapt",
-    "tests/test_outcome_worktrees.py": "defer",
-    "tests/test_pulse_telemetry.py": "defer",
-    "tests/test_reap_orphans.py": "defer",
-    "tests/test_review_second_opinion.py": "defer",
-    "tests/test_run_ledger.py": "codex-adapt",
-    "tests/test_saga_engine_dispatch.py": "defer",
-    "tests/test_saga_execution_spec.py": "defer",
-    "tests/test_saga_hooks.py": "reject",
-    "tests/test_saga_plugin.py": "defer",
-    "tests/test_saga_workflow_emitter.py": "reject",
-    "tests/test_work_second_opinion.py": "defer",
-}
-
-RECONCILED_CODEX_PATHS = {
-    "plugins/fleet-core/.codex-plugin/plugin.json",
-    "plugins/fleet-core/CHANGELOG.md",
+    "plugins/saga/references/outcome-cross-runtime.md": "codex-adapt",
+    "plugins/saga/scripts/outcome.py": "codex-adapt",
+    "plugins/saga/scripts/outcome_compat.py": "codex-adapt",
+    "plugins/saga/skills/outcome/SKILL.md": "codex-adapt",
+    "tests/fixtures/outcome-cross-runtime/v1/canonical-status.json": "direct-port",
+    "tests/fixtures/outcome-cross-runtime/v1/compatibility-halt.json": "direct-port",
+    "tests/fixtures/outcome-cross-runtime/v1/discovery-envelope.json": "direct-port",
+    "tests/fixtures/outcome-cross-runtime/v1/handoff-reference.json": "direct-port",
+    "tests/fixtures/outcome-cross-runtime/v1/invalid/future-protocol-envelope.json": "direct-port",
+    "tests/fixtures/outcome-cross-runtime/v1/invalid/unknown-field-envelope.json": "direct-port",
+    "tests/test_liveness_consumer_conformance.py": "reject",
+    "tests/test_outcome_command.py": "codex-adapt",
+    "tests/test_outcome_cross_runtime_contract.py": "codex-adapt",
+    "tests/test_saga_plugin.py": "reject",
 }
 
 U2_SOURCE_ROWS = {
-    "plugins/fleet-core/scripts/fleet_commons/audit_store.py",
-    "plugins/fleet-core/scripts/fleet_commons/concurrency_policy.py",
-    "plugins/fleet-core/scripts/fleet_commons/lease_broker.py",
-    "plugins/fleet-core/scripts/fleet_commons/orphan_evidence.py",
-    "tests/test_fleet_lease_broker.py",
-    "tests/test_orphan_fencing.py",
+    "tests/fixtures/outcome-cross-runtime/v1/canonical-status.json",
+    "tests/fixtures/outcome-cross-runtime/v1/compatibility-halt.json",
+    "tests/fixtures/outcome-cross-runtime/v1/discovery-envelope.json",
+    "tests/fixtures/outcome-cross-runtime/v1/handoff-reference.json",
+    "tests/fixtures/outcome-cross-runtime/v1/invalid/future-protocol-envelope.json",
+    "tests/fixtures/outcome-cross-runtime/v1/invalid/unknown-field-envelope.json",
 }
 
-U3_SOURCE_ROWS = {
-    "plugins/saga/scripts/dispatch_settlement.py",
-    "plugins/saga/scripts/lease_broker.py",
-    "plugins/saga/scripts/outcome_dispatcher.py",
-    "plugins/saga/scripts/outcome_store.py",
-    "plugins/saga/scripts/run_ledger.py",
-    "tests/test_dispatch_settlement.py",
-    "tests/test_outcome_dispatcher.py",
-    "tests/test_run_ledger.py",
+U4_SOURCE_ROWS = {
+    "plugins/saga/scripts/outcome_compat.py",
+    "tests/test_outcome_cross_runtime_contract.py",
 }
-
-U4_SOURCE_ROWS = {"tests/test_concurrency_conformance.py"}
 
 U5_SOURCE_ROWS = {
-    "plugins/fleet-core/.claude-plugin/plugin.json",
-    "plugins/fleet-core/CHANGELOG.md",
     "plugins/saga/.claude-plugin/plugin.json",
     "plugins/saga/CHANGELOG.md",
+    "plugins/saga/references/outcome-cross-runtime.md",
+    "plugins/saga/scripts/outcome.py",
+    "plugins/saga/skills/outcome/SKILL.md",
+    "tests/test_outcome_command.py",
 }
+
+
+def _manifest() -> dict:
+    return json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+
+
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def _assert_unit_rows_verified(unit: str, row_paths: set[str]) -> None:
@@ -130,31 +110,23 @@ def _assert_unit_rows_verified(unit: str, row_paths: set[str]) -> None:
             assert (ROOT / test_path).is_file(), test_path
 
 
-def _manifest() -> dict:
-    return json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
-
-
-def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
 def test_classification_freezes_exact_authority_and_inventories() -> None:
     manifest = _manifest()
     source = manifest["source"]
     codex = manifest["codex"]
 
-    assert manifest["port_id"] == "lease-safe-substrate-2026-07-19"
+    assert manifest["port_id"] == "outcome-cross-runtime-parity-2026-07-19"
     assert source["base_ref"] == SOURCE_BASE
     assert source["target_ref"] == SOURCE_TARGET
     assert set(source["pathspecs"]) == set(SOURCE_TREATMENTS)
     assert len(source["pathspecs"]) == len(SOURCE_TREATMENTS)
-    assert source["expected_count"] == len(source["rows"]) == 46
+    assert source["expected_count"] == len(source["rows"]) == 25
     assert source["inventory_sha256"] == SOURCE_INVENTORY_SHA256
     assert port_contract.inventory_digest(source["rows"]) == source["inventory_sha256"]
 
     assert codex["historical_plan_base"] == CODEX_PLAN_BASE
     assert codex["execution_base"] == CODEX_EXECUTION_BASE
-    assert codex["expected_count"] == len(codex["rows"]) == 80
+    assert codex["expected_count"] == len(codex["rows"]) == 0
     assert codex["inventory_sha256"] == CODEX_INVENTORY_SHA256
     assert port_contract.inventory_digest(codex["rows"]) == codex["inventory_sha256"]
 
@@ -168,7 +140,7 @@ def test_classification_has_one_explicit_treatment_per_source_row() -> None:
         assert row["treatment"] == expected_treatment, path
         assert row["state"] in {"classified", "implemented", "verified"}, path
         assert row["rationale"], path
-        if expected_treatment == "codex-adapt":
+        if expected_treatment in {"codex-adapt", "direct-port"}:
             assert row["planned_targets"], path
             assert row["planned_tests"], path
             assert row["units"], path
@@ -180,21 +152,27 @@ def test_classification_has_one_explicit_treatment_per_source_row() -> None:
             assert expected_treatment in {"reject", "defer"}, path
 
 
-def test_classification_codex_drift_rows_are_all_classified() -> None:
-    rows = _manifest()["codex"]["rows"]
+def test_codex_preservation_drift_is_empty_by_construction() -> None:
+    """The 2026-07-19 plan refresh re-grounded the plan at the execution base (3723a818),
+    so plan-to-execution preservation drift is empty by construction, not by omission."""
+    manifest = _manifest()
+    assert manifest["codex"]["historical_plan_base"] == manifest["codex"]["execution_base"]
+    assert manifest["codex"]["rows"] == []
 
-    assert len(rows) == 80
-    reconciled = {row["new_path"] for row in rows if row["treatment"] == "reconcile"}
-    assert reconciled == RECONCILED_CODEX_PATHS
-    for row in rows:
-        assert row["treatment"] in {"preserve", "reconcile"}, row["new_path"]
-        assert row["state"] in {"classified", "verified"}, row["new_path"]
-        assert row["invariant"], row["new_path"]
-        assert row["rationale"], row["new_path"]
-        if row["treatment"] == "reconcile":
-            assert row["units"] == ["U5"], row["new_path"]
-        else:
-            assert row["units"] == [], row["new_path"]
+
+def test_unit_row_sets_partition_the_ported_rows() -> None:
+    ported = {
+        path
+        for path, treatment in SOURCE_TREATMENTS.items()
+        if treatment in {"codex-adapt", "direct-port"}
+    }
+    unit_sets = [U2_SOURCE_ROWS, U4_SOURCE_ROWS, U5_SOURCE_ROWS]
+    assert set().union(*unit_sets) == ported
+    assert sum(len(unit_set) for unit_set in unit_sets) == len(ported)
+    rows = {row["new_path"]: row for row in _manifest()["source"]["rows"]}
+    for unit, unit_set in (("U2", U2_SOURCE_ROWS), ("U4", U4_SOURCE_ROWS), ("U5", U5_SOURCE_ROWS)):
+        for path in unit_set:
+            assert rows[path]["units"] == [unit], path
 
 
 def test_classification_authority_hashes_and_render_are_current() -> None:
@@ -217,32 +195,23 @@ def test_classification_authority_hashes_and_render_are_current() -> None:
 
 
 def test_classification_preserves_independent_codex_version_lineage() -> None:
-    assert _manifest()["version_policy"] == [
-        {
-            "current_codex_identity": "fleet-core",
-            "current_codex_version": "0.8.5+codex.20260717220000",
-            "policy": "lineage-with-codex-adaptation",
-            "release_unit": "U5",
-            "source_plugin": "fleet-core",
-            "source_version": "0.15.0",
-            "target_codex_identity": "fleet-core",
-            "target_codex_version": "0.9.0",
-        },
+    expected_policy = [
         {
             "current_codex_identity": "saga",
-            "current_codex_version": "0.75.17+codex.20260711160644",
+            "current_codex_version": "0.76.0+codex.20260719174556",
             "policy": "lineage-with-codex-adaptation",
             "release_unit": "U5",
             "source_plugin": "saga",
-            "source_version": "0.104.0",
+            "source_version": "0.103.0",
             "target_codex_identity": "saga",
-            "target_codex_version": "0.76.0",
-        },
+            "target_codex_version": "0.77.0",
+        }
     ]
+    assert _manifest()["version_policy"] == expected_policy
+    assert json.loads(VERSION_POLICY_PATH.read_text(encoding="utf-8")) == expected_policy
 
 
-def test_capability_snapshot_records_retired_v2_as_v1_contract() -> None:
-    """multi_agent_v2 was retired to v1 (operator decision, 2026-07-19); pin the honest truth."""
+def test_capability_snapshot_records_v1_contract_and_parity_refs() -> None:
     manifest = _manifest()
     capability = manifest["authority"]["capability_snapshot"]
     snapshot = json.loads((ROOT / capability["path"]).read_text(encoding="utf-8"))
@@ -259,6 +228,7 @@ def test_capability_snapshot_records_retired_v2_as_v1_contract() -> None:
     assert {"agent_nickname", "agent_role", "depth"} <= set(spawn["spawn_receipt_fields"])
     assert spawn["per_child_sandbox"] is False
     assert snapshot["runtime"]["session_fact_source"] == "operator-session-rollouts"
+    assert snapshot["refs"]["claude"]["source_base"] == SOURCE_BASE
     assert snapshot["refs"]["claude"]["source_target"] == SOURCE_TARGET
     assert snapshot["refs"]["codex"]["execution_base"] == CODEX_EXECUTION_BASE
 
@@ -300,15 +270,23 @@ def test_capability_snapshot_validator_rejects_each_dishonest_v1_claim(
     assert any(expected_error in error for error in errors), errors
 
 
-def test_u2_substrate_rows_are_verified_with_current_evidence() -> None:
+def test_u2_fixture_rows_are_verified_with_current_evidence() -> None:
     _assert_unit_rows_verified("U2", U2_SOURCE_ROWS)
 
 
-def test_u3_settlement_rows_are_verified_with_current_evidence() -> None:
-    _assert_unit_rows_verified("U3", U3_SOURCE_ROWS)
+def test_u3_canonical_status_evidence_is_recorded() -> None:
+    """U3 has no dedicated source row (status logic lives inside the U4-completing module);
+    its acceptance evidence is still a required, digest-current manifest entry."""
+    manifest = _manifest()
+    entries = [entry for entry in manifest["evidence"] if entry["unit"] == "U3"]
+    assert entries, "U3 evidence missing"
+    for entry in entries:
+        assert entry["kind"] in port_contract.EVIDENCE_KINDS
+        assert entry["exit_code"] == 0
+        assert _sha256(ROOT / entry["artifact_path"]) == entry["artifact_sha256"]
 
 
-def test_u4_conformance_row_is_verified_with_current_evidence() -> None:
+def test_u4_handoff_rows_are_verified_with_current_evidence() -> None:
     _assert_unit_rows_verified("U4", U4_SOURCE_ROWS)
 
 
@@ -316,24 +294,41 @@ def test_u5_release_rows_are_verified_with_current_evidence() -> None:
     _assert_unit_rows_verified("U5", U5_SOURCE_ROWS)
 
 
+def test_release_version_pins_are_coherent() -> None:
+    """Every surface pinning the saga release tells the same 0.77.0 story."""
+    manifest_version = json.loads(
+        (ROOT / "plugins/saga/.codex-plugin/plugin.json").read_text(encoding="utf-8")
+    )["version"]
+    assert manifest_version.split("+codex.")[0] == "0.77.0"
+    inventory = json.loads(
+        (ROOT / "docs/validation/saga-family-target-inventory.json").read_text(encoding="utf-8")
+    )
+    saga_rows = [entry["version"] for entry in inventory["plugins"] if entry.get("name") == "saga"]
+    assert saga_rows == [manifest_version]
+    changelog = (ROOT / "plugins/saga/CHANGELOG.md").read_text(encoding="utf-8")
+    assert "## 0.77.0 - 2026-07-20" in changelog
+
+
+def test_dispatcher_lease_seam_stays_dormant_ktd6() -> None:
+    """Operator decision 2026-07-19 (plan KTD6): this port must not activate the repository-wide
+    dispatcher lease seam; `default_lease_authority` wiring belongs to cross-runtime-acceptance."""
+    outcome_py = (ROOT / "plugins/saga/scripts/outcome.py").read_text(encoding="utf-8")
+    assert "default_lease_authority" not in outcome_py
+
+
 def test_release_surfaces_are_coherent_for_cutover() -> None:
-    """Cutover gate (U5): drained refresh queue, policy-target versions, bound review evidence."""
+    """Cutover gate (U5): drained refresh queue, floor-safe release versions, bound release evidence."""
     manifest = _manifest()
     assert manifest["refresh_changes"] == []
 
-    policy = json.loads(
-        (
-            ROOT / "docs/portability/ports/2026-07-19-lease-safe-substrate-version-policy.json"
-        ).read_text(encoding="utf-8")
-    )
-    for row in policy:
+    for row in manifest["version_policy"]:
         plugin = row["target_codex_identity"]
         actual = json.loads(
             (ROOT / f"plugins/{plugin}/.codex-plugin/plugin.json").read_text(encoding="utf-8")
         )["version"]
-        # The #33 atomic release is a historical fact: the changelog must record it, and the
-        # live manifest may be newer but never behind it. Pinning the current version here would
-        # break on the first legitimate release after #33 (release-event-guard-floor precedent,
+        # The #34 atomic release is a historical fact: the changelog must record it, and the live
+        # version may be newer but never behind it. Pinning the current version here would break on
+        # the first legitimate release after #34 (release-event-guard-floor precedent,
         # infiquetra-claude-plugins#604).
         released = row["target_codex_version"]
         changelog = (ROOT / f"plugins/{plugin}/CHANGELOG.md").read_text(encoding="utf-8")
@@ -356,8 +351,3 @@ def test_release_surfaces_are_coherent_for_cutover() -> None:
         entry = evidence[reference]
         assert entry["kind"] == kind and entry["unit"] == "U5" and entry["exit_code"] == 0, key
         assert _sha256(ROOT / entry["artifact_path"]) == entry["artifact_sha256"], key
-
-    codex_rows = {row["row_id"]: row for row in manifest["codex"]["rows"]}
-    for row_id in ("codex-c44473857715d49d", "codex-ae2bfb19c195be7f"):
-        row = codex_rows[row_id]
-        assert row["state"] == "verified" and row["evidence_refs"], row_id
