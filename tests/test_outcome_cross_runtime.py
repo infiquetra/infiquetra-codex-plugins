@@ -975,12 +975,16 @@ OCLI = _load_outcome_module()
 
 
 def _cli(repo: Path, *args: str) -> subprocess.CompletedProcess[str]:
+    # Same hermeticity as _git: any git the production CLI runs internally must not inherit
+    # the runner's global/system git config.
+    env = dict(os.environ, GIT_CONFIG_GLOBAL="/dev/null", GIT_CONFIG_SYSTEM="/dev/null")
     return subprocess.run(
         [sys.executable, str(OUTCOME_CLI), *args],
         cwd=str(repo),
         capture_output=True,
         text=True,
         timeout=60,
+        env=env,
     )
 
 

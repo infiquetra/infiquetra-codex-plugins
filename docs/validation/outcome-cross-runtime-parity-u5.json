@@ -1,8 +1,9 @@
 {
  "claim": "release surfaces coherent for saga 0.77.0+codex.20260720023112",
  "command": "python3 scripts/validate_codex_plugins.py",
- "recorded_at": "2026-07-20T02:59:39Z",
- "repo_head": "fc9975566fa4277c07fd216fe7fc5451b23c195e",
+ "provenance_note": "re-recorded at b8b627a after ceremony r2 devils P3: the prior repo_head (fc99755) predated the committed 0.77.0 surfaces (they were working-tree edits at recording time); at this head the surfaces are committed and the claim reproduces from the tree",
+ "recorded_at": "2026-07-20T03:15:27Z",
+ "repo_head": "b8b627a69e3909efc241e09a4dc2a716c3f6b2d5",
  "result": "Codex plugin validation passed (current)",
  "surfaces": {
   "changelog": "plugins/saga/CHANGELOG.md 0.77.0 - 2026-07-20",
