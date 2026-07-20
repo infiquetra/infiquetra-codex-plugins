@@ -568,7 +568,7 @@
     {
       "classification": "legacy-read-metadata",
       "path": "docs/validation/saga-family-target-inventory.json",
-      "sha256": "db9958cbe96e9e4c1aaabe72f8a15ba6c4eef579b3ee30e0fd3caa5c8eb6ead8",
+      "sha256": "831c50bed9b5921db915c4a0f7bb8dc72564085e1394ae3c8dfebc0eeb61da9f",
       "tokens": [
         ".codex/team-execution/",
         "team-execution"
@@ -669,7 +669,7 @@
     {
       "classification": "lineage-documentation",
       "path": "plugins/fleet-core/CHANGELOG.md",
-      "sha256": "66e2842f2e4f20c9ad11b11a82b62aee0a37e5905c1e62cbd35c04b4b10b571a",
+      "sha256": "44b686037617a94c7baa0e937ade6823db0a3b174484622313f9d371c2588f5c",
       "tokens": [
         "Team Execution"
       ]
@@ -702,7 +702,7 @@
     {
       "classification": "frozen-source-contract",
       "path": "plugins/fleet-core/scripts/fleet_commons/audit_store.py",
-      "sha256": "3f2d49e255da04d2acc14b4d3c56c5ff3e0f268029e74ea52acffc0a181f101c",
+      "sha256": "7d40eb93c8e4853fcbce81fa86c85db27ef5e72dc7f5d426b5d4c6dd19b737d1",
       "tokens": [
         "team-execution"
       ]
@@ -785,7 +785,7 @@
     {
       "classification": "lineage-documentation",
       "path": "plugins/saga/CHANGELOG.md",
-      "sha256": "1b27a5709300db50ee58592175c3b2448b919a3405eb57b40ea01ed12c199653",
+      "sha256": "56d82709c4dc73f848aba0e8a33b51e89a0037682d3746aa1b11331d8b4c44f8",
       "tokens": [
         "Team Execution",
         "team-execution"
@@ -853,7 +853,7 @@
     {
       "classification": "legacy-parser",
       "path": "plugins/saga/scripts/outcome.py",
-      "sha256": "9ced677674ec95076d634ae25be8cf5298b408fc844dd232a843735409e88349",
+      "sha256": "711c261ad59fece542227e7e6126a806005ce471fe131a500fca18faa492cd73",
       "tokens": [
         "team-execution"
       ]
@@ -1058,7 +1058,7 @@
     {
       "classification": "migration-fixture",
       "path": "tests/test_outcome_dispatcher.py",
-      "sha256": "4afa0a54f1eff130086d375fd45039aaa57af855aca27e60ffac59be05a62ee0",
+      "sha256": "497abf22899066c3963f3239291256ee071cee56974424be6e259f1c81ec12b5",
       "tokens": [
         "#team-structure",
         "team_execution_ref"

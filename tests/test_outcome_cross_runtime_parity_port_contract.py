@@ -295,25 +295,33 @@ def test_u5_release_rows_are_verified_with_current_evidence() -> None:
 
 
 def test_release_version_pins_are_coherent() -> None:
-    """Every surface pinning the saga release tells the same 0.77.0 story."""
+    """Every surface pinning the saga release tells the same 0.78.0 story."""
     manifest_version = json.loads(
         (ROOT / "plugins/saga/.codex-plugin/plugin.json").read_text(encoding="utf-8")
     )["version"]
-    assert manifest_version.split("+codex.")[0] == "0.77.0"
+    assert manifest_version.split("+codex.")[0] == "0.78.0"
     inventory = json.loads(
         (ROOT / "docs/validation/saga-family-target-inventory.json").read_text(encoding="utf-8")
     )
     saga_rows = [entry["version"] for entry in inventory["plugins"] if entry.get("name") == "saga"]
     assert saga_rows == [manifest_version]
     changelog = (ROOT / "plugins/saga/CHANGELOG.md").read_text(encoding="utf-8")
-    assert "## 0.77.0 - 2026-07-20" in changelog
+    assert "## 0.78.0 - 2026-07-20" in changelog
 
 
-def test_dispatcher_lease_seam_stays_dormant_ktd6() -> None:
-    """Operator decision 2026-07-19 (plan KTD6): this port must not activate the repository-wide
-    dispatcher lease seam; `default_lease_authority` wiring belongs to cross-runtime-acceptance."""
+def test_dispatcher_lease_seam_is_active_ktd8() -> None:
+    """Plan KTD8 (#43): cross-runtime acceptance resolves the #34 KTD6 deferral.
+
+    Every dispatcher this CLI builds now carries lease authority, so a codex `advance` — the
+    plain one or the attached one — cannot dispatch a leaf another runtime holds. Comparing the
+    two counts rather than pinning a literal means a newly added dispatcher site fails here
+    unless it is wired too.
+    """
     outcome_py = (ROOT / "plugins/saga/scripts/outcome.py").read_text(encoding="utf-8")
-    assert "default_lease_authority" not in outcome_py
+    built = outcome_py.count("outcome_dispatcher.make_dispatcher(")
+    wired = outcome_py.count("lease_authority=outcome_dispatcher.default_lease_authority()")
+    assert built == 2, f"expected 2 dispatcher sites, found {built}"
+    assert wired == built, f"{built} dispatcher sites but only {wired} wire lease authority"
 
 
 def test_release_surfaces_are_coherent_for_cutover() -> None:

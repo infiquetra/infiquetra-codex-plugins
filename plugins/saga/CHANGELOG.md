@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.78.0 - 2026-07-20
+
+### Changed - Dispatcher lease seam activated (#43, PA-2 of infiquetra-claude-plugins#605)
+
+- Both `outcome_dispatcher.make_dispatcher(...)` call sites in `outcome.py` — the `advance` arm
+  and the native attached-advance dispatch path — now pass
+  `lease_authority=outcome_dispatcher.default_lease_authority()`. The #34 port deliberately left
+  this seam dormant under its KTD6 operator deferral; cross-runtime acceptance is where that
+  deferral resolves, because without lease authority a Codex `advance` can dispatch a leaf
+  another runtime already holds. `test_dispatcher_lease_seam_stays_dormant_ktd6` is replaced by
+  an activation pin that compares dispatcher-site and wiring counts (so a new unwired site
+  fails), plus a behavioral test that a real lease is taken during dispatch and released after.
+
+### Fixed - Retired-bundle CLI surface re-ported (#43, from infiquetra-claude-plugins#624)
+
+- `outcome export`/`import` `--help` strings describe the live #604 R7 semantics instead of the
+  retired `outcome-bundle/1` flow, and the section comment matches.
+- `outcome import` refuses without reading its path argument, so a missing or malformed bundle
+  yields the migration guidance rather than an uncaught `FileNotFoundError` traceback or a bare
+  JSON parse error.
+
+### Security - Protected handoff-store directory re-ported (#43, from infiquetra-claude-plugins#624)
+
+- `outcome_compat.py` is re-frozen byte-faithful to its Claude source at `794b4da6`, with
+  `RUNTIME_LABEL = "codex"` the only divergence (re-proved by diff). It carries the handoff-store
+  hardening: directories are created `0o700`, a pre-existing symlinked/foreign-owned/permissive
+  directory is refused, existing ancestors below `$HOME` are refused when symlinked,
+  world-writable, or uninspectable, and `handoff-store-unsafe` receipts carry no absolute path
+  (R12 — callers print them verbatim).
+
 ## 0.77.0 - 2026-07-20
 
 ### Added

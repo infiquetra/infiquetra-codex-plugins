@@ -452,6 +452,33 @@ def test_make_dispatcher_holds_lease_across_backend_settlement(
     assert selected.inspect()["leases"] == []
 
 
+def test_default_lease_authority_takes_and_releases_a_real_lease(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Activation pin (#43, plan KTD8): the CLI wires `default_lease_authority()` into every
+    dispatcher it builds, so that resolver must yield an authority that actually brackets
+    dispatch — a lease held while the backend prepares and gone once it settles. The port gate
+    pins the wiring text; this pins the behavior behind it.
+    """
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    selected = D.default_lease_authority()
+    original_dispatch = D.dispatch
+
+    def observing_dispatch(req: Any, *, available: Any) -> dict[str, Any]:
+        live = selected.inspect()["leases"]
+        assert len(live) == 1, "no lease was held while the backend prepared"
+        assert live[0]["session_id"] == "outcome:ship-x"
+        assert live[0]["mutation"] == "none"
+        return cast(dict[str, Any], original_dispatch(req, available=available))
+
+    monkeypatch.setattr(D, "dispatch", observing_dispatch)
+
+    result = D.make_dispatcher(lease_authority=selected)(_req("inline"))
+
+    assert result["status"] == "prepared"
+    assert selected.inspect()["leases"] == [], "the lease outlived dispatch settlement"
+
+
 def test_make_dispatcher_refuses_capacity_before_backend_call(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

@@ -78,7 +78,7 @@ LEGACY_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
 
 PRE_CUTOVER_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
     "saga": {
-        "version": "0.77.0+codex.20260720023112",
+        "version": "0.78.0+codex.20260720120109",
         "skills": (
             "office-hours",
             "ideate",
@@ -135,7 +135,7 @@ PRE_CUTOVER_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
         "skills": ("discord-identity-assets",),
     },
     "fleet-core": {
-        "version": "0.9.0+codex.20260719174556",
+        "version": "0.10.0+codex.20260720120109",
         "skills": (),
         "library": True,
     },
