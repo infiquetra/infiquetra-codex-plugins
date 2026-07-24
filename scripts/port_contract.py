@@ -850,17 +850,23 @@ def _validate_capability_snapshot(
         errors.append("capability snapshot must be an object")
         return
     models = snapshot.get("catalog", {}).get("models", [])
-    projection = [
-        {
+    include_multi_agent_version = bool(models) and all(
+        isinstance(model, dict) and "multi_agent_version" in model for model in models
+    )
+    projection = []
+    for model in models:
+        if not isinstance(model, dict):
+            continue
+        row = {
             "slug": model.get("slug"),
             "default_effort": model.get("default_effort"),
             "supported_efforts": model.get("supported_efforts"),
             "visibility": model.get("visibility"),
             "supported_in_api": model.get("supported_in_api"),
         }
-        for model in models
-        if isinstance(model, dict)
-    ]
+        if include_multi_agent_version:
+            row["multi_agent_version"] = model.get("multi_agent_version")
+        projection.append(row)
     expected_digest = snapshot.get("catalog", {}).get("normalized_sha256")
     if sha256_bytes(canonical_json_bytes(projection)) != expected_digest:
         errors.append("capability snapshot catalog digest is stale")

@@ -150,8 +150,16 @@ TARGET_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
     for name, spec in PRE_CUTOVER_EXPECTED_PLUGINS.items()
     if name != "team-execution"
 }
+TARGET_EXPECTED_PLUGINS["fleet-core"] = {
+    **TARGET_EXPECTED_PLUGINS["fleet-core"],
+    "version": "0.11.0+codex.20260724175626",
+}
+TARGET_EXPECTED_PLUGINS["saga"] = {
+    **TARGET_EXPECTED_PLUGINS["saga"],
+    "version": "0.79.0+codex.20260724175626",
+}
 TARGET_EXPECTED_PLUGINS["verified-workflows"] = {
-    "version": "1.0.3+codex.20260718134043",
+    "version": "2.0.0+codex.20260724175626",
     "skills": ("run", "review-workflow", "appsec-audit", "select-agent"),
 }
 CURRENT_ONLY_LEGACY_PLUGINS = {

@@ -49,7 +49,7 @@ def test_manifest_and_skill_inventory_match_target_fixture() -> None:
     target = next(entry for entry in fixture["plugins"] if entry["name"] == "saga")
 
     assert manifest["name"] == "saga"
-    assert manifest["version"] == "0.78.0+codex.20260720120109"
+    assert manifest["version"] == "0.79.0+codex.20260724175626"
     assert set(target["skills"]) == EXPECTED_SKILLS
     assert {path.parent.name for path in (PLUGIN_ROOT / "skills").glob("*/SKILL.md")} == EXPECTED_SKILLS
     assert not (PLUGIN_ROOT / ".claude-plugin").exists()

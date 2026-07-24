@@ -40,7 +40,7 @@ def test_v2_contract_freezes_the_review_and_validator_lineage() -> None:
     assert all(row["codex_invariant_refs"] for row in rows)
 
 
-def test_v2_contract_binds_schema_r3_and_defers_release_versions_to_u8() -> None:
+def test_v2_contract_binds_schema_r3_and_mints_release_versions_in_u8() -> None:
     manifest = _load(MANIFEST)
     authority = manifest["authority"]
     assert isinstance(authority, dict)
@@ -67,7 +67,9 @@ def test_v2_contract_binds_schema_r3_and_defers_release_versions_to_u8() -> None
     }
     assert {row["release_unit"] for row in policies} == {"U8"}
     assert {row["target_codex_version"] for row in policies} == {
-        "pending-u8-candidate"
+        "0.11.0+codex.20260724175626",
+        "0.79.0+codex.20260724175626",
+        "2.0.0+codex.20260724175626",
     }
 
 
@@ -76,7 +78,9 @@ def test_v2_classification_is_rendered_and_historical_contract_is_unchanged() ->
     assert "codex-v2-orchestration-2026-07-24" in rendered
     assert "src-7ca0384cf8d21d44" in rendered
     assert "src-76516b36df832272" in rendered
-    assert "pending-u8-candidate" in rendered
+    assert "fleet-core 0.11.0+codex.20260724175626" in rendered
+    assert "saga 0.79.0+codex.20260724175626" in rendered
+    assert "verified-workflows 2.0.0+codex.20260724175626" in rendered
 
     digest = hashlib.sha256(HISTORICAL_MANIFEST.read_bytes()).hexdigest()
     assert digest == "1da9e147b0c59bf306e987f9e6e3f29d1c24be57e2d2ab5db6f483afa6cac498"

@@ -52,7 +52,7 @@ tool-specific orchestration.
 
 - Count differences are intentional. The active Codex marketplace has 10 plugins, not the full portability catalog.
 - The prior SDLC and document-review plugin roots are superseded by `saga`, `verified-workflows`, and `mission-control`.
-- `verified-workflows` `1.0.3+codex.20260718134043` is the released active workflow package.
+- `verified-workflows` `2.0.0+codex.20260724175626` is the V2-only release candidate.
   `team-execution` remains only as frozen lineage and legacy-readable state vocabulary.
 - The target fixture exposes `verified-workflows:run`, `verified-workflows:review-workflow`,
   `verified-workflows:appsec-audit`, and `verified-workflows:select-agent`. The Claude catalog

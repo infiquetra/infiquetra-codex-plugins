@@ -7,7 +7,7 @@ hierarchy, liveness, messaging, waiting, interruption, and restoration. This plu
 operator-approved contract, validates runtime identity and typed results, audits writable attempts,
 evaluates gates, and writes one concise run record.
 
-Release status: `1.0.3+codex.20260718134043` is the current published package. Historical Team
+Release candidate: `2.0.0+codex.20260724175626` is the V2-only package. Historical Team
 Execution names and earlier V1 or hook-based proof artifacts are lineage only; they are not active
 execution paths.
 

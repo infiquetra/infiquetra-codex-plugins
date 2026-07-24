@@ -51,7 +51,7 @@ def test_target_fixture_facts_project_verified_workflows_without_changing_curren
     }
     assert "team-execution" not in facts["plugins"]
     assert facts["plugins"]["verified-workflows"]["version"] == (
-        "1.0.3+codex.20260718134043"
+        "2.0.0+codex.20260724175626"
     )
     assert {
         row["namespace"] for row in facts["plugins"]["verified-workflows"]["skills"]

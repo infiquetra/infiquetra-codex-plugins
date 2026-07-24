@@ -2,7 +2,7 @@
 
 All notable changes to the Codex `fleet-core` plugin are documented here.
 
-## Unreleased
+## 0.11.0 — 2026-07-24
 
 ### Changed
 
