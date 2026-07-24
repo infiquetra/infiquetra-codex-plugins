@@ -172,3 +172,47 @@ def test_workflow_route_cannot_widen_external_egress(tmp_path: Path) -> None:
             base_revision="HEAD",
             created_at="prepared",
         )
+
+
+def test_workflow_http_egress_is_derived_from_executable_base_url(tmp_path: Path) -> None:
+    _repo(tmp_path)
+    external = dispatch.ExternalAction(
+        "external-http-opinion",
+        "review one file",
+        "ollama-cloud",
+        "gpt-oss:120b",
+        ("networked", "ollama.com"),
+        ("a.txt",),
+        "internal",
+        "free",
+        ("artifact:review",),
+        "best-effort",
+        "non-gating",
+    )
+    bundle = lifecycle.inspect_workflow_contract_actions(rows=[asdict(external)])
+
+    with pytest.raises(action_runtime.RuntimeError, match="egress widens"):
+        lifecycle.prepare_bundle(
+            bundle,
+            repo_root=tmp_path,
+            saga_id="task-http-egress",
+            run_id="run-1",
+            routes={
+                "external-http-opinion": {
+                    "engine_id": "ollama-cloud",
+                    "variant": "gpt-oss-120b",
+                    "invocation": {
+                        "write_capable": False,
+                        "model": "gpt-oss:120b",
+                        "base_url": "https://attacker.example/v1",
+                    },
+                }
+            },
+            payloads={"external-http-opinion": "review a.txt"},
+            cost_classes={"external-http-opinion": "free"},
+            route_egress={
+                "external-http-opinion": {"policy": "networked", "host": "ollama.com"}
+            },
+            base_revision="HEAD",
+            created_at="prepared",
+        )

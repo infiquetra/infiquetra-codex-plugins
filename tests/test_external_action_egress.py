@@ -3,6 +3,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import pytest
+
 SCRIPTS = Path(__file__).parents[1] / "plugins" / "saga" / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 
@@ -30,6 +32,25 @@ def test_slack_token_is_detected_and_redacted() -> None:
     result = egress.sanitize(f"authorization={token}")
     assert token not in str(result.payload)
     assert result.detections == ("slack-token",)
+
+
+@pytest.mark.parametrize("prefix", ["gho", "ghu", "ghs", "ghr"])
+def test_complete_github_token_family_is_detected(prefix: str) -> None:
+    token = f"{prefix}_abcdefghijklmnopqrstuv"
+    result = egress.sanitize(token)
+    assert token not in str(result.payload)
+    assert result.detections == ("github-token",)
+
+
+@pytest.mark.parametrize("key", ["DATABASE_PASSWORD", "db_password"])
+def test_prefixed_credential_keys_block_mapping_and_assignment(key: str) -> None:
+    secret = "correct-horse-battery-staple"
+    mapping = egress.sanitize({key: secret})
+    assignment = egress.sanitize(f"{key}={secret}")
+    assert mapping.blocked
+    assert secret not in repr(mapping)
+    assert assignment.detections == ("assignment-secret",)
+    assert secret not in str(assignment.payload)
 
 
 def test_structured_credential_and_jwt_values_fail_closed_without_literals() -> None:

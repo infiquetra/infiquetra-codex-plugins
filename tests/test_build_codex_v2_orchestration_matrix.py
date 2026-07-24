@@ -72,6 +72,27 @@ def test_every_capability_receipt_field_is_fail_closed(
         M.build_matrix(payload)
 
 
+@pytest.mark.parametrize(
+    ("case", "marker", "expected"),
+    [
+        (case, marker, expected)
+        for case, expectations in M.REQUIRED_CASE_MARKERS.items()
+        for marker, expected in expectations.items()
+    ],
+)
+def test_every_required_capability_marker_is_fail_closed(
+    case: str, marker: str, expected: bool
+) -> None:
+    payload = copy.deepcopy(receipts())
+    row = next(item for item in payload["receipts"] if item["case"] == case)
+    row["markers"][marker] = not expected
+    payload["receipt_set_sha256"] = M._canonical_sha256(
+        {"catalog": payload["catalog"], "receipts": payload["receipts"]}
+    )
+    with pytest.raises(M.MatrixError, match=f"receipt {case} required markers"):
+        M.build_matrix(payload)
+
+
 def test_rollout_parser_projects_runtime_and_typed_result(tmp_path: Path) -> None:
     rows = [
         {

@@ -218,7 +218,7 @@ separate-login requirement on 2026-07-24.
 - Repository validator, legacy inventory, port classification, Saga facts, and Saga assets: passed.
 - `git diff --check`: passed.
 
-## Review Remediation And Next Step
+## Review Round 2 Remediation
 
 - Fresh testing, architecture, and security reviewers found gaps in the curated matrix, descendant
   receipts, gate authority binding, audit coverage, external CLI containment, and project V2 config.
@@ -227,3 +227,31 @@ separate-login requirement on 2026-07-24.
 - Next: regenerate affected proofs and release metadata, rerun focused and full validation, rerun all
   three fresh V2 reviewers, then continue the approved PR, merge, install, rollback, reapply, and
   fresh-session proof sequence.
+
+## Remediation Round 3
+
+- Fresh V2 testing, architecture, and security review roots reused the current Codex authentication
+  and project configuration. Runtime receipts proved Sol/max read-only roots and exact Sol/high
+  `review_high` children at the three approved paths; no alternate authentication home, feature
+  override, or Hermes operation was used.
+- Closed every case-specific positive and negative capability marker in the receipt-derived matrix,
+  with table-driven mutation tests for all required markers.
+- Split workspace overlap semantics: pre-existing dirty-state collision remains symmetric, while a
+  changed entry must equal or descend from a declared write. Coarse ignored-repository ancestors can
+  no longer authorize narrower declared files or undeclared siblings.
+- Bound HTTP actions to exact canonical registry invocations and included the executable URL host in
+  workflow egress validation, preventing endpoint and authentication-environment substitution.
+- Expanded the shared secret detector for the maintained GitHub token family, Slack tokens, cloud
+  access keys, and prefixed credential keys and assignments; scoped workspace materialization reuses
+  that detector and rejects undecodable bytes.
+
+## Remediation Round 3 Checks
+
+- Focused matrix, workspace-audit, external-action, adapter, workflow-integration, and runtime pytest:
+  122 passed.
+- Full repository pytest: 2,628 passed.
+- `uv run ruff check .`: passed.
+- Repository validator and `git diff --check`: passed.
+- Next: commit the round-3 remediation, run fresh round-3 revalidation attempts for the three affected
+  reviewers, then continue the approved PR, CI, merge, install, rollback, reapply, and fresh-session
+  proof sequence if all reviewer gates accept.

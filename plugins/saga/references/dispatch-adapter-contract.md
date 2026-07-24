@@ -39,6 +39,9 @@ provider preflight, read credentials, or perform network I/O.
   into the invocation dict (which flows into run-ledger telemetry), a receipt, `AdvisoryEvidence`,
   or a log line. A receipt or error message may carry the env var *name* (`auth.key_env`), never
   its value.
+- An approved HTTP action must carry the canonical registry invocation byte-for-byte. The
+  executable `base_url` host participates in workflow egress validation, so separate route metadata
+  cannot authorize endpoint or credential-environment substitution.
 - HTTP error / timeout / malformed-body responses map onto the existing `FAILURE_STATUSES`
   vocabulary with a downgrade note — never a fabricated `ok` result.
 
@@ -89,9 +92,11 @@ no signature break for any existing caller). `dispatch()` populates it from the 
 
 CLI actions run in a scoped Git workspace materialized only from approved context. They receive a
 minimal environment and provider-native read-only tools; secret-like paths and high-confidence
-secret content fail before materialization. Non-empty external write sets fail closed until the
-adapter has an enforceable filesystem boundary. Caller-supplied route data cannot promote a route,
-and provider output never applies directly to the shared worktree.
+secret content, including bearer/JWT, supported GitHub and Slack tokens, cloud access keys, and
+credential-key assignments, fail before materialization. Undecodable content also fails closed.
+Non-empty external write sets fail closed until the adapter has an enforceable filesystem boundary.
+Caller-supplied route data cannot promote a route, and provider output never applies directly to
+the shared worktree.
 
 ## Never a gatekeeper (R6/#387 AC6, restated for the bridge)
 

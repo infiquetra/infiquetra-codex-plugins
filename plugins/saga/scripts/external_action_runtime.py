@@ -16,6 +16,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Mapping
+from urllib.parse import urlsplit
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -199,6 +200,12 @@ def _validate_workflow_route(
             actual_egress.update(value)
         else:
             raise RuntimeError("external route egress contains an unsupported value")
+    base_url = invocation.get("base_url")
+    if isinstance(base_url, str) and base_url:
+        host = urlsplit(base_url).hostname
+        if not host:
+            raise RuntimeError("external HTTP route base URL is invalid")
+        actual_egress.add(host)
     if not actual_egress or not actual_egress.issubset(set(approved_egress)):
         raise RuntimeError("external route egress widens the workflow contract")
 

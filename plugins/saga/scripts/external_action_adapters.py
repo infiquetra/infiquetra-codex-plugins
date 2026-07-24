@@ -387,6 +387,8 @@ def _validate_adapter_route(
         raise ValueError(
             "external CLI writes are disabled without an enforceable filesystem boundary"
         )
+    if entry.transport == "http" and invocation != entry.invocation:
+        raise ValueError("approved HTTP invocation differs from the canonical registry")
     for field in ("write_capable", "patch_capture", "shared_workspace_import"):
         if invocation.get(field) != entry.invocation.get(field):
             raise ValueError(f"approved route {field} differs from the canonical registry")

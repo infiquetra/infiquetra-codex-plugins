@@ -121,6 +121,12 @@ def test_scoped_workspace_rejects_nested_secret_paths(tmp_path: Path) -> None:
         b"ASIAABCDEFGHIJKLMNOP",
         b"Authorization: Bearer abcdefghijklmnop",
         b"password=correct-horse-battery-staple",
+        b"gho_abcdefghijklmnopqrstuv",
+        b"ghu_abcdefghijklmnopqrstuv",
+        b"ghs_abcdefghijklmnopqrstuv",
+        b"ghr_abcdefghijklmnopqrstuv",
+        b"DATABASE_PASSWORD=correct-horse-battery-staple",
+        b"db_password=correct-horse-battery-staple",
         b"\xff\xfe\x00binary",
     ],
 )

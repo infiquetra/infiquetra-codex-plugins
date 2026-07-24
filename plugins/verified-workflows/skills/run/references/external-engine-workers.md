@@ -44,6 +44,9 @@ the validated registry invocation. Neither surface may impersonate the other.
 - CLI routes are advisory and read-only. They receive a scoped Git workspace containing only
   declared context, a minimal environment, and no undeclared source history. Non-empty external
   write sets fail closed until an enforceable filesystem boundary exists.
+- HTTP routes execute only the canonical registry invocation. The executable URL host is checked
+  against the workflow egress allowlist, and caller input cannot replace the endpoint, model, or
+  authentication environment.
 - Every successful bridge receipt binds engine, variant, transport, model, effort, the complete
   secret-free invocation, output attestation, and non-negative finite telemetry.
 - A capability-routed result that differs from the operator-approved preview is

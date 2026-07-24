@@ -122,6 +122,48 @@ EXPECTED_CASE_RUNTIME = {
     "ultra_request_root": ("/root", "root", "gpt-5.6-sol", "max", "read-only", True),
     "ultra_root": ("/root", "root", "gpt-5.6-sol", "ultra", "read-only", True),
 }
+REQUIRED_CASE_MARKERS = {
+    "bounded_child": {"V2_BOUNDED_CONTEXT_OK": True, "V2_BOUNDED_VISIBLE": True},
+    "bounded_root": {"V2_BOUNDED_CONTEXT_OK": True, "V2_BOUNDED_VISIBLE": True},
+    "lifecycle_child": {"V2_LIFECYCLE_RESTORED": True},
+    "lifecycle_root": {"V2_LIFECYCLE_RESTORED": True, "V2_LIFECYCLE_ROOT_OK": True},
+    "nested_leaf": {"V2_NESTED_LEAF_OK": True},
+    "nested_parent": {"V2_NESTED_LEAF_OK": True, "V2_NESTED_PARENT_OK": True},
+    "nested_root": {
+        "V2_NESTED_LEAF_OK": True,
+        "V2_NESTED_PARENT_OK": True,
+        "V2_NESTED_ROOT_OK": True,
+    },
+    "no_history_child": {
+        "V2_PROFILE_CHILD_OK": True,
+        "V2_PROFILE_PARENT_ONLY_CONTEXT": False,
+    },
+    "no_history_root": {
+        "V2_PROFILE_CHILD_OK": True,
+        "V2_PROFILE_PARENT_ONLY_CONTEXT": True,
+    },
+    "profile_monitor_low": {"V2_PROFILE_MONITOR_LOW_OK": True},
+    "profile_read_root": {
+        "V2_PROFILE_MONITOR_LOW_OK": True,
+        "V2_PROFILE_REVIEW_HIGH_OK": True,
+        "V2_PROFILE_REVIEW_MAX_OK": True,
+        "V2_PROFILE_SCAN_LOW_OK": True,
+    },
+    "profile_review_high": {"V2_PROFILE_REVIEW_HIGH_OK": True},
+    "profile_review_max": {"V2_PROFILE_REVIEW_MAX_OK": True},
+    "profile_scan_low": {"V2_PROFILE_SCAN_LOW_OK": True},
+    "profile_test_medium": {"V2_PROFILE_TEST_MEDIUM_OK": True},
+    "profile_work_high": {"V2_PROFILE_WORK_HIGH_OK": True},
+    "profile_write_root": {
+        "V2_PROFILE_TEST_MEDIUM_OK": True,
+        "V2_PROFILE_WORK_HIGH_OK": True,
+    },
+    "typed_child": {"V2_TYPED_RESULT_OK": True},
+    "typed_root": {"V2_TYPED_RESULT_OK": True, "V2_TYPED_ROOT_OK": True},
+    "ultra_child": {},
+    "ultra_request_root": {"V2_ULTRA_CHILD_REJECTION_OBSERVED": True},
+    "ultra_root": {"V2_ULTRA_ROOT_OK": True},
+}
 TYPED_RESULT = {
     "assignment_id": "v2-typed",
     "attempt_id": "a1",
@@ -351,6 +393,11 @@ def _closed_receipts(payload: object) -> tuple[dict[str, Any], dict[str, dict[st
             or not all(isinstance(value, bool) for value in markers.values())
         ):
             raise MatrixError(f"receipt {case} marker set is invalid")
+        if any(
+            markers.get(marker) is not expected
+            for marker, expected in REQUIRED_CASE_MARKERS[case].items()
+        ):
+            raise MatrixError(f"receipt {case} required markers are invalid")
         if not isinstance(row.get("typed_result_valid"), bool):
             raise MatrixError(f"receipt {case} typed-result state is invalid")
     expected_catalog = {

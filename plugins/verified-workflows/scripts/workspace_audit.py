@@ -291,6 +291,12 @@ def _overlaps(path: str, allowed: str) -> bool:
     return left == right or left in right.parents or right in left.parents
 
 
+def _within_declared_write(path: str, allowed: str) -> bool:
+    candidate = PurePosixPath(path)
+    boundary = PurePosixPath(allowed)
+    return candidate == boundary or boundary in candidate.parents
+
+
 def validate_attempt_audit(
     before: WorkspaceAudit,
     after: WorkspaceAudit,
@@ -332,7 +338,11 @@ def validate_attempt_audit(
             if before_entries.get(path) != after_entries.get(path)
         )
     )
-    outside = [path for path in changed if not any(_overlaps(path, item) for item in allowed)]
+    outside = [
+        path
+        for path in changed
+        if not any(_within_declared_write(path, item) for item in allowed)
+    ]
     if outside:
         raise WorkspaceAuditError(f"worker changed paths outside declared ownership {outside}")
     return WorkspaceDelta(
