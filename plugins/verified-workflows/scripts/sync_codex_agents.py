@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Safely synchronize the five managed execution profiles into a Codex home."""
+"""Safely synchronize the six managed execution profiles into a Codex home."""
 
 from __future__ import annotations
 
@@ -513,13 +513,13 @@ def plan_sync(
     migrate_legacy: bool = False,
     remove_stale: bool = False,
 ) -> SyncPlan:
-    """Plan five-profile reconciliation without mutating the target."""
+    """Plan six-profile reconciliation without mutating the target."""
 
     profiles = {profile.filename: profile for profile in bundle.profiles}
     if set(profiles) != {
         f"{name}.toml" for name in renderer.RUNTIME_AGENT_NAMES.values()
     }:
-        raise SyncError("render bundle does not contain the exact five execution profiles")
+        raise SyncError("render bundle does not contain the exact six execution profiles")
     actions: list[SyncAction] = []
     for name, profile in profiles.items():
         current = pre_state.entry(name)
@@ -609,9 +609,9 @@ def plan_sync(
 
 def _profile_actions(plan: SyncPlan) -> dict[str, str]:
     return {
-        renderer.EXECUTION_CLASS_BY_AGENT_NAME[Path(action.name).stem]: action.action
+        renderer.PROFILE_ID_BY_AGENT_NAME[Path(action.name).stem]: action.action
         for action in plan.actions
-        if Path(action.name).stem in renderer.EXECUTION_CLASS_BY_AGENT_NAME
+        if Path(action.name).stem in renderer.PROFILE_ID_BY_AGENT_NAME
     }
 
 
@@ -677,7 +677,7 @@ def _receipt(
         receipt["readback"] = {
             **_snapshot_receipt(post_state),
             "profile_sha256": {
-                profile.execution_class: profile.sha256 for profile in plan.bundle.profiles
+                profile.profile_id: profile.sha256 for profile in plan.bundle.profiles
             },
             "verified": result == "verified",
         }
@@ -1757,7 +1757,6 @@ def main() -> int:
     except (
         SyncError,
         renderer.RoleRegistryError,
-        renderer.RESOLVER.TierResolverError,
         renderer.CATALOG.CatalogError,
     ) as exc:
         print(f"verified-workflows profile sync failed: {exc}", file=sys.stderr)

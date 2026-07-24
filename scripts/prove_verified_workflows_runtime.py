@@ -347,12 +347,12 @@ def validate_runtime_receipt(
 
 def _profile_facts() -> list[dict[str, str]]:
     facts: list[dict[str, str]] = []
-    for execution_class, runtime_agent_name in renderer.RUNTIME_AGENT_NAMES.items():
+    for profile_id, runtime_agent_name in renderer.RUNTIME_AGENT_NAMES.items():
         path = PLUGIN_ROOT / "agents" / f"{runtime_agent_name}.toml"
         content = _read_regular(path, "managed profile", 1024 * 1024)
         facts.append(
             {
-                "execution_class": execution_class,
+                "profile_id": profile_id,
                 "runtime_agent_name": runtime_agent_name,
                 "sha256": _sha256(content),
             }

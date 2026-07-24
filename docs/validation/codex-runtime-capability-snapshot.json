@@ -125,7 +125,7 @@
       "mcp_servers",
       "skills.config"
     ],
-    "repo_managed_source_count": 5,
+    "repo_managed_source_count": 6,
     "installed_custom_agent_count": 9,
     "installed_verified_workflows_managed_count": 5
   },

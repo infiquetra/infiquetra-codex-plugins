@@ -1065,7 +1065,7 @@ def validate_verified_workflows_canonical_surface(root: Path, errors: list[str])
 
 
 def validate_verified_workflows_agents(root: Path, errors: list[str]) -> None:
-    """Validate the closed U3 role registry and exact five generated profiles."""
+    """Validate the closed role registry and exact six generated profiles."""
 
     plugin_root = root / "plugins" / "verified-workflows"
     script = plugin_root / "scripts" / "render_codex_agents.py"
@@ -1108,8 +1108,8 @@ def validate_verified_workflows_agents(root: Path, errors: list[str]) -> None:
             raise RuntimeError("renderer made an unsupported runtime claim")
         if receipt.get("registry", {}).get("role_count") != 25:
             raise RuntimeError("renderer did not preserve exactly 25 logical roles")
-        if len(receipt.get("profiles", [])) != 5:
-            raise RuntimeError("renderer did not produce exactly five profiles")
+        if len(receipt.get("profiles", [])) != 6:
+            raise RuntimeError("renderer did not produce exactly six profiles")
         validate_verified_workflows_project_agents(root, receipt, errors)
     except (OSError, RuntimeError, json.JSONDecodeError, subprocess.TimeoutExpired) as exc:
         errors.append(f"verified-workflows: U3 role/profile validation failed: {exc}")
@@ -1150,8 +1150,8 @@ def validate_verified_workflows_project_agents(
             errors.append("verified-workflows: renderer profile entry is invalid")
             continue
         runtime_name = profile.get("runtime_agent_name")
-        execution_class = profile.get("execution_class")
-        if not isinstance(runtime_name, str) or not isinstance(execution_class, str):
+        profile_id = profile.get("profile_id")
+        if not isinstance(runtime_name, str) or not isinstance(profile_id, str):
             errors.append("verified-workflows: renderer profile identity is invalid")
             continue
         project_path = project_agents / f"{runtime_name}.toml"
@@ -1167,7 +1167,7 @@ def validate_verified_workflows_project_agents(
             if project_path.read_bytes() != source_path.read_bytes():
                 errors.append(
                     f".codex/agents/{runtime_name}.toml: project runtime agent bytes "
-                    f"drifted from execution class `{execution_class}`"
+                    f"drifted from profile `{profile_id}`"
                 )
         except OSError as exc:
             errors.append(
@@ -1212,7 +1212,7 @@ def validate_verified_workflows_runtime(root: Path, errors: list[str]) -> None:
         return
     hooks_path = plugin_root / "hooks" / "hooks.json"
     hooks = load_json(hooks_path, errors)
-    expected_matcher = "^(review_max|review_high|test_medium|scan_low|monitor_low)$"
+    expected_matcher = "^(review_max|review_high|work_high|test_medium|scan_low|monitor_low)$"
     expected_command = 'python3 "$PLUGIN_ROOT/hooks/agent_receipt.py"'
     if not isinstance(hooks, dict) or set(hooks) != {"hooks"}:
         errors.append("verified-workflows hooks: top-level fields must be exactly `hooks`")

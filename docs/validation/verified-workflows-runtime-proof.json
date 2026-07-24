@@ -2,7 +2,7 @@
   "capability_outcome": "diagnostic",
   "claim": "codex-v2-runtime-capability",
   "codex_cli_version": "0.145.0",
-  "harness_sha256": "318d98231d6f21adbb6518057c943dd803c87d8930d29956a04bbedc6407c1bb",
+  "harness_sha256": "f7d6bb8446412ec6fc8be8c26ac239e32a2fb874e18dd5ecb3956fb399e34559",
   "isolated_login_metadata_present": null,
   "limitations": [
     "Codex 0.145.0 child permissions inherit the parent turn after profile loading",
@@ -21,52 +21,61 @@
   ],
   "profiles": [
     {
-      "execution_class": "review-max",
+      "profile_id": "review_max",
       "runtime_agent_name": "review_max",
-      "sha256": "ee2062e446db24856e6893dd290183b66b9387f19d97e8a39a7631de453adb9f"
+      "sha256": "65e15b6348f97ba0be4af6512e11f1e1e490e4e592678dd8cf1ef0b563149df5"
     },
     {
-      "execution_class": "review-high",
+      "profile_id": "review_high",
       "runtime_agent_name": "review_high",
-      "sha256": "42e86e00e054281b0a79e4b3b9b544c04a31eb2fd6b53c0489adc42ea639c9a8"
+      "sha256": "dc2b9f930927452a61bf91dec6f87505284c2ba4256554e94223e79cbc1cbde0"
     },
     {
-      "execution_class": "test-medium",
+      "profile_id": "work_high",
+      "runtime_agent_name": "work_high",
+      "sha256": "55841c5065b5517c00766ecced560f017ca4e3afbfab200f35c98d035112a5e2"
+    },
+    {
+      "profile_id": "test_medium",
       "runtime_agent_name": "test_medium",
-      "sha256": "6d69bb4d5e477574ce186a353a3d2fcc7f8ab6b1f014b93aebb05084aecccc1b"
+      "sha256": "24bb62bd5b28c0b29754e89fd9ffe92b21c050ac008065923b6394f4eef8cd2f"
     },
     {
-      "execution_class": "scan-low",
+      "profile_id": "scan_low",
       "runtime_agent_name": "scan_low",
-      "sha256": "bbb5cb1c6d3fc28ac66d61bb2794ed1824b814913f42079a568cdfa2b7cdfb50"
+      "sha256": "d6e9494f5fccf83c879946428e8897a77588f7ee33f5ec1cb6dd54ab4af9682c"
     },
     {
-      "execution_class": "monitor-low",
+      "profile_id": "monitor_low",
       "runtime_agent_name": "monitor_low",
-      "sha256": "340c678c08682fb25453dcf995b1c98215e6d0fd2be912f7e028874512c0948c"
+      "sha256": "140f03d50fc677e9d4eea7bb4871c7419148fbca8ea6ad25092a1e6b8a39310d"
     }
   ],
   "project_discovery": {
     "files": [
       {
         "filename": "monitor_low.toml",
-        "sha256": "340c678c08682fb25453dcf995b1c98215e6d0fd2be912f7e028874512c0948c"
+        "sha256": "140f03d50fc677e9d4eea7bb4871c7419148fbca8ea6ad25092a1e6b8a39310d"
       },
       {
         "filename": "review_high.toml",
-        "sha256": "42e86e00e054281b0a79e4b3b9b544c04a31eb2fd6b53c0489adc42ea639c9a8"
+        "sha256": "dc2b9f930927452a61bf91dec6f87505284c2ba4256554e94223e79cbc1cbde0"
       },
       {
         "filename": "review_max.toml",
-        "sha256": "ee2062e446db24856e6893dd290183b66b9387f19d97e8a39a7631de453adb9f"
+        "sha256": "65e15b6348f97ba0be4af6512e11f1e1e490e4e592678dd8cf1ef0b563149df5"
       },
       {
         "filename": "scan_low.toml",
-        "sha256": "bbb5cb1c6d3fc28ac66d61bb2794ed1824b814913f42079a568cdfa2b7cdfb50"
+        "sha256": "d6e9494f5fccf83c879946428e8897a77588f7ee33f5ec1cb6dd54ab4af9682c"
       },
       {
         "filename": "test_medium.toml",
-        "sha256": "6d69bb4d5e477574ce186a353a3d2fcc7f8ab6b1f014b93aebb05084aecccc1b"
+        "sha256": "24bb62bd5b28c0b29754e89fd9ffe92b21c050ac008065923b6394f4eef8cd2f"
+      },
+      {
+        "filename": "work_high.toml",
+        "sha256": "55841c5065b5517c00766ecced560f017ca4e3afbfab200f35c98d035112a5e2"
       }
     ],
     "location": ".codex/agents",
@@ -87,7 +96,7 @@
   ],
   "runtime_receipt": null,
   "schema_version": 2,
-  "snapshot_sha256": "28d3e39c9c601dff2c44b158c95a4a88e3d577bea46f424cf4a2e1fffaef11c7",
+  "snapshot_sha256": "f29aa421042ac8f975188ba78c6b799fd08f987cd9d5c625077f5fb494807f7e",
   "spawn_request_fields": [
     "agent_type",
     "fork_turns",

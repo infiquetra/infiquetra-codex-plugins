@@ -21,7 +21,7 @@ from typing import Any, Callable
 MAX_HOOK_BYTES = 64 * 1024
 MAX_PROFILE_BYTES = 1024 * 1024
 PROFILE_TYPES = frozenset(
-    {"review_max", "review_high", "test_medium", "scan_low", "monitor_low"}
+    {"review_max", "review_high", "work_high", "test_medium", "scan_low", "monitor_low"}
 )
 EVENTS = {"SubagentStart": "start", "SubagentStop": "stop"}
 PERMISSION_MODES = {"default", "acceptEdits", "plan", "dontAsk", "bypassPermissions"}

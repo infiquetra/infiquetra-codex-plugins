@@ -95,7 +95,7 @@ def test_dry_run_is_read_only_and_reports_sanitized_plan(tmp_path: Path) -> None
     assert not target_path.exists()
     assert not S._lock_path(plan.target).exists()
     assert not S._transaction_dir(plan.target).exists()
-    assert len(receipt["profiles"]) == 5
+    assert len(receipt["profiles"]) == 6
     assert len(receipt["roles"]) == 25
     assert {
         "sha256",
@@ -105,12 +105,11 @@ def test_dry_run_is_read_only_and_reports_sanitized_plan(tmp_path: Path) -> None
     } <= set(receipt["pre_state"])
     assert all(
         {
-            "preferred_model",
-            "effective_model",
-            "fallback_models",
-            "requested_effort",
-            "effective_effort",
-            "fallback_reason",
+            "model",
+            "effort",
+            "default_profile",
+            "allowed_profiles",
+            "result_schema",
         }
         <= set(role)
         for role in receipt["roles"]
@@ -118,7 +117,7 @@ def test_dry_run_is_read_only_and_reports_sanitized_plan(tmp_path: Path) -> None
     assert str(tmp_path) not in json.dumps(receipt)
 
 
-def test_isolated_apply_installs_five_profiles_and_is_idempotent(tmp_path: Path) -> None:
+def test_isolated_apply_installs_six_profiles_and_is_idempotent(tmp_path: Path) -> None:
     target_path = tmp_path / "agents"
     first_plan = _plan(target_path)
     first = S.apply_sync(first_plan)
@@ -591,7 +590,7 @@ def test_update_boundary_retains_concurrently_substituted_unmanaged_bytes(
     target.mkdir()
     managed = target / "review_high.toml"
     managed.write_text(
-        _agent_text("review-high", S.renderer.MANAGED_MARKER),
+        _agent_text("review_high", S.renderer.MANAGED_MARKER),
         encoding="utf-8",
     )
     plan = _plan(target)
@@ -599,7 +598,7 @@ def test_update_boundary_retains_concurrently_substituted_unmanaged_bytes(
         action.name == "review_high.toml" and action.action == "update"
         for action in plan.actions
     )
-    substitute = _agent_text("user-review-high").encode()
+    substitute = _agent_text("user_review_high").encode()
     recheck = S._recheck_action_target
 
     def swap_after_recheck(plan_arg, target_fd, action):
@@ -625,7 +624,7 @@ def test_update_boundary_retains_special_node_substitution_as_manual_conflict(
     target.mkdir()
     managed = target / "review_high.toml"
     managed.write_text(
-        _agent_text("review-high", S.renderer.MANAGED_MARKER),
+        _agent_text("review_high", S.renderer.MANAGED_MARKER),
         encoding="utf-8",
     )
     plan = _plan(target)

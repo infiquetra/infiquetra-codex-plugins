@@ -29,7 +29,7 @@ def _role_text(role_id: str) -> str:
     return (PLUGIN_ROOT / "roles" / f"{role_id}.md").read_text(encoding="utf-8")
 
 
-def test_every_lens_is_versioned_digest_bound_and_has_an_output_contract() -> None:
+def test_every_lens_is_versioned_digest_bound_and_has_a_result_contract() -> None:
     registry = R.load_role_registry()
     roles = tuple(role for role in registry.roles if role.kind == "agent-lens")
 
@@ -40,8 +40,8 @@ def test_every_lens_is_versioned_digest_bound_and_has_an_output_contract() -> No
         assert "role_kind: agent-lens" in text
         assert role.source_behavior_sha256 in text
         assert role.lens_sha256 is not None
-        assert role.output_schema in registry.evidence_schemas
-        assert registry.evidence_schemas[role.output_schema]
+        assert role.result_schema in registry.result_schemas
+        assert registry.result_schemas[role.result_schema]
 
 
 def test_three_frozen_registry_sources_are_exact_digest_bound_oracles() -> None:
@@ -50,44 +50,26 @@ def test_three_frozen_registry_sources_are_exact_digest_bound_oracles() -> None:
     assert {path.name for path in FROZEN_SOURCE.iterdir()} == set(R.SOURCE_FILE_SHA256)
     for name, expected in R.SOURCE_FILE_SHA256.items():
         assert hashlib.sha256((FROZEN_SOURCE / name).read_bytes()).hexdigest() == expected
-    assert registry.source_behavior_policy == R.SOURCE_BEHAVIOR_POLICY
-    assert registry.source_behavior_policy["docs_only_requires_full_review"] is True
-    assert registry.source_behavior_policy["triage_options"] == [
-        "skip-review",
-        "full-review",
-        "devils-advocate-only",
-    ]
-    assert registry.source_behavior_policy["custom_reviewer_contract"] == (
-        "user-supplied-versioned-agent-lens"
-    )
-    assert registry.source_behavior_policy["automation_requires_default_branch"] is True
-    assert registry.source_behavior_policy["required_validator_absence"] == "blocked"
-    assert all(
-        row == {"unit": "U7", "active": False, "gate_authority": "none"}
-        for row in registry.source_behavior_policy["advisory_deferrals"].values()
-    )
+    assert registry.assurance_policy == R.ASSURANCE_POLICY
+    assert registry.assurance_policy["required_independent_reviewers"] == 1
+    assert registry.assurance_policy["additional_reviewer_selection"] == "risk-triggered"
 
 
-def test_typed_evidence_schemas_and_shared_review_gate_reach_every_profile() -> None:
+def test_common_result_schema_and_reviewer_extension_reach_every_profile() -> None:
     registry = R.load_role_registry()
-    assert registry.evidence_schemas == R.EVIDENCE_SCHEMA_CONTRACTS
+    assert registry.result_schemas == R.RESULT_SCHEMA_CONTRACTS
+    assert registry.result_types == R.RESULT_TYPE_CONTRACTS
     assert registry.review_policy == R.REVIEW_POLICY
-    assert registry.evidence_schemas["deploy-observation.v1"]["required_fields"][-2:] == [
-        "run_status",
-        "gate_status",
-    ]
 
     bundle = R.render_bundle(registry, R.load_catalog_snapshot())
     for profile in bundle.profiles:
         instructions = tomllib.loads(profile.content.decode())["developer_instructions"]
         assert "arithmetic-mean-of-applicable-dimensions" in instructions
         assert "minimum_acceptance_average" in instructions
-        assert "review-evidence.v1" in instructions
-        assert "scanner-evidence.v1" in instructions
-        assert "tester-evidence.v1" in instructions
-        assert "monitor-evidence.v1" in instructions
-        assert "deploy-observation.v1" in instructions
-        assert "hard-fail and blocked prevent completion" in instructions
+        assert "assignment-result.v1" in instructions
+        assert "reviewer-result.v1" in instructions
+        assert "canonical agent path" in instructions
+        assert "protected-evidence" not in instructions
 
 
 def test_representative_reviewer_lenses_preserve_findings_exclusions_and_hard_rules() -> None:

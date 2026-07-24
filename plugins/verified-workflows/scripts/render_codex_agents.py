@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render the five managed Codex execution profiles from one frozen catalog."""
+"""Render the six managed Codex V2 profiles from the role/profile contract."""
 
 from __future__ import annotations
 
@@ -27,8 +27,6 @@ if str(SCRIPTS_DIR) not in sys.path:
 import fleet_commons_shim  # noqa: E402
 
 CATALOG = fleet_commons_shim.load("codex_model_catalog")
-PALETTE = fleet_commons_shim.load("tier_palette")
-RESOLVER = fleet_commons_shim.load("tier_resolver")
 WORKFLOW_COMPAT = fleet_commons_shim.load("workflow_compat")
 
 PLUGIN_ROOT = Path(__file__).resolve().parents[1]
@@ -78,51 +76,88 @@ EXPECTED_ROLE_IDS = frozenset(
 BASE_ROLE_IDS = frozenset(
     {"architecture-reviewer", "devils-advocate-reviewer", "security-reviewer"}
 )
-EXPECTED_CLASSES = (
-    "review-max",
-    "review-high",
-    "test-medium",
-    "scan-low",
-    "monitor-low",
+PROFILE_IDS = (
+    "review_max",
+    "review_high",
+    "work_high",
+    "test_medium",
+    "scan_low",
+    "monitor_low",
 )
-RUNTIME_AGENT_NAMES = {
-    "review-max": "review_max",
-    "review-high": "review_high",
-    "test-medium": "test_medium",
-    "scan-low": "scan_low",
-    "monitor-low": "monitor_low",
-}
-EXECUTION_CLASS_BY_AGENT_NAME = {
-    agent_name: execution_class
-    for execution_class, agent_name in RUNTIME_AGENT_NAMES.items()
-}
+RUNTIME_AGENT_NAMES = {profile_id: profile_id for profile_id in PROFILE_IDS}
+PROFILE_ID_BY_AGENT_NAME = dict(RUNTIME_AGENT_NAMES)
 RUNTIME_AGENT_NAME = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
-CLASS_POLICY = {
-    "reviewer": {
-        "default": "review-high",
-        "allowed": ("review-high", "review-max"),
+PROFILE_POLICY = {
+    "review_max": {
+        "description": "Maximum-effort independent review for exceptional risk.",
+        "model": "gpt-5.6-sol",
+        "effort": "max",
         "workspace": "read-only",
         "external": "none",
     },
-    "tester": {
-        "default": "test-medium",
-        "allowed": ("test-medium", "review-high"),
+    "review_high": {
+        "description": "High-effort independent review across maintained role lenses.",
+        "model": "gpt-5.6-sol",
+        "effort": "high",
+        "workspace": "read-only",
+        "external": "none",
+    },
+    "work_high": {
+        "description": "High-effort implementation for complex bounded workspace changes.",
+        "model": "gpt-5.6-sol",
+        "effort": "high",
         "workspace": "declared-write",
         "external": "none",
     },
-    "scanner": {
-        "default": "scan-low",
-        "allowed": ("scan-low", "test-medium"),
+    "test_medium": {
+        "description": "Ordinary implementation and test execution for bounded workspace changes.",
+        "model": "gpt-5.6-terra",
+        "effort": "medium",
+        "workspace": "declared-write",
+        "external": "none",
+    },
+    "scan_low": {
+        "description": "Low-cost read-only scanning with no external access.",
+        "model": "gpt-5.6-luna",
+        "effort": "low",
         "workspace": "read-only",
         "external": "none",
     },
-    "monitor": {
-        "default": "monitor-low",
-        "allowed": ("monitor-low", "test-medium"),
+    "monitor_low": {
+        "description": "Low-cost read-only monitoring through allowlisted external reads.",
+        "model": "gpt-5.6-luna",
+        "effort": "low",
         "workspace": "read-only",
         "external": "allowlisted-read",
     },
 }
+ROLE_PROFILE_POLICY = {
+    "reviewer": {
+        "default": "review_high",
+        "allowed": ("review_high", "review_max"),
+        "workspace": "read-only",
+        "external": "none",
+    },
+    "tester": {
+        "default": "test_medium",
+        "allowed": ("test_medium", "work_high"),
+        "workspace": "declared-write",
+        "external": "none",
+    },
+    "scanner": {
+        "default": "scan_low",
+        "allowed": ("scan_low",),
+        "workspace": "read-only",
+        "external": "none",
+    },
+    "monitor": {
+        "default": "monitor_low",
+        "allowed": ("monitor_low",),
+        "workspace": "read-only",
+        "external": "allowlisted-read",
+    },
+}
+REQUIRED_REVIEWER_ID = "devils-advocate-reviewer"
 ROOT_ONLY_ACTIONS = (
     "git-mutation",
     "workflow-state",
@@ -203,6 +238,12 @@ REVIEW_POLICY = {
     "minimum_dimension_score": 7.0,
     "exclusion_reason": "static-non-applicable",
     "role_specific_hard_stops_override": True,
+}
+ASSURANCE_POLICY = {
+    "required_independent_reviewers": 1,
+    "default_required_reviewer": REQUIRED_REVIEWER_ID,
+    "additional_reviewer_selection": "risk-triggered",
+    "implementer_or_descendant_may_review": False,
 }
 EVIDENCE_SCHEMA_CONTRACTS = {
     "review-evidence.v1": {
@@ -490,11 +531,71 @@ DETERMINISTIC_TESTER_OUTPUT_SCHEMA = {
         },
     },
 }
-CATEGORY_OUTPUT_SCHEMAS = {
-    "reviewer": frozenset({"review-evidence.v1"}),
-    "scanner": frozenset({"scanner-evidence.v1"}),
-    "tester": frozenset({"tester-evidence.v1"}),
-    "monitor": frozenset({"monitor-evidence.v1", "deploy-observation.v1"}),
+RESULT_SCHEMA_CONTRACTS = {
+    "assignment-result.v1": {
+        "required_fields": [
+            "assignment_id",
+            "attempt_id",
+            "agent_path",
+            "role_id",
+            "profile_id",
+            "terminal_status",
+            "summary",
+            "changed_paths",
+            "no_change",
+            "checks",
+            "findings",
+            "residual_risks",
+        ],
+        "terminal_statuses": ["completed", "failed", "interrupted", "blocked"],
+        "change_rule": "changed_paths must be empty exactly when no_change is true",
+    },
+    "reviewer-result.v1": {
+        "extends": "assignment-result.v1",
+        "required_fields": [
+            "dimensions",
+            "exclusions",
+            "denominator",
+            "overall",
+            "verdict",
+            "hard_stop",
+        ],
+        "verdicts": ["accept", "needs-revision", "blocking"],
+    },
+}
+RESULT_TYPE_CONTRACTS = {
+    "check": {
+        "required_fields": ["check_id", "status", "detail"],
+        "statuses": ["pass", "warn", "failed", "blocked"],
+    },
+    "finding": {
+        "required_fields": [
+            "finding_id",
+            "severity",
+            "category",
+            "location",
+            "impact",
+            "fix",
+            "validation",
+            "resolved",
+            "hard_stop",
+        ],
+        "severities": ["P0", "P1", "P2", "P3"],
+    },
+    "scored-dimension": {
+        "required_fields": ["dimension_id", "score", "notes"],
+        "score": "number[0,10]",
+    },
+    "typed-exclusion": {
+        "required_fields": ["dimension_id", "reason"],
+        "reasons": ["static-non-applicable"],
+    },
+}
+CATEGORY_RESULT_SCHEMAS = {
+    "reviewer": frozenset({"reviewer-result.v1"}),
+    "scanner": frozenset({"assignment-result.v1"}),
+    "tester": frozenset({"assignment-result.v1"}),
+    "monitor": frozenset({"assignment-result.v1"}),
 }
 MANAGED_MARKER = WORKFLOW_COMPAT.emit(WORKFLOW_COMPAT.MANAGED_AGENT_MARKER)
 LEGACY_MARKER = WORKFLOW_COMPAT.legacy_values(WORKFLOW_COMPAT.MANAGED_AGENT_MARKER)[0]
@@ -536,11 +637,11 @@ class RoleSpec:
     selection_mode: str
     signals: tuple[str, ...]
     minimum_independence: str | None
-    default_class: str | None
-    allowed_classes: tuple[str, ...]
+    default_profile: str | None
+    allowed_profiles: tuple[str, ...]
     workspace_cap: str | None
     external_cap: str | None
-    output_schema: str
+    result_schema: str
     source_behavior_sha256: str
     lens_path: str | None
     lens_sha256: str | None
@@ -559,10 +660,10 @@ class RoleRegistry:
     sha256: str
     schema_version: int
     role_spec_version: int
-    source_behavior_policy: dict[str, Any]
+    assurance_policy: dict[str, Any]
     review_policy: dict[str, Any]
-    evidence_schemas: dict[str, dict[str, Any]]
-    nested_type_contracts: dict[str, dict[str, Any]]
+    result_schemas: dict[str, dict[str, Any]]
+    result_types: dict[str, dict[str, Any]]
     roles: tuple[RoleSpec, ...]
 
     def role(self, role_id: str) -> RoleSpec:
@@ -576,12 +677,12 @@ class RoleRegistry:
 class RoleResolution:
     role: RoleSpec
     effective_independence: str | None
-    selected_class: str | None
+    selected_profile: str | None
 
 
 @dataclass(frozen=True, slots=True)
 class RenderedProfile:
-    execution_class: str
+    profile_id: str
     runtime_agent_name: str
     content: bytes
     sha256: str
@@ -598,6 +699,16 @@ class RenderBundle:
     catalog: Any
     profiles: tuple[RenderedProfile, ...]
     roles: tuple[RoleResolution, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class ProfileResolution:
+    profile_id: str
+    model: str
+    effort: str
+    workspace_boundary: str
+    external_boundary: str
+    catalog_sha256: str
 
 
 def _sha256(content: bytes) -> str:
@@ -761,46 +872,42 @@ def _parse_lens(path: Path, role: dict[str, Any], roles_dir: Path) -> tuple[str,
 def _parse_selection(value: object, role_id: str) -> tuple[str, tuple[str, ...]]:
     row = _closed_keys(value, {"mode", "signals"}, f"role {role_id}.selection")
     mode = row.get("mode")
-    if mode not in {"base", "conditional"}:
+    if mode not in {"required", "conditional"}:
         raise RoleRegistryError(f"role {role_id}.selection.mode is invalid")
     signals = _string_list(row.get("signals"), f"role {role_id}.selection.signals")
-    expected_mode = "base" if role_id in BASE_ROLE_IDS else "conditional"
+    expected_mode = "required" if role_id == REQUIRED_REVIEWER_ID else "conditional"
     if mode != expected_mode:
         raise RoleRegistryError(f"role {role_id} selection mode must be {expected_mode!r}")
-    if mode == "base" and signals:
-        raise RoleRegistryError(f"base role {role_id} must not declare selection signals")
+    if mode == "required" and signals:
+        raise RoleRegistryError(f"required role {role_id} must not declare selection signals")
     if mode == "conditional" and not signals:
         raise RoleRegistryError(f"conditional role {role_id} needs selection signals")
     return mode, signals
 
 
-def _validate_output_schema(
+def _validate_result_schema(
     role_id: str,
     category: object,
-    output_schema: object,
-    evidence_schemas: set[str],
+    result_schema: object,
+    result_schemas: set[str],
 ) -> str:
-    if category not in CATEGORY_OUTPUT_SCHEMAS:
+    if category not in CATEGORY_RESULT_SCHEMAS:
         raise RoleRegistryError(f"role {role_id}.category is invalid")
-    if output_schema not in evidence_schemas:
-        raise RoleRegistryError(f"role {role_id}.output_schema is unknown")
-    if output_schema not in CATEGORY_OUTPUT_SCHEMAS[str(category)]:
+    if result_schema not in result_schemas:
+        raise RoleRegistryError(f"role {role_id}.result_schema is unknown")
+    if result_schema not in CATEGORY_RESULT_SCHEMAS[str(category)]:
         raise RoleRegistryError(
-            f"role {role_id}.output_schema is invalid for category {category!r}"
+            f"role {role_id}.result_schema is invalid for category {category!r}"
         )
-    if output_schema == "deploy-observation.v1" and role_id != "deploy-watcher":
-        raise RoleRegistryError("deploy-observation.v1 is reserved for deploy-watcher")
-    if role_id == "deploy-watcher" and output_schema != "deploy-observation.v1":
-        raise RoleRegistryError("deploy-watcher must use deploy-observation.v1")
-    return str(output_schema)
+    return str(result_schema)
 
 
 def _parse_agent_lens(
-    raw: dict[str, Any], roles_dir: Path, evidence_schemas: set[str]
+    raw: dict[str, Any], roles_dir: Path, result_schemas: set[str]
 ) -> RoleSpec:
     role_id = str(raw["id"])
     category = raw.get("category")
-    if category not in CLASS_POLICY:
+    if category not in ROLE_PROFILE_POLICY:
         raise RoleRegistryError(f"role {role_id}.category is invalid")
     spec_version = raw.get("spec_version")
     if spec_version != 1:
@@ -814,25 +921,39 @@ def _parse_agent_lens(
     minimum = raw.get("minimum_independence")
     if minimum not in {"preferred", "required"}:
         raise RoleRegistryError(f"role {role_id}.minimum_independence is invalid")
-    default = raw.get("default_class")
-    allowed = _string_list(raw.get("allowed_classes"), f"role {role_id}.allowed_classes", nonempty=True)
-    policy = CLASS_POLICY[category]
+    expected_independence = "required" if category == "reviewer" else "preferred"
+    if minimum != expected_independence:
+        raise RoleRegistryError(
+            f"role {role_id}.minimum_independence must be {expected_independence!r}"
+        )
+    default = raw.get("default_profile")
+    allowed = _string_list(
+        raw.get("allowed_profiles"),
+        f"role {role_id}.allowed_profiles",
+        nonempty=True,
+    )
+    policy = ROLE_PROFILE_POLICY[category]
     if default != policy["default"] or allowed != policy["allowed"]:
-        raise RoleRegistryError(f"role {role_id} execution-class transition violates KTD2")
+        raise RoleRegistryError(f"role {role_id} profile transition violates KTD4")
     boundaries = _closed_keys(
         raw.get("boundaries"),
-        {"workspace_cap", "external_cap", "external_mutation", "class_may_not_widen_role"},
+        {
+            "workspace_cap",
+            "external_cap",
+            "external_mutation",
+            "profile_may_not_widen_role",
+        },
         f"role {role_id}.boundaries",
     )
     if boundaries != {
         "workspace_cap": policy["workspace"],
         "external_cap": policy["external"],
         "external_mutation": "forbidden",
-        "class_may_not_widen_role": True,
+        "profile_may_not_widen_role": True,
     }:
         raise RoleRegistryError(f"role {role_id} boundary cap violates its category contract")
-    output_schema = _validate_output_schema(
-        role_id, category, raw.get("output_schema"), evidence_schemas
+    result_schema = _validate_result_schema(
+        role_id, category, raw.get("result_schema"), result_schemas
     )
     source_hash = raw.get("source_behavior_sha256")
     if not isinstance(source_hash, str) or not HEX64.fullmatch(source_hash):
@@ -847,11 +968,11 @@ def _parse_agent_lens(
         selection_mode=mode,
         signals=signals,
         minimum_independence=str(minimum),
-        default_class=str(default),
-        allowed_classes=allowed,
+        default_profile=str(default),
+        allowed_profiles=allowed,
         workspace_cap=str(boundaries["workspace_cap"]),
         external_cap=str(boundaries["external_cap"]),
-        output_schema=output_schema,
+        result_schema=result_schema,
         source_behavior_sha256=source_hash,
         lens_path=expected_spec,
         lens_sha256=lens_sha,
@@ -859,13 +980,13 @@ def _parse_agent_lens(
 
 
 def _parse_deterministic(
-    raw: dict[str, Any], roles_dir: Path, evidence_schemas: set[str]
+    raw: dict[str, Any], roles_dir: Path, result_schemas: set[str]
 ) -> RoleSpec:
     role_id = str(raw["id"])
     if raw.get("spec_version") != 1:
         raise RoleRegistryError(f"role {role_id}.spec_version must be 1")
     category = raw.get("category")
-    if category not in CLASS_POLICY:
+    if category not in ROLE_PROFILE_POLICY:
         raise RoleRegistryError(f"role {role_id}.category is invalid")
     mode, signals = _parse_selection(raw.get("selection"), role_id)
     command = _closed_keys(
@@ -956,8 +1077,8 @@ def _parse_deterministic(
         raise RoleRegistryError(
             f"role {role_id} must use the closed deterministic tester output schema"
         )
-    output_schema = _validate_output_schema(
-        role_id, category, raw.get("output_schema"), evidence_schemas
+    result_schema = _validate_result_schema(
+        role_id, category, raw.get("result_schema"), result_schemas
     )
     source_hash = raw.get("source_behavior_sha256")
     if not isinstance(source_hash, str) or not HEX64.fullmatch(source_hash):
@@ -971,11 +1092,11 @@ def _parse_deterministic(
         selection_mode=mode,
         signals=signals,
         minimum_independence=None,
-        default_class=None,
-        allowed_classes=(),
+        default_profile=None,
+        allowed_profiles=(),
         workspace_cap=None,
         external_cap=str(command["network"]),
-        output_schema=output_schema,
+        result_schema=result_schema,
         source_behavior_sha256=source_hash,
         lens_path=None,
         lens_sha256=None,
@@ -990,7 +1111,7 @@ def _parse_deterministic(
 
 
 def _parse_role(
-    value: object, roles_dir: Path, evidence_schemas: set[str]
+    value: object, roles_dir: Path, result_schemas: set[str]
 ) -> RoleSpec:
     if not isinstance(value, dict):
         raise RoleRegistryError("role rows must be objects")
@@ -1007,31 +1128,16 @@ def _parse_role(
         "description",
         "selection",
         "minimum_independence",
-        "default_class",
-        "allowed_classes",
+        "default_profile",
+        "allowed_profiles",
         "boundaries",
-        "output_schema",
+        "result_schema",
         "source_behavior_sha256",
     }
-    deterministic_keys = {
-        "id",
-        "kind",
-        "category",
-        "spec_version",
-        "description",
-        "selection",
-        "command",
-        "evidence_schema",
-        "output_schema",
-        "source_behavior_sha256",
-    }
-    if kind == "agent-lens":
-        _closed_keys(value, agent_keys, f"role {role_id}")
-        return _parse_agent_lens(value, roles_dir, evidence_schemas)
-    if kind == "deterministic-validator":
-        _closed_keys(value, deterministic_keys, f"role {role_id}")
-        return _parse_deterministic(value, roles_dir, evidence_schemas)
-    raise RoleRegistryError(f"role {role_id}.kind is invalid")
+    if kind != "agent-lens":
+        raise RoleRegistryError(f"role {role_id}.kind must be 'agent-lens'")
+    _closed_keys(value, agent_keys, f"role {role_id}")
+    return _parse_agent_lens(value, roles_dir, result_schemas)
 
 
 def load_role_registry(
@@ -1053,13 +1159,10 @@ def load_role_registry(
             "schema_version",
             "role_spec_version",
             "source_contract",
-            "source_behavior_policy",
-            "selection_config_keys",
-            "root_only_actions",
-            "gate_statuses",
+            "assurance_policy",
             "review_policy",
-            "evidence_schemas",
-            "nested_type_contracts",
+            "result_schemas",
+            "result_types",
             "roles",
         },
         "role registry",
@@ -1087,74 +1190,23 @@ def load_role_registry(
         "source_file_sha256": SOURCE_FILE_SHA256,
     }:
         raise RoleRegistryError("role registry source contract drifted")
-    source_behavior_policy = payload.get("source_behavior_policy")
-    if source_behavior_policy != SOURCE_BEHAVIOR_POLICY:
-        raise RoleRegistryError("role registry frozen source behavior policy drifted")
-    selection_config_keys = _string_list(
-        payload.get("selection_config_keys"),
-        "role registry.selection_config_keys",
-        nonempty=True,
-    )
-    if selection_config_keys != SELECTION_CONFIG_KEYS:
-        raise RoleRegistryError("role registry selection config keys drifted")
-    if _string_list(payload.get("root_only_actions"), "role registry.root_only_actions") != ROOT_ONLY_ACTIONS:
-        raise RoleRegistryError("role registry root-only action contract drifted")
-    if _string_list(payload.get("gate_statuses"), "role registry.gate_statuses") != GATE_STATUSES:
-        raise RoleRegistryError("role registry gate statuses drifted")
+    assurance_policy = payload.get("assurance_policy")
+    if assurance_policy != ASSURANCE_POLICY:
+        raise RoleRegistryError("role registry assurance policy drifted")
     review_policy = payload.get("review_policy")
     if review_policy != REVIEW_POLICY:
         raise RoleRegistryError("role registry review policy drifted")
-    schemas_raw = payload.get("evidence_schemas")
-    if not isinstance(schemas_raw, dict) or not schemas_raw:
-        raise RoleRegistryError("role registry.evidence_schemas must be a non-empty object")
-    evidence_schemas: dict[str, dict[str, Any]] = {}
-    for schema_id, schema_value in schemas_raw.items():
-        schema_id = _nonempty_string(schema_id, "evidence schema id")
-        schema = _closed_keys(
-            schema_value,
-            {"required_fields", "field_types", "enum_fields"},
-            f"evidence schema {schema_id}",
-        )
-        required_fields = _string_list(
-            schema.get("required_fields"),
-            f"evidence schema {schema_id}.required_fields",
-            nonempty=True,
-        )
-        field_types = schema.get("field_types")
-        enum_fields = schema.get("enum_fields")
-        if not isinstance(field_types, dict) or not all(
-            isinstance(key, str) and isinstance(value, str)
-            for key, value in field_types.items()
-        ):
-            raise RoleRegistryError(f"evidence schema {schema_id}.field_types is invalid")
-        if set(field_types) != set(required_fields):
-            raise RoleRegistryError(
-                f"evidence schema {schema_id}.field_types must cover every required field"
-            )
-        if not isinstance(enum_fields, dict) or not all(
-            isinstance(key, str) and isinstance(value, list)
-            for key, value in enum_fields.items()
-        ):
-            raise RoleRegistryError(f"evidence schema {schema_id}.enum_fields is invalid")
-        normalized_schema = {
-            "required_fields": list(required_fields),
-            "field_types": dict(field_types),
-            "enum_fields": {
-                key: list(_string_list(value, f"evidence schema {schema_id}.{key}", nonempty=True))
-                for key, value in enum_fields.items()
-            },
-        }
-        evidence_schemas[schema_id] = normalized_schema
-    if evidence_schemas != EVIDENCE_SCHEMA_CONTRACTS:
-        raise RoleRegistryError("role registry evidence schema contract drifted")
-    nested_type_contracts = payload.get("nested_type_contracts")
-    if nested_type_contracts != NESTED_TYPE_CONTRACTS:
-        raise RoleRegistryError("role registry nested type contract drifted")
+    result_schemas = payload.get("result_schemas")
+    if result_schemas != RESULT_SCHEMA_CONTRACTS:
+        raise RoleRegistryError("role registry result schema contract drifted")
+    result_types = payload.get("result_types")
+    if result_types != RESULT_TYPE_CONTRACTS:
+        raise RoleRegistryError("role registry result type contract drifted")
     roles_raw = payload.get("roles")
     if not isinstance(roles_raw, list) or not roles_raw:
         raise RoleRegistryError("role registry.roles must be a non-empty list")
     roles = tuple(
-        _parse_role(value, roles_dir, set(evidence_schemas)) for value in roles_raw
+        _parse_role(value, roles_dir, set(result_schemas)) for value in roles_raw
     )
     ids = tuple(role.role_id for role in roles)
     if len(ids) != len(set(ids)):
@@ -1182,10 +1234,10 @@ def load_role_registry(
         sha256=_sha256(content),
         schema_version=1,
         role_spec_version=1,
-        source_behavior_policy=dict(source_behavior_policy),
+        assurance_policy=dict(assurance_policy),
         review_policy=dict(review_policy),
-        evidence_schemas=evidence_schemas,
-        nested_type_contracts=dict(nested_type_contracts),
+        result_schemas=dict(result_schemas),
+        result_types=dict(result_types),
         roles=roles,
     )
 
@@ -1194,21 +1246,17 @@ def resolve_role(
     registry: RoleRegistry,
     role_id: str,
     *,
-    requested_class: str | None = None,
+    requested_profile: str | None = None,
     requested_independence: str | None = None,
 ) -> RoleResolution:
-    """Resolve a role-level class/independence request without widening its contract."""
+    """Resolve a role-level profile/independence request without widening its contract."""
 
     role = registry.role(role_id)
-    if role.kind == "deterministic-validator":
-        if requested_class is not None or requested_independence is not None:
-            raise RoleRegistryError("deterministic validators do not accept class or independence")
-        return RoleResolution(role=role, effective_independence=None, selected_class=None)
-    selected_class = requested_class or role.default_class
-    if selected_class not in role.allowed_classes:
+    selected_profile = requested_profile or role.default_profile
+    if selected_profile not in role.allowed_profiles:
         raise RoleRegistryError(
-            f"role {role_id} cannot use execution class {selected_class!r}; "
-            f"allowed={role.allowed_classes}"
+            f"role {role_id} cannot use profile {selected_profile!r}; "
+            f"allowed={role.allowed_profiles}"
         )
     independence = requested_independence or role.minimum_independence
     if independence not in {"preferred", "required"}:
@@ -1218,7 +1266,7 @@ def resolve_role(
     return RoleResolution(
         role=role,
         effective_independence=independence,
-        selected_class=selected_class,
+        selected_profile=selected_profile,
     )
 
 
@@ -1279,9 +1327,9 @@ def load_catalog_snapshot(path: Path = DEFAULT_CATALOG_SNAPSHOT) -> Any:
     )
 
 
-def _profile_instructions(resolution: Any, registry: RoleRegistry) -> str:
+def _profile_instructions(resolution: ProfileResolution, registry: RoleRegistry) -> str:
     schema_contract = json.dumps(
-        registry.evidence_schemas,
+        registry.result_schemas,
         sort_keys=True,
         separators=(",", ":"),
     )
@@ -1290,12 +1338,12 @@ def _profile_instructions(resolution: Any, registry: RoleRegistry) -> str:
         sort_keys=True,
         separators=(",", ":"),
     )
-    nested_contract = json.dumps(
-        registry.nested_type_contracts,
+    type_contract = json.dumps(
+        registry.result_types,
         sort_keys=True,
         separators=(",", ":"),
     )
-    return f"""You are the managed Verified Workflows `{resolution.execution_class}` execution profile.
+    return f"""You are the managed Verified Workflows `{resolution.profile_id}` execution profile.
 
 This profile supplies compute and permission defaults only. It is not logical-role identity.
 Apply exactly the versioned role/lens supplied by the root thread; fail closed when it is absent,
@@ -1307,22 +1355,21 @@ Boundaries:
 - external access: {resolution.external_boundary}
 - external mutation, Git mutation, workflow-state writes, integration, merge, deploy initiation,
   credential changes, and completion decisions remain forbidden to this profile.
-- the role registry may narrow these boundaries; an execution-class escalation never widens them.
+- the role registry may narrow these boundaries; a profile escalation never widens them.
 
-Evidence contract:
-- Return the logical role ID and lens digest plus every field required by the selected schema.
-  Represent unresolved risks only as closed typed findings; reviewer exclusions use typed-exclusion.
-- The role registry selects one output_schema. Return every required field with the declared type;
-  enum values are closed. Never derive gate status from prose or untrusted finding text.
-- Gate status is one of: {', '.join(GATE_STATUSES)}. hard-fail and blocked prevent completion;
-  skipped-by-config is allowed only for an explicitly disabled validator.
-- Reviewer scores remain supporting evidence, but the preserved review arithmetic is mandatory:
+Result contract:
+- Return the assignment, attempt, canonical agent path, role, profile, terminal status, summary,
+  changed paths or explicit no-change statement, checks, findings, and residual risks.
+- The role registry selects one result_schema. Return every required field with its declared type.
+  Never release a dependency or gate from prose, messages, or untrusted finding text.
+- Reviewer results also return scored mandates, typed exclusions, arithmetic, typed findings, and
+  hard-stop flags. The root validates this policy:
   {review_contract}
-- Closed output schemas: {schema_contract}
-- Closed nested types: {nested_contract}
+- Closed result schemas: {schema_contract}
+- Closed result types: {type_contract}
 
-Do not claim that a model, reasoning effort, sandbox, or separate child was observed; U4 joins
-profile, hook, and result receipts before making those claims.
+Do not claim that a model, reasoning effort, provider, permission, or separate child was observed;
+the root accepts those claims only from Codex V2 runtime readback.
 """
 
 
@@ -1330,28 +1377,62 @@ def _toml_string(value: str) -> str:
     return json.dumps(value, ensure_ascii=False)
 
 
-def render_profile(resolution: Any, registry: RoleRegistry) -> RenderedProfile:
-    """Render and parse-check one class-bound custom-agent TOML."""
+def resolve_profile(profile_id: str, catalog_snapshot: Any) -> ProfileResolution:
+    """Resolve one exact V2 profile without a hidden model or effort fallback."""
 
-    policy = PALETTE.execution_class_policy(resolution.execution_class)
-    runtime_agent_name = RUNTIME_AGENT_NAMES[resolution.execution_class]
+    try:
+        policy = PROFILE_POLICY[profile_id]
+    except KeyError as exc:
+        raise RoleRegistryError(f"unknown profile {profile_id!r}") from exc
+    model = catalog_snapshot.model(policy["model"])
+    if model is None or not model.selectable:
+        raise RoleRegistryError(
+            f"profile {profile_id} model {policy['model']!r} is not selectable"
+        )
+    if policy["effort"] not in model.supported_efforts:
+        raise RoleRegistryError(
+            f"profile {profile_id} effort {policy['effort']!r} is unsupported"
+        )
+    if policy["effort"] == "ultra":
+        raise RoleRegistryError("Ultra is root-only and cannot be a managed child profile")
+    return ProfileResolution(
+        profile_id=profile_id,
+        model=policy["model"],
+        effort=policy["effort"],
+        workspace_boundary=policy["workspace"],
+        external_boundary=policy["external"],
+        catalog_sha256=catalog_snapshot.normalized_sha256,
+    )
+
+
+def render_profile(
+    resolution: ProfileResolution, registry: RoleRegistry
+) -> RenderedProfile:
+    """Render and parse-check one profile-bound custom-agent TOML."""
+
+    policy = PROFILE_POLICY[resolution.profile_id]
+    runtime_agent_name = RUNTIME_AGENT_NAMES[resolution.profile_id]
     if RUNTIME_AGENT_NAME.fullmatch(runtime_agent_name) is None:
         raise RoleRegistryError("runtime agent name is not accepted by Codex")
-    sandbox_mode = "workspace-write" if resolution.workspace_boundary == "declared-write" else "read-only"
+    sandbox_mode = (
+        "workspace-write"
+        if resolution.workspace_boundary == "declared-write"
+        else "read-only"
+    )
     lines = [
         MANAGED_MARKER,
         '# generated_by = "plugins/verified-workflows/scripts/render_codex_agents.py"',
-        f'# execution_class = "{resolution.execution_class}"',
+        f'# profile_id = "{resolution.profile_id}"',
         f'# runtime_agent_name = "{runtime_agent_name}"',
         f'# registry_sha256 = "{registry.sha256}"',
         f'# catalog_sha256 = "{resolution.catalog_sha256}"',
         f'name = {_toml_string(runtime_agent_name)}',
-        f'description = {_toml_string(policy.description)}',
-        f'model = {_toml_string(resolution.effective_model)}',
-        f'model_reasoning_effort = {_toml_string(resolution.effective_effort)}',
+        f'description = {_toml_string(policy["description"])}',
+        f'model = {_toml_string(resolution.model)}',
+        f'model_reasoning_effort = {_toml_string(resolution.effort)}',
         f'sandbox_mode = {_toml_string(sandbox_mode)}',
         f'developer_instructions = {_toml_string(_profile_instructions(resolution, registry))}',
-        f'nickname_candidates = [{_toml_string(resolution.execution_class)}]',
+        f'nickname_candidates = [{_toml_string(resolution.profile_id)}]',
         "",
     ]
     content = "\n".join(lines).encode("utf-8")
@@ -1372,14 +1453,14 @@ def render_profile(resolution: Any, registry: RoleRegistry) -> RenderedProfile:
         raise RoleRegistryError("generated profile fields drifted")
     if (
         payload["name"] != runtime_agent_name
-        or payload["model"] != resolution.effective_model
-        or payload["model_reasoning_effort"] != resolution.effective_effort
+        or payload["model"] != resolution.model
+        or payload["model_reasoning_effort"] != resolution.effort
         or payload["sandbox_mode"] != sandbox_mode
-        or resolution.effective_effort == "ultra"
+        or resolution.effort == "ultra"
     ):
-        raise RoleRegistryError("generated profile does not match its class resolution")
+        raise RoleRegistryError("generated profile does not match its profile contract")
     return RenderedProfile(
-        execution_class=resolution.execution_class,
+        profile_id=resolution.profile_id,
         runtime_agent_name=runtime_agent_name,
         content=content,
         sha256=_sha256(content),
@@ -1388,22 +1469,19 @@ def render_profile(resolution: Any, registry: RoleRegistry) -> RenderedProfile:
 
 
 def render_bundle(registry: RoleRegistry, catalog_snapshot: Any) -> RenderBundle:
-    """Resolve all five fleet-core classes once and bind every logical role to a profile."""
+    """Resolve all six profiles once and bind every logical role to a profile."""
 
-    if tuple(RESOLVER.EXECUTION_CLASSES) != EXPECTED_CLASSES:
-        raise RoleRegistryError("fleet-core execution-class roster drifted")
+    if set(PROFILE_POLICY) != set(PROFILE_IDS):
+        raise RoleRegistryError("managed profile policy roster drifted")
     profiles = tuple(
-        render_profile(
-            RESOLVER.resolve_execution_class(execution_class, catalog_snapshot),
-            registry,
-        )
-        for execution_class in EXPECTED_CLASSES
+        render_profile(resolve_profile(profile_id, catalog_snapshot), registry)
+        for profile_id in PROFILE_IDS
     )
     roles = tuple(resolve_role(registry, role.role_id) for role in registry.roles)
-    selected = {role.selected_class for role in roles if role.selected_class is not None}
-    if selected != set(EXPECTED_CLASSES) - {"review-max"}:
+    selected = {role.selected_profile for role in roles}
+    if selected != {"review_high", "test_medium", "scan_low", "monitor_low"}:
         raise RoleRegistryError(
-            "default role mapping must use review-high, test-medium, scan-low, and monitor-low"
+            "default role mapping must use review_high, test_medium, scan_low, and monitor_low"
         )
     return RenderBundle(
         registry=registry,
@@ -1421,78 +1499,52 @@ def bundle_receipt(
     """Return a sanitized expected-configuration receipt; this is not runtime proof."""
 
     actions = profile_actions or {}
-    profile_by_class = {profile.execution_class: profile for profile in bundle.profiles}
+    profile_by_id = {profile.profile_id: profile for profile in bundle.profiles}
     profiles = []
     for profile in bundle.profiles:
         resolution = profile.resolution
-        policy = PALETTE.execution_class_policy(profile.execution_class)
         profiles.append(
             {
-                "execution_class": profile.execution_class,
+                "profile_id": profile.profile_id,
                 "runtime_agent_name": profile.runtime_agent_name,
-                "preferred_model": resolution.preferred_model,
-                "effective_model": resolution.effective_model,
-                "fallback_models": [candidate.model for candidate in policy.fallbacks],
-                "requested_effort": resolution.requested_effort,
-                "effective_effort": resolution.effective_effort,
-                "candidate_index": resolution.candidate_index,
-                "fallback_reason": resolution.fallback_reason,
+                "model": resolution.model,
+                "effort": resolution.effort,
                 "workspace_boundary": resolution.workspace_boundary,
                 "external_boundary": resolution.external_boundary,
                 "profile_sha256": profile.sha256,
                 "relative_path": f"agents/{profile.filename}",
-                "action": actions.get(profile.execution_class, "rendered"),
+                "action": actions.get(profile.profile_id, "rendered"),
             }
         )
     roles = []
     for resolved in bundle.roles:
         role = resolved.role
-        if role.kind == "agent-lens":
-            profile = profile_by_class[str(resolved.selected_class)]
-            class_resolution = profile.resolution
-            class_policy = PALETTE.execution_class_policy(str(resolved.selected_class))
-            roles.append(
-                {
-                    "role_id": role.role_id,
-                    "role_kind": role.kind,
-                    "category": role.category,
-                    "role_lens_sha256": role.lens_sha256,
-                    "source_behavior_sha256": role.source_behavior_sha256,
-                    "minimum_independence": role.minimum_independence,
-                    "effective_independence": resolved.effective_independence,
-                    "default_class": role.default_class,
-                    "allowed_classes": list(role.allowed_classes),
-                    "selected_class": resolved.selected_class,
-                    "selected_runtime_agent_name": profile.runtime_agent_name,
-                    "selection_basis": "registry-default",
-                    "preferred_model": class_resolution.preferred_model,
-                    "effective_model": class_resolution.effective_model,
-                    "fallback_models": [
-                        candidate.model for candidate in class_policy.fallbacks
-                    ],
-                    "requested_effort": class_resolution.requested_effort,
-                    "effective_effort": class_resolution.effective_effort,
-                    "fallback_reason": class_resolution.fallback_reason,
-                    "workspace_cap": role.workspace_cap,
-                    "external_cap": role.external_cap,
-                    "output_schema": role.output_schema,
-                    "profile_sha256": profile.sha256,
-                    "action": actions.get(str(resolved.selected_class), "rendered"),
-                }
-            )
-        else:
-            roles.append(
-                {
-                    "role_id": role.role_id,
-                    "role_kind": role.kind,
-                    "command": list(role.command or ()),
-                    "command_implementation_path": role.command_implementation_path,
-                    "command_implementation_sha256": role.command_implementation_sha256,
-                    "evidence_schema_sha256": role.evidence_schema_sha256,
-                    "output_schema": role.output_schema,
-                    "action": "deterministic",
-                }
-            )
+        profile = profile_by_id[str(resolved.selected_profile)]
+        profile_resolution = profile.resolution
+        roles.append(
+            {
+                "role_id": role.role_id,
+                "role_kind": role.kind,
+                "category": role.category,
+                "role_lens_sha256": role.lens_sha256,
+                "source_behavior_sha256": role.source_behavior_sha256,
+                "selection_mode": role.selection_mode,
+                "minimum_independence": role.minimum_independence,
+                "effective_independence": resolved.effective_independence,
+                "default_profile": role.default_profile,
+                "allowed_profiles": list(role.allowed_profiles),
+                "selected_profile": resolved.selected_profile,
+                "selected_runtime_agent_name": profile.runtime_agent_name,
+                "selection_basis": "registry-default",
+                "model": profile_resolution.model,
+                "effort": profile_resolution.effort,
+                "workspace_cap": role.workspace_cap,
+                "external_cap": role.external_cap,
+                "result_schema": role.result_schema,
+                "profile_sha256": profile.sha256,
+                "action": actions.get(str(resolved.selected_profile), "rendered"),
+            }
+        )
     counts = Counter(role.role.kind for role in bundle.roles)
     return {
         "schema_version": 1,
@@ -1503,6 +1555,7 @@ def bundle_receipt(
             "role_count": len(bundle.roles),
             "role_kind_counts": dict(sorted(counts.items())),
             "source_file_sha256": SOURCE_FILE_SHA256,
+            "assurance_policy": bundle.registry.assurance_policy,
         },
         "catalog": {
             "source": bundle.catalog.source,
@@ -1524,7 +1577,7 @@ def check_generated(bundle: RenderBundle, agents_dir: Path = DEFAULT_AGENTS_DIR)
     actual = {child.name for child in children if child.is_file() and not child.is_symlink()}
     if actual != expected or any(child.is_symlink() or not child.is_file() for child in children):
         raise RoleRegistryError(
-            f"managed agents source must contain exactly five profiles; "
+            f"managed agents source must contain exactly six profiles; "
             f"missing={sorted(expected - actual)} unexpected={sorted(actual - expected)}"
         )
     for profile in bundle.profiles:
@@ -1867,7 +1920,7 @@ def main() -> int:
             write_generated(bundle)
         elif args.check:
             check_generated(bundle)
-    except (OSError, RoleRegistryError, RESOLVER.TierResolverError) as exc:
+    except (OSError, RoleRegistryError) as exc:
         print(f"verified-workflows profile render failed: {exc}", file=sys.stderr)
         return 1
     payload = bundle_receipt(bundle)

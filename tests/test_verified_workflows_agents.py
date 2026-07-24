@@ -64,20 +64,20 @@ def _adapt_source_behavior(source: str) -> str:
     body = body.replace(
         "You are a base reviewer in the `verified-workflows` workflow, always present alongside\n"
         "the security and architecture reviewers.\n",
-        "You are always selected as a base logical reviewer alongside the security and architecture\n"
-        "reviewers. Your preferred independence may degrade visibly to inline until U4 proves child dispatch.\n",
+        "You are the required independent reviewer for every workflow. Use a self-contained review packet;\n"
+        "additional reviewer lenses are selected only when their risk signals are material.\n",
     )
     body = body.replace(
         "You are a base reviewer in the `verified-workflows` workflow, always present alongside\n"
         "the devil's advocate and security reviewers.\n",
-        "You are always selected as a base logical reviewer alongside the devil's advocate and security\n"
-        "reviewers. Your preferred independence may degrade visibly to inline until U4 proves child dispatch.\n",
+        "You are selected when architecture risk is material. Run independently from the implementation\n"
+        "assignment with a self-contained review packet.\n",
     )
     body = body.replace(
         "You are a base reviewer in the `verified-workflows` workflow, always present alongside\n"
         "the devil's advocate and architecture reviewers.\n",
-        "You are always selected as a base logical reviewer alongside the devil's advocate and architecture\n"
-        "reviewers. Your preferred independence may degrade visibly to inline until U4 proves child dispatch.\n",
+        "You are selected when security risk is material. Run independently from the implementation\n"
+        "assignment with a self-contained review packet.\n",
     )
     body = body.replace(
         "- Remote is `github.com/infiquetra/*`.\n",
@@ -123,7 +123,7 @@ def test_all_25_current_role_behaviors_are_digest_bound_and_preserved() -> None:
         assert target_body.startswith(_adapt_source_behavior(source).rstrip("\n"))
 
 
-def test_renderer_cli_checks_the_committed_five_profile_bundle() -> None:
+def test_renderer_cli_checks_the_committed_six_profile_bundle() -> None:
     result = subprocess.run(
         ["python3", str(RENDERER_PATH), "--check"],
         cwd=ROOT,
@@ -136,9 +136,9 @@ def test_renderer_cli_checks_the_committed_five_profile_bundle() -> None:
     assert payload["claim"] == "expected-profile-configuration-only"
     assert payload["registry"]["role_count"] == 25
     assert payload["registry"]["role_kind_counts"] == {"agent-lens": 25}
-    assert len(payload["profiles"]) == 5
-    assert {profile["execution_class"] for profile in payload["profiles"]} == set(
-        R.EXPECTED_CLASSES
+    assert len(payload["profiles"]) == 6
+    assert {profile["profile_id"] for profile in payload["profiles"]} == set(
+        R.PROFILE_IDS
     )
 
 
@@ -199,7 +199,7 @@ def test_sync_cli_uses_isolated_codex_home_and_emits_relative_receipt(tmp_path: 
         "real_profile_mutated": False,
     }
     assert receipt["readback"]["verified"] is True
-    assert len(list((codex_home / "agents").glob("*.toml"))) == 5
+    assert len(list((codex_home / "agents").glob("*.toml"))) == 6
     assert str(tmp_path) not in json.dumps(receipt)
 
 

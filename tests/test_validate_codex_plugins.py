@@ -405,14 +405,15 @@ def test_verified_workflows_role_profiles_are_part_of_repo_validation() -> None:
 def test_verified_workflows_project_agents_bind_generated_runtime_names() -> None:
     errors: list[str] = []
     profiles = [
-        {"execution_class": execution_class, "runtime_agent_name": runtime_name}
-        for execution_class, runtime_name in {
-            "review-max": "review_max",
-            "review-high": "review_high",
-            "test-medium": "test_medium",
-            "scan-low": "scan_low",
-            "monitor-low": "monitor_low",
-        }.items()
+        {"profile_id": profile_id, "runtime_agent_name": profile_id}
+        for profile_id in (
+            "review_max",
+            "review_high",
+            "work_high",
+            "test_medium",
+            "scan_low",
+            "monitor_low",
+        )
     ]
 
     validate_verified_workflows_project_agents(
@@ -443,7 +444,7 @@ def test_verified_workflows_project_agents_reject_stale_profile_bytes(
         {
             "profiles": [
                 {
-                    "execution_class": "review-high",
+                    "profile_id": "review_high",
                     "runtime_agent_name": "review_high",
                 }
             ]

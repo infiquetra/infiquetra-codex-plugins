@@ -312,7 +312,7 @@
     {
       "classification": "lineage-documentation",
       "path": "docs/portability/classifications/2026-07-24-codex-v2-orchestration.md",
-      "sha256": "ba11998c324532ca5a3fe85ea520b5960104af1cef0b6a8b49d6ff4783eadfb3",
+      "sha256": "24589f9ecf32e37b5a0e0bc7cd0c149bf41d1ea371baaddefb01bad761dafef2",
       "tokens": [
         "team-execution"
       ]
@@ -395,7 +395,7 @@
     {
       "classification": "lineage-documentation",
       "path": "docs/portability/ports/2026-07-24-codex-v2-orchestration.json",
-      "sha256": "1c9a16c8b450f6441c66660df25798ef716dfe121e47bef96b7704093636fc0c",
+      "sha256": "846960a809d6e3d5eb807e2099393c3212c4aaf17e7f96240b095dc0e34d1a6f",
       "tokens": [
         "team-execution"
       ]
@@ -1167,7 +1167,7 @@
     {
       "classification": "migration-fixture",
       "path": "tests/test_validate_codex_plugins.py",
-      "sha256": "b5c4fd6a1cb924f0c18196dc966d49326b57d136fa80c5f535dec3925dbf8cc3",
+      "sha256": "68fc0daf0cec8785b80fe79b08ac3c84128c466cb7e920876c8829f0df3b67dd",
       "tokens": [
         ".codex/team-execution/",
         "team-execution",
@@ -1196,7 +1196,7 @@
     {
       "classification": "migration-fixture",
       "path": "tests/test_verified_workflows_agents.py",
-      "sha256": "c3242b323113de9552cf7cb406ed677d2476176480deedaf29a1b242fb5e7420",
+      "sha256": "b33929130ab747d2e385615812e521532707c400aa5b957a576584cf84afa8c8",
       "tokens": [
         ".team-execution.json",
         "Team Execution",
