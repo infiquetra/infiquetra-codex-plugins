@@ -1,25 +1,24 @@
 ---
 name: review-workflow
-description: Review an approved Workflow Structure for attainable root-inline, advisory-child, or strict-child evidence before workflow execution. Use when a plan contains `## Workflow Structure`, a workflow gate blocks unexpectedly, or the operator wants to confirm that named subagent profiles are not being mistaken for observed runtime proof.
+description: Review an approved Workflow Contract for Codex V2 profile, graph, context, write, check, reviewer, fallback, and external-action feasibility without launching work.
 ---
 
 # Review Workflow Feasibility
 
-Review the evidence contract before treating a Workflow Structure as executable. The root Codex session remains the orchestrator and retains all mutation, integration, Git, gate, and completion authority.
+Validate the operator-visible `## Workflow Contract` before execution. The main Codex session remains the sole orchestrator and owns dependency release, integration, Git, gate, and completion decisions.
 
-Run the deterministic review against the approved plan and capability snapshot:
+Run the read-only compiler and capability review:
 
 ```bash
 python3 plugins/verified-workflows/scripts/workflow_feasibility.py \
   --plan docs/plans/YYYY-MM-DD-topic-plan.md \
+  --plan-revision <approved-git-revision> \
   --snapshot docs/validation/codex-runtime-capability-snapshot.json \
   --pretty
 ```
 
-Interpret the result before asking for execution approval:
+`outcome=ready` means the three compact tables compile, their roles and profiles agree with the maintained six-profile contract, the graph and write ownership are safe, required independent review is present, and the U1 snapshot exposes the necessary Codex V2 request and readback fields.
 
-- `ready`: every gate-authoritative agent lens is root-inline, and root/deterministic rows are attainable. Profile fields remain requested configuration, not observed child facts.
-- `requires-inline`: one or more preferred-independence `auto` or `subagent` rows may produce advisory child evidence but cannot satisfy the gate. Re-render those rows as `inline`, then obtain approval for the amended workflow.
-- `strict-unavailable`: a required-independence row needs host-issued child attestation unavailable in the current runtime. Do not downgrade it silently; either supply the required capability or amend the workflow and obtain new approval.
+The result includes one canonical contract digest and one approval binding over that digest plus the explicit plan revision. Any material graph, role, profile, model, effort, context, write, completion, check, fallback, external-action, or authority edit requires a new preview and approval.
 
-The review is read-only. It does not spawn a child, install a profile, modify Codex configuration, or claim an observed child model, effort, sandbox, or permission boundary. Use `verified-workflows:select-agent` for ordinary native delegation after this review; that separate capability remains advisory unless an approved workflow has the attestation evidence it requires.
+This review does not launch an agent, write a run record, mutate Codex configuration, or prove runtime identity. Requested profile, model, effort, provider, permission, context isolation, path, and restoration remain provisional until the root validates Codex V2 `session_meta` plus `turn_context` readback.

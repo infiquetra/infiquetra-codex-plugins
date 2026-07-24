@@ -70,6 +70,24 @@ U1 is complete. The frozen Claude lineage, Codex 0.145.0 capability contract, cu
 - Repository validator and legacy inventory check: passed.
 - `git diff --check`: passed.
 
+## U3: Compile The Compact Workflow Contract
+
+- Replaced the 18-column evidence parser and intent emitter with a pure three-table compiler for assignments, blocking checks, and external actions.
+- Added exact KTD3 grammars for dependencies, parents, bounded context, profile/model/effort agreement, writes, ordered fallbacks, blocking checks, and fixed `non-gating` external authority.
+- Added acyclic graph, declared-parent, root-only Git, independent fresh-root reviewer, fallback-boundary, and concurrent write-overlap validation.
+- Canonicalized rows and unordered cells into one contract digest, then bound that digest to an explicit approved plan revision. Material edits now fail as a stale approval binding.
+- Emitted root-owned V2 launch specifications only. The compiler stores no runtime status and creates no subjects, snapshots, intents, receipts, or second task tree.
+- Reworked the feasibility review to require Codex V2 named-profile, bounded-context, and runtime-readback capability fields without claiming runtime proof.
+- Updated the workflow protocol and review skill to describe the compact V2 contract.
+
+## U3 Checks
+
+- Compiler and feasibility pytest: 36 passed.
+- Focused Ruff: passed.
+- Repository plan compiled deterministically and returned `ready` against the U1 capability snapshot.
+- Repository validator and legacy inventory regeneration: passed.
+- `git diff --check`: passed.
+
 ## Next Step
 
-Execute U3: replace the legacy workflow parser with the compact assignment, check, and external-action compiler plus digest-bound approval validation.
+Execute U4: make native V2 identity readback, typed terminal results, workspace/Git audit, and the concise run record authoritative.
