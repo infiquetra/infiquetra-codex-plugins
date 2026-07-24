@@ -88,6 +88,24 @@ U1 is complete. The frozen Claude lineage, Codex 0.145.0 capability contract, cu
 - Repository validator and legacy inventory regeneration: passed.
 - `git diff --check`: passed.
 
+## U4: Make Native V2 Runtime Results Authoritative
+
+- Replaced the diagnostic protocol fixture with a closed parser and validator over Codex V2 `session_meta` plus `turn_context`.
+- Bound strict work to the exact canonical agent path, configured profile, model, effort, provider, permission, sandbox, and V2 mode; requested fields, profile bytes, messages, and hooks cannot satisfy the receipt.
+- Added undeclared-descendant and worker-Git-command rejection while keeping messages coordination-only.
+- Added closed `assignment-result.v1` and `reviewer-result.v1` validation, including changed-path ownership, check/finding types, reviewer exclusions, denominator, and arithmetic.
+- Added the lightweight pre/post workspace audit over HEAD, branch, index, refs, local config, hooks, and porcelain-v2 paths. Sequential writers work without native attribution; concurrent writers require it.
+- Added one owner-controlled, identity-guarded, atomically replaced run record. Same-attempt restoration preserves the path; retry, remediation, and revalidation require a fresh path and classified partial edits.
+- Removed V1 and hook-attestation instructions from the active run and selector skills.
+
+## U4 Checks
+
+- Native runtime, result, run-record, workspace-audit, compiler, feasibility, profile, and role pytest: 83 passed.
+- Focused Ruff: passed.
+- Repository validator and legacy inventory regeneration: passed.
+- `git diff --check`: passed.
+- Authenticated isolated strict-worker and fresh-reviewer runtime execution remains unclaimed because the isolated home is not logged in; it stays part of the blocking U8 matrix.
+
 ## Next Step
 
-Execute U4: make native V2 identity readback, typed terminal results, workspace/Git audit, and the concise run record authoritative.
+Execute U5: reduce assurance to deterministic checks, independent reviewer scoring, root-adopted findings, and at most three shared remediation rounds.

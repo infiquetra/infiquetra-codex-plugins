@@ -6,7 +6,7 @@ description: Show and launch the six maintained Infiquetra Codex V2 agent profil
 # Select Agent
 
 Present an explicit profile catalog, launch the chosen named profile in fresh context, and report the
-runtime-observed role, model, and effort. This is native interactive delegation, not a Verified
+runtime-observed path, profile, model, effort, provider, and effective permission. This is native interactive delegation, not a Verified
 Workflow gate.
 
 ## Select
@@ -33,9 +33,10 @@ Workflow gate.
 
 ## Verify
 
-Read the host-issued spawn activity or child turn context. Report the role, model, and effort as
-observed only when that runtime evidence contains them. On a mismatch, stop the child before assigning
-more work and report requested versus observed values. Never use child self-report as runtime proof.
+Validate the combined host-issued `session_meta` and `turn_context`. Report the canonical path, profile,
+model, effort, provider, and effective permission as observed only when both runtime sources contain the
+closed receipt. On a mismatch, interrupt the child before assigning more work and report requested versus
+observed values. Never use child self-report, profile bytes, or hooks as runtime proof.
 
 After launch, tell the operator that `/agent` switches among the root and spawned agent threads; it
 does not open the pre-spawn catalog.
@@ -43,7 +44,8 @@ does not open the pre-spawn catalog.
 ## Boundaries
 
 - Ultra is root-only and is never a child profile.
-- A profile's sandbox value is configured intent. Verify the effective child permission boundary
-  separately when it matters.
+- Codex 0.145.0 children inherit the parent turn's permission profile; a named child profile cannot
+  independently widen or narrow it.
+- Same-attempt restoration uses `followup_task` on the same path. A retry uses a fresh canonical path.
 - Do not edit installed agent TOMLs or plugin cache copies. Change the maintained source profiles and
   synchronize them through the repository tooling.
