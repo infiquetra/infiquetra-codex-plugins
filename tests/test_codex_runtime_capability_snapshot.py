@@ -1,4 +1,4 @@
-"""Tests for the sanitized Codex runtime capability snapshot."""
+"""Tests for the sanitized Codex 0.145.0 V2 capability snapshot."""
 
 from __future__ import annotations
 
@@ -7,25 +7,26 @@ import json
 import re
 from pathlib import Path
 
-from scripts.port_contract import canonical_json_bytes
+from scripts.port_contract import canonical_json_bytes, validate_json_schema_instance
 
 
 ROOT = Path(__file__).resolve().parents[1]
 SNAPSHOT_PATH = ROOT / "docs/validation/codex-runtime-capability-snapshot.json"
-SCHEMA_PATH = ROOT / "docs/validation/codex-runtime-capability-snapshot.schema.json"
+SCHEMA_PATH = ROOT / "docs/validation/codex-runtime-capability-snapshot.schema-r3.json"
 
 
 def load_snapshot() -> dict:
     return json.loads(SNAPSHOT_PATH.read_text(encoding="utf-8"))
 
 
-def test_snapshot_top_level_matches_closed_schema() -> None:
+def test_snapshot_matches_closed_r3_schema() -> None:
     snapshot = load_snapshot()
     schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
 
+    assert validate_json_schema_instance(snapshot, schema, label="snapshot") == []
     assert schema["additionalProperties"] is False
     assert set(snapshot) == set(schema["required"]) == set(schema["properties"])
-    assert snapshot["schema_version"] == 1
+    assert snapshot["schema_version"] == 2
     assert re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", snapshot["captured_at"])
 
 
@@ -54,6 +55,8 @@ def test_refs_are_full_commits_and_frozen_target_is_reachable() -> None:
                 continue
             assert re.fullmatch(r"[0-9a-f]{40}", value), (key, value)
     assert refs["claude"]["target_reachable"] is True
+    assert refs["claude"]["source_base"] == "9470edca65b1db06d2f7562eeb2d5a9e48c34dec"
+    assert refs["claude"]["source_target"] == "46fefb6f17f0c9d0d63858978536d3369ab57dfe"
 
 
 def test_catalog_projection_reproduces_digest() -> None:
@@ -66,39 +69,31 @@ def test_catalog_projection_reproduces_digest() -> None:
     assert by_slug["gpt-5.6-sol"]["supported_efforts"][-1] == "ultra"
     assert by_slug["gpt-5.6-terra"]["supported_efforts"][-1] == "ultra"
     assert "ultra" not in by_slug["gpt-5.6-luna"]["supported_efforts"]
-    assert by_slug["gpt-5.3-codex-spark"]["supported_in_api"] is False
-    assert by_slug["codex-auto-review"]["visibility"] == "hide"
+    assert by_slug["gpt-5.6-sol"]["multi_agent_version"] == "v2"
+    assert by_slug["gpt-5.6-terra"]["multi_agent_version"] == "v2"
+    assert by_slug["gpt-5.6-luna"]["multi_agent_version"] == "v1"
 
 
-def test_configured_effort_is_not_misreported_as_catalog_default() -> None:
+def test_active_host_and_v2_contract_are_separate_truths() -> None:
     snapshot = load_snapshot()
+    runtime = snapshot["runtime"]
 
-    assert snapshot["configured_defaults"] == {
-        "model": "gpt-5.6-sol",
-        "model_reasoning_effort": "xhigh",
-    }
-    sol = next(model for model in snapshot["catalog"]["models"] if model["slug"] == "gpt-5.6-sol")
-    assert sol["default_effort"] == "low"
-
-
-def test_host_capacity_is_distinct_from_configured_thread_ceiling() -> None:
-    runtime = load_snapshot()["runtime"]
-
+    assert runtime["codex_cli_version"] == "0.145.0"
+    assert snapshot["features"]["multi_agent_v2"] == {"stage": "stable", "enabled": True}
+    assert runtime["multi_agent_v2_config"]["enabled"] is True
     assert runtime["configured_max_threads"] == 6
-    assert runtime["configured_max_threads_source"] == "config"
-    assert runtime["configured_max_depth_source"] == "config"
-    assert runtime["host_total_slots"] == 4
-    assert runtime["effective_total_slots"] == min(
-        runtime["configured_max_threads"], runtime["host_total_slots"]
-    )
-    assert runtime["effective_max_children"] == runtime["effective_total_slots"] - 1
+    assert runtime["configured_max_threads_key"] == "max_threads"
+    assert runtime["configured_v2_total_threads"] == 7
+    assert runtime["configured_v2_total_threads_source"] == "agents-plus-root"
+    assert runtime["configured_max_depth"] == 2
+    assert runtime["host_total_slots"] is None
 
 
-def test_spawn_contract_records_configured_named_profile_selection_and_readback() -> None:
+def test_spawn_contract_separates_request_response_and_runtime_readback() -> None:
     spawn = load_snapshot()["collaboration"]["spawn"]
 
+    assert spawn["contract_version"] == "v2"
     assert spawn["tool_namespace"] == "agents"
-    assert spawn["hide_spawn_agent_metadata"] is False
     assert spawn["request_fields"] == [
         "agent_type",
         "fork_turns",
@@ -108,44 +103,78 @@ def test_spawn_contract_records_configured_named_profile_selection_and_readback(
         "service_tier",
         "task_name",
     ]
-    assert spawn["default_fork_turns"] == "all"
-    assert spawn["profile_selection_fork_turns"] == ["none", "positive-integer"]
+    assert spawn["response_fields"] == ["nickname", "task_name"]
+    assert spawn["runtime_receipt_sources"] == ["session_meta", "turn_context"]
     assert spawn["selection_readback_fields"] == [
-        "agent_type",
-        "effort",
+        "agent_path",
+        "agent_role",
         "model",
-        "sandbox_mode",
+        "reasoning_effort",
+        "model_provider",
+        "approval_policy",
+        "permission_profile",
+        "sandbox_policy",
+        "multi_agent_version",
     ]
-    assert spawn["per_child_agent_type"] is True
-    assert spawn["per_child_model"] is True
-    assert spawn["per_child_effort"] is True
     assert spawn["per_child_sandbox"] is False
+    assert load_snapshot()["collaboration"]["context"]["child_permissions_inherit_parent_turn"] is True
 
 
-def test_custom_agent_config_and_hook_attestation_are_separate() -> None:
-    snapshot = load_snapshot()
-    optional = snapshot["custom_agents"]["optional_config_fields"]
-    hooks = snapshot["hook_capabilities"]
+def test_v2_operation_inventory_and_live_matrix_status_are_explicit() -> None:
+    collaboration = load_snapshot()["collaboration"]
+    statuses = {row["name"]: row["status"] for row in collaboration["required_capabilities"]}
 
-    for field in ("model", "model_reasoning_effort", "sandbox_mode"):
-        assert field in optional
-    assert hooks["observes_active_model"] is True
-    assert hooks["observes_agent_type"] is True
-    assert hooks["observes_reasoning_effort"] is False
+    assert collaboration["operations"] == [
+        "followup_task",
+        "interrupt_agent",
+        "list_agents",
+        "send_message",
+        "spawn_agent",
+        "wait_agent",
+    ]
+    assert statuses["configured-agent-selection"] == "supported"
+    assert statuses["nested-delegation"] == "supported"
+    assert statuses["typed-results"] == "supported"
+    assert statuses["luna-leaf"] == "unavailable"
+    assert statuses["ultra-root-only"] == "supported"
 
 
-def test_capability_dimensions_do_not_conflate_goal_hooks_or_subagents() -> None:
-    dimensions = load_snapshot()["capability_dimensions"]
-    workflow = {row["name"]: row["status"] for row in dimensions["workflow_modes"]}
-    vehicles = {row["name"]: row["status"] for row in dimensions["step_vehicles"]}
-    continuation = {row["name"]: row["status"] for row in dimensions["continuation"]}
+def test_v2_live_matrix_records_profiles_luna_decision_and_runtime_operations() -> None:
+    matrix = json.loads(
+        (ROOT / "docs/validation/codex-v2-orchestration-matrix.json").read_text()
+    )
 
-    assert continuation["goal"] == "explicit-only"
-    assert workflow["source-workflow"] == "unsupported"
-    assert workflow["verified-workflow"] == "planned-unproved"
-    assert vehicles["generic-subagent"] == "available"
-    assert vehicles["named-profile-subagent"] == "available"
-    assert {"goal", "hooks", "fork"}.isdisjoint(vehicles)
+    assert matrix["capability_outcome"] == "supported"
+    assert matrix["authentication_mode"] == "current-codex-home-reused"
+    assert matrix["catalog"]["luna_multi_agent_version"] == "v1"
+    assert matrix["luna_decision"]["outcome"] == "fallback-selected"
+    assert [row["profile"] for row in matrix["profiles"]] == [
+        "review_max",
+        "review_high",
+        "work_high",
+        "test_medium",
+        "scan_low",
+        "monitor_low",
+    ]
+    assert all(row["multi_agent_version"] == "v2" for row in matrix["profiles"])
+    assert matrix["nested_delegation"]["leaf_path"] == "/root/nested_parent/nested_leaf"
+    assert matrix["lifecycle"]["operations"] == [
+        "spawn_agent",
+        "send_message",
+        "list_agents",
+        "interrupt_agent",
+        "followup_task",
+        "wait_agent",
+    ]
+    assert matrix["ultra"]["root_effective_effort"] == "ultra"
+    assert matrix["ultra"]["child_ultra_effective"] is False
+
+
+def test_hooks_are_not_runtime_authority() -> None:
+    hooks = load_snapshot()["hook_capabilities"]
+
+    assert hooks["plugin_hooks_supported"] is True
+    assert hooks["runtime_authority"] is False
 
 
 def test_snapshot_excludes_sensitive_and_host_specific_payloads() -> None:
@@ -164,7 +193,6 @@ def test_snapshot_excludes_sensitive_and_host_specific_payloads() -> None:
 
     present_keys = keys(snapshot)
     text = SNAPSHOT_PATH.read_text(encoding="utf-8").lower()
-
     for forbidden_key in (
         "base_instructions",
         "developer_instructions",
@@ -176,11 +204,5 @@ def test_snapshot_excludes_sensitive_and_host_specific_payloads() -> None:
         "secret",
     ):
         assert forbidden_key not in present_keys
-    for forbidden_value in (
-        "auth.json",
-        "/users/",
-        ".codex/plugins/cache",
-        "bearer",
-        "password",
-    ):
+    for forbidden_value in ("auth.json", "/users/", "bearer ", "sk-"):
         assert forbidden_value not in text

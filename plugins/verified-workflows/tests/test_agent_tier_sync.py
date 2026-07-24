@@ -46,21 +46,22 @@ def _raw_model(
     }
 
 
-def test_full_catalog_renders_exact_five_model_pinned_profiles() -> None:
+def test_full_catalog_renders_exact_six_model_pinned_profiles() -> None:
     bundle = _bundle()
     expected = {
-        "review-max": ("gpt-5.6-sol", "max", "read-only"),
-        "review-high": ("gpt-5.6-sol", "high", "read-only"),
-        "test-medium": ("gpt-5.6-terra", "medium", "workspace-write"),
-        "scan-low": ("gpt-5.6-luna", "low", "read-only"),
-        "monitor-low": ("gpt-5.6-luna", "low", "read-only"),
+        "review_max": ("gpt-5.6-sol", "max", "read-only"),
+        "review_high": ("gpt-5.6-sol", "high", "read-only"),
+        "work_high": ("gpt-5.6-sol", "high", "workspace-write"),
+        "test_medium": ("gpt-5.6-terra", "medium", "workspace-write"),
+        "scan_low": ("gpt-5.6-terra", "low", "read-only"),
+        "monitor_low": ("gpt-5.6-terra", "low", "read-only"),
     }
 
-    assert {profile.execution_class for profile in bundle.profiles} == set(expected)
+    assert {profile.profile_id for profile in bundle.profiles} == set(expected)
     for profile in bundle.profiles:
         payload = tomllib.loads(profile.content.decode("utf-8"))
-        model, effort, sandbox = expected[profile.execution_class]
-        assert payload["name"] == R.RUNTIME_AGENT_NAMES[profile.execution_class]
+        model, effort, sandbox = expected[profile.profile_id]
+        assert payload["name"] == R.RUNTIME_AGENT_NAMES[profile.profile_id]
         assert profile.runtime_agent_name == payload["name"]
         assert profile.filename == f"{payload['name']}.toml"
         assert payload["model"] == model
@@ -75,18 +76,18 @@ def test_full_catalog_renders_exact_five_model_pinned_profiles() -> None:
 
 def test_scan_and_monitor_remain_distinct_at_the_same_model_effort() -> None:
     bundle = _bundle()
-    profiles = {profile.execution_class: profile for profile in bundle.profiles}
-    scan = tomllib.loads(profiles["scan-low"].content.decode("utf-8"))
-    monitor = tomllib.loads(profiles["monitor-low"].content.decode("utf-8"))
+    profiles = {profile.profile_id: profile for profile in bundle.profiles}
+    scan = tomllib.loads(profiles["scan_low"].content.decode("utf-8"))
+    monitor = tomllib.loads(profiles["monitor_low"].content.decode("utf-8"))
 
-    assert scan["model"] == monitor["model"] == "gpt-5.6-luna"
+    assert scan["model"] == monitor["model"] == "gpt-5.6-terra"
     assert scan["model_reasoning_effort"] == monitor["model_reasoning_effort"] == "low"
     assert "external access: none" in scan["developer_instructions"]
     assert "external access: allowlisted-read" in monitor["developer_instructions"]
-    assert profiles["scan-low"].sha256 != profiles["monitor-low"].sha256
+    assert profiles["scan_low"].sha256 != profiles["monitor_low"].sha256
 
 
-def test_partial_catalog_uses_ordered_fallback_without_upward_effort_clamp() -> None:
+def test_missing_exact_profile_model_fails_without_hidden_fallback() -> None:
     payload = {
         "models": [
             _raw_model("gpt-5.6-terra", ("low", "medium", "high", "max")),
@@ -96,14 +97,8 @@ def test_partial_catalog_uses_ordered_fallback_without_upward_effort_clamp() -> 
         ]
     }
     snapshot = R.CATALOG.normalize_catalog(payload, source="fixture")
-    bundle = R.render_bundle(R.load_role_registry(), snapshot)
-    profiles = {profile.execution_class: profile for profile in bundle.profiles}
-
-    assert profiles["review-max"].resolution.effective_model == "gpt-5.6-terra"
-    assert profiles["review-max"].resolution.effective_effort == "max"
-    assert profiles["review-high"].resolution.effective_model == "gpt-5.6-terra"
-    assert profiles["review-high"].resolution.effective_effort == "high"
-    assert all(profile.resolution.effective_effort != "ultra" for profile in bundle.profiles)
+    with pytest.raises(R.RoleRegistryError, match="gpt-5.6-sol.*not selectable"):
+        R.render_bundle(R.load_role_registry(), snapshot)
 
 
 def test_no_compatible_catalog_fails_loud() -> None:
@@ -114,8 +109,17 @@ def test_no_compatible_catalog_fails_loud() -> None:
     }
     snapshot = R.CATALOG.normalize_catalog(payload, source="fixture")
 
-    with pytest.raises(R.RESOLVER.TierResolverError, match="no compatible selectable model"):
+    with pytest.raises(R.RoleRegistryError, match="not selectable"):
         R.render_bundle(R.load_role_registry(), snapshot)
+
+
+def test_ultra_is_rejected_as_a_child_profile(monkeypatch: pytest.MonkeyPatch) -> None:
+    policy = dict(R.PROFILE_POLICY["work_high"])
+    policy["effort"] = "ultra"
+    monkeypatch.setitem(R.PROFILE_POLICY, "work_high", policy)
+
+    with pytest.raises(R.RoleRegistryError, match="Ultra is root-only"):
+        R.render_bundle(R.load_role_registry(), R.load_catalog_snapshot())
 
 
 def test_generated_profiles_are_current_and_repeatable() -> None:

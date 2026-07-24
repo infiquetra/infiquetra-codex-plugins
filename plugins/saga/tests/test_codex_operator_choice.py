@@ -49,7 +49,7 @@ def test_manifest_and_skill_inventory_match_target_fixture() -> None:
     target = next(entry for entry in fixture["plugins"] if entry["name"] == "saga")
 
     assert manifest["name"] == "saga"
-    assert manifest["version"] == "0.78.0+codex.20260720120109"
+    assert manifest["version"] == "0.79.0+codex.20260724175626"
     assert set(target["skills"]) == EXPECTED_SKILLS
     assert {path.parent.name for path in (PLUGIN_ROOT / "skills").glob("*/SKILL.md")} == EXPECTED_SKILLS
     assert not (PLUGIN_ROOT / ".claude-plugin").exists()
@@ -90,10 +90,10 @@ def test_operator_choice_documents_separate_codex_capability_dimensions() -> Non
         "Hooks",
     ):
         assert dimension in text
-    assert "stable V1 `agent_type` selects custom-agent TOML" in text
-    assert "`fork_context=false`" in text
-    assert "restart Codex" in text
-    assert "host-issued child role/model/effort" in text
-    assert "generic subagent output remains generic evidence" in text
-    assert "Ultra is a root orchestration control" in text
-    assert "Source `cc-workflows-ultracode`, fork, Goal, hooks, and generic subagents" in text
+    assert "exact V2 profile, model, effort" in text
+    assert "bounded `fork_turns`" in text
+    assert "session_meta" in text
+    assert "turn_context" in text
+    assert "child self-report" in text
+    assert "Ultra is a root-only orchestration control" in text
+    assert "Missing or mismatched readback fails visibly" in text

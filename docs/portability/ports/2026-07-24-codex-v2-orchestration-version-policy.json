@@ -1,0 +1,32 @@
+[
+  {
+    "current_codex_identity": "fleet-core",
+    "current_codex_version": "0.10.0+codex.20260720120109",
+    "policy": "lineage-with-codex-adaptation",
+    "release_unit": "U8",
+    "source_plugin": "fleet-core",
+    "source_version": "0.8.4",
+    "target_codex_identity": "fleet-core",
+    "target_codex_version": "0.11.0+codex.20260724175626"
+  },
+  {
+    "current_codex_identity": "saga",
+    "current_codex_version": "0.78.0+codex.20260720120109",
+    "policy": "lineage-with-codex-adaptation",
+    "release_unit": "U8",
+    "source_plugin": "saga",
+    "source_version": "0.75.17",
+    "target_codex_identity": "saga",
+    "target_codex_version": "0.79.0+codex.20260724175626"
+  },
+  {
+    "current_codex_identity": "verified-workflows",
+    "current_codex_version": "1.0.3+codex.20260718134043",
+    "policy": "identity-migration-no-byte-parity",
+    "release_unit": "U8",
+    "source_plugin": "team-execution",
+    "source_version": "2.14.3",
+    "target_codex_identity": "verified-workflows",
+    "target_codex_version": "2.0.0+codex.20260724175626"
+  }
+]

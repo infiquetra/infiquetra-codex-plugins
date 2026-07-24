@@ -7,6 +7,8 @@ import sys
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parent.parent
 SAGA_SCRIPTS = ROOT / "plugins" / "saga" / "scripts"
@@ -64,17 +66,12 @@ def test_empty_ref_work_is_blocked_before_mutation(tmp_path: Path) -> None:
     assert "docs/plans/repair.md#workflow-structure" in result.repair_hint
 
 
-def test_absent_spawn_surface_is_truthful_inline_only() -> None:
-    payload = PROBE.probe_protocol(
-        snapshot={},
-        snapshot_sha256="0" * 64,
-        spawn_surface="absent",
-        hook_pair="absent",
-    )
-
-    assert payload["outcome"] == "inline-only"
-    assert payload["runtime_proof"] is False
-    assert "native child spawn is unavailable" in payload["limitations"]
+def test_missing_v2_runtime_readback_fails_closed() -> None:
+    with pytest.raises(
+        PROBE.ProtocolProbeError,
+        match="requires both session_meta and turn_context",
+    ):
+        PROBE.parse_runtime_receipt(b"")
 
 
 def test_resume_instructions_cover_contradiction_and_stale_context_repair() -> None:

@@ -49,6 +49,7 @@ def project(
         ),
         None,
     )
+    adjudication_detail = dict(adjudication.get("detail", {})) if adjudication else {}
     consumption = next(
         (event for event in reversed(snapshot.events) if event["event"] == "consume"),
         None,
@@ -56,7 +57,7 @@ def project(
     route = dict(approval.route) if approval else {}
     raw_invocation = route.get("invocation")
     invocation: dict[str, Any] = dict(raw_invocation) if isinstance(raw_invocation, dict) else {}
-    return {
+    projection = {
         "schema": STATUS_SCHEMA,
         "saga_id": snapshot.request.saga_id,
         "run_id": snapshot.request.run_id,
@@ -93,6 +94,16 @@ def project(
         "last_event_at": last["at"] if last else None,
         "last_detail": dict(last.get("detail", {})) if last else {},
     }
+    if "authority" in complete_detail:
+        projection.update(
+            {
+                "authority": complete_detail["authority"],
+                "changed_paths": complete_detail.get("changed_paths", []),
+                "patch_sha256": complete_detail.get("patch_sha256"),
+                "root_import": adjudication_detail.get("root_import", "pending"),
+            }
+        )
+    return projection
 
 
 def _evidence_text(reference: Any, evidence_root: Path | None = None) -> str:
@@ -118,7 +129,7 @@ def _value(value: Any) -> str:
 
 
 def render(status: dict[str, Any]) -> str:
-    rows = (
+    rows = [
         ("State", status["state"]),
         ("Intent", status["intent"]),
         ("Requiredness", status["requiredness"]),
@@ -138,7 +149,17 @@ def render(status: dict[str, Any]) -> str:
         ("Consumed artifact", status["consumed_artifact"]),
         ("Approval fingerprint", status["approval_fingerprint"]),
         ("Last event", status["last_event"]),
-    )
+    ]
+    if "authority" in status:
+        insertion = next(
+            index for index, row in enumerate(rows) if row[0] == "Codex adjudication"
+        )
+        rows[insertion:insertion] = [
+            ("Authority", status["authority"]),
+            ("Changed paths", status["changed_paths"]),
+            ("Patch SHA-256", status["patch_sha256"]),
+            ("Root import", status["root_import"]),
+        ]
     lines = [
         f"# External Action `{status['action_id']}`",
         "",

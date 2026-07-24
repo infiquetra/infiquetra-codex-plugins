@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import hashlib
+import copy
 import sys
-import tomllib
 from pathlib import Path
 
 import pytest
@@ -12,502 +11,379 @@ SCRIPTS = PLUGIN_ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-import render_codex_agents as renderer  # noqa: E402
 import workflow_dispatch as W  # noqa: E402
 
-RUN_SHA256 = "f" * 64
 
-
-def profile_facts(execution_class: str) -> tuple[str, str, str]:
-    runtime_agent_name = renderer.RUNTIME_AGENT_NAMES[execution_class]
-    content = (PLUGIN_ROOT / "agents" / f"{runtime_agent_name}.toml").read_bytes()
-    payload = tomllib.loads(content.decode())
-    return (
-        hashlib.sha256(content).hexdigest(),
-        payload["model"],
-        payload["model_reasoning_effort"],
-    )
-
-
-def row(
-    step_id: str,
-    role_id: str = "security-reviewer",
+def assignment(
+    assignment_id: str,
     *,
-    depends_on: str = "-",
-    barrier: str = "-",
-    independence: str = "preferred",
-    execution_class: str = "review-high",
-    vehicle: str = "auto",
-    mutation: str = "none",
-    required_evidence: str = "review-evidence",
-    validator_required: bool | None = None,
-    validator_disabled: bool | None = None,
+    depends: str = "-",
+    parent: str = "root",
+    role: str = "root implementer",
+    profile: str = "root",
+    model: str = "gpt-5.6-sol",
+    effort: str = "max",
+    context: str = "root",
+    writes: str = "unit:U1",
+    completion: str = "work completes",
+    fallback: str = "none",
 ) -> list[str]:
-    if role_id == "root":
-        return [
-            step_id,
-            depends_on,
-            barrier,
-            "root",
-            "root",
-            "n/a",
-            "-",
-            "-",
-            "root",
-            mutation,
-            required_evidence,
-            "-",
-            "-",
-            "-",
-            "-",
-            "n/a",
-            "n/a",
-            "-",
-        ]
-    role = renderer.load_role_registry().role(role_id)
-    digest, model, effort = profile_facts(execution_class)
-    is_validator = role.output_schema != "review-evidence.v1"
-    required_cell = (
-        "true" if (validator_required is not False) else "false"
-    ) if is_validator else "n/a"
-    disabled_cell = (
-        "true" if validator_disabled is True else "false"
-    ) if is_validator else "n/a"
     return [
-        step_id,
-        depends_on,
-        barrier,
-        role_id,
-        role.kind,
-        independence,
-        execution_class,
-        renderer.RUNTIME_AGENT_NAMES[execution_class],
-        vehicle,
-        mutation,
-        required_evidence,
-        str(role.lens_sha256),
-        digest,
+        assignment_id,
+        depends,
+        parent,
+        role,
+        profile,
         model,
         effort,
-        required_cell,
-        disabled_cell,
-        (
-            W._deterministic_contract_sha256(role)
-            if role.kind == "deterministic-validator"
-            else "-"
-        ),
+        context,
+        writes,
+        completion,
+        fallback,
     ]
 
 
-def plan(*rows: list[str]) -> str:
-    header = "| " + " | ".join(W.HEADERS) + " |"
-    separator = "| " + " | ".join("---" for _ in W.HEADERS) + " |"
-    body = "\n".join("| " + " | ".join(values) + " |" for values in rows)
-    return f"# Plan\n\n## Workflow Structure\n\n{header}\n{separator}\n{body}\n"
+def reviewer(*, depends: str = "implement", fallback: str = "review_max@terminal-failure") -> list[str]:
+    return assignment(
+        "review",
+        depends=depends,
+        parent="fresh-root:review",
+        role="devils-advocate-reviewer",
+        profile="review_high",
+        effort="high",
+        context="none",
+        writes="none",
+        completion="review score passes",
+        fallback=fallback,
+    )
 
 
-def state_payload(workflow: W.Workflow, **statuses: str) -> dict[str, object]:
-    return {
-        "schema_version": 1,
-        "workflow_sha256": workflow.sha256,
-        "workflow_run_sha256": RUN_SHA256,
-        "steps": {
-            step.step_id: {
-                "status": statuses.get(step.step_id, "pending"),
-                "cycle": 0 if statuses.get(step.step_id, "pending") == "pending" else 1,
-                "result_ref": (
-                    f"result:{step.step_id}"
-                    if statuses.get(step.step_id) in {"passed", "needs-follow-up"}
-                    else None
-                ),
-                "finding_refs": ["finding:p2"]
-                if statuses.get(step.step_id) == "needs-follow-up"
-                else [],
-            }
-            for step in workflow.steps
-        },
+def worker(
+    worker_id: str = "test",
+    *,
+    depends: str = "implement",
+    parent: str = "root",
+    writes: str = "tests/test_feature.py",
+    context: str = "turns:4",
+    profile: str = "test_medium",
+    model: str = "gpt-5.6-terra",
+    effort: str = "medium",
+    fallback: str = "work_high@terminal-failure",
+    completion: str = "targeted tests pass",
+) -> list[str]:
+    return assignment(
+        worker_id,
+        depends=depends,
+        parent=parent,
+        role="scenario-tester",
+        profile=profile,
+        model=model,
+        effort=effort,
+        context=context,
+        writes=writes,
+        completion=completion,
+        fallback=fallback,
+    )
+
+
+def check(
+    check_id: str = "reviewer-assurance",
+    *,
+    owner: str = "root",
+    after: str = "review",
+    command: str = "reviewer result satisfies policy",
+    blocking: str = "yes",
+    failure: str = "stop",
+) -> list[str]:
+    return [check_id, owner, after, command, blocking, failure]
+
+
+def external(action_id: str = "second-opinion", **overrides: str) -> list[str]:
+    values = {
+        "purpose": "advisory review",
+        "provider": "claude",
+        "model": "fable/xhigh",
+        "egress": "docs/input.md",
+        "context": "docs/input.md",
+        "sensitivity": "internal",
+        "cost": "metered",
+        "writes-or-artifact": "artifact:review",
+        "requiredness": "best-effort",
+        "authority": "non-gating",
     }
+    values.update(overrides)
+    return [action_id, *(values[header] for header in W.EXTERNAL_ACTION_HEADERS[1:])]
 
 
-def scheduler_state(
-    workflow: W.Workflow, *, cycle: int = 1, **statuses: str
-) -> dict[str, W.StepState]:
-    values = W._default_state(workflow)
-    for step_id, status in statuses.items():
-        values[step_id] = W.StepState(
-            status=status,
-            cycle=cycle,
-            result_ref=f"normalized:scheduler-fixture:{step_id}",
-            finding_refs=("finding-p2",) if status == "needs-follow-up" else (),
-        )
-    return values
-
-
-def test_parallel_ready_set_and_barrier_join() -> None:
-    workflow = W.parse_workflow_structure(
-        plan(
-            row("implement", "root", mutation="root-only", required_evidence="diff"),
-            row("security", depends_on="implement", barrier="verify"),
-            row(
-                "tests",
-                "scenario-tester",
-                depends_on="implement",
-                barrier="verify",
-                execution_class="test-medium",
-                mutation="none",
-                required_evidence="test-evidence",
-            ),
-            row("integrate", "root", depends_on="security,tests", required_evidence="root-check"),
-        )
+def table(headers: tuple[str, ...], rows: list[list[str]]) -> str:
+    return "\n".join(
+        [
+            "| " + " | ".join(headers) + " |",
+            "| " + " | ".join("---" for _ in headers) + " |",
+            *("| " + " | ".join(row) + " |" for row in rows),
+        ]
     )
 
-    first = W.emit_intents(
-        workflow,
-        W.load_dispatch_state(
-            None, workflow, workflow_run_sha256=RUN_SHA256
+
+def plan(
+    assignments: list[list[str]],
+    *,
+    checks: list[list[str]] | None = None,
+    external_actions: list[list[str]] | None = None,
+) -> str:
+    external_text = (
+        table(W.EXTERNAL_ACTION_HEADERS, external_actions)
+        if external_actions
+        else "`External actions: []` is the exact approved value."
+    )
+    return (
+        "# Plan\n\n"
+        "## Workflow Contract\n\n"
+        + table(W.ASSIGNMENT_HEADERS, assignments)
+        + "\n\n### Blocking Checks\n\n"
+        + table(W.CHECK_HEADERS, checks or [check()])
+        + "\n\n### External Actions\n\n"
+        + external_text
+        + "\n\n## Implementation Units\n"
+    )
+
+
+def compile_fixture(
+    assignments: list[list[str]] | None = None,
+    *,
+    checks: list[list[str]] | None = None,
+    external_actions: list[list[str]] | None = None,
+    revision: str = "approved-revision",
+) -> W.WorkflowContract:
+    return W.compile_workflow_contract(
+        plan(
+            assignments or [assignment("implement"), reviewer(), worker()],
+            checks=checks,
+            external_actions=external_actions,
         ),
-        workflow_run_sha256=RUN_SHA256,
+        plan_revision=revision,
     )
-    assert [item["step_id"] for item in first["intents"]] == ["implement"]
-    assert first["intents"][0]["cycle"] == 1
 
-    second_state = scheduler_state(workflow, implement="passed")
-    second = W.emit_intents(
-        workflow, second_state, workflow_run_sha256=RUN_SHA256
-    )
-    assert [item["step_id"] for item in second["intents"]] == ["security", "tests"]
 
-    third_state = scheduler_state(
-        workflow, implement="passed", security="passed", tests="passed"
+def test_valid_mixed_contract_compiles_to_root_owned_launch_specs() -> None:
+    contract = compile_fixture(external_actions=[external()])
+
+    assert contract.schema_version == 2
+    assert len(contract.assignments) == 3
+    assert len(contract.external_actions) == 1
+    specs = {spec.assignment_id: spec for spec in contract.launch_specs}
+    assert specs["implement"].agent_type is None
+    assert specs["review"].agent_type == "review_high"
+    assert specs["review"].fork_turns == "none"
+    assert specs["test"].fork_turns == 4
+    assert specs["test"].result_schema == "assignment-result.v1"
+    assert specs["review"].reviewer_mandate_ids == (
+        "assumption-validity",
+        "edge-case-coverage",
+        "failure-mode-analysis",
+        "scope-creep-risk",
+        "alternatives-considered",
     )
-    assert [
-        item["step_id"]
-        for item in W.emit_intents(
-            workflow, third_state, workflow_run_sha256=RUN_SHA256
-        )["intents"]
-    ] == [
-        "integrate"
+    assert specs["review"].registry_sha256 == contract.registry_sha256
+    assert specs["review"].role_lens_sha256
+    assert specs["review"].profile_sha256
+    assert contract.authority_sha256
+    assert contract.external_actions[0].authority == "non-gating"
+
+
+def test_canonical_binding_ignores_row_and_unordered_list_order() -> None:
+    first = compile_fixture(
+        [assignment("implement"), worker(writes="tests/b.py,tests/a.py"), reviewer()],
+        revision="same-revision",
+    )
+    second = compile_fixture(
+        [reviewer(), worker(writes="tests/a.py,tests/b.py"), assignment("implement")],
+        revision="same-revision",
+    )
+
+    assert first.contract_sha256 == second.contract_sha256
+    assert first.approval_binding_sha256 == second.approval_binding_sha256
+
+
+def test_material_edit_invalidates_approval_binding() -> None:
+    approved = compile_fixture()
+    changed_rows = [assignment("implement"), reviewer(), worker(completion="different result")]
+    changed = compile_fixture(changed_rows)
+
+    with pytest.raises(W.WorkflowDispatchError, match="approval binding is stale"):
+        W.validate_approval_binding(
+            changed,
+            approved_plan_revision=approved.plan_revision,
+            approved_contract_sha256=approved.contract_sha256,
+            approved_binding_sha256=approved.approval_binding_sha256,
+        )
+
+
+def test_role_or_profile_authority_changes_invalidate_approval_binding(tmp_path: Path) -> None:
+    approved = compile_fixture()
+    changed_registry = tmp_path / "role-registry.yaml"
+    changed_registry.write_bytes(W.renderer.DEFAULT_REGISTRY.read_bytes())
+    changed_roles = tmp_path / "roles"
+    changed_roles.mkdir()
+    for source in W.renderer.DEFAULT_ROLES_DIR.iterdir():
+        (changed_roles / source.name).write_bytes(source.read_bytes())
+    target = changed_roles / "devils-advocate-reviewer.md"
+    target.write_text(target.read_text().replace("Assumption Validity", "Assumption Soundness"))
+    changed = W.compile_workflow_contract(
+        plan([assignment("implement"), reviewer(), worker()]),
+        plan_revision=approved.plan_revision,
+        registry_path=changed_registry,
+        roles_dir=changed_roles,
+    )
+    assert changed.contract_sha256 == approved.contract_sha256
+    assert changed.authority_sha256 != approved.authority_sha256
+    assert changed.approval_binding_sha256 != approved.approval_binding_sha256
+
+
+def test_exact_approved_binding_passes() -> None:
+    contract = compile_fixture()
+    W.validate_approval_binding(
+        contract,
+        approved_plan_revision=contract.plan_revision,
+        approved_contract_sha256=contract.contract_sha256,
+        approved_binding_sha256=contract.approval_binding_sha256,
+    )
+
+
+def test_dependency_cycle_is_rejected() -> None:
+    rows = [
+        assignment("a", depends="b"),
+        assignment("b", depends="a"),
+        reviewer(depends="a"),
     ]
+    with pytest.raises(W.WorkflowDispatchError, match="cycle"):
+        compile_fixture(rows)
 
 
-def test_selection_policy_requires_all_base_reviewers_and_a_required_validator() -> None:
-    registry = renderer.load_role_registry()
-    root_only = W.parse_workflow_structure(
-        plan(row("implement", "root", mutation="root-only", required_evidence="diff"))
-    )
-    with pytest.raises(W.WorkflowDispatchError, match="required base reviewers"):
-        W.validate_selection_policy(root_only, registry)
-
-    reviewers_only = W.parse_workflow_structure(
-        plan(
-            row("architecture", "architecture-reviewer"),
-            row("devils", "devils-advocate-reviewer"),
-            row("security", "security-reviewer"),
-        )
-    )
-    with pytest.raises(W.WorkflowDispatchError, match="required validator"):
-        W.validate_selection_policy(reviewers_only, registry)
-
-    full_review = W.parse_workflow_structure(
-        plan(
-            row("architecture", "architecture-reviewer"),
-            row("devils", "devils-advocate-reviewer"),
-            row("security", "security-reviewer"),
-            row(
-                "tests",
-                "scenario-tester",
-                execution_class="test-medium",
-                required_evidence="tester-evidence",
-                validator_required=True,
-            ),
-        )
-    )
-    selection = W.validate_selection_policy(full_review, registry)
-
-    assert selection["review_mode"] == "full-review"
-    assert selection["required_validator_step_ids"] == ["tests"]
+def test_duplicate_assignment_id_is_rejected() -> None:
+    rows = [assignment("implement"), assignment("implement"), reviewer()]
+    with pytest.raises(W.WorkflowDispatchError, match="duplicate assignment ids"):
+        compile_fixture(rows)
 
 
-def test_follow_up_preempts_new_work_and_is_selective() -> None:
-    workflow = W.parse_workflow_structure(plan(row("security"), row("clarity", "clarity-reviewer")))
-    state = scheduler_state(workflow, security="needs-follow-up")
-
-    payload = W.emit_intents(workflow, state, workflow_run_sha256=RUN_SHA256)
-
-    assert [(item["intent"], item["step_id"], item["cycle"]) for item in payload["intents"]] == [
-        ("follow-up", "security", 2)
+def test_concurrent_overlapping_writes_are_rejected() -> None:
+    rows = [
+        assignment("implement"),
+        worker("left", writes="src"),
+        worker("right", writes="src/feature.py"),
+        reviewer(),
     ]
-    assert payload["intents"][0]["previous_receipt_ref"] == state["security"].result_ref
-    assert payload["intents"][0]["finding_refs"] == ["finding-p2"]
+    with pytest.raises(W.WorkflowDispatchError, match="overlap writes"):
+        compile_fixture(rows)
 
 
-def test_follow_up_requires_interrupting_a_running_descendant() -> None:
-    workflow = W.parse_workflow_structure(
-        plan(
-            row("security"),
-            row("clarity", "clarity-reviewer", depends_on="security"),
-        )
-    )
-    state = scheduler_state(workflow, security="needs-follow-up")
-    state["clarity"] = W.StepState("running", 1, None, ())
-
-    result = W.emit_intents(
-        workflow,
-        state,
-        workflow_run_sha256=RUN_SHA256,
-    )
-
-    assert result["claim"] == "dispatch-state-update-required"
-    assert result["intents"] == []
-    assert result["invalidations"] == [
-        {
-            "step_id": "clarity",
-            "from_status": "running",
-            "to_status": "stale",
-            "reason": "interrupt the running step before upstream remediation",
-        }
+def test_ordered_overlapping_writes_are_allowed() -> None:
+    rows = [
+        assignment("implement"),
+        worker("left", writes="src"),
+        worker("right", depends="left", writes="src/feature.py"),
+        reviewer(depends="right"),
     ]
+    assert compile_fixture(rows).contract_sha256
 
 
-def test_stale_step_emits_contiguous_receipt_supported_revalidation() -> None:
-    workflow = W.parse_workflow_structure(
-        plan(
-            row("security"),
-            row("integrate", "root", depends_on="security"),
-        )
-    )
-    state = scheduler_state(
-        workflow,
-        cycle=3,
-        security="passed",
-        integrate="stale",
-    )
-    state["integrate"] = W.StepState(
-        status="stale",
-        cycle=1,
-        result_ref="normalized:scheduler-fixture:integrate",
-        finding_refs=(),
-    )
+@pytest.mark.parametrize("context", ["root", "all", "turns:0", "turns:-1"])
+def test_delegated_context_must_be_bounded_or_absent(context: str) -> None:
+    with pytest.raises(W.WorkflowDispatchError, match="must be 'none' or turns"):
+        compile_fixture([assignment("implement"), reviewer(), worker(context=context)])
 
-    payload = W.emit_intents(workflow, state, workflow_run_sha256=RUN_SHA256)
 
-    assert payload["intents"] == [
-        {
-            "intent": "revalidate",
-            "cycle": 2,
-            "previous_receipt_ref": "normalized:scheduler-fixture:integrate",
-            "finding_refs": [],
-            **workflow.step("integrate").to_jsonable(),
-        }
+def test_profile_model_effort_mismatch_is_rejected() -> None:
+    rows = [assignment("implement"), reviewer(), worker(model="gpt-5.6-sol")]
+    with pytest.raises(W.WorkflowDispatchError, match="requires model=gpt-5.6-terra"):
+        compile_fixture(rows)
+
+
+def test_child_ultra_is_rejected() -> None:
+    rows = [
+        assignment("implement"),
+        reviewer(),
+        worker(profile="review_high", model="gpt-5.6-sol", effort="ultra"),
     ]
+    with pytest.raises(W.WorkflowDispatchError, match="cannot use profile|requires model"):
+        compile_fixture(rows)
 
 
-def test_cycle_cap_escalates_and_never_emits_run() -> None:
-    workflow = W.parse_workflow_structure(plan(row("security")))
-    state = scheduler_state(workflow, cycle=3, security="needs-follow-up")
-
-    result = W.emit_intents(workflow, state, workflow_run_sha256=RUN_SHA256)
-
-    assert result["intents"] == []
-    assert result["escalations"] == [
-        {"step_id": "security", "reason": "three-cycle remediation cap reached"}
-    ]
-    assert result["complete"] is False
+def test_widened_fallback_is_rejected() -> None:
+    rows = [assignment("implement"), reviewer(), worker(fallback="review_max@ambiguity")]
+    with pytest.raises(W.WorkflowDispatchError, match="widens role"):
+        compile_fixture(rows)
 
 
-def test_required_independence_rejects_inline() -> None:
-    with pytest.raises(W.WorkflowDispatchError, match="required independence"):
-        W.parse_workflow_structure(
-            plan(row("security", independence="required", vehicle="inline"))
-        )
+def test_missing_independent_review_is_rejected() -> None:
+    dependent_review = copy.deepcopy(reviewer())
+    dependent_review[W.ASSIGNMENT_HEADERS.index("parent")] = "root"
+    rows = [assignment("implement"), dependent_review, worker()]
+    with pytest.raises(W.WorkflowDispatchError, match="fresh-root independent reviewer"):
+        compile_fixture(rows)
 
 
-def test_stale_role_or_profile_digest_fails_closed() -> None:
-    values = row("security")
-    values[11] = "0" * 64
-    with pytest.raises(W.WorkflowDispatchError, match="role lens"):
-        W.parse_workflow_structure(plan(values))
+def test_fresh_root_must_be_same_id_read_only_reviewer() -> None:
+    bad_review = copy.deepcopy(reviewer())
+    bad_review[W.ASSIGNMENT_HEADERS.index("parent")] = "fresh-root:someone-else"
+    with pytest.raises(W.WorkflowDispatchError, match="same-id, read-only"):
+        compile_fixture([assignment("implement"), bad_review, worker()])
 
 
-@pytest.mark.parametrize("status", ["passed", "needs-follow-up"])
-def test_completed_state_requires_result_evidence(status: str) -> None:
-    workflow = W.parse_workflow_structure(plan(row("security")))
-    value = state_payload(workflow, security=status)
-    value["steps"]["security"]["result_ref"] = None  # type: ignore[index]
-
-    with pytest.raises(W.WorkflowDispatchError, match="requires a result"):
-        W.load_dispatch_state(value, workflow, workflow_run_sha256=RUN_SHA256)
+def test_assignment_parent_must_be_declared_dependency() -> None:
+    rows = [assignment("implement"), reviewer(), worker(parent="implement", depends="-")]
+    with pytest.raises(W.WorkflowDispatchError, match="depend on its declared parent"):
+        compile_fixture(rows)
 
 
-def test_disabled_validator_skipped_result_advances_dispatch(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    workflow = W.parse_workflow_structure(
-        plan(
-            row(
-                "tests",
-                "scenario-tester",
-                validator_required=False,
-                validator_disabled=True,
-            )
-        )
-    )
-    value = state_payload(workflow, tests="passed")
-    import dispatch_receipt as receipts
-
-    monkeypatch.setattr(
-        receipts,
-        "validate_normalized_receipt",
-        lambda _plugin_data, _reference, _workflow: (
-            {
-                "step_id": "tests",
-                "attempt": 1,
-                "workflow_run_sha256": RUN_SHA256,
-            },
-            {"evidence": {"gate_status": "skipped-by-config"}},
-        ),
-    )
-
-    state = W.load_dispatch_state(
-        value,
-        workflow,
-        workflow_run_sha256=RUN_SHA256,
-        plugin_data=tmp_path,
-    )
-
-    assert state["tests"].status == "passed"
-    assert W.emit_intents(
-        workflow,
-        state,
-        workflow_run_sha256=RUN_SHA256,
-    )["complete"] is True
+def test_worker_git_mutation_is_rejected() -> None:
+    rows = [assignment("implement"), reviewer(), worker(completion="git commit the change")]
+    with pytest.raises(W.WorkflowDispatchError, match="may not own a Git mutation"):
+        compile_fixture(rows)
 
 
-def test_cycle_booleans_and_zero_attempt_completed_state_are_rejected() -> None:
-    workflow = W.parse_workflow_structure(plan(row("security")))
-    value = state_payload(workflow, security="passed")
-    value["steps"]["security"]["cycle"] = True  # type: ignore[index]
-    with pytest.raises(W.WorkflowDispatchError, match="invalid"):
-        W.load_dispatch_state(value, workflow, workflow_run_sha256=RUN_SHA256)
-
-    value["steps"]["security"]["cycle"] = 0  # type: ignore[index]
-    with pytest.raises(W.WorkflowDispatchError, match="requires an attempt"):
-        W.load_dispatch_state(value, workflow, workflow_run_sha256=RUN_SHA256)
-
-    values = row("security")
-    values[12] = "0" * 64
-    with pytest.raises(W.WorkflowDispatchError, match="profile"):
-        W.parse_workflow_structure(plan(values))
+def test_git_metadata_write_is_rejected() -> None:
+    rows = [assignment("implement"), reviewer(), worker(writes=".git/config")]
+    with pytest.raises(W.WorkflowDispatchError, match="Git metadata"):
+        compile_fixture(rows)
 
 
 @pytest.mark.parametrize(
-    "rows,match",
+    ("overrides", "message"),
     [
-        ((row("same"), row("same")), "duplicate"),
-        ((row("one", depends_on="missing"),), "invalid dependencies"),
-        ((row("one", depends_on="two"), row("two", depends_on="one")), "cycle"),
-        (
-            (
-                row("one", barrier="join"),
-                row("two", barrier="join"),
-                row("after", "root", depends_on="one"),
-            ),
-            "every member",
-        ),
+        ({"egress": "none"}, "egress must be explicit"),
+        ({"authority": "gating"}, "authority must be non-gating"),
+        ({"writes-or-artifact": "none"}, "must name an artifact"),
+        ({"requiredness": "mandatory"}, "requiredness must be best-effort or required"),
     ],
 )
-def test_invalid_graphs_fail(rows: tuple[list[str], ...], match: str) -> None:
-    with pytest.raises(W.WorkflowDispatchError, match=match):
-        W.parse_workflow_structure(plan(*rows))
+def test_external_action_contract_is_closed(overrides: dict[str, str], message: str) -> None:
+    with pytest.raises(W.WorkflowDispatchError, match=message):
+        compile_fixture(external_actions=[external(**overrides)])
 
 
-def test_dispatcher_contains_no_launch_or_collaboration_primitive() -> None:
-    source = (SCRIPTS / "workflow_dispatch.py").read_text()
-    assert "subprocess" not in source
-    assert "spawn_agent" not in source
-    assert "followup_task" not in source
-    assert "collaboration." not in source
-
-
-def test_synthetic_deterministic_role_emits_pinned_model_free_contract() -> None:
-    base = renderer.load_role_registry()
-    role = renderer.RoleSpec(
-        role_id="schema-validator",
-        kind="deterministic-validator",
-        category="tester",
-        spec_version=1,
-        description="Validate schema deterministically",
-        selection_mode="context",
-        signals=(),
-        minimum_independence=None,
-        default_class=None,
-        allowed_classes=(),
-        workspace_cap="read-only",
-        external_cap="none",
-        output_schema="tester-evidence.v1",
-        source_behavior_sha256="1" * 64,
-        lens_path=None,
-        lens_sha256=None,
-        command=("python3", "tools/check_schema.py"),
-        command_implementation_path="tools/check_schema.py",
-        command_implementation_sha256="2" * 64,
-        command_timeout_seconds=30,
-        command_output_limit_bytes=65536,
-        evidence_schema_path="schemas/tester-evidence.json",
-        evidence_schema_sha256="3" * 64,
+def test_table_columns_are_exact() -> None:
+    text = plan([assignment("implement"), reviewer(), worker()]).replace(
+        "| id | depends |", "| id | unexpected | depends |", 1
     )
-    registry = renderer.RoleRegistry(
-        path=base.path,
-        sha256=base.sha256,
-        schema_version=base.schema_version,
-        role_spec_version=base.role_spec_version,
-        source_behavior_policy=base.source_behavior_policy,
-        review_policy=base.review_policy,
-        evidence_schemas=base.evidence_schemas,
-        nested_type_contracts=base.nested_type_contracts,
-        roles=(role,),
+    with pytest.raises(W.WorkflowDispatchError, match="columns must be exactly"):
+        W.compile_workflow_contract(text, plan_revision="revision")
+
+
+def test_repository_plan_compiles() -> None:
+    repo_root = Path(__file__).parents[3]
+    contract = W.compile_plan(
+        repo_root / "docs/plans/2026-07-24-codex-v2-orchestrated-execution-system-plan.md",
+        plan_revision="reviewed-plan",
     )
-    values = [
-        "schema-check",
-        "-",
-        "-",
-        "schema-validator",
-        "deterministic-validator",
-        "n/a",
-        "-",
-        "-",
-        "deterministic-tool",
-        "none",
-        "tester-evidence",
-        "-",
-        "-",
-        "-",
-        "-",
-        "true",
-        "false",
-        W._deterministic_contract_sha256(role),
-    ]
+    assert len(contract.assignments) == 12
+    assert len(contract.checks) == 10
+    assert contract.external_actions == ()
 
-    workflow = W.parse_workflow_structure(plan(values), registry=registry)
-    step = workflow.step("schema-check")
 
-    assert step.command == role.command
-    assert step.command_implementation_sha256 == role.command_implementation_sha256
-    assert step.evidence_schema_sha256 == role.evidence_schema_sha256
-    assert step.execution_class is None
-    assert step.expected_model is None
+def test_cli_emits_compiled_contract(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    path = tmp_path / "plan.md"
+    path.write_text(plan([assignment("implement"), reviewer(), worker()]), encoding="utf-8")
 
-    values[9] = "root-only"
-    with pytest.raises(W.WorkflowDispatchError, match="mutation `none`"):
-        W.parse_workflow_structure(plan(values), registry=registry)
-
-    values[9] = "none"
-    values[17] = "0" * 64
-    with pytest.raises(W.WorkflowDispatchError, match="deterministic contract"):
-        W.parse_workflow_structure(plan(values), registry=registry)
-
-    values[17] = W._deterministic_contract_sha256(role)
-    values[4] = "agent-lens"
-    with pytest.raises(W.WorkflowDispatchError, match="role_kind is stale"):
-        W.parse_workflow_structure(plan(values), registry=registry)
+    assert W.main(["--plan", str(path), "--plan-revision", "revision"]) == 0
+    assert '"approval_binding_sha256"' in capsys.readouterr().out

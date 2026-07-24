@@ -23,6 +23,22 @@ import external_action_contract as contract  # noqa: E402
 POLICY_VERSION = 1
 POLICY_PATH = Path(".codex") / "saga" / "external-action-policy.json"
 DEFAULTS_PATH = Path(__file__).resolve().parent.parent / "references" / "external-action-defaults.yaml"
+WORKFLOW_ACTION_FIELDS = {
+    "action_id",
+    "purpose",
+    "provider",
+    "model",
+    "egress",
+    "context",
+    "sensitivity",
+    "cost",
+    "writes_or_artifact",
+    "requiredness",
+    "authority",
+}
+SECRET_PATH_PARTS = frozenset(
+    {".env", "secrets", "credentials", ".aws", ".ssh", ".gnupg", "private-keys"}
+)
 
 
 class PolicyError(ValueError):
@@ -89,6 +105,67 @@ class ActionTemplate:
 class ResolvedPolicy:
     source: str
     actions: tuple[ActionTemplate, ...]
+
+
+def workflow_rows_to_templates(rows: Sequence[Mapping[str, Any]]) -> tuple[ActionTemplate, ...]:
+    """Import the compiler's approved external rows into the existing Saga lifecycle."""
+
+    templates: list[ActionTemplate] = []
+    for index, row in enumerate(rows):
+        if set(row) != WORKFLOW_ACTION_FIELDS:
+            raise PolicyError(
+                f"workflow external action {index} fields must be exactly {sorted(WORKFLOW_ACTION_FIELDS)}"
+            )
+        if row.get("authority") != contract.AUTHORITY:
+            raise PolicyError("workflow external actions must have non-gating authority")
+        requiredness = row.get("requiredness")
+        if requiredness == "required":
+            saga_requiredness = contract.Requiredness.REQUIRED.value
+        elif requiredness == "best-effort":
+            saga_requiredness = contract.Requiredness.BEST_EFFORT.value
+        else:
+            raise PolicyError("workflow external action requiredness is invalid")
+        context_scope = _strings(row.get("context", ()), "context")
+        writes_or_artifact = _strings(
+            row.get("writes_or_artifact", ()), "writes_or_artifact"
+        )
+        write_set = tuple(item for item in writes_or_artifact if not item.startswith("artifact:"))
+        for path in (*context_scope, *write_set):
+            parts = Path(path).parts
+            folded_parts = {part.casefold() for part in parts}
+            if path == "." or path.startswith("/") or ".." in parts or ".git" in parts:
+                raise PolicyError("workflow external paths must be contained repository paths")
+            if SECRET_PATH_PARTS & folded_parts:
+                raise PolicyError(f"workflow external path {path!r} is secret-bearing")
+        provider = _required_text(row, "provider")
+        model = _required_text(row, "model")
+        purpose = _required_text(row, "purpose")
+        egress = _strings(row.get("egress", ()), "egress")
+        templates.append(
+            ActionTemplate.from_mapping(
+                {
+                    "action_id": _required_text(row, "action_id"),
+                    "intent": "offload" if write_set else "second-opinion",
+                    "trigger": purpose,
+                    "requiredness": saga_requiredness,
+                    "consumption_point": "verified-workflow-run-record",
+                    "provider_constraints": {
+                        "provider": provider,
+                        "model": model,
+                        "egress": list(egress),
+                        "cost": _required_text(row, "cost"),
+                        "authority": contract.AUTHORITY,
+                    },
+                    "context_scope": list(context_scope),
+                    "sensitivity": _required_text(row, "sensitivity"),
+                    "write_set": list(write_set),
+                    "evidence_destination": ".codex/saga/external-actions",
+                }
+            )
+        )
+    if len({item.action_id for item in templates}) != len(templates):
+        raise PolicyError("workflow external actions contain duplicate IDs")
+    return tuple(templates)
 
 
 def _strings(value: Any, field_name: str) -> tuple[str, ...]:

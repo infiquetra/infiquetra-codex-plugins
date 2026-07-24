@@ -353,6 +353,7 @@ def build_manifest(
     port_id: str = ACTIVE_PORT_ID,
     source_repository_id: str = "infiquetra/infiquetra-claude-plugins",
     codex_repository_id: str = "infiquetra/infiquetra-codex-plugins",
+    codex_evidence_ref: str = CODEX_EVIDENCE_REF,
     version_policy: Sequence[Mapping[str, str]] | None = None,
 ) -> dict[str, Any]:
     source_base = resolve_ref(source_repo, source_base)
@@ -364,12 +365,27 @@ def build_manifest(
     if not is_ancestor(root, codex_plan_base, codex_execution_base):
         raise ContractError("Codex historical plan base is not an ancestor of the execution base")
 
+    try:
+        capability_schema_version = json.loads(
+            contained_file(root, capability_snapshot.as_posix()).read_text(encoding="utf-8")
+        ).get("schema_version")
+    except (AttributeError, json.JSONDecodeError, OSError) as exc:
+        raise ContractError("capability snapshot lacks a readable schema version") from exc
+    if capability_schema_version not in {1, 2}:
+        raise ContractError("capability snapshot schema version is unsupported")
+
     source_rows = git_inventory(source_repo, source_base, source_target, source_pathspecs)
     codex_rows = git_inventory(root, codex_plan_base, codex_execution_base)
     source_head = resolve_ref(source_repo, "HEAD")
 
     if not port_id or CONTROL_RE.search(port_id):
         raise ContractError("port_id must be a non-empty printable string")
+    if (
+        not codex_evidence_ref.startswith("refs/tags/evidence/")
+        or CONTROL_RE.search(codex_evidence_ref)
+        or " " in codex_evidence_ref
+    ):
+        raise ContractError("codex evidence ref must be a safe evidence tag")
     default_version_policy: list[dict[str, str]] = [
         {
             "source_plugin": "fleet-core",
@@ -412,7 +428,7 @@ def build_manifest(
             "runbook": {**_authority_entry(root, runbook), "version": RUNBOOK_VERSION},
             "capability_snapshot": {
                 **_authority_entry(root, capability_snapshot),
-                "schema_version": 1,
+                "schema_version": capability_schema_version,
                 "schema_path": _authority_entry(root, capability_schema)["path"],
                 "schema_sha256": _authority_entry(root, capability_schema)["sha256"],
             },
@@ -437,7 +453,7 @@ def build_manifest(
             "repository_id": codex_repository_id,
             "historical_plan_base": codex_plan_base,
             "execution_base": codex_execution_base,
-            "evidence_ref": CODEX_EVIDENCE_REF,
+            "evidence_ref": codex_evidence_ref,
             "observed_origin_main": optional_ref(root, "origin/main"),
             "expected_count": len(codex_rows),
             "inventory_sha256": inventory_digest(codex_rows),
@@ -516,6 +532,21 @@ def _validate_artifact(root: Path, entry: Mapping[str, Any], label: str, errors:
     _check_digest(expected, f"{label}.sha256", errors)
     if isinstance(expected, str) and sha256_file(path) != expected:
         errors.append(f"{label} digest is stale: {safe}")
+
+
+def _historical_file_by_sha256(root: Path, path: str, expected: str) -> bytes:
+    """Recover a digest-bound historical authority file without changing its manifest."""
+
+    commits = _run_git(root, ["log", "--all", "--format=%H", "--", path]).decode().splitlines()
+    if len(commits) > 256:
+        raise ContractError("historical authority search exceeded the commit ceiling")
+    for commit in commits:
+        if not HEX40_RE.fullmatch(commit):
+            continue
+        content = _run_git(root, ["show", f"{commit}:{path}"], allow_failure=True)
+        if content and sha256_bytes(content) == expected:
+            return content
+    raise ContractError("digest-bound historical authority preimage is unavailable")
 
 
 def _json_schema_ref(root_schema: Mapping[str, Any], reference: str) -> Mapping[str, Any]:
@@ -780,16 +811,26 @@ def _validate_codex_rows(rows: list[dict[str, Any]], stage: str, errors: list[st
             errors.append(f"{label}: verified state requires evidence")
 
 
-def _validate_capability_snapshot(root: Path, entry: Mapping[str, Any], errors: list[str]) -> None:
+def _validate_capability_snapshot(
+    root: Path,
+    entry: Mapping[str, Any],
+    errors: list[str],
+    *,
+    snapshot_bytes: bytes | None = None,
+) -> None:
     try:
         path = contained_file(root, str(entry.get("path", "")))
         schema_path = contained_file(root, str(entry.get("schema_path", "")))
     except ContractError:
         return
     try:
-        snapshot = json.loads(path.read_text(encoding="utf-8"))
+        snapshot = json.loads(
+            snapshot_bytes.decode("utf-8")
+            if snapshot_bytes is not None
+            else path.read_text(encoding="utf-8")
+        )
         snapshot_schema = json.loads(schema_path.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError) as exc:
+    except (UnicodeDecodeError, json.JSONDecodeError, OSError) as exc:
         errors.append(f"capability snapshot/schema is unreadable: {exc}")
         return
     if not isinstance(snapshot_schema, dict):
@@ -809,17 +850,23 @@ def _validate_capability_snapshot(root: Path, entry: Mapping[str, Any], errors: 
         errors.append("capability snapshot must be an object")
         return
     models = snapshot.get("catalog", {}).get("models", [])
-    projection = [
-        {
+    include_multi_agent_version = bool(models) and all(
+        isinstance(model, dict) and "multi_agent_version" in model for model in models
+    )
+    projection = []
+    for model in models:
+        if not isinstance(model, dict):
+            continue
+        row = {
             "slug": model.get("slug"),
             "default_effort": model.get("default_effort"),
             "supported_efforts": model.get("supported_efforts"),
             "visibility": model.get("visibility"),
             "supported_in_api": model.get("supported_in_api"),
         }
-        for model in models
-        if isinstance(model, dict)
-    ]
+        if include_multi_agent_version:
+            row["multi_agent_version"] = model.get("multi_agent_version")
+        projection.append(row)
     expected_digest = snapshot.get("catalog", {}).get("normalized_sha256")
     if sha256_bytes(canonical_json_bytes(projection)) != expected_digest:
         errors.append("capability snapshot catalog digest is stale")
@@ -845,7 +892,7 @@ def _validate_capability_snapshot(root: Path, entry: Mapping[str, Any], errors: 
             errors.append("capability snapshot must not claim direct per-child sandbox override")
         if spawn.get("named_profile_selection") != "rollout-attested":
             errors.append("capability snapshot v1 named-profile selection must be rollout-attested")
-    elif isinstance(spawn, dict):
+    elif isinstance(spawn, dict) and spawn.get("contract_version") == "v2":
         if spawn.get("tool_namespace") != "agents":
             errors.append("capability snapshot spawn namespace must be `agents`")
         if spawn.get("hide_spawn_agent_metadata") is not False:
@@ -869,13 +916,39 @@ def _validate_capability_snapshot(root: Path, entry: Mapping[str, Any], errors: 
                 errors.append(f"capability snapshot must claim configured `{field}`")
         if spawn.get("per_child_sandbox") is not False:
             errors.append("capability snapshot must not claim direct per-child sandbox override")
+        if spawn.get("response_fields") != ["nickname", "task_name"]:
+            errors.append("capability snapshot V2 spawn response fields drifted")
+        if spawn.get("runtime_receipt_sources") != ["session_meta", "turn_context"]:
+            errors.append("capability snapshot V2 runtime receipt sources drifted")
+        if spawn.get("selection_readback_fields") != [
+            "agent_path",
+            "agent_role",
+            "model",
+            "reasoning_effort",
+            "model_provider",
+            "approval_policy",
+            "permission_profile",
+            "sandbox_policy",
+            "multi_agent_version",
+        ]:
+            errors.append("capability snapshot child receipt fields drifted")
+        context = snapshot.get("collaboration", {}).get("context", {})
+        if not isinstance(context, dict) or context.get(
+            "child_permissions_inherit_parent_turn"
+        ) is not True:
+            errors.append("capability snapshot must record V2 parent-turn permission inheritance")
+    elif isinstance(spawn, dict) and spawn.get("contract_version") is None:
+        if spawn.get("tool_namespace") != "agents":
+            errors.append("capability snapshot spawn namespace must be `agents`")
         if spawn.get("selection_readback_fields") != [
             "agent_type",
             "effort",
             "model",
             "sandbox_mode",
         ]:
-            errors.append("capability snapshot child receipt fields drifted")
+            errors.append("capability snapshot legacy child receipt fields drifted")
+    elif isinstance(spawn, dict):
+        errors.append("capability snapshot collaboration.spawn contract_version is unsupported")
     dimensions = snapshot.get("capability_dimensions", {})
     workflow_names = {row.get("name"): row.get("status") for row in dimensions.get("workflow_modes", []) if isinstance(row, dict)}
     if workflow_names.get("source-workflow") != "unsupported":
@@ -887,6 +960,13 @@ def _validate_capability_snapshot(root: Path, entry: Mapping[str, Any], errors: 
 
 def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "classification", unit: str | None = None) -> list[str]:
     errors: list[str] = []
+    authority_hint = manifest.get("authority")
+    plan_hint = authority_hint.get("plan") if isinstance(authority_hint, dict) else None
+    active_contract = (
+        isinstance(plan_hint, dict)
+        and plan_hint.get("path") == DEFAULT_PLAN.as_posix()
+    )
+    approved_evidence_base = APPROVED_CODEX_EXECUTION_BASE
     if stage not in VALID_STAGES:
         return [f"unknown port-contract stage `{stage}`"]
     if stage == "unit" and unit not in UNIT_IDS:
@@ -898,7 +978,10 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
     _exact_keys(manifest, top_keys, "manifest", errors)
     if manifest.get("schema_version") != SCHEMA_VERSION:
         errors.append(f"schema_version must be {SCHEMA_VERSION}")
-    if manifest.get("port_id") != ACTIVE_PORT_ID:
+    port_id = manifest.get("port_id")
+    if not isinstance(port_id, str) or not port_id or CONTROL_RE.search(port_id):
+        errors.append("port_id must be a non-empty printable string")
+    if active_contract and port_id != ACTIVE_PORT_ID:
         errors.append(f"port_id must remain the active contract `{ACTIVE_PORT_ID}`")
     _scan_forbidden_keys(manifest, "manifest", errors)
 
@@ -936,16 +1019,32 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
                 "authority.capability_snapshot",
                 errors,
             )
-            if capability.get("schema_version") != 1:
-                errors.append("authority.capability_snapshot.schema_version must be 1")
-            _validate_artifact(root, {"path": capability.get("path"), "sha256": capability.get("sha256")}, "authority.capability_snapshot", errors)
+            if capability.get("schema_version") not in {1, 2}:
+                errors.append("authority.capability_snapshot.schema_version must be 1 or 2")
+            historical_snapshot: bytes | None = None
+            if active_contract:
+                try:
+                    snapshot_path = validate_repo_path(str(capability.get("path", "")))
+                    expected = str(capability.get("sha256", ""))
+                    _check_digest(
+                        expected, "authority.capability_snapshot.sha256", errors
+                    )
+                    historical_snapshot = _historical_file_by_sha256(
+                        root, snapshot_path, expected
+                    )
+                except ContractError as exc:
+                    errors.append(f"authority.capability_snapshot historical preimage: {exc}")
+            else:
+                _validate_artifact(root, {"path": capability.get("path"), "sha256": capability.get("sha256")}, "authority.capability_snapshot", errors)
             _validate_artifact(
                 root,
                 {"path": capability.get("schema_path"), "sha256": capability.get("schema_sha256")},
                 "authority.capability_snapshot.schema",
                 errors,
             )
-            _validate_capability_snapshot(root, capability, errors)
+            _validate_capability_snapshot(
+                root, capability, errors, snapshot_bytes=historical_snapshot
+            )
         else:
             errors.append("authority.capability_snapshot must be an object")
         try:
@@ -969,23 +1068,23 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
         else:
             errors.append("source.observed_refs must be an object")
         paths = _validate_string_list(source.get("pathspecs"), "source.pathspecs", errors, paths=True)
-        if tuple(paths) != DEFAULT_SOURCE_PATHS:
+        if active_contract and tuple(paths) != DEFAULT_SOURCE_PATHS:
             errors.append("source.pathspecs changed from the four approved focused paths")
-        if source.get("base_ref") != DEFAULT_SOURCE_BASE:
+        if active_contract and source.get("base_ref") != DEFAULT_SOURCE_BASE:
             errors.append("source.base_ref changed from the approved frozen base")
-        if source.get("target_ref") != DEFAULT_SOURCE_TARGET:
+        if active_contract and source.get("target_ref") != DEFAULT_SOURCE_TARGET:
             errors.append("source.target_ref changed from the approved frozen target")
         source_rows = source.get("rows") if isinstance(source.get("rows"), list) else []
         inventory = _validate_inventory_rows(source_rows, "source.rows", errors)
         if source.get("expected_count") != len(source_rows):
             errors.append("source.expected_count does not match rows")
-        if len(source_rows) != EXPECTED_SOURCE_COUNT:
+        if active_contract and len(source_rows) != EXPECTED_SOURCE_COUNT:
             errors.append(f"focused source inventory must contain exactly {EXPECTED_SOURCE_COUNT} rows")
         expected_digest = source.get("inventory_sha256")
         _check_digest(expected_digest, "source.inventory_sha256", errors)
         if inventory_digest(inventory) != expected_digest:
             errors.append("source inventory digest is stale")
-        if expected_digest != EXPECTED_SOURCE_INVENTORY_SHA256:
+        if active_contract and expected_digest != EXPECTED_SOURCE_INVENTORY_SHA256:
             errors.append("source inventory digest changed from the approved frozen inventory")
         _validate_source_rows(source_rows, stage, errors)
 
@@ -999,14 +1098,14 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
         _check_commit(codex.get("historical_plan_base"), "codex.historical_plan_base", errors)
         _check_commit(codex.get("execution_base"), "codex.execution_base", errors)
         _check_commit(codex.get("observed_origin_main"), "codex.observed_origin_main", errors)
-        if codex.get("historical_plan_base") != DEFAULT_CODEX_PLAN_BASE:
+        if active_contract and codex.get("historical_plan_base") != DEFAULT_CODEX_PLAN_BASE:
             errors.append("Codex historical plan base changed from the approved value")
-        if codex.get("execution_base") != APPROVED_CODEX_EXECUTION_BASE:
+        if active_contract and codex.get("execution_base") != APPROVED_CODEX_EXECUTION_BASE:
             errors.append("Codex execution base changed from the approved value")
         evidence_ref = codex.get("evidence_ref")
-        if evidence_ref != CODEX_EVIDENCE_REF:
+        if active_contract and evidence_ref != CODEX_EVIDENCE_REF:
             errors.append(f"codex.evidence_ref must remain `{CODEX_EVIDENCE_REF}`")
-        else:
+        elif active_contract:
             try:
                 codex_evidence_head = resolve_ref(root, evidence_ref)
             except ContractError as exc:
@@ -1014,17 +1113,24 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
             else:
                 if not is_ancestor(root, APPROVED_CODEX_EXECUTION_BASE, codex_evidence_head):
                     errors.append("codex.evidence_ref does not retain the approved execution base")
+        elif (
+            not isinstance(evidence_ref, str)
+            or not evidence_ref.startswith("refs/tags/evidence/")
+            or CONTROL_RE.search(evidence_ref)
+            or " " in evidence_ref
+        ):
+            errors.append("codex.evidence_ref must be a safe evidence tag")
         codex_rows = codex.get("rows") if isinstance(codex.get("rows"), list) else []
         inventory = _validate_inventory_rows(codex_rows, "codex.rows", errors)
         if codex.get("expected_count") != len(codex_rows):
             errors.append("codex.expected_count does not match rows")
-        if len(codex_rows) != EXPECTED_CODEX_COUNT:
+        if active_contract and len(codex_rows) != EXPECTED_CODEX_COUNT:
             errors.append(f"Codex drift inventory must contain exactly {EXPECTED_CODEX_COUNT} rows")
         expected_digest = codex.get("inventory_sha256")
         _check_digest(expected_digest, "codex.inventory_sha256", errors)
         if inventory_digest(inventory) != expected_digest:
             errors.append("Codex drift inventory digest is stale")
-        if expected_digest != EXPECTED_CODEX_INVENTORY_SHA256:
+        if active_contract and expected_digest != EXPECTED_CODEX_INVENTORY_SHA256:
             errors.append("Codex drift digest changed from the approved execution-base inventory")
         try:
             actual_codex_inventory = git_inventory(
@@ -1038,12 +1144,25 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
             if actual_codex_inventory != normalize_inventory(codex_rows):
                 errors.append("Codex drift rows do not match the recorded Git refs")
         _validate_codex_rows(codex_rows, stage, errors)
+        if not active_contract and isinstance(codex.get("execution_base"), str):
+            approved_evidence_base = codex["execution_base"]
 
     if isinstance(authority, dict) and isinstance(authority.get("capability_snapshot"), dict):
         capability_entry = authority["capability_snapshot"]
         try:
-            snapshot_path = contained_file(root, str(capability_entry.get("path", "")))
-            snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
+            snapshot_path_value = validate_repo_path(
+                str(capability_entry.get("path", ""))
+            )
+            if active_contract:
+                snapshot_content = _historical_file_by_sha256(
+                    root,
+                    snapshot_path_value,
+                    str(capability_entry.get("sha256", "")),
+                )
+                snapshot = json.loads(snapshot_content)
+            else:
+                snapshot_path = contained_file(root, snapshot_path_value)
+                snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
         except (ContractError, OSError, json.JSONDecodeError):
             snapshot = None
         if isinstance(snapshot, dict) and isinstance(source, dict) and isinstance(codex, dict):
@@ -1130,7 +1249,7 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
                 errors.append(f"{label}.repo_head is not present in this repository: {exc}")
             else:
                 if resolved_evidence_head != repo_head or not is_ancestor(
-                    root, APPROVED_CODEX_EXECUTION_BASE, repo_head
+                    root, approved_evidence_base, repo_head
                 ):
                     errors.append(f"{label}.repo_head is outside the approved execution history")
                 if codex_evidence_head is not None and not is_ancestor(
@@ -1522,11 +1641,12 @@ def command_init(args: argparse.Namespace) -> int:
         capability_snapshot=Path(args.capability_snapshot),
         capability_schema=Path(args.capability_schema),
         plan=Path(args.plan),
-        reviews=[Path(path) for path in args.review],
+        reviews=[Path(path) for path in (args.review or [str(path) for path in DEFAULT_REVIEWS])],
         classification_path=Path(args.classification_path),
         port_id=args.port_id,
         source_repository_id=args.source_repository_id,
         codex_repository_id=args.codex_repository_id,
+        codex_evidence_ref=args.codex_evidence_ref,
         version_policy=version_policy,
     )
     write_json(manifest_path, manifest)
@@ -1606,9 +1726,10 @@ def build_parser() -> argparse.ArgumentParser:
     init.add_argument("--capability-snapshot", default=str(DEFAULT_CAPABILITY))
     init.add_argument("--capability-schema", default=str(DEFAULT_CAPABILITY_SCHEMA))
     init.add_argument("--codex-repository-id", default="infiquetra/infiquetra-codex-plugins")
+    init.add_argument("--codex-evidence-ref", default=CODEX_EVIDENCE_REF)
     init.add_argument("--version-policy", help="repo-relative JSON array overriding version policy")
     init.add_argument("--plan", default=str(DEFAULT_PLAN))
-    init.add_argument("--review", action="append", default=[str(path) for path in DEFAULT_REVIEWS])
+    init.add_argument("--review", action="append")
     init.add_argument("--classification-path", default=str(DEFAULT_RENDER))
     init.set_defaults(func=command_init)
 

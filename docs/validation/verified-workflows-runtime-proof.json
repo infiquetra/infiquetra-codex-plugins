@@ -1,1 +1,113 @@
-{"capability_outcome": "diagnostic", "claim": "runtime-capability-characterization", "codex_cli_version": "0.144.1", "harness_sha256": "a495e2c9ce8245a10f33a641cca2c3c7beeaa7d6ddcc7b45cc1054f646a181d7", "hook_capabilities": {"definition_sha256": "8f5eca1811d2ea751c7eecbded0fab704c54496f6b9a82f5feda01d260aae9e1", "events": ["SubagentStart", "SubagentStop"], "handler_sha256": "06161231953398dfdd207090b31f9b665d327c92b501475aaa64e37897629e11", "installed_bytes_readback": false, "observes_active_model": true, "observes_agent_type": true, "observes_reasoning_effort": false, "trust_readback": "unobserved", "trust_required": true}, "isolated_login_metadata_present": null, "limitations": ["project profile discovery is expected configuration, not runtime selection", "hook permission_mode is not effective sandbox_mode", "reasoning effort is expected from the exact profile digest, not observed by hooks", "profile-selected work requires agent_type with fork_turns none or a positive integer", "tracked characterization does not contain a live child turn_context receipt", "isolated readback proves bytes only; it does not prove hook trust or task execution"], "live_envelope_sha256": null, "live_invocation_performed": false, "mode": "dry-run", "profiles": [{"execution_class": "review-max", "runtime_agent_name": "review_max", "sha256": "ee2062e446db24856e6893dd290183b66b9387f19d97e8a39a7631de453adb9f"}, {"execution_class": "review-high", "runtime_agent_name": "review_high", "sha256": "42e86e00e054281b0a79e4b3b9b544c04a31eb2fd6b53c0489adc42ea639c9a8"}, {"execution_class": "test-medium", "runtime_agent_name": "test_medium", "sha256": "6d69bb4d5e477574ce186a353a3d2fcc7f8ab6b1f014b93aebb05084aecccc1b"}, {"execution_class": "scan-low", "runtime_agent_name": "scan_low", "sha256": "bbb5cb1c6d3fc28ac66d61bb2794ed1824b814913f42079a568cdfa2b7cdfb50"}, {"execution_class": "monitor-low", "runtime_agent_name": "monitor_low", "sha256": "340c678c08682fb25453dcf995b1c98215e6d0fd2be912f7e028874512c0948c"}], "project_discovery": {"files": [{"filename": "monitor_low.toml", "sha256": "340c678c08682fb25453dcf995b1c98215e6d0fd2be912f7e028874512c0948c"}, {"filename": "review_high.toml", "sha256": "42e86e00e054281b0a79e4b3b9b544c04a31eb2fd6b53c0489adc42ea639c9a8"}, {"filename": "review_max.toml", "sha256": "ee2062e446db24856e6893dd290183b66b9387f19d97e8a39a7631de453adb9f"}, {"filename": "scan_low.toml", "sha256": "bbb5cb1c6d3fc28ac66d61bb2794ed1824b814913f42079a568cdfa2b7cdfb50"}, {"filename": "test_medium.toml", "sha256": "6d69bb4d5e477574ce186a353a3d2fcc7f8ab6b1f014b93aebb05084aecccc1b"}], "location": ".codex/agents", "regular_files_only": true, "source_bytes_match": true}, "reason": "configured named-profile selection is available; tracked characterization carries no live child receipt", "role_registry_sha256": "011eea995e8c263c37805aa30b1c3f6b7cb5559c4c5e867a0d951adb95ccb4bc", "root_mediated_task_reported": false, "runtime_receipt_ref": null, "runtime_receipt_sha256": null, "schema_version": 1, "snapshot_sha256": "800e81b32bf0922a3427cc4b49e09926b874850e49df3316a84ebd0f97ffdfa5", "spawn_request_fields": ["agent_type", "fork_turns", "message", "model", "reasoning_effort", "service_tier", "task_name"], "spawn_surface": "named"}
+{
+  "capability_outcome": "diagnostic",
+  "claim": "codex-v2-runtime-capability",
+  "codex_cli_version": "0.145.0",
+  "harness_sha256": "3c918e52f4377da71cbf8e42281521e3f6d9b229bd9a7f71a677590660847acc",
+  "limitations": [
+    "Codex 0.145.0 child permissions inherit the parent turn after profile loading",
+    "this minimal probe covers one read-only child; the receipt-derived matrix covers the full operation set",
+    "requested spawn fields are never accepted as runtime identity without session_meta and turn_context"
+  ],
+  "live_invocation_performed": false,
+  "mode": "dry-run",
+  "operations": [
+    "followup_task",
+    "interrupt_agent",
+    "list_agents",
+    "send_message",
+    "spawn_agent",
+    "wait_agent"
+  ],
+  "profiles": [
+    {
+      "profile_id": "review_max",
+      "runtime_agent_name": "review_max",
+      "sha256": "02326611dccfcc6e4666a4e825c1a94044ff651a7e1be5c47842533ce9d8cce8"
+    },
+    {
+      "profile_id": "review_high",
+      "runtime_agent_name": "review_high",
+      "sha256": "3c0b9d8070e300cb84c456fd2ca09ef5999408d84d5a6ee8964303c8b38683d0"
+    },
+    {
+      "profile_id": "work_high",
+      "runtime_agent_name": "work_high",
+      "sha256": "520fcdd1f404adb2e6ac911a50054e5cb230ae557eec693d20ccc54cba322d98"
+    },
+    {
+      "profile_id": "test_medium",
+      "runtime_agent_name": "test_medium",
+      "sha256": "45105c90ed7e2c51b8b0ecffafed16a1dfb2a0ab24c8cdf47a2f5790a672da60"
+    },
+    {
+      "profile_id": "scan_low",
+      "runtime_agent_name": "scan_low",
+      "sha256": "caca93d44de56bf12839f50fc30e013bb210bd19d13b0c6098a6dfb256d80ac7"
+    },
+    {
+      "profile_id": "monitor_low",
+      "runtime_agent_name": "monitor_low",
+      "sha256": "633a29e67fb570814ba079015ce7d6a372ea67fd44d1dc9c156276247375ef36"
+    }
+  ],
+  "project_discovery": {
+    "files": [
+      {
+        "filename": "monitor_low.toml",
+        "sha256": "633a29e67fb570814ba079015ce7d6a372ea67fd44d1dc9c156276247375ef36"
+      },
+      {
+        "filename": "review_high.toml",
+        "sha256": "3c0b9d8070e300cb84c456fd2ca09ef5999408d84d5a6ee8964303c8b38683d0"
+      },
+      {
+        "filename": "review_max.toml",
+        "sha256": "02326611dccfcc6e4666a4e825c1a94044ff651a7e1be5c47842533ce9d8cce8"
+      },
+      {
+        "filename": "scan_low.toml",
+        "sha256": "caca93d44de56bf12839f50fc30e013bb210bd19d13b0c6098a6dfb256d80ac7"
+      },
+      {
+        "filename": "test_medium.toml",
+        "sha256": "45105c90ed7e2c51b8b0ecffafed16a1dfb2a0ab24c8cdf47a2f5790a672da60"
+      },
+      {
+        "filename": "work_high.toml",
+        "sha256": "520fcdd1f404adb2e6ac911a50054e5cb230ae557eec693d20ccc54cba322d98"
+      }
+    ],
+    "location": ".codex/agents",
+    "regular_files_only": true,
+    "source_bytes_match": true
+  },
+  "reason": "source and configuration contract only; no live runtime receipt supplied",
+  "runtime_readback_fields": [
+    "agent_path",
+    "agent_role",
+    "model",
+    "reasoning_effort",
+    "model_provider",
+    "approval_policy",
+    "permission_profile",
+    "sandbox_policy",
+    "multi_agent_version"
+  ],
+  "runtime_receipt": null,
+  "schema_version": 2,
+  "snapshot_sha256": "f89c79db0f511fe1804ba50fa3673ae53a9a4440cd9b5039c82d93cf0f33dde2",
+  "spawn_request_fields": [
+    "agent_type",
+    "fork_turns",
+    "message",
+    "model",
+    "reasoning_effort",
+    "service_tier",
+    "task_name"
+  ],
+  "spawn_response_fields": [
+    "nickname",
+    "task_name"
+  ],
+  "tool_namespace": "agents"
+}

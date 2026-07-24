@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import hashlib
+import copy
 import json
 import sys
-import tomllib
 from pathlib import Path
 
 import pytest
@@ -12,208 +11,97 @@ PLUGIN_ROOT = Path(__file__).parents[1]
 SCRIPTS = PLUGIN_ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
+TESTS = Path(__file__).parent
+if str(TESTS) not in sys.path:
+    sys.path.insert(0, str(TESTS))
 
-import render_codex_agents as renderer  # noqa: E402
-import workflow_dispatch as dispatch  # noqa: E402
 import workflow_feasibility as feasibility  # noqa: E402
+from test_workflow_dispatch import assignment, plan, reviewer, worker  # noqa: E402
 
-SNAPSHOT = Path(__file__).parents[3] / "docs" / "validation" / "codex-runtime-capability-snapshot.json"
-
-
-def _profile(execution_class: str) -> tuple[str, str, str]:
-    runtime_agent_name = renderer.RUNTIME_AGENT_NAMES[execution_class]
-    content = (PLUGIN_ROOT / "agents" / f"{runtime_agent_name}.toml").read_bytes()
-    payload = tomllib.loads(content.decode("utf-8"))
-    return hashlib.sha256(content).hexdigest(), payload["model"], payload["model_reasoning_effort"]
+SNAPSHOT = Path(__file__).parents[3] / "docs/validation/codex-runtime-capability-snapshot.json"
+REPOSITORY_PLAN = (
+    Path(__file__).parents[3]
+    / "docs/plans/2026-07-24-codex-v2-orchestrated-execution-system-plan.md"
+)
 
 
-def _row(
-    step_id: str,
-    role_id: str = "security-reviewer",
-    *,
-    independence: str = "preferred",
-    vehicle: str = "inline",
-) -> list[str]:
-    if role_id == "root":
-        return [
-            step_id,
-            "-",
-            "-",
-            "root",
-            "root",
-            "n/a",
-            "-",
-            "-",
-            "root",
-            "root-only",
-            "root-evidence",
-            "-",
-            "-",
-            "-",
-            "-",
-            "n/a",
-            "n/a",
-            "-",
-        ]
-    role = renderer.load_role_registry().role(role_id)
-    digest, model, effort = _profile("review-high")
-    return [
-        step_id,
-        "-",
-        "-",
-        role_id,
-        role.kind,
-        independence,
-        "review-high",
-        "review_high",
-        vehicle,
-        "none",
-        "review-evidence",
-        str(role.lens_sha256),
-        digest,
-        model,
-        effort,
-        "n/a",
-        "n/a",
-        "-",
-    ]
+def write_plan(tmp_path: Path) -> Path:
+    path = tmp_path / "plan.md"
+    path.write_text(plan([assignment("implement"), reviewer(), worker()]), encoding="utf-8")
+    return path
 
 
-def _plan(*rows: list[str]) -> str:
-    header = "| " + " | ".join(dispatch.HEADERS) + " |"
-    separator = "| " + " | ".join("---" for _ in dispatch.HEADERS) + " |"
-    body = "\n".join("| " + " | ".join(row) + " |" for row in rows)
-    return f"# Plan\n\n## Workflow Structure\n\n{header}\n{separator}\n{body}\n"
-
-
-def _write_plan(tmp_path: Path, *rows: list[str]) -> Path:
-    plan = tmp_path / "plan.md"
-    plan.write_text(_plan(*rows), encoding="utf-8")
-    return plan
-
-
-def test_inline_plan_is_ready_without_child_claim(tmp_path: Path) -> None:
+def test_v2_contract_is_compile_time_ready(tmp_path: Path) -> None:
     result = feasibility.review_workflow(
-        plan=_write_plan(tmp_path, _row("root", "root"), _row("review")),
+        plan=write_plan(tmp_path),
         snapshot_path=SNAPSHOT,
+        plan_revision="approved-revision",
     )
 
     assert result["outcome"] == "ready"
     assert result["runtime_proof"] is False
-    assert result["findings"] == []
-    review = next(row for row in result["rows"] if row["step_id"] == "review")
-    assert review["disposition"] == "gate-authoritative-root-inline"
-    assert "model" not in review
-    assert "effort" not in review
+    assert result["spawn_surface"] == "agents"
+    rows = {row["assignment_id"]: row for row in result["rows"]}
+    assert rows["implement"]["disposition"] == "root-owned"
+    assert rows["review"]["disposition"] == "fresh-review-root-required"
+    assert rows["test"]["disposition"] == "v2-launch-ready"
+    assert result["contract_sha256"]
+    assert result["approval_binding_sha256"]
 
 
-@pytest.mark.parametrize("vehicle", ["auto", "subagent"])
-def test_child_vehicle_requires_inline_gate_contract(tmp_path: Path, vehicle: str) -> None:
+def test_repository_plan_is_ready_against_u1_snapshot() -> None:
     result = feasibility.review_workflow(
-        plan=_write_plan(tmp_path, _row("review", vehicle=vehicle)),
+        plan=REPOSITORY_PLAN,
         snapshot_path=SNAPSHOT,
+        plan_revision="reviewed-plan",
     )
-
-    assert result["outcome"] == "requires-inline"
-    assert result["findings"] == [
-        {
-            "step_id": "review",
-            "role_kind": "agent-lens",
-            "vehicle": vehicle,
-            "independence": "preferred",
-            "requested_execution_class": "review-high",
-            "runtime_agent_name": "review_high",
-            "spawn_surface": "named",
-            "disposition": "advisory-child-only",
-            "required_amendment": "change vehicle to inline for gate authority",
-            "limitation": (
-                "a native child may provide advisory evidence, but this capability projection does not "
-                "prove host-issued child attestation"
-            ),
-        }
-    ]
-
-
-def test_required_independence_remains_strictly_unavailable(tmp_path: Path) -> None:
-    result = feasibility.review_workflow(
-        plan=_write_plan(
-            tmp_path,
-            _row("review", independence="required", vehicle="subagent"),
-        ),
-        snapshot_path=SNAPSHOT,
-    )
-
-    assert result["outcome"] == "strict-unavailable"
-    assert result["findings"][0]["disposition"] == "strict-child-unavailable"
-    assert result["findings"][0]["required_amendment"] == (
-        "provide host-issued child attestation or remove the strict contract"
-    )
-
-
-def test_cli_uses_nonzero_exit_for_required_amendment(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    plan = _write_plan(tmp_path, _row("review", vehicle="subagent"))
-
-    assert feasibility.main(["--plan", str(plan), "--snapshot", str(SNAPSHOT)]) == 1
-
-    result = json.loads(capsys.readouterr().out)
-    assert result["outcome"] == "requires-inline"
-
-
-def test_rejects_non_object_capability_snapshot(tmp_path: Path) -> None:
-    snapshot = tmp_path / "snapshot.json"
-    snapshot.write_text("[]\n", encoding="utf-8")
-
-    with pytest.raises(feasibility.WorkflowFeasibilityError, match="must be an object"):
-        feasibility.review_workflow(
-            plan=_write_plan(tmp_path, _row("review")),
-            snapshot_path=snapshot,
-        )
+    assert result["outcome"] == "ready"
+    assert len(result["rows"]) == 12
 
 
 @pytest.mark.parametrize(
-    ("payload", "message"),
+    ("mutator", "message"),
     [
-        ({"collaboration": []}, "collaboration must be an object"),
-        ({"collaboration": {"spawn": []}}, "collaboration.spawn must be an object"),
+        (lambda payload: payload.update({"collaboration": []}), "collaboration must be an object"),
         (
-            {"collaboration": {"spawn": {"host_issued_child_attestation": True}}},
-            "host-issued child attestation is unsupported",
+            lambda payload: payload["collaboration"].update({"spawn": []}),
+            "collaboration.spawn must be an object",
+        ),
+        (
+            lambda payload: payload["collaboration"]["spawn"].update({"contract_version": "v1"}),
+            "Codex V2 configured-agent spawning is not available",
+        ),
+        (
+            lambda payload: payload["collaboration"]["spawn"].update({"per_child_agent_type": False}),
+            "named profile selection is not source-confirmed",
+        ),
+        (
+            lambda payload: payload["collaboration"]["spawn"].update({"request_fields": []}),
+            "spawn request fields are incomplete",
+        ),
+        (
+            lambda payload: payload["collaboration"]["spawn"].update(
+                {"selection_readback_fields": []}
+            ),
+            "runtime readback fields are incomplete",
         ),
     ],
 )
-def test_rejects_malformed_or_unsupported_capability_claims(
-    tmp_path: Path,
-    payload: dict[str, object],
-    message: str,
+def test_capability_projection_failures_are_actionable(
+    tmp_path: Path, mutator: object, message: str
 ) -> None:
+    payload = json.loads(SNAPSHOT.read_text())
+    mutated = copy.deepcopy(payload)
+    mutator(mutated)  # type: ignore[operator]
     snapshot = tmp_path / "snapshot.json"
-    snapshot.write_text(json.dumps(payload), encoding="utf-8")
+    snapshot.write_text(json.dumps(mutated), encoding="utf-8")
 
     with pytest.raises(feasibility.WorkflowFeasibilityError, match=message):
-        feasibility.review_workflow(
-            plan=_write_plan(tmp_path, _row("review")),
-            snapshot_path=snapshot,
-        )
+        feasibility.review_workflow(plan=write_plan(tmp_path), snapshot_path=snapshot)
 
 
-def test_explicit_unavailable_attestation_remains_root_inline_capable(tmp_path: Path) -> None:
-    snapshot = tmp_path / "snapshot.json"
-    snapshot.write_text(
-        json.dumps({"collaboration": {"spawn": {"host_issued_child_attestation": False}}}),
-        encoding="utf-8",
-    )
-
-    result = feasibility.review_workflow(
-        plan=_write_plan(tmp_path, _row("review")),
-        snapshot_path=snapshot,
-    )
-
-    assert result["outcome"] == "ready"
-
-
-def test_analyzer_never_launches_or_configures_children() -> None:
-    source = Path(feasibility.__file__).read_text(encoding="utf-8")
-
-    assert "subprocess" not in source
-    assert "spawn_agent" not in source
-    assert "codex_v1_catalog" not in source
+def test_cli_returns_two_for_invalid_contract(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    invalid = tmp_path / "invalid.md"
+    invalid.write_text("# no contract\n", encoding="utf-8")
+    assert feasibility.main(["--plan", str(invalid), "--snapshot", str(SNAPSHOT)]) == 2
+    assert "missing 'Workflow Contract' heading" in capsys.readouterr().err

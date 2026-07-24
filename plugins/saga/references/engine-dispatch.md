@@ -20,10 +20,10 @@ The adapter dispatches to the wrapper each engine already owns — it does not r
   invocation contains the reviewed HTTPS provider root, model, effort, and bearer environment
   variable name. The secret value exists only in the outbound header and never enters evidence.
 
-Native Codex children are not external engines. Their `gpt-5.6-sol`, `gpt-5.6-terra`, or
-`gpt-5.6-luna` model and scalar effort are selected by Fleet Core execution classes and Verified
-Workflows profiles, then verified from host-issued child context. `codex:delegate` and stale
-`codex --effort` recipes are rejected by the registry.
+Native Codex children are not external engines. Their `gpt-5.6-sol` or `gpt-5.6-terra` model and
+scalar effort are selected by Fleet Core execution classes and Verified Workflows profiles, then
+verified from host-issued child context. Luna remains V1-only in Codex 0.145.0 and is not used by
+the V2 profile set. `codex:delegate` and stale `codex --effort` recipes are rejected by the registry.
 
 Both paths are **evidence-only by default** (R23): the engine returns proposed output; it does not
 mutate the working tree. File-mutating external work is deferred until the ideation-R14 sandbox

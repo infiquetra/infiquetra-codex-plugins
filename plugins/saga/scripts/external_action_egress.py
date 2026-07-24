@@ -13,14 +13,20 @@ from external_action_contract import digest
 PRIVATE_KEY = re.compile(r"-----BEGIN (?:[A-Z0-9 ]+ )?PRIVATE KEY(?: BLOCK)?-----")
 JWT = re.compile(r"\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b")
 CREDENTIAL_KEY = re.compile(
-    r"(?i)^(?:api[_-]?key|access[_-]?token|auth[_-]?token|bearer[_-]?token|token|password|secret|client[_-]?secret|private[_-]?key|jwt)$"
+    r"(?i)^(?:[a-z0-9]+[_-])*(?:api[_-]?key|access[_-]?token|auth[_-]?token|bearer[_-]?token|token|password|secret|client[_-]?secret|private[_-]?key|jwt)$"
 )
 PATTERNS = (
     ("bearer-token", re.compile(r"(?i)\bBearer\s+[A-Za-z0-9._~+/=-]{12,}")),
+    ("slack-token", re.compile(r"\bxox[a-zA-Z]-[A-Za-z0-9-]{8,}\b")),
     ("openai-key", re.compile(r"\bsk-[A-Za-z0-9_-]{16,}")),
-    ("github-token", re.compile(r"\b(?:ghp|github_pat)_[A-Za-z0-9_]{16,}")),
+    ("github-token", re.compile(r"\b(?:gh[pousr]|github_pat)_[A-Za-z0-9_]{16,}")),
     ("aws-access-key", re.compile(r"\b(?:AKIA|ASIA)[A-Z0-9]{16}\b")),
-    ("assignment-secret", re.compile(r"(?i)\b(?:token|password|secret|api[_-]?key)\s*[:=]\s*[^\s,;]{8,}")),
+    (
+        "assignment-secret",
+        re.compile(
+            r"(?i)\b(?:[a-z0-9]+[_-])*(?:api[_-]?key|access[_-]?token|auth[_-]?token|bearer[_-]?token|token|password|secret|client[_-]?secret|private[_-]?key|jwt)\s*[:=]\s*[^\s,;]{8,}"
+        ),
+    ),
 )
 
 

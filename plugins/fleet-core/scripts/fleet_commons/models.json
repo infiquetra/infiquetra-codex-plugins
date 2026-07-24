@@ -59,10 +59,9 @@
       "description": "Bounded extraction and scanner-result reduction.",
       "workspace_boundary": "read-only",
       "external_boundary": "none",
-      "preferred": { "model": "gpt-5.6-luna", "effort": "low" },
+      "preferred": { "model": "gpt-5.6-terra", "effort": "low" },
       "fallbacks": [
-        { "model": "gpt-5.6-terra", "effort": "low" },
-        { "model": "gpt-5.4-mini", "effort": "low" }
+        { "model": "gpt-5.6-sol", "effort": "low" }
       ]
     },
     "monitor-low": {
@@ -70,10 +69,9 @@
       "description": "Network-aware CI, deploy, and runtime observation.",
       "workspace_boundary": "read-only",
       "external_boundary": "allowlisted-read",
-      "preferred": { "model": "gpt-5.6-luna", "effort": "low" },
+      "preferred": { "model": "gpt-5.6-terra", "effort": "low" },
       "fallbacks": [
-        { "model": "gpt-5.6-terra", "effort": "low" },
-        { "model": "gpt-5.4-mini", "effort": "low" }
+        { "model": "gpt-5.6-sol", "effort": "low" }
       ]
     }
   },

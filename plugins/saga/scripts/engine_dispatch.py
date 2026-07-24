@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import bridge_signatures  # noqa: E402
 import chaperone_economics as ce  # noqa: E402
 import engine_resolver  # noqa: E402
+import external_action_contract  # noqa: E402
 import fleet_commons_shim  # noqa: E402
 import manifest_store  # noqa: E402
 import provenance_manifest as pm  # noqa: E402
@@ -41,7 +42,7 @@ PANEL_TOTAL_OUTPUT_BYTES_CAP = 256 * 1024
 # structurally rejected, not policy-rejected (R6, plan U6, binding decision
 # `{#external-engines-never-gatekeepers}` #283). An external engine's output is advisory by
 # construction; no runner may hand back a key that looks like a gate authority surface.
-_GATEKEEPER_KEYS = frozenset({"verdict", "gate_status", "adjudicated"})
+_GATEKEEPER_KEYS = external_action_contract.GATEKEEPER_KEYS
 
 Runner = Callable[[dict[str, Any]], dict[str, Any]]
 PanelForeman = Callable[[tuple[reconcile.PanelMemberEvidence, ...]], reconcile.ReconciliationResult]
@@ -916,7 +917,7 @@ def _reject_gatekeeper_keys(result: dict[str, Any]) -> None:
     """Structurally refuse a runner result that attempts to carry gate/verdict authority (R6).
 
     Policy-level advisory-only behavior is not enough -- a runner shaped to slip a
-    ``verdict``/``gate_status``/``adjudicated`` key past the dispatch boundary must be
+    any gate-shaped key past the dispatch boundary must be
     rejected by the contract itself, never merely ignored.
     """
     found = _GATEKEEPER_KEYS.intersection(result)

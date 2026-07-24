@@ -61,7 +61,7 @@ def test_real_lifecycle_uses_shipped_cli_adapter_dispatch_and_receipt(
         routes={
             action.action_id: {
                 "engine_id": "agy",
-                "variant": "gemini-fixture",
+                "variant": "gemini-3.5-flash-high",
                 "protocol": ["Return advisory evidence only."],
                 "invocation": {
                     "via": "agy:delegate",
@@ -176,7 +176,7 @@ def test_no_output_becomes_invalid_evidence_without_artifact(
         routes={
             action.action_id: {
                 "engine_id": "agy",
-                "variant": "gemini-fixture",
+                "variant": "gemini-3.5-flash-high",
                 "invocation": {
                     "via": "agy:delegate",
                     "recipe": "agy fixture",

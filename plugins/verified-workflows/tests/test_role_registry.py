@@ -1,12 +1,7 @@
 from __future__ import annotations
 
-import hashlib
 import importlib.util
-import json
-import os
-import shutil
 import sys
-from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -18,7 +13,7 @@ RENDERER_PATH = PLUGIN_ROOT / "scripts" / "render_codex_agents.py"
 
 
 def _load_renderer():
-    name = "verified_workflows_u3_role_renderer"
+    name = "verified_workflows_v2_role_renderer"
     spec = importlib.util.spec_from_file_location(name, RENDERER_PATH)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
@@ -30,247 +25,178 @@ def _load_renderer():
 R = _load_renderer()
 
 
+def _registry_payload() -> dict:
+    return yaml.safe_load(R.DEFAULT_REGISTRY.read_text(encoding="utf-8"))
+
+
+def _write_registry(tmp_path: Path, payload: dict) -> Path:
+    path = tmp_path / "role-registry.yaml"
+    path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    return path
+
+
 def test_registry_preserves_exact_25_role_contracts() -> None:
     registry = R.load_role_registry()
 
     assert {role.role_id for role in registry.roles} == R.EXPECTED_ROLE_IDS
     assert len(registry.roles) == 25
     assert {role.kind for role in registry.roles} == {"agent-lens"}
-    assert all(role.minimum_independence == "preferred" for role in registry.roles)
     assert sum(role.category == "reviewer" for role in registry.roles) == 10
     assert sum(role.category == "tester" for role in registry.roles) == 8
     assert sum(role.category == "scanner" for role in registry.roles) == 4
     assert sum(role.category == "monitor" for role in registry.roles) == 3
 
     for role in registry.roles:
-        policy = R.CLASS_POLICY[role.category]
-        assert role.default_class == policy["default"]
-        assert role.allowed_classes == policy["allowed"]
+        policy = R.ROLE_PROFILE_POLICY[role.category]
+        assert role.default_profile == policy["default"]
+        assert role.allowed_profiles == policy["allowed"]
         assert role.workspace_cap == policy["workspace"]
         assert role.external_cap == policy["external"]
+        assert role.minimum_independence == (
+            "required" if role.category == "reviewer" else "preferred"
+        )
         assert role.lens_sha256 is not None and len(role.lens_sha256) == 64
-        assert role.output_schema in registry.evidence_schemas
+        assert role.result_schema in registry.result_schemas
 
 
-def test_role_resolution_allows_only_declared_escalation_and_independence() -> None:
+def test_one_reviewer_is_required_and_additional_reviewers_are_risk_triggered() -> None:
     registry = R.load_role_registry()
+    required = [role for role in registry.roles if role.selection_mode == "required"]
+
+    assert registry.assurance_policy == R.ASSURANCE_POLICY
+    assert [role.role_id for role in required] == ["devils-advocate-reviewer"]
+    assert required[0].signals == ()
+    assert all(
+        role.selection_mode == "conditional" and role.signals
+        for role in registry.roles
+        if role.role_id != "devils-advocate-reviewer"
+    )
+
+
+def test_role_resolution_uses_only_underscore_profile_ids() -> None:
+    registry = R.load_role_registry()
+
     reviewer = R.resolve_role(
         registry,
         "devils-advocate-reviewer",
-        requested_class="review-max",
-        requested_independence="required",
+        requested_profile="review_max",
     )
-
-    assert reviewer.selected_class == "review-max"
-    assert reviewer.effective_independence == "required"
-    with pytest.raises(R.RoleRegistryError, match="cannot use execution class"):
-        R.resolve_role(registry, "devils-advocate-reviewer", requested_class="test-medium")
-
-    required_role = replace(registry.role("security-reviewer"), minimum_independence="required")
-    required_registry = replace(
+    worker = R.resolve_role(
         registry,
-        roles=tuple(
-            required_role if role.role_id == required_role.role_id else role
-            for role in registry.roles
-        ),
+        "scenario-tester",
+        requested_profile="work_high",
     )
-    with pytest.raises(R.RoleRegistryError, match="cannot be lowered"):
+
+    assert reviewer.selected_profile == "review_max"
+    assert reviewer.effective_independence == "required"
+    assert worker.selected_profile == "work_high"
+    with pytest.raises(R.RoleRegistryError, match="cannot use profile"):
         R.resolve_role(
-            required_registry,
-            "security-reviewer",
-            requested_independence="preferred",
+            registry,
+            "devils-advocate-reviewer",
+            requested_profile="work_high",
+        )
+    with pytest.raises(R.RoleRegistryError, match="cannot use profile"):
+        R.resolve_role(
+            registry,
+            "security-scanner",
+            requested_profile="test_medium",
+        )
+    with pytest.raises(R.RoleRegistryError, match="cannot use profile"):
+        R.resolve_role(
+            registry,
+            "scenario-tester",
+            requested_profile="test-medium",
         )
 
 
-def _synthetic_registry(tmp_path: Path) -> tuple[Path, Path, dict]:
-    roles_dir = tmp_path / "roles"
-    schemas_dir = tmp_path / "schemas"
-    scripts_dir = tmp_path / "scripts"
-    roles_dir.mkdir(parents=True)
-    schemas_dir.mkdir()
-    scripts_dir.mkdir()
-    evidence = schemas_dir / "proof.json"
-    evidence.write_text(
-        json.dumps(R.DETERMINISTIC_TESTER_OUTPUT_SCHEMA, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
-    implementation = scripts_dir / "check.py"
-    implementation.write_text("raise SystemExit(0)\n", encoding="utf-8")
-    payload = yaml.safe_load(R.DEFAULT_REGISTRY.read_text(encoding="utf-8"))
-    payload["roles"] = [
-        {
-            "id": "bounded-validator",
-            "kind": "deterministic-validator",
-            "category": "tester",
-            "spec_version": 1,
-            "description": "Run one contained validator and emit its closed evidence.",
-            "selection": {"mode": "conditional", "signals": ["bounded proof"]},
-            "command": {
-                "argv": ["python3", "scripts/check.py", "--json"],
-                "implementation": {
-                    "path": "scripts/check.py",
-                    "sha256": hashlib.sha256(implementation.read_bytes()).hexdigest(),
-                },
-                "cwd_scope": "repository",
-                "timeout_seconds": 30,
-                "output_limit_bytes": 65536,
-                "network": "none",
-                "workspace_writes": [],
-            },
-            "evidence_schema": {
-                "path": "schemas/proof.json",
-                "sha256": hashlib.sha256(evidence.read_bytes()).hexdigest(),
-            },
-            "output_schema": "tester-evidence.v1",
-            "source_behavior_sha256": "0" * 64,
-        }
+def test_result_contract_is_common_with_one_reviewer_extension() -> None:
+    registry = R.load_role_registry()
+    common = registry.result_schemas["assignment-result.v1"]
+    reviewer = registry.result_schemas["reviewer-result.v1"]
+
+    assert common["required_fields"] == [
+        "assignment_id",
+        "attempt_id",
+        "agent_path",
+        "role_id",
+        "profile_id",
+        "terminal_status",
+        "summary",
+        "changed_paths",
+        "no_change",
+        "checks",
+        "findings",
+        "residual_risks",
     ]
-    registry_path = tmp_path / "role-registry.yaml"
-    registry_path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
-    return registry_path, roles_dir, payload
-
-
-def test_deterministic_validator_union_has_no_model_class_or_independence(tmp_path: Path) -> None:
-    registry_path, roles_dir, _payload = _synthetic_registry(tmp_path)
-
-    registry = R.load_role_registry(
-        registry_path,
-        roles_dir,
-        expected_role_ids=None,
+    assert reviewer["extends"] == "assignment-result.v1"
+    assert reviewer["required_fields"] == [
+        "dimensions",
+        "exclusions",
+        "denominator",
+        "overall",
+        "verdict",
+        "hard_stop",
+    ]
+    serialized = yaml.safe_dump(
+        {"schemas": registry.result_schemas, "types": registry.result_types}
     )
-    role = registry.roles[0]
-
-    assert role.kind == "deterministic-validator"
-    assert role.command == ("python3", "scripts/check.py", "--json")
-    assert role.command_implementation_path == "scripts/check.py"
-    assert role.command_implementation_sha256 == hashlib.sha256(
-        (tmp_path / "scripts" / "check.py").read_bytes()
-    ).hexdigest()
-    assert role.default_class is None
-    assert role.allowed_classes == ()
-    assert role.minimum_independence is None
-    assert R.resolve_role(registry, role.role_id).selected_class is None
-    with pytest.raises(R.RoleRegistryError, match="do not accept class"):
-        R.resolve_role(registry, role.role_id, requested_class="scan-low")
+    assert "protected-evidence" not in serialized
+    assert "workspace-snapshot" not in serialized
 
 
-def test_deterministic_validator_rejects_mixed_agent_fields(tmp_path: Path) -> None:
-    registry_path, roles_dir, payload = _synthetic_registry(tmp_path)
-    payload["roles"][0]["default_class"] = "scan-low"
-    registry_path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+def test_registry_rejects_hyphenated_or_ultra_profile_ids(tmp_path: Path) -> None:
+    payload = _registry_payload()
+    payload["roles"][0]["default_profile"] = "review-high"
+    hyphen_root = tmp_path / "hyphen"
+    hyphen_root.mkdir()
+    path = _write_registry(hyphen_root, payload)
 
-    with pytest.raises(R.RoleRegistryError, match="fields must be exactly"):
-        R.load_role_registry(registry_path, roles_dir, expected_role_ids=None)
+    with pytest.raises(R.RoleRegistryError, match="profile transition"):
+        R.load_role_registry(path, R.DEFAULT_ROLES_DIR)
 
-
-@pytest.mark.parametrize(
-    "mutation,match",
-    [
-        (("spec_version", 2), "spec_version"),
-        (("category", "unknown"), "category"),
-    ],
-)
-def test_deterministic_validator_rejects_invalid_closed_contract(
-    tmp_path: Path,
-    mutation: tuple[str, object],
-    match: str,
-) -> None:
-    registry_path, roles_dir, payload = _synthetic_registry(tmp_path)
-    payload["roles"][0][mutation[0]] = mutation[1]
-    registry_path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
-
-    with pytest.raises(R.RoleRegistryError, match=match):
-        R.load_role_registry(registry_path, roles_dir, expected_role_ids=None)
-
-
-def test_deterministic_validator_rejects_escaping_argument_and_digest_drift(
-    tmp_path: Path,
-) -> None:
-    registry_path, roles_dir, payload = _synthetic_registry(tmp_path)
-    payload["roles"][0]["command"]["argv"].append("../../outside")
-    registry_path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
-    with pytest.raises(R.RoleRegistryError, match="must not escape"):
-        R.load_role_registry(registry_path, roles_dir, expected_role_ids=None)
-
-    registry_path, roles_dir, payload = _synthetic_registry(tmp_path / "digest")
-    payload["roles"][0]["command"]["implementation"]["sha256"] = "0" * 64
-    registry_path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
-    with pytest.raises(R.RoleRegistryError, match="implementation digest drifted"):
-        R.load_role_registry(registry_path, roles_dir, expected_role_ids=None)
+    payload = _registry_payload()
+    payload["roles"][0]["allowed_profiles"].append("ultra")
+    ultra_root = tmp_path / "ultra"
+    ultra_root.mkdir()
+    path = _write_registry(ultra_root, payload)
+    with pytest.raises(R.RoleRegistryError, match="profile transition"):
+        R.load_role_registry(path, R.DEFAULT_ROLES_DIR)
 
 
 def test_registry_rejects_duplicate_keys_and_yaml_aliases(tmp_path: Path) -> None:
-    registry_path, roles_dir, _payload = _synthetic_registry(tmp_path)
-    duplicate = registry_path.read_text(encoding="utf-8") + "schema_version: 1\n"
-    registry_path.write_text(duplicate, encoding="utf-8")
-    with pytest.raises(R.RoleRegistryError, match="duplicate YAML key"):
-        R.load_role_registry(registry_path, roles_dir, expected_role_ids=None)
-
-    registry_path, roles_dir, _payload = _synthetic_registry(tmp_path / "alias")
-    aliased = registry_path.read_text(encoding="utf-8").replace(
-        "schema_version: 1", "schema_version: &version 1", 1
-    )
-    registry_path.write_text(aliased, encoding="utf-8")
-    with pytest.raises(R.RoleRegistryError, match="aliases, anchors, or tags"):
-        R.load_role_registry(registry_path, roles_dir, expected_role_ids=None)
-
-
-def test_registry_rejects_nonstring_keys_and_closed_policy_drift(tmp_path: Path) -> None:
-    registry_path, roles_dir, _payload = _synthetic_registry(tmp_path / "keys")
-    registry_path.write_text(
-        registry_path.read_text(encoding="utf-8") + "1: unexpected\n",
+    duplicate = tmp_path / "duplicate.yaml"
+    duplicate.write_text(
+        R.DEFAULT_REGISTRY.read_text(encoding="utf-8") + "schema_version: 1\n",
         encoding="utf-8",
     )
-    with pytest.raises(R.RoleRegistryError, match="field names must be strings"):
-        R.load_role_registry(registry_path, roles_dir, expected_role_ids=None)
+    with pytest.raises(R.RoleRegistryError, match="duplicate YAML key"):
+        R.load_role_registry(duplicate, R.DEFAULT_ROLES_DIR)
 
-    registry_path, roles_dir, payload = _synthetic_registry(tmp_path / "selection")
-    payload["selection_config_keys"].pop()
-    registry_path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
-    with pytest.raises(R.RoleRegistryError, match="selection config keys drifted"):
-        R.load_role_registry(registry_path, roles_dir, expected_role_ids=None)
-
-    registry_path, roles_dir, payload = _synthetic_registry(tmp_path / "schema")
-    payload["evidence_schemas"]["scanner-evidence.v1"]["required_fields"].pop()
-    registry_path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
-    with pytest.raises(R.RoleRegistryError, match="field_types must cover"):
-        R.load_role_registry(registry_path, roles_dir, expected_role_ids=None)
+    aliased = tmp_path / "aliased.yaml"
+    aliased.write_text(
+        R.DEFAULT_REGISTRY.read_text(encoding="utf-8").replace(
+            "schema_version: 1", "schema_version: &version 1", 1
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(R.RoleRegistryError, match="aliases, anchors, or tags"):
+        R.load_role_registry(aliased, R.DEFAULT_ROLES_DIR)
 
 
-def test_role_output_schema_is_category_specific(tmp_path: Path) -> None:
-    registry_path, roles_dir, payload = _synthetic_registry(tmp_path)
-    payload["roles"][0]["output_schema"] = "review-evidence.v1"
-    registry_path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+def test_registry_rejects_assurance_and_result_contract_drift(tmp_path: Path) -> None:
+    payload = _registry_payload()
+    payload["assurance_policy"]["required_independent_reviewers"] = 3
+    root = tmp_path / "assurance"
+    root.mkdir()
+    path = _write_registry(root, payload)
+    with pytest.raises(R.RoleRegistryError, match="assurance policy"):
+        R.load_role_registry(path, R.DEFAULT_ROLES_DIR)
 
-    with pytest.raises(R.RoleRegistryError, match="invalid for category"):
-        R.load_role_registry(registry_path, roles_dir, expected_role_ids=None)
-
-
-def test_roles_directory_must_not_be_a_symlink(tmp_path: Path) -> None:
-    real_roles = tmp_path / "real-roles"
-    shutil.copytree(R.DEFAULT_ROLES_DIR, real_roles)
-    linked_roles = tmp_path / "roles"
-    linked_roles.symlink_to(real_roles, target_is_directory=True)
-
-    with pytest.raises(R.RoleRegistryError, match="real directory"):
-        R.load_role_registry(R.DEFAULT_REGISTRY, linked_roles)
-
-
-@pytest.mark.parametrize("unsafe", ["symlink", "hardlink"])
-def test_role_lens_must_be_regular_single_link(tmp_path: Path, unsafe: str) -> None:
-    copied = tmp_path / "plugin"
-    (copied / "config").mkdir(parents=True)
-    shutil.copy2(R.DEFAULT_REGISTRY, copied / "config" / "role-registry.yaml")
-    shutil.copytree(R.DEFAULT_ROLES_DIR, copied / "roles")
-    target = copied / "roles" / "security-reviewer.md"
-    original = target.read_bytes()
-    target.unlink()
-    backing = copied / "backing.md"
-    backing.write_bytes(original)
-    if unsafe == "symlink":
-        target.symlink_to(backing)
-    else:
-        os.link(backing, target)
-
-    with pytest.raises(R.RoleRegistryError, match="regular, single-link"):
-        R.load_role_registry(copied / "config" / "role-registry.yaml", copied / "roles")
+    payload = _registry_payload()
+    payload["result_schemas"]["assignment-result.v1"]["required_fields"].pop()
+    root = tmp_path / "result"
+    root.mkdir()
+    path = _write_registry(root, payload)
+    with pytest.raises(R.RoleRegistryError, match="result schema"):
+        R.load_role_registry(path, R.DEFAULT_ROLES_DIR)

@@ -150,8 +150,16 @@ TARGET_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
     for name, spec in PRE_CUTOVER_EXPECTED_PLUGINS.items()
     if name != "team-execution"
 }
+TARGET_EXPECTED_PLUGINS["fleet-core"] = {
+    **TARGET_EXPECTED_PLUGINS["fleet-core"],
+    "version": "0.11.0+codex.20260724175626",
+}
+TARGET_EXPECTED_PLUGINS["saga"] = {
+    **TARGET_EXPECTED_PLUGINS["saga"],
+    "version": "0.79.0+codex.20260724175626",
+}
 TARGET_EXPECTED_PLUGINS["verified-workflows"] = {
-    "version": "1.0.3+codex.20260718134043",
+    "version": "2.0.0+codex.20260724175626",
     "skills": ("run", "review-workflow", "appsec-audit", "select-agent"),
 }
 CURRENT_ONLY_LEGACY_PLUGINS = {
@@ -276,7 +284,7 @@ STAGED_MARKETPLACE_SHA256 = (
     "42803919b39b720599b9692bfdcd95bcfe8c31b06ebb2c976aacaa890fdfea8a"
 )
 LEGACY_WORKFLOW_HISTORICAL_INVENTORY_SHA256 = (
-    "42c16a25a764c3939008c473f20d458b108469c1af7ad971df76f217165e2eac"
+    "ae44b6596d35489965715ff1aa39b35c8faecc0a5d56edcefed8f5092a9caf14"
 )
 LEGACY_WORKFLOW_INVENTORY = Path(
     "docs/validation/verified-workflows-legacy-token-inventory.json"
@@ -332,7 +340,6 @@ LEGACY_WORKFLOW_EXACT_CLASSIFICATIONS = {
     Path("plugins/verified-workflows/CHANGELOG.md"): "lineage-documentation",
     Path("scripts/build_legacy_workflow_inventory.py"): "inventory-builder",
     Path("scripts/build_saga_docs_facts.py"): "current-target-projection",
-    Path("scripts/capture_codex_runtime_capabilities.py"): "historical-evidence",
     Path("scripts/port_contract.py"): "frozen-source-contract",
     Path("scripts/prove_codex_plugin_profile.py"): "migration-documentation",
     Path("scripts/render_saga_docs_assets.py"): "migration-documentation",
@@ -1066,7 +1073,7 @@ def validate_verified_workflows_canonical_surface(root: Path, errors: list[str])
 
 
 def validate_verified_workflows_agents(root: Path, errors: list[str]) -> None:
-    """Validate the closed U3 role registry and exact five generated profiles."""
+    """Validate the closed role registry and exact six generated profiles."""
 
     plugin_root = root / "plugins" / "verified-workflows"
     script = plugin_root / "scripts" / "render_codex_agents.py"
@@ -1109,8 +1116,8 @@ def validate_verified_workflows_agents(root: Path, errors: list[str]) -> None:
             raise RuntimeError("renderer made an unsupported runtime claim")
         if receipt.get("registry", {}).get("role_count") != 25:
             raise RuntimeError("renderer did not preserve exactly 25 logical roles")
-        if len(receipt.get("profiles", [])) != 5:
-            raise RuntimeError("renderer did not produce exactly five profiles")
+        if len(receipt.get("profiles", [])) != 6:
+            raise RuntimeError("renderer did not produce exactly six profiles")
         validate_verified_workflows_project_agents(root, receipt, errors)
     except (OSError, RuntimeError, json.JSONDecodeError, subprocess.TimeoutExpired) as exc:
         errors.append(f"verified-workflows: U3 role/profile validation failed: {exc}")
@@ -1151,8 +1158,8 @@ def validate_verified_workflows_project_agents(
             errors.append("verified-workflows: renderer profile entry is invalid")
             continue
         runtime_name = profile.get("runtime_agent_name")
-        execution_class = profile.get("execution_class")
-        if not isinstance(runtime_name, str) or not isinstance(execution_class, str):
+        profile_id = profile.get("profile_id")
+        if not isinstance(runtime_name, str) or not isinstance(profile_id, str):
             errors.append("verified-workflows: renderer profile identity is invalid")
             continue
         project_path = project_agents / f"{runtime_name}.toml"
@@ -1168,7 +1175,7 @@ def validate_verified_workflows_project_agents(
             if project_path.read_bytes() != source_path.read_bytes():
                 errors.append(
                     f".codex/agents/{runtime_name}.toml: project runtime agent bytes "
-                    f"drifted from execution class `{execution_class}`"
+                    f"drifted from profile `{profile_id}`"
                 )
         except OSError as exc:
             errors.append(
@@ -1177,22 +1184,32 @@ def validate_verified_workflows_project_agents(
 
 
 def validate_verified_workflows_runtime(root: Path, errors: list[str]) -> None:
-    """Validate the closed U4 hook, workflow, receipt, gate, and proof surfaces."""
+    """Validate the closed native V2 workflow, result, audit, gate, and proof surfaces."""
 
     plugin_root = root / "plugins" / "verified-workflows"
     required = (
+        plugin_root / "scripts" / "workflow_dispatch.py",
+        plugin_root / "scripts" / "workflow_feasibility.py",
+        plugin_root / "scripts" / "gate_evaluator.py",
+        plugin_root / "scripts" / "protocol_probe.py",
+        plugin_root / "scripts" / "result_contract.py",
+        plugin_root / "scripts" / "run_record.py",
+        plugin_root / "scripts" / "workspace_audit.py",
+        root / "scripts" / "prove_verified_workflows_runtime.py",
+        root / "scripts" / "build_codex_v2_orchestration_matrix.py",
+        root / "docs" / "validation" / "verified-workflows-runtime-proof.json",
+        root / "docs" / "validation" / "codex-v2-orchestration-receipts.json",
+        root / "docs" / "validation" / "codex-v2-orchestration-matrix.json",
+    )
+    retired = (
         plugin_root / "hooks" / "hooks.json",
         plugin_root / "hooks" / "agent_receipt.py",
-        plugin_root / "scripts" / "workflow_dispatch.py",
         plugin_root / "scripts" / "dispatch_receipt.py",
         plugin_root / "scripts" / "protected_store.py",
         plugin_root / "scripts" / "workspace_evidence.py",
         plugin_root / "scripts" / "workflow_records.py",
         plugin_root / "scripts" / "named_child_attestation.py",
-        plugin_root / "scripts" / "gate_evaluator.py",
-        plugin_root / "scripts" / "protocol_probe.py",
-        root / "scripts" / "prove_verified_workflows_runtime.py",
-        root / "docs" / "validation" / "verified-workflows-runtime-proof.json",
+        plugin_root / "scripts" / "raw_hook_maintenance.py",
     )
     references = {
         "workflow-protocol.md",
@@ -1209,45 +1226,13 @@ def validate_verified_workflows_runtime(root: Path, errors: list[str]) -> None:
         if not (reference_root / name).is_file()
     )
     if missing:
-        errors.append(f"verified-workflows: U4 runtime surfaces missing {missing}")
+        errors.append(f"verified-workflows: native V2 runtime surfaces missing {missing}")
         return
-    hooks_path = plugin_root / "hooks" / "hooks.json"
-    hooks = load_json(hooks_path, errors)
-    expected_matcher = "^(review_max|review_high|test_medium|scan_low|monitor_low)$"
-    expected_command = 'python3 "$PLUGIN_ROOT/hooks/agent_receipt.py"'
-    if not isinstance(hooks, dict) or set(hooks) != {"hooks"}:
-        errors.append("verified-workflows hooks: top-level fields must be exactly `hooks`")
-    else:
-        events = hooks.get("hooks")
-        if not isinstance(events, dict) or set(events) != {"SubagentStart", "SubagentStop"}:
-            errors.append("verified-workflows hooks: only SubagentStart/Stop are allowed")
-        else:
-            for event_name, groups in events.items():
-                expected_status = (
-                    "Recording Verified Workflows agent start"
-                    if event_name == "SubagentStart"
-                    else "Recording Verified Workflows agent stop"
-                )
-                valid = (
-                    isinstance(groups, list)
-                    and len(groups) == 1
-                    and isinstance(groups[0], dict)
-                    and set(groups[0]) == {"matcher", "hooks"}
-                    and groups[0].get("matcher") == expected_matcher
-                    and isinstance(groups[0].get("hooks"), list)
-                    and len(groups[0]["hooks"]) == 1
-                    and isinstance(groups[0]["hooks"][0], dict)
-                    and set(groups[0]["hooks"][0])
-                    == {"type", "command", "timeout", "statusMessage"}
-                    and groups[0]["hooks"][0].get("type") == "command"
-                    and groups[0]["hooks"][0].get("command") == expected_command
-                    and groups[0]["hooks"][0].get("timeout") == 10
-                    and groups[0]["hooks"][0].get("statusMessage") == expected_status
-                )
-                if not valid:
-                    errors.append(
-                        f"verified-workflows hooks: {event_name} definition is not closed"
-                    )
+    present_retired = [path.relative_to(root).as_posix() for path in retired if path.exists()]
+    if present_retired:
+        errors.append(
+            f"verified-workflows: retired V1/evidence-chain surfaces remain {present_retired}"
+        )
     proof_path = root / "docs" / "validation" / "verified-workflows-runtime-proof.json"
     proof = load_json(proof_path, errors)
     if proof is None:
@@ -1289,6 +1274,24 @@ def validate_verified_workflows_runtime(root: Path, errors: list[str]) -> None:
             raise RuntimeError("U4 tracked proof must not carry live-envelope evidence")
     except (OSError, RuntimeError, json.JSONDecodeError, subprocess.TimeoutExpired) as exc:
         errors.append(f"verified-workflows: U4 runtime proof validation failed: {exc}")
+    try:
+        matrix = subprocess.run(  # noqa: S603 - fixed repository proof builder
+            [
+                sys.executable,
+                str(root / "scripts" / "build_codex_v2_orchestration_matrix.py"),
+                "--check",
+            ],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+        if matrix.returncode:
+            detail = matrix.stderr.strip().splitlines()[-1] if matrix.stderr.strip() else "failed"
+            raise RuntimeError(detail)
+    except (OSError, RuntimeError, subprocess.TimeoutExpired) as exc:
+        errors.append(f"verified-workflows: U8 runtime matrix validation failed: {exc}")
 
 
 def is_cross_plugin_module(name: str) -> bool:

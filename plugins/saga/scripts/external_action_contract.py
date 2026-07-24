@@ -18,6 +18,10 @@ ID_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{0,127}$")
 STAGES = frozenset({"ideate", "brainstorm", "plan", "work", "doc-review", "code-review"})
 INTENTS = frozenset({"offload", "second-opinion"})
 SENSITIVITY = frozenset({"public", "internal", "sensitive"})
+AUTHORITY = "non-gating"
+GATEKEEPER_KEYS = frozenset(
+    {"adjudicated", "blocking", "gate_status", "hard_stop", "overall", "verdict"}
+)
 
 
 class ContractError(ValueError):

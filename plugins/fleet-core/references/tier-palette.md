@@ -32,8 +32,8 @@ hooks do not observe reasoning effort.
 | `review-max` | Explicit escalation for unusually ambiguous or high-risk review. | workspace=read-only; external=none | `gpt-5.6-sol` / `max` | `gpt-5.6-terra` / `max` -> `gpt-5.5` / `strongest supported scalar` |
 | `review-high` | Architecture, security, adversarial, API, privacy, and quality review. | workspace=read-only; external=none | `gpt-5.6-sol` / `high` | `gpt-5.6-terra` / `high` -> `gpt-5.5` / `high` |
 | `test-medium` | General workers, testers, and interpretation of ambiguous validator output. | workspace=declared-write; external=none | `gpt-5.6-terra` / `medium` | `gpt-5.6-sol` / `medium` -> `gpt-5.5` / `medium` |
-| `scan-low` | Bounded extraction and scanner-result reduction. | workspace=read-only; external=none | `gpt-5.6-luna` / `low` | `gpt-5.6-terra` / `low` -> `gpt-5.4-mini` / `low` |
-| `monitor-low` | Network-aware CI, deploy, and runtime observation. | workspace=read-only; external=allowlisted-read | `gpt-5.6-luna` / `low` | `gpt-5.6-terra` / `low` -> `gpt-5.4-mini` / `low` |
+| `scan-low` | Bounded extraction and scanner-result reduction. | workspace=read-only; external=none | `gpt-5.6-terra` / `low` | `gpt-5.6-sol` / `low` |
+| `monitor-low` | Network-aware CI, deploy, and runtime observation. | workspace=read-only; external=allowlisted-read | `gpt-5.6-terra` / `low` | `gpt-5.6-sol` / `low` |
 <!-- END GENERATED EXECUTION CLASS TABLE -->
 
 Resolution first searches the ordered candidates for the requested effort. Only when no candidate
@@ -42,7 +42,8 @@ clamping, a hidden or API-ineligible model, an absent compatible fallback, and U
 fail loud.
 
 `scan-low` and `monitor-low` intentionally share model policy but remain distinct because their
-external-read boundaries differ.
+external-read boundaries differ. Codex 0.145.0 exposes Luna only through MultiAgent V1, so the
+V2-only cutover selects Terra/low for both profiles.
 
 ## Effort and Ultra
 

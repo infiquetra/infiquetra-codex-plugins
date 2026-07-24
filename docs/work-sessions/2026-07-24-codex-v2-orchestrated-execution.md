@@ -1,0 +1,272 @@
+# Codex V2 Orchestrated Execution Work Session
+
+## Status
+
+U1 through U7 are complete. The compact V2 compiler, runtime receipt and result contracts,
+root-owned assurance gate, Saga external-action integration, and closed V1/evidence-chain removal are
+implemented and validated. U8 now uses fresh `codex exec` sessions with the existing authenticated
+Codex identity and project-discovered candidate profiles; the operator explicitly removed the
+separate-login requirement on 2026-07-24.
+
+## U1: Freeze Lineage And Establish The Runtime Contract
+
+- Froze Claude source range `9470edca65b1db06d2f7562eeb2d5a9e48c34dec..46fefb6f17f0c9d0d63858978536d3369ab57dfe` over the reviewer and validator registries.
+- Classified both source rows as Codex adaptations owned by U6. External advisory output remains opaque, non-gating input under root authority.
+- Added the schema-r3 Codex 0.145.0 snapshot. It separates the active V1 host state from source-confirmed V2 request, response, and rollout-readback contracts.
+- Corrected host capture for canonical concurrency, V2 total-thread semantics, effective project feature state, and Codex's boolean-V2 defaults (`hide_spawn_agent_metadata=true`, `non_code_mode_only=true`).
+- Removed the obsolete V1 managed-profile counter from the active capability capture so the current cutover surface contains no legacy workflow marker.
+- Added a bounded V2 proof harness over `session_meta` plus `turn_context` runtime receipts, exact role/model/effort/provider/permission readback, root-child permission equality, and root-only context exclusion for `fork_turns=none`.
+- The original isolated-login design was superseded in U8: authentication is reused from the active Codex home, while candidate profiles are discovered from project `.codex/agents` and installed plugins remain unchanged before merge.
+- Generalized port contracts for schema version 2, custom frozen refs, dedicated evidence tags, and digest-bound historical capability preimages without changing the historical `2026-07-10` manifest.
+- Deferred all three candidate plugin versions to U8.
+
+## Key Decisions
+
+- Codex 0.145.0 reapplies the parent turn's permission profile after loading a named profile. Strict child work therefore requires a permission-homogeneous parent; a child profile cannot widen or narrow the parent turn independently.
+- Spawn request fields and tool responses are not runtime authority. Runtime authority is the combined child `session_meta` and `turn_context` receipt.
+- Rollout `history_mode` is storage metadata, not proof of `fork_turns` isolation. The probe uses a root-only marker that must be absent from the child rollout.
+- Hooks remain observation surfaces only and cannot substitute for missing V2 readback.
+- U1 may truthfully record a diagnostic probe, but U8 cannot version, merge, install, or cut over until the live full V2 matrix passes with current-session runtime receipts.
+
+## Files
+
+- `scripts/capture_codex_runtime_capabilities.py`
+- `scripts/prove_verified_workflows_runtime.py`
+- `scripts/port_contract.py`
+- `docs/validation/codex-runtime-capability-snapshot.json`
+- `docs/validation/codex-runtime-capability-snapshot.schema-r3.json`
+- `docs/validation/codex-v2-orchestration-baseline.json`
+- `docs/validation/codex-v2-orchestration-runtime-proof.json`
+- `docs/portability/ports/2026-07-24-codex-v2-orchestration.json`
+- `docs/portability/ports/2026-07-24-codex-v2-orchestration-version-policy.json`
+- `docs/portability/classifications/2026-07-24-codex-v2-orchestration.md`
+- Focused tests under `tests/` for capture, schema, proof, and port-contract behavior.
+
+## Checks
+
+- `python3 scripts/port_contract.py validate --manifest docs/portability/ports/2026-07-24-codex-v2-orchestration.json --stage classification`
+- `python3 scripts/port_contract.py verify-source --manifest docs/portability/ports/2026-07-24-codex-v2-orchestration.json --source-repo ../infiquetra-claude-plugins`
+- `python3 scripts/capture_codex_runtime_capabilities.py --check --session-facts-json <allowlisted-current-session-facts>`
+- `python3 scripts/prove_verified_workflows_runtime.py --live --pretty` -> supported current-session V2 root and `review_high` child
+- Focused pytest: 120 passed.
+- Focused Ruff: passed.
+- Repository validator and generated inventory checks: passed.
+- `git diff --check`: passed.
+
+## U2: Publish The Six-Profile And Role Contract
+
+- Added the exact six underscore profile IDs: `review_max`, `review_high`, `work_high`, `test_medium`, `scan_low`, and `monitor_low`.
+- Made profile policy direct and closed: model, effort, workspace ceiling, and external boundary are resolved without an execution-class or model-catalog fallback.
+- Added `work_high` as the explicit Sol/high escalation from `test_medium`; Ultra remains unavailable to child profiles.
+- Reduced the role registry to the 25 maintained role lenses, direct profile mappings, compact result-schema references, and risk-based assurance policy.
+- Made `devils-advocate-reviewer` the one required independent reviewer. Every additional reviewer is selected only by a concrete risk trigger.
+- Replaced protected-evidence result vocabulary on the generated profile surface with `assignment-result.v1` and its reviewer extension, `reviewer-result.v1`.
+- Generated byte-identical maintained and project-discovery profile copies without mutating the active user profile.
+- Updated the capability snapshot, diagnostic proof, portability binding, and legacy-token inventory for the six-profile state.
+
+## U2 Checks
+
+- Focused pytest: 144 passed.
+- Focused Ruff: passed.
+- Profile rendering and isolated sync dry-run: passed.
+- Port classification and frozen-source verification: passed.
+- Repository validator and legacy inventory check: passed.
+- `git diff --check`: passed.
+
+## U3: Compile The Compact Workflow Contract
+
+- Replaced the 18-column evidence parser and intent emitter with a pure three-table compiler for assignments, blocking checks, and external actions.
+- Added exact KTD3 grammars for dependencies, parents, bounded context, profile/model/effort agreement, writes, ordered fallbacks, blocking checks, and fixed `non-gating` external authority.
+- Added acyclic graph, declared-parent, root-only Git, independent fresh-root reviewer, fallback-boundary, and concurrent write-overlap validation.
+- Canonicalized rows and unordered cells into one contract digest, then bound that digest to an explicit approved plan revision. Material edits now fail as a stale approval binding.
+- Emitted root-owned V2 launch specifications only. The compiler stores no runtime status and creates no subjects, snapshots, intents, receipts, or second task tree.
+- Reworked the feasibility review to require Codex V2 named-profile, bounded-context, and runtime-readback capability fields without claiming runtime proof.
+- Updated the workflow protocol and review skill to describe the compact V2 contract.
+
+## U3 Checks
+
+- Compiler and feasibility pytest: 36 passed.
+- Focused Ruff: passed.
+- Repository plan compiled deterministically and returned `ready` against the U1 capability snapshot.
+- Repository validator and legacy inventory regeneration: passed.
+- `git diff --check`: passed.
+
+## U4: Make Native V2 Runtime Results Authoritative
+
+- Replaced the diagnostic protocol fixture with a closed parser and validator over Codex V2 `session_meta` plus `turn_context`.
+- Bound strict work to the exact canonical agent path, configured profile, model, effort, provider, permission, sandbox, and V2 mode; requested fields, profile bytes, messages, and hooks cannot satisfy the receipt.
+- Added real V2 `task_name` descendant derivation, authoritative child-receipt reconciliation, and
+  rejection of every worker Git invocation while keeping messages coordination-only.
+- Added closed `assignment-result.v1` and `reviewer-result.v1` validation, including changed-path ownership, check/finding types, reviewer exclusions, denominator, and arithmetic.
+- Added the lightweight pre/post workspace audit over HEAD, branch, index, all refs, local config,
+  hooks, logs, operation state, and content-bound dirty, untracked, and ignored paths. Sequential
+  writers work without native attribution; concurrent writers require it.
+- Added one owner-controlled, identity-guarded, atomically replaced run record. Same-attempt restoration preserves the path; retry, remediation, and revalidation require a fresh path and classified partial edits.
+- Removed V1 and hook-attestation instructions from the active run and selector skills.
+
+## U4 Checks
+
+- Native runtime, result, run-record, workspace-audit, compiler, feasibility, profile, and role pytest: 83 passed.
+- Focused Ruff: passed.
+- Repository validator and legacy inventory regeneration: passed.
+- `git diff --check`: passed.
+- Current-session strict-worker and fresh-reviewer runtime execution remains part of the blocking U8 matrix.
+
+## U8 Current-Session Proof Correction
+
+- Removed the clean-home and separate-login requirement from the runtime proof. Fresh roots and
+  children are fresh contexts under the current Codex identity, not separate authenticated homes.
+- Confirmed the active legacy `model_catalog_json` override is the only cause of the first V2 child
+  launch failure: it marks Sol and Terra as V1, while the current native Codex model cache marks both
+  as V2.
+- The pre-merge source proof now selects that unmodified native cache with a CLI override and records
+  its digest. The permanent cutover still removes the obsolete user-level V1 catalog pointer.
+- Removed the generated isolated proof home's authentication file and login log. No Hermes or current
+  Codex authentication state was modified.
+
+## U8 Luna Decision
+
+- Codex 0.145.0's native model cache reports Luna as MultiAgent V1 while Sol and Terra report V2.
+  Luna therefore cannot satisfy the V2-only leaf requirement.
+- Applied the plan's preapproved fallback: `scan_low` and `monitor_low` now use Terra/low with their
+  existing read-only and external-access boundaries unchanged. Sol/low is their only ordered V2
+  fallback.
+
+## U8 Live Matrix Observations
+
+- All six project-discovered profiles launched through V2 with exact runtime model and effort
+  readback. Read-only profiles inherited a read-only managed parent; `work_high` and `test_medium`
+  inherited a workspace-write managed parent and made no file changes.
+- Nested delegation completed at `/root/nested_parent/nested_leaf`: `review_high` launched
+  `scan_low`, whose receipt reported Terra/low and V2.
+- One canonical child path completed `send_message`, `list_agents`, `interrupt_agent`,
+  `followup_task`, `wait_agent`, and restoration, finishing with the follow-up result.
+- A root launched at Sol/Ultra and reported effective Ultra. An Ultra request for a `review_max`
+  child produced a normal child whose runtime receipt remained at the profile's Max ceiling; child
+  Ultra was not effective even though the launch request was accepted.
+
+## U5: Reduce Assurance And Bound Remediation
+
+- Replaced receipt-chain adjudication with one root reducer over the approved contract, root-issued
+  attempt authorities, typed V2 results, deterministic check outcomes, fresh-root reviewer
+  identities, verified root-adopted findings, and remediation state.
+- Bound approval and gate evaluation to the registry, exact role-lens bytes, selected generated
+  profile bytes, runtime receipt digest, canonical graph identity, and exact reviewer mandate roster.
+- Made reviewer average `>=9.0`, every applicable dimension `>=7.0`, exact arithmetic, typed exclusions, accepted verdict, and no role hard stop blocking requirements.
+- Kept severity-first behavior: unresolved P0, P1, security, and role hard-stop findings block independently of score; unresolved P2/P3 findings also require remediation.
+- Required every blocking check to be present and pass, with fresh focused revalidation after any remediation.
+- Enforced one workflow-wide remediation counter with rounds zero through three; unresolved work at round three escalates and a fourth automatic round is rejected.
+- Preserved compact reviewer score data in the run record without adding events or evidence chains.
+- Replaced validator/evidence documentation with the compact check, worker, result, and gate contracts.
+
+## U5 Checks
+
+- Gate, result, run-record, runtime, audit, compiler, and feasibility pytest: 88 passed.
+- Focused Ruff: passed.
+- Repository validator and legacy inventory regeneration: passed.
+- `git diff --check`: passed.
+
+## U6: Join External Actions To The Shared Control Plane
+
+- Imported approved workflow external rows into Saga's existing work-stage action lifecycle while
+  binding provider, model, cost, egress allowlist, context, writes, requiredness, and fixed
+  `non-gating` authority.
+- Made current external CLI routes advisory and read-only. They receive a minimal child environment,
+  provider-native read tools, and only declared context after path and high-confidence
+  secret-content screening. Non-empty external write sets fail closed until an enforceable
+  filesystem boundary exists.
+- Added conditional status projection for new action facts without changing retained
+  `status.v1` release-proof hashes, and projected external route outcomes into the same concise
+  Verified Workflows run record.
+- Expanded structural rejection of gate-shaped provider fields and retained the existing root-only
+  independently verified finding-adoption path.
+- Removed Claude edit tools, accepted-edit mode, and the `agy` permission bypass.
+
+## U6 Checks
+
+- External action, registry, dispatch, run-record, gate, and workflow-integration pytest: 210 passed.
+- End-to-end fixture proved approved Claude-route patch capture, root import, status, and same-record
+  projection without a live provider call.
+- Focused Ruff: passed.
+- Repository validator: passed.
+- `git diff --check`: passed.
+
+## U7: Remove Active V1 And Evidence-Chain Surfaces
+
+- Deleted the executable Fleet Core V1 catalog override and its compatibility tests.
+- Deleted Verified Workflows hooks, intent and receipt writers, protected stores, named-child
+  attestation, raw-hook maintenance, full workspace evidence, and the corresponding test suites.
+- Preserved only the compact V2 compiler, feasibility review, runtime probe, typed result contract,
+  workspace audit, gate reducer, and root-owned run record.
+- Extended Fleet Core's normalized catalog projection and schema to preserve each native
+  `multi_agent_version` value without rewriting model rows.
+- Regenerated all six maintained profiles and project-discovery copies against the updated catalog
+  digest, then refreshed both current proof artifacts.
+- Rewrote active root, Fleet Core, Verified Workflows, Saga operator-choice, cutover, portability,
+  manifest, and changelog guidance for native V2. The previous modernization cutover is explicitly
+  historical.
+- Added active-surface regressions against V1 install guidance, forced V1 configuration, five-profile
+  claims, hidden fallback, and retired module imports.
+- Regenerated the legacy-token inventory, Saga facts/assets, and port classification from canonical
+  inputs without versioning the three release candidates.
+
+## U7 Checks
+
+- Full repository pytest: 2,540 passed.
+- Focused U7 migration/regression pytest: 73 passed after the full-suite drift corrections.
+- `uv run ruff check .`: passed.
+- Repository validator, legacy inventory, port classification, Saga facts, and Saga assets: passed.
+- `git diff --check`: passed.
+
+## Review Round 2 Remediation
+
+- Fresh testing, architecture, and security reviewers found gaps in the curated matrix, descendant
+  receipts, gate authority binding, audit coverage, external CLI containment, and project V2 config.
+- The remediation uses current Codex authentication, project-level V2 enablement, a nested depth of
+  two, receipt-derived matrix generation, and no Hermes or credential mutation.
+- Next: regenerate affected proofs and release metadata, rerun focused and full validation, rerun all
+  three fresh V2 reviewers, then continue the approved PR, merge, install, rollback, reapply, and
+  fresh-session proof sequence.
+
+## Remediation Round 3
+
+- Fresh V2 testing, architecture, and security review roots reused the current Codex authentication
+  and project configuration. Runtime receipts proved Sol/max read-only roots and exact Sol/high
+  `review_high` children at the three approved paths; no alternate authentication home, feature
+  override, or Hermes operation was used.
+- Closed every case-specific positive and negative capability marker in the receipt-derived matrix,
+  with table-driven mutation tests for all required markers.
+- Split workspace overlap semantics: pre-existing dirty-state collision remains symmetric, while a
+  changed entry must equal or descend from a declared write. Coarse ignored-repository ancestors can
+  no longer authorize narrower declared files or undeclared siblings.
+- Bound HTTP actions to exact canonical registry invocations and included the executable URL host in
+  workflow egress validation, preventing endpoint and authentication-environment substitution.
+- Expanded the shared secret detector for the maintained GitHub token family, Slack tokens, cloud
+  access keys, and prefixed credential keys and assignments; scoped workspace materialization reuses
+  that detector and rejects undecodable bytes.
+
+## Remediation Round 3 Checks
+
+- Focused matrix, workspace-audit, external-action, adapter, workflow-integration, and runtime pytest:
+  122 passed.
+- Full repository pytest: 2,628 passed.
+- `uv run ruff check .`: passed.
+- Repository validator and `git diff --check`: passed.
+- Next: commit the round-3 remediation, run fresh round-3 revalidation attempts for the three affected
+  reviewers, then continue the approved PR, CI, merge, install, rollback, reapply, and fresh-session
+  proof sequence if all reviewer gates accept.
+
+## Round 3 Revalidation Follow-Up
+
+- Architecture and security fresh revalidation attempts accepted the full diff with 10.0 averages,
+  no findings, and no hard stops.
+- Testing revalidation scored 9.2 and identified two P2 coverage gaps: endpoint and authentication
+  substitutions shared one HTTP test, and the complete GitHub token-family test omitted explicit
+  `ghp_` and `github_pat_` cases.
+- Split the HTTP regression into independent endpoint-only and authentication-only mutations. Added
+  `ghp_` and `github_pat_` to payload and scoped-workspace secret screening cases.
+- Focused affected pytest: 41 passed.
+- Full repository pytest: 2,633 passed.
+- `uv run ruff check .`, repository validation, and `git diff --check`: passed.
+- Next: run a fresh testing-only revalidation attempt within remediation round 3, then proceed only
+  if its reviewer gate accepts.

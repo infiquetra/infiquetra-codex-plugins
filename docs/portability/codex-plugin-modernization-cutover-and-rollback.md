@@ -1,5 +1,8 @@
 # Codex Plugin Modernization Cutover And Rollback
 
+> Historical runbook: this records the completed July 2026 Team Execution-to-Verified Workflows
+> cutover. It is non-current evidence and must not be used for the native Codex V2 release.
+
 This is the operator runbook for the U8 package, profile, hook, and cache cutover. The machine record
 is [codex-plugin-modernization-cutover.json](../validation/codex-plugin-modernization-cutover.json).
 The general port contract remains

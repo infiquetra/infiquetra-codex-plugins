@@ -1,0 +1,153 @@
+{
+  "capability_outcome": "supported",
+  "claim": "codex-v2-runtime-capability",
+  "codex_cli_version": "0.145.0",
+  "harness_sha256": "3c918e52f4377da71cbf8e42281521e3f6d9b229bd9a7f71a677590660847acc",
+  "limitations": [
+    "Codex 0.145.0 child permissions inherit the parent turn after profile loading",
+    "this minimal probe covers one read-only child; the receipt-derived matrix covers the full operation set",
+    "requested spawn fields are never accepted as runtime identity without session_meta and turn_context"
+  ],
+  "live_invocation_performed": true,
+  "mode": "current-session-live",
+  "operations": [
+    "followup_task",
+    "interrupt_agent",
+    "list_agents",
+    "send_message",
+    "spawn_agent",
+    "wait_agent"
+  ],
+  "profiles": [
+    {
+      "profile_id": "review_max",
+      "runtime_agent_name": "review_max",
+      "sha256": "02326611dccfcc6e4666a4e825c1a94044ff651a7e1be5c47842533ce9d8cce8"
+    },
+    {
+      "profile_id": "review_high",
+      "runtime_agent_name": "review_high",
+      "sha256": "3c0b9d8070e300cb84c456fd2ca09ef5999408d84d5a6ee8964303c8b38683d0"
+    },
+    {
+      "profile_id": "work_high",
+      "runtime_agent_name": "work_high",
+      "sha256": "520fcdd1f404adb2e6ac911a50054e5cb230ae557eec693d20ccc54cba322d98"
+    },
+    {
+      "profile_id": "test_medium",
+      "runtime_agent_name": "test_medium",
+      "sha256": "45105c90ed7e2c51b8b0ecffafed16a1dfb2a0ab24c8cdf47a2f5790a672da60"
+    },
+    {
+      "profile_id": "scan_low",
+      "runtime_agent_name": "scan_low",
+      "sha256": "caca93d44de56bf12839f50fc30e013bb210bd19d13b0c6098a6dfb256d80ac7"
+    },
+    {
+      "profile_id": "monitor_low",
+      "runtime_agent_name": "monitor_low",
+      "sha256": "633a29e67fb570814ba079015ce7d6a372ea67fd44d1dc9c156276247375ef36"
+    }
+  ],
+  "project_discovery": {
+    "files": [
+      {
+        "filename": "monitor_low.toml",
+        "sha256": "633a29e67fb570814ba079015ce7d6a372ea67fd44d1dc9c156276247375ef36"
+      },
+      {
+        "filename": "review_high.toml",
+        "sha256": "3c0b9d8070e300cb84c456fd2ca09ef5999408d84d5a6ee8964303c8b38683d0"
+      },
+      {
+        "filename": "review_max.toml",
+        "sha256": "02326611dccfcc6e4666a4e825c1a94044ff651a7e1be5c47842533ce9d8cce8"
+      },
+      {
+        "filename": "scan_low.toml",
+        "sha256": "caca93d44de56bf12839f50fc30e013bb210bd19d13b0c6098a6dfb256d80ac7"
+      },
+      {
+        "filename": "test_medium.toml",
+        "sha256": "45105c90ed7e2c51b8b0ecffafed16a1dfb2a0ab24c8cdf47a2f5790a672da60"
+      },
+      {
+        "filename": "work_high.toml",
+        "sha256": "520fcdd1f404adb2e6ac911a50054e5cb230ae557eec693d20ccc54cba322d98"
+      }
+    ],
+    "location": ".codex/agents",
+    "regular_files_only": true,
+    "source_bytes_match": true
+  },
+  "reason": "current-session Codex V2 rollout attests project profile and effective runtime fields",
+  "runtime_readback_fields": [
+    "agent_path",
+    "agent_role",
+    "model",
+    "reasoning_effort",
+    "model_provider",
+    "approval_policy",
+    "permission_profile",
+    "sandbox_policy",
+    "multi_agent_version"
+  ],
+  "runtime_receipt": {
+    "catalog": {
+      "luna_multi_agent_version": "v1",
+      "required_v2_models": [
+        "gpt-5.6-sol",
+        "gpt-5.6-terra"
+      ],
+      "sha256": "490e0edbfbdcd93d85c8f79c175f3f5bf2962a4bbcfea778f2b3f0eca329b668",
+      "source": "native-model-cache"
+    },
+    "child": {
+      "agent_path": "/root/v2_config_probe",
+      "agent_role": "scan_low",
+      "approval_policy": "never",
+      "history_mode": "legacy",
+      "model": "gpt-5.6-terra",
+      "model_provider": "openai",
+      "multi_agent_version": "v2",
+      "parent_context_marker_observed": false,
+      "permission_profile": "managed",
+      "reasoning_effort": "low",
+      "sandbox_mode": "read-only",
+      "terminal_marker_observed": true,
+      "terminal_status": "completed"
+    },
+    "profile_sha256": "caca93d44de56bf12839f50fc30e013bb210bd19d13b0c6098a6dfb256d80ac7",
+    "root": {
+      "approval_policy": "never",
+      "model": "gpt-5.6-sol",
+      "model_provider": "openai",
+      "multi_agent_version": "v2",
+      "operations_observed": [
+        "list_agents",
+        "spawn_agent",
+        "wait_agent"
+      ],
+      "permission_profile": "managed",
+      "reasoning_effort": "max",
+      "sandbox_mode": "read-only"
+    }
+  },
+  "schema_version": 2,
+  "snapshot_sha256": "f89c79db0f511fe1804ba50fa3673ae53a9a4440cd9b5039c82d93cf0f33dde2",
+  "spawn_request_fields": [
+    "agent_type",
+    "fork_turns",
+    "message",
+    "model",
+    "reasoning_effort",
+    "service_tier",
+    "task_name"
+  ],
+  "spawn_response_fields": [
+    "nickname",
+    "task_name"
+  ],
+  "tool_namespace": "agents"
+}

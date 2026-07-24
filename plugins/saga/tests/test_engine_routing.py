@@ -220,7 +220,7 @@ def test_capability_dispatch_returns_variant_protocol_and_payload(registry: Any)
     assert resolution.effort == "high"
     assert "claude --safe-mode" in resolution.recipe
     assert resolution.payload == "\n".join(resolution.protocol) + "\n\n" + context
-    assert resolution.write_capable is True
+    assert resolution.write_capable is False
     assert resolution.fallback is None
     assert resolution.halt is None
 
@@ -552,14 +552,15 @@ def test_dispatch_short_circuits_when_resolution_already_halted() -> None:
     assert evidence.provenance["status"] == "halted"
 
 
-def test_external_gatekeeper_fields_are_rejected_structurally() -> None:
+@pytest.mark.parametrize("gate_key", sorted(D._GATEKEEPER_KEYS))
+def test_external_gatekeeper_fields_are_rejected_structurally(gate_key: str) -> None:
     with pytest.raises(D.DispatchError, match="never gatekeepers"):
         D.dispatch(
             _resolution(),
             runner=lambda _invocation: {
                 "status": "ok",
                 "output": "plausible text",
-                "verdict": "pass",
+                gate_key: "provider-claimed-authority",
             },
         )
 

@@ -27,8 +27,9 @@ procedure is:
 1. Validate this repo at the intended commit.
 2. Capture and validate the protected local rollback bundle under ignored `.codex/cutover/` state.
 3. Install the ten target plugins from this repo-managed marketplace using the Codex plugin CLI.
-4. Sync exactly five marker-owned profiles with the expected pre-state digest.
-5. Start a fresh Codex session and confirm the expected skills, hooks, model, and effort receipts.
+4. Sync exactly six marker-owned V2 profiles with the expected pre-state digest.
+5. Start a fresh Codex session and confirm skill discovery plus exact V2 profile, model, effort,
+   provider, and effective-permission readback from `session_meta` and `turn_context`.
 6. Keep the previous cache bytes in the rollback bundle until all readback gates pass.
 
 Do not edit files under `/Users/jefcox/.codex/plugins/cache/infiquetra-plugins` as source.
@@ -42,7 +43,7 @@ Exact old-invocation replacement rows live in
   `mission-control`.
 - Lifecycle routing, planning, handoff, document classification, and review
   entrypoints: `saga`.
-- Reviewer consensus, validator protocol, and truthful inline evidence:
+- Workflow contracts, native V2 execution, typed results, independent review, and concise gates:
   `verified-workflows`.
 - Tag promotion, deployment status, hotfix, rollback, and release-note preview:
   `deploy`.
@@ -51,9 +52,9 @@ Exact old-invocation replacement rows live in
 
 If repo-managed install validation fails:
 
-1. Restore the exact pre-cutover marketplace, config, hooks, managed-agent files, legacy state,
-   and installed package bytes from the validated local rollback bundle.
-2. Reinstall the retired workflow package from the restored local marketplace and remove the
-   failed Verified Workflows install.
-3. Restart Codex and verify the pre-state hashes exactly.
+1. Restore the exact pre-cutover marketplace, project and user config, managed-agent files, model
+   catalog state, workflow state, and installed package bytes from the validated local rollback
+   bundle.
+2. Restore the exact pre-cutover Fleet Core, Saga, and Verified Workflows versions.
+3. Restart Codex and verify the complete pre-state hashes exactly.
 4. Record the failed gate and fix this repo before retrying.

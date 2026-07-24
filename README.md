@@ -7,11 +7,11 @@ Codex-ready plugin surface, currently:
 
 | Plugin | Version | Status |
 |---|---:|---|
-| `saga` | 0.75.17 | active |
+| `saga` | 0.79.0+codex.20260724175626 | active |
 | `deploy` | 0.1.1 | active |
-| `mission-control` | 2.4.0 | active |
-| `verified-workflows` | 1.0.2 | active |
-| `fleet-core` | 0.8.5 | active (library) |
+| `mission-control` | 2.4.2 | active |
+| `verified-workflows` | 2.0.0+codex.20260724175626 | active |
+| `fleet-core` | 0.11.0+codex.20260724175626 | active (library) |
 | `discord-identity-assets` | 0.2.0 | proof port |
 | `home-lab-ops` | 1.0.0 | baseline |
 | `python-toolkit` | 1.0.0 | baseline |
@@ -26,18 +26,16 @@ Exact migration rows live in
 
 The operator-facing Saga family guide lives in `docs/saga/README.md`.
 
-## GPT-5.6 Agent Compatibility
+## Codex V2 Agents
 
-Codex currently assigns Sol and Terra to unfinished MultiAgent V2 through the model catalog. Restore
-the stable named-agent model and effort controls with:
+Verified Workflows uses Codex V2 directly. The main session orchestrates the live DAG, and six
+maintained profiles provide explicit model, effort, permission intent, and role-lens defaults:
+`review_max`, `review_high`, `work_high`, `test_medium`, `scan_low`, and `monitor_low`.
 
-```bash
-python3 plugins/fleet-core/scripts/codex_v1_catalog.py install
-```
-
-Restart Codex and open a fresh session, then invoke `verified-workflows:select-agent` to choose one
-of the five maintained profiles. `/agent` switches among threads after an agent is spawned. Re-run
-the install command after model-catalog updates; Ultra remains unverified under this override.
+Use `verified-workflows:select-agent` for a direct named-agent launch. Approved workflow runs use
+`verified-workflows:review-workflow` followed by `verified-workflows:run`. Runtime identity is
+accepted only from matching V2 `session_meta` and `turn_context` readback; profile files and prompts
+are configuration, not execution proof. `/agent` switches among the root and spawned threads.
 
 ## Layout
 

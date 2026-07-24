@@ -49,7 +49,7 @@ def test_generate_static_proof_contains_required_evidence(tmp_path: Path) -> Non
     assert proof["flows"]["mission_control"]["mutation_plan_present"] is True
     assert proof["flows"]["mission_control"]["confirmation_refused"] is True
     assert proof["flows"]["mission_control"]["mutation_occurred"] is False
-    assert proof["flows"]["verified_workflows"]["outcome"] == "inline-only"
+    assert proof["flows"]["verified_workflows"]["outcome"] == "diagnostic"
     assert proof["flows"]["verified_workflows"]["runtime_proof"] is False
     assert proof["flows"]["verified_workflows"]["root_acceptance_required"] is True
     assert proof["state_proof"]["ignored"][".codex/saga/"] is True
@@ -75,7 +75,7 @@ def test_rendered_markdown_redacts_local_profile_paths() -> None:
                 "mutation_plan_present": True,
                 "confirmation_refused": True,
             },
-            "verified_workflows": {"outcome": "inline-only", "runtime_proof": False},
+            "verified_workflows": {"outcome": "diagnostic", "runtime_proof": False},
         },
     }
     text = proof_script.render_markdown(proof)
@@ -93,7 +93,7 @@ def test_target_fixture_identity_is_read_only_and_released() -> None:
 
     assert proof["mode"] == "target-fixture"
     assert proof["workflow_plugin"] == "verified-workflows"
-    assert proof["workflow_version"] == "1.0.3+codex.20260718134043"
+    assert proof["workflow_version"] == "2.0.0+codex.20260724175626"
     assert proof["workflow_skills"] == ["appsec-audit", "review-workflow", "run", "select-agent"]
     assert proof["publication_status"] == "released"
     assert proof["legacy_workflow_marketplace_listed"] is False

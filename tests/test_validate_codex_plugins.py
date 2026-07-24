@@ -104,10 +104,17 @@ def copy_verified_workflows_runtime_target(tmp_path: Path) -> Path:
         REPO_ROOT / "scripts" / "prove_verified_workflows_runtime.py",
         root / "scripts" / "prove_verified_workflows_runtime.py",
     )
+    shutil.copy2(
+        REPO_ROOT / "scripts" / "build_codex_v2_orchestration_matrix.py",
+        root / "scripts" / "build_codex_v2_orchestration_matrix.py",
+    )
     shutil.copytree(REPO_ROOT / ".codex" / "agents", root / ".codex" / "agents")
+    shutil.copy2(REPO_ROOT / ".codex" / "config.toml", root / ".codex" / "config.toml")
     (root / "docs" / "validation").mkdir(parents=True)
     for name in (
         "codex-runtime-capability-snapshot.json",
+        "codex-v2-orchestration-receipts.json",
+        "codex-v2-orchestration-matrix.json",
         "verified-workflows-runtime-proof.json",
     ):
         shutil.copy2(
@@ -228,7 +235,7 @@ def test_target_plugin_set_describes_saga_family_cutover():
         "discord-identity-assets",
     )
     assert TARGET_EXPECTED_PLUGINS["verified-workflows"] == {
-        "version": "1.0.3+codex.20260718134043",
+        "version": "2.0.0+codex.20260724175626",
         "skills": ("run", "review-workflow", "appsec-audit", "select-agent"),
     }
     assert "team-execution" not in TARGET_EXPECTED_PLUGINS
@@ -314,14 +321,14 @@ def test_target_fixture_rejects_duplicate_plugin_entries():
         "plugins": [
             {
                 "name": "verified-workflows",
-                "version": "1.0.3+codex.20260718134043",
+                "version": "2.0.0+codex.20260724175626",
                 "publication_status": "released",
                 "skills": ["run", "review-workflow", "appsec-audit", "select-agent"],
                 "forbidden_active_dirs": [".claude-plugin", "commands"],
             },
             {
                 "name": "verified-workflows",
-                "version": "1.0.3+codex.20260718134043",
+                "version": "2.0.0+codex.20260724175626",
                 "publication_status": "released",
                 "skills": ["run", "review-workflow", "appsec-audit", "select-agent"],
                 "forbidden_active_dirs": [".claude-plugin", "commands"],
@@ -405,14 +412,15 @@ def test_verified_workflows_role_profiles_are_part_of_repo_validation() -> None:
 def test_verified_workflows_project_agents_bind_generated_runtime_names() -> None:
     errors: list[str] = []
     profiles = [
-        {"execution_class": execution_class, "runtime_agent_name": runtime_name}
-        for execution_class, runtime_name in {
-            "review-max": "review_max",
-            "review-high": "review_high",
-            "test-medium": "test_medium",
-            "scan-low": "scan_low",
-            "monitor-low": "monitor_low",
-        }.items()
+        {"profile_id": profile_id, "runtime_agent_name": profile_id}
+        for profile_id in (
+            "review_max",
+            "review_high",
+            "work_high",
+            "test_medium",
+            "scan_low",
+            "monitor_low",
+        )
     ]
 
     validate_verified_workflows_project_agents(
@@ -443,7 +451,7 @@ def test_verified_workflows_project_agents_reject_stale_profile_bytes(
         {
             "profiles": [
                 {
-                    "execution_class": "review-high",
+                    "profile_id": "review_high",
                     "runtime_agent_name": "review_high",
                 }
             ]
@@ -462,9 +470,9 @@ def test_verified_workflows_runtime_surfaces_are_part_of_repo_validation() -> No
     assert errors == []
 
 
-def test_verified_workflows_runtime_rejects_missing_hook(tmp_path: Path) -> None:
+def test_verified_workflows_runtime_rejects_missing_v2_surface(tmp_path: Path) -> None:
     root = copy_verified_workflows_runtime_target(tmp_path)
-    (root / "plugins" / "verified-workflows" / "hooks" / "hooks.json").unlink()
+    (root / "plugins" / "verified-workflows" / "scripts" / "run_record.py").unlink()
     errors: list[str] = []
 
     validate_verified_workflows_runtime(root, errors)
@@ -472,17 +480,15 @@ def test_verified_workflows_runtime_rejects_missing_hook(tmp_path: Path) -> None
     assert any("runtime surfaces missing" in error for error in errors)
 
 
-def test_verified_workflows_runtime_rejects_open_hook_definition(tmp_path: Path) -> None:
+def test_verified_workflows_runtime_rejects_retired_evidence_surface(tmp_path: Path) -> None:
     root = copy_verified_workflows_runtime_target(tmp_path)
-    hook_path = root / "plugins" / "verified-workflows" / "hooks" / "hooks.json"
-    payload = json.loads(hook_path.read_text())
-    payload["extra"] = True
-    hook_path.write_text(json.dumps(payload))
+    retired = root / "plugins" / "verified-workflows" / "scripts" / "protected_store.py"
+    retired.write_text("# retired fixture\n", encoding="utf-8")
     errors: list[str] = []
 
     validate_verified_workflows_runtime(root, errors)
 
-    assert any("top-level fields" in error for error in errors)
+    assert any("retired V1/evidence-chain surfaces remain" in error for error in errors)
 
 
 def test_verified_workflows_runtime_rejects_stale_proof(tmp_path: Path) -> None:
@@ -686,6 +692,13 @@ def test_legacy_workflow_tokens_require_an_explicit_path_classification(tmp_path
             Path("plugins/saga/scripts/new_serializer.py")
         )
         is None
+    )
+
+
+def test_active_capability_capture_has_no_legacy_workflow_tokens():
+    assert (
+        "scripts/capture_codex_runtime_capabilities.py"
+        not in legacy_workflow_file_facts(REPO_ROOT)
     )
 
 

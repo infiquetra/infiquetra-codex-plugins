@@ -267,18 +267,18 @@
           "skill_path": "plugins/saga/skills/loop/SKILL.md"
         }
       ],
-      "version": "0.78.0+codex.20260720120109"
+      "version": "0.79.0+codex.20260724175626"
     },
     "verified-workflows": {
       "skills": [
         {
-          "description": "Run an approved Infiquetra plan as a root-owned Codex workflow DAG with explicit dependencies, logical role lenses, risk-selected execution classes, fresh per-attempt contexts, truthful inline execution, diagnostic child receipts, deterministic validator evidence, and severity-first completion gates. Use when a plan contains `## Workflow Structure` or explicitly requests Verified Workflows.",
+          "description": "Run an approved Infiquetra Workflow Contract as a root-owned Codex V2 DAG with exact named profiles, bounded context, typed results, independent review, deterministic checks, and one concise run record.",
           "name": "run",
           "namespace": "verified-workflows:run",
           "skill_path": "plugins/verified-workflows/skills/run/SKILL.md"
         },
         {
-          "description": "Review an approved Workflow Structure for attainable root-inline, advisory-child, or strict-child evidence before workflow execution. Use when a plan contains `## Workflow Structure`, a workflow gate blocks unexpectedly, or the operator wants to confirm that named subagent profiles are not being mistaken for observed runtime proof.",
+          "description": "Review an approved Workflow Contract for Codex V2 profile, graph, context, write, check, reviewer, fallback, and external-action feasibility without launching work.",
           "name": "review-workflow",
           "namespace": "verified-workflows:review-workflow",
           "skill_path": "plugins/verified-workflows/skills/review-workflow/SKILL.md"
@@ -290,13 +290,13 @@
           "skill_path": "plugins/verified-workflows/skills/appsec-audit/SKILL.md"
         },
         {
-          "description": "Show and launch the five maintained Infiquetra Codex agent profiles. Use when the operator asks to list, choose, select, or start a review, test, scan, or monitor agent, or wants the pre-spawn agent-picker experience before using /agent to switch threads.",
+          "description": "Show and launch the six maintained Infiquetra Codex V2 agent profiles. Use when the operator asks to list, choose, select, or start a review, work, test, scan, or monitor agent, or wants the pre-spawn agent-picker experience before using /agent to switch threads.",
           "name": "select-agent",
           "namespace": "verified-workflows:select-agent",
           "skill_path": "plugins/verified-workflows/skills/select-agent/SKILL.md"
         }
       ],
-      "version": "1.0.3+codex.20260718134043"
+      "version": "2.0.0+codex.20260724175626"
     }
   },
   "saga_routing": {

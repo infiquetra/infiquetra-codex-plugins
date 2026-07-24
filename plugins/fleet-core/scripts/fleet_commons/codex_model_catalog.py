@@ -23,6 +23,7 @@ COMMAND_TIMEOUT_SECONDS = 15.0
 MAX_OUTPUT_BYTES = 16 * 1024 * 1024
 CATALOG_EFFORTS = frozenset({"none", "minimal", "low", "medium", "high", "xhigh", "max", "ultra"})
 CATALOG_VISIBILITIES = frozenset({"list", "hide"})
+MULTI_AGENT_VERSIONS = frozenset({None, "v1", "v2"})
 MODEL_SLUG_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 
 
@@ -48,6 +49,7 @@ class CatalogModel:
     supported_efforts: tuple[str, ...]
     visibility: str
     supported_in_api: bool
+    multi_agent_version: str | None
 
     @property
     def selectable(self) -> bool:
@@ -60,6 +62,7 @@ class CatalogModel:
             "supported_efforts": list(self.supported_efforts),
             "visibility": self.visibility,
             "supported_in_api": self.supported_in_api,
+            "multi_agent_version": self.multi_agent_version,
         }
 
 
@@ -187,6 +190,7 @@ def normalize_catalog(
         levels = raw.get("supported_reasoning_levels")
         visibility = raw.get("visibility")
         supported_in_api = raw.get("supported_in_api")
+        multi_agent_version = raw.get("multi_agent_version")
         if not isinstance(slug, str) or not MODEL_SLUG_RE.fullmatch(slug) or slug in seen_slugs:
             raise CatalogError(f"model row {index} has a missing or duplicate slug")
         if default not in CATALOG_EFFORTS:
@@ -205,6 +209,8 @@ def normalize_catalog(
             raise CatalogError(f"model {slug!r} default effort is not in its supported levels")
         if visibility not in CATALOG_VISIBILITIES or not isinstance(supported_in_api, bool):
             raise CatalogError(f"model {slug!r} has malformed visibility/API support")
+        if multi_agent_version not in MULTI_AGENT_VERSIONS:
+            raise CatalogError(f"model {slug!r} has an unsupported multi-agent version")
         seen_slugs.add(slug)
         models.append(
             CatalogModel(
@@ -213,6 +219,7 @@ def normalize_catalog(
                 supported_efforts=tuple(efforts),
                 visibility=visibility,
                 supported_in_api=supported_in_api,
+                multi_agent_version=multi_agent_version,
             )
         )
     normalized = [model.to_jsonable() for model in models]

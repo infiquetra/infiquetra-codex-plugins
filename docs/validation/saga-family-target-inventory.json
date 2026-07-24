@@ -5,7 +5,7 @@
   "plugins": [
     {
       "name": "saga",
-      "version": "0.78.0+codex.20260720120109",
+      "version": "0.79.0+codex.20260724175626",
       "skills": [
         "office-hours",
         "ideate",
@@ -72,7 +72,7 @@
     },
     {
       "name": "verified-workflows",
-      "version": "1.0.3+codex.20260718134043",
+      "version": "2.0.0+codex.20260724175626",
       "publication_status": "released",
       "skills": [
         "run",
@@ -154,7 +154,7 @@
     },
     {
       "name": "fleet-core",
-      "version": "0.10.0+codex.20260720120109",
+      "version": "0.11.0+codex.20260724175626",
       "skills": [],
       "library": true,
       "forbidden_active_dirs": [
