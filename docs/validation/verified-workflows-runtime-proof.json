@@ -2,8 +2,7 @@
   "capability_outcome": "diagnostic",
   "claim": "codex-v2-runtime-capability",
   "codex_cli_version": "0.145.0",
-  "harness_sha256": "f7d6bb8446412ec6fc8be8c26ac239e32a2fb874e18dd5ecb3956fb399e34559",
-  "isolated_login_metadata_present": null,
+  "harness_sha256": "8547e7f9a9f0066426f5fe2c92a6dc3f22aba7cb035ab214f440e7abd21baec1",
   "limitations": [
     "Codex 0.145.0 child permissions inherit the parent turn after profile loading",
     "the U1 probe covers one read-only configured child; the complete operation matrix remains U8",
@@ -82,7 +81,7 @@
     "regular_files_only": true,
     "source_bytes_match": true
   },
-  "reason": "source and configuration contract only; no live isolated receipt supplied",
+  "reason": "source and configuration contract only; no live runtime receipt supplied",
   "runtime_readback_fields": [
     "agent_path",
     "agent_role",

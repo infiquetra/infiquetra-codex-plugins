@@ -54,8 +54,8 @@
   ],
   "v2_baseline": {
     "configured_agent_selection": "source-confirmed",
-    "isolated_profile_sync": "applied-source-bytes-match",
-    "runtime_receipt": "auth-unavailable",
+    "project_profile_discovery": "source-bytes-match",
+    "runtime_receipt": "supported-current-session-native-cache",
     "permission_behavior": "child-inherits-parent-turn",
     "full_matrix": "pending-u8"
   },

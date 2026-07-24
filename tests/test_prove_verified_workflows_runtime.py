@@ -100,8 +100,6 @@ def test_dry_run_is_v2_diagnostic_and_sanitized() -> None:
         snapshot=value,
         snapshot_sha256=digest,
         live=False,
-        codex_home=None,
-        authenticated_isolated_home=False,
     )
 
     assert proof["capability_outcome"] == "diagnostic"
@@ -112,6 +110,30 @@ def test_dry_run_is_v2_diagnostic_and_sanitized() -> None:
     assert proof["project_discovery"]["location"] == ".codex/agents"
     assert proof["project_discovery"]["source_bytes_match"] is True
     P.validate_sanitized_proof(proof)
+
+
+def test_native_model_cache_requires_v2_rows(tmp_path: Path) -> None:
+    home = tmp_path / "codex"
+    home.mkdir()
+    cache = home / "models_cache.json"
+    cache.write_text(
+        json.dumps(
+            {
+                "models": [
+                    {"slug": "gpt-5.6-sol", "multi_agent_version": "v2"},
+                    {"slug": "gpt-5.6-terra", "multi_agent_version": "v1"},
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    path, receipt = P._native_model_cache(home, ("gpt-5.6-sol",))
+    assert path == cache
+    assert receipt["source"] == "native-model-cache"
+    assert receipt["required_v2_models"] == ["gpt-5.6-sol"]
+    with pytest.raises(P.RuntimeProofError, match="not V2"):
+        P._native_model_cache(home, ("gpt-5.6-terra",))
 
 
 def test_rollout_parser_combines_session_meta_and_turn_context() -> None:
@@ -188,60 +210,17 @@ def test_root_only_context_in_child_rollout_fails() -> None:
         P.validate_runtime_receipt(receipt, expected())
 
 
-def test_live_requires_explicit_isolated_home_and_acknowledgement(tmp_path: Path) -> None:
+def test_live_requires_runtime_receipt() -> None:
     value, digest = snapshot()
-    with pytest.raises(P.RuntimeProofError, match="requires an explicit isolated"):
+    with pytest.raises(P.RuntimeProofError, match="requires a runtime receipt"):
         P.build_proof(
             snapshot=value,
             snapshot_sha256=digest,
             live=True,
-            codex_home=None,
-            authenticated_isolated_home=False,
-        )
-    home = tmp_path / "isolated-home"
-    home.mkdir(mode=0o700)
-    auth = home / "auth.json"
-    auth.write_bytes(b"present")
-    auth.chmod(0o600)
-    with pytest.raises(P.RuntimeProofError, match="acknowledgement"):
-        P.build_proof(
-            snapshot=value,
-            snapshot_sha256=digest,
-            live=True,
-            codex_home=home,
-            authenticated_isolated_home=False,
         )
 
 
-def test_missing_isolated_login_is_auth_unavailable(tmp_path: Path) -> None:
-    value, digest = snapshot()
-    home = tmp_path / "isolated-home"
-    home.mkdir(mode=0o700)
-
-    proof = P.build_proof(
-        snapshot=value,
-        snapshot_sha256=digest,
-        live=True,
-        codex_home=home,
-        authenticated_isolated_home=True,
-    )
-
-    assert proof["capability_outcome"] == "auth-unavailable"
-    assert proof["isolated_login_metadata_present"] is False
-
-
-def test_committed_auth_unavailable_preflight_is_current(tmp_path: Path) -> None:
-    value, digest = snapshot()
-    home = tmp_path / "isolated-home"
-    home.mkdir(mode=0o700)
-
-    proof = P.build_proof(
-        snapshot=value,
-        snapshot_sha256=digest,
-        live=True,
-        codex_home=home,
-        authenticated_isolated_home=True,
-    )
+def test_committed_live_proof_is_supported_and_sanitized() -> None:
     committed = json.loads(
         (
             ROOT
@@ -251,12 +230,10 @@ def test_committed_auth_unavailable_preflight_is_current(tmp_path: Path) -> None
         ).read_text(encoding="utf-8")
     )
 
-    assert committed == proof
-
-
-def test_default_profile_tree_is_rejected() -> None:
-    with pytest.raises(P.RuntimeProofError, match="default Codex profile"):
-        P._validate_isolated_home(Path.home() / ".codex")
+    assert committed["capability_outcome"] == "supported"
+    assert committed["mode"] == "current-session-live"
+    assert committed["live_invocation_performed"] is True
+    P.validate_sanitized_proof(committed)
 
 
 def test_secret_or_absolute_host_path_fails_proof_validation() -> None:
@@ -287,10 +264,15 @@ def test_snapshot_projection_records_inherited_not_per_child_sandbox() -> None:
         P._snapshot_projection(value)
 
 
-def test_live_command_is_closed_and_does_not_copy_default_auth() -> None:
+def test_live_command_reuses_current_auth_and_project_profiles() -> None:
     source = SCRIPT.read_text()
 
     assert "shutil.copy" not in source
     assert "shell=True" not in source
     assert 'env["CODEX_HOME"]' in source
+    assert '"auth.json"' not in source
+    assert '"models_cache.json"' in source
+    assert "infiquetra-v1.json" not in source
     assert '"--strict-config"' in source
+    assert '"multi_agent_v2"' in source
+    assert "str(REPO_ROOT)" in source

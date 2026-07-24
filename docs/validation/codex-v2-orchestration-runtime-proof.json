@@ -1,16 +1,15 @@
 {
-  "capability_outcome": "auth-unavailable",
+  "capability_outcome": "supported",
   "claim": "codex-v2-runtime-capability",
   "codex_cli_version": "0.145.0",
-  "harness_sha256": "f7d6bb8446412ec6fc8be8c26ac239e32a2fb874e18dd5ecb3956fb399e34559",
-  "isolated_login_metadata_present": false,
+  "harness_sha256": "8547e7f9a9f0066426f5fe2c92a6dc3f22aba7cb035ab214f440e7abd21baec1",
   "limitations": [
     "Codex 0.145.0 child permissions inherit the parent turn after profile loading",
     "the U1 probe covers one read-only configured child; the complete operation matrix remains U8",
     "requested spawn fields are never accepted as runtime identity without session_meta and turn_context"
   ],
-  "live_invocation_performed": false,
-  "mode": "live-preflight",
+  "live_invocation_performed": true,
+  "mode": "current-session-live",
   "operations": [
     "followup_task",
     "interrupt_agent",
@@ -82,7 +81,7 @@
     "regular_files_only": true,
     "source_bytes_match": true
   },
-  "reason": "isolated home has no separately established login",
+  "reason": "current-session Codex V2 rollout attests project profile and effective runtime fields",
   "runtime_readback_fields": [
     "agent_path",
     "agent_role",
@@ -94,7 +93,45 @@
     "sandbox_policy",
     "multi_agent_version"
   ],
-  "runtime_receipt": null,
+  "runtime_receipt": {
+    "catalog": {
+      "required_v2_models": [
+        "gpt-5.6-sol"
+      ],
+      "sha256": "490e0edbfbdcd93d85c8f79c175f3f5bf2962a4bbcfea778f2b3f0eca329b668",
+      "source": "native-model-cache"
+    },
+    "child": {
+      "agent_path": "/root/u1_probe",
+      "agent_role": "review_high",
+      "approval_policy": "never",
+      "history_mode": "legacy",
+      "model": "gpt-5.6-sol",
+      "model_provider": "openai",
+      "multi_agent_version": "v2",
+      "parent_context_marker_observed": false,
+      "permission_profile": "managed",
+      "reasoning_effort": "high",
+      "sandbox_mode": "read-only",
+      "terminal_marker_observed": true,
+      "terminal_status": "completed"
+    },
+    "profile_sha256": "3c0b9d8070e300cb84c456fd2ca09ef5999408d84d5a6ee8964303c8b38683d0",
+    "root": {
+      "approval_policy": "never",
+      "model": "gpt-5.6-sol",
+      "model_provider": "openai",
+      "multi_agent_version": "v2",
+      "operations_observed": [
+        "list_agents",
+        "spawn_agent",
+        "wait_agent"
+      ],
+      "permission_profile": "managed",
+      "reasoning_effort": "max",
+      "sandbox_mode": "read-only"
+    }
+  },
   "schema_version": 2,
   "snapshot_sha256": "55db69b01ec7bcda10c18597f78d1b8a08b37b587867f46c869b2c0d513ec182",
   "spawn_request_fields": [

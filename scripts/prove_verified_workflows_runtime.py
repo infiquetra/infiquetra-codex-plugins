@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prove the minimal Codex V2 runtime identity boundary in an isolated home."""
+"""Prove the minimal Codex V2 runtime identity boundary with the active login."""
 
 from __future__ import annotations
 
@@ -12,7 +12,6 @@ import re
 import stat
 import subprocess
 import sys
-import tempfile
 import tomllib
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -28,7 +27,7 @@ import render_codex_agents as renderer  # noqa: E402
 DEFAULT_SNAPSHOT = REPO_ROOT / "docs" / "validation" / "codex-runtime-capability-snapshot.json"
 PROJECT_AGENTS = REPO_ROOT / ".codex" / "agents"
 MAX_BYTES = 4 * 1024 * 1024
-MAX_ROLLOUTS = 64
+MAX_NEW_ROLLOUTS = 16
 TERMINAL_MARKER = "U1_V2_CHILD_OK"
 ROOT_MARKER = "U1_V2_ROOT_OK"
 PARENT_ONLY_MARKER = "U1_V2_PARENT_ONLY_CONTEXT"
@@ -96,20 +95,30 @@ def _load_json(path: Path, where: str) -> tuple[dict[str, Any], str]:
     return payload, _sha256(content)
 
 
-def _assert_no_symlink_components(path: Path) -> None:
-    if not path.is_absolute():
-        raise RuntimeProofError("isolated CODEX_HOME must be absolute")
-    current = Path(path.anchor)
-    for part in path.parts[1:]:
-        current /= part
-        try:
-            metadata = current.lstat()
-        except FileNotFoundError:
-            break
-        except OSError as exc:
-            raise RuntimeProofError("isolated CODEX_HOME is unreadable") from exc
-        if stat.S_ISLNK(metadata.st_mode):
-            raise RuntimeProofError("isolated CODEX_HOME must be symlink-free")
+def _native_model_cache(
+    codex_home: Path, required_models: Sequence[str]
+) -> tuple[Path, dict[str, Any]]:
+    path = codex_home / "models_cache.json"
+    payload, digest = _load_json(path, "native Codex model cache")
+    rows = payload.get("models")
+    if not isinstance(rows, list):
+        raise RuntimeProofError("native Codex model cache lacks model rows")
+    versions: dict[str, str | None] = {}
+    for row in rows:
+        if not isinstance(row, dict):
+            raise RuntimeProofError("native Codex model cache has a malformed row")
+        slug = row.get("slug")
+        version = row.get("multi_agent_version")
+        if isinstance(slug, str):
+            versions[slug] = version if isinstance(version, str) else None
+    required = sorted(set(required_models))
+    if any(versions.get(model) != "v2" for model in required):
+        raise RuntimeProofError("required model is not V2 in the native Codex model cache")
+    return path, {
+        "source": "native-model-cache",
+        "sha256": digest,
+        "required_v2_models": required,
+    }
 
 
 def _reject_default_profile_input(path: Path, where: str) -> None:
@@ -117,37 +126,6 @@ def _reject_default_profile_input(path: Path, where: str) -> None:
     candidate = path.expanduser().resolve(strict=False)
     if candidate == default or default in candidate.parents:
         raise RuntimeProofError(f"{where} must not read from the default Codex profile tree")
-
-
-def _validate_isolated_home(path: Path) -> bool:
-    _assert_no_symlink_components(path)
-    default = (Path.home() / ".codex").resolve(strict=False)
-    candidate = path.resolve(strict=False)
-    if candidate == default or candidate in default.parents or default in candidate.parents:
-        raise RuntimeProofError("live proof refuses the default Codex profile tree")
-    try:
-        metadata = path.lstat()
-    except FileNotFoundError:
-        raise RuntimeProofError("live proof requires an existing isolated CODEX_HOME") from None
-    if (
-        not stat.S_ISDIR(metadata.st_mode)
-        or metadata.st_uid != os.getuid()
-        or metadata.st_mode & 0o022
-    ):
-        raise RuntimeProofError("isolated CODEX_HOME must be a user-owned safe directory")
-    auth_path = path / "auth.json"
-    try:
-        auth = auth_path.lstat()
-    except FileNotFoundError:
-        return False
-    if (
-        not stat.S_ISREG(auth.st_mode)
-        or auth.st_nlink != 1
-        or auth.st_uid != os.getuid()
-        or auth.st_mode & 0o077
-    ):
-        raise RuntimeProofError("isolated authentication metadata is unsafe")
-    return auth.st_size > 0
 
 
 def _snapshot_projection(snapshot: Mapping[str, Any]) -> dict[str, Any]:
@@ -392,15 +370,15 @@ def _project_agent_facts() -> dict[str, Any]:
     }
 
 
-def _installed_profile_expectation(codex_home: Path, profile: str) -> dict[str, str]:
+def _project_profile_expectation(profile: str) -> dict[str, str]:
     if not TASK_NAME_RE.fullmatch(profile):
         raise RuntimeProofError("profile name is invalid")
     source = PLUGIN_ROOT / "agents" / f"{profile}.toml"
-    installed = codex_home / "agents" / f"{profile}.toml"
+    installed = PROJECT_AGENTS / f"{profile}.toml"
     source_bytes = _read_regular(source, "source profile", 1024 * 1024)
-    installed_bytes = _read_regular(installed, "installed isolated profile", 1024 * 1024)
+    installed_bytes = _read_regular(installed, "project-discovered profile", 1024 * 1024)
     if source_bytes != installed_bytes:
-        raise RuntimeProofError("isolated profile bytes do not match source")
+        raise RuntimeProofError("project profile bytes do not match source")
     try:
         payload = tomllib.loads(source_bytes.decode("utf-8"))
     except (UnicodeDecodeError, tomllib.TOMLDecodeError) as exc:
@@ -423,10 +401,7 @@ def _rollout_paths(codex_home: Path) -> set[Path]:
     sessions = codex_home / "sessions"
     if not sessions.exists():
         return set()
-    paths = set(sessions.glob("**/rollout-*.jsonl"))
-    if len(paths) > MAX_ROLLOUTS:
-        raise RuntimeProofError("isolated home contains too many rollout files")
-    return paths
+    return set(sessions.glob("**/rollout-*.jsonl"))
 
 
 def _thread_id_from_exec_output(stdout: bytes) -> str | None:
@@ -443,15 +418,19 @@ def _thread_id_from_exec_output(stdout: bytes) -> str | None:
 
 
 def run_live_probe(
-    *, codex_home: Path, profile: str = "review_high", task_name: str = "u1_probe"
+    *, profile: str = "review_high", task_name: str = "u1_probe"
 ) -> dict[str, Any]:
-    if not _validate_isolated_home(codex_home):
-        raise RuntimeProofError("isolated home has no separately established login")
     if not TASK_NAME_RE.fullmatch(task_name):
         raise RuntimeProofError("task name is invalid")
-    expected_profile = _installed_profile_expectation(codex_home, profile)
+    expected_profile = _project_profile_expectation(profile)
     if expected_profile["sandbox_mode"] != "read-only":
         raise RuntimeProofError("the minimal U1 live probe requires a read-only profile")
+    codex_home = Path(os.environ.get("CODEX_HOME", Path.home() / ".codex")).expanduser()
+    if not codex_home.is_dir():
+        raise RuntimeProofError("the active Codex home is unavailable")
+    native_catalog_path, native_catalog = _native_model_cache(
+        codex_home, ("gpt-5.6-sol", expected_profile["model"])
+    )
     before = _rollout_paths(codex_home)
     prompt = (
         f"Retain this root-only marker and never include it in the child message: "
@@ -464,35 +443,39 @@ def run_live_probe(
     )
     env = os.environ.copy()
     env["CODEX_HOME"] = str(codex_home)
-    with tempfile.TemporaryDirectory(prefix="u1-v2-probe-", dir=codex_home) as workspace:
-        argv = [
-            "codex",
-            "exec",
-            "--json",
-            "--skip-git-repo-check",
-            "--ignore-rules",
-            "--strict-config",
-            "-C",
-            workspace,
-            "--sandbox",
-            "read-only",
-            "-m",
-            "gpt-5.6-sol",
-            "-c",
-            'model_reasoning_effort="max"',
-            prompt,
-        ]
-        try:
-            result = subprocess.run(
-                argv,
-                check=False,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                timeout=240,
-                env=env,
-            )
-        except subprocess.TimeoutExpired as exc:
-            raise RuntimeProofError("Codex V2 live probe timed out") from exc
+    argv = [
+        "codex",
+        "exec",
+        "--json",
+        "--ignore-rules",
+        "--strict-config",
+        "--enable",
+        "multi_agent",
+        "--enable",
+        "multi_agent_v2",
+        "-C",
+        str(REPO_ROOT),
+        "--sandbox",
+        "read-only",
+        "-m",
+        "gpt-5.6-sol",
+        "-c",
+        'model_reasoning_effort="max"',
+        "-c",
+        f"model_catalog_json={json.dumps(str(native_catalog_path))}",
+        prompt,
+    ]
+    try:
+        result = subprocess.run(
+            argv,
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=240,
+            env=env,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeProofError("Codex V2 live probe timed out") from exc
     if len(result.stdout) > MAX_BYTES or len(result.stderr) > MAX_BYTES:
         raise RuntimeProofError("Codex V2 live probe exceeded the output ceiling")
     if result.returncode:
@@ -501,6 +484,8 @@ def run_live_probe(
     created = sorted(after - before)
     if not created:
         raise RuntimeProofError("Codex V2 live probe produced no rollout receipts")
+    if len(created) > MAX_NEW_ROLLOUTS:
+        raise RuntimeProofError("Codex V2 live probe produced too many rollout receipts")
     parsed = []
     for path in created:
         content = _read_regular(path, "live rollout")
@@ -547,6 +532,7 @@ def run_live_probe(
     if not required_operations.issubset(root_ops):
         raise RuntimeProofError("Codex V2 root receipt lacks required probe operations")
     return {
+        "catalog": native_catalog,
         "root": {
             key: root.get(key)
             for key in (
@@ -587,38 +573,24 @@ def build_proof(
     snapshot: dict[str, Any],
     snapshot_sha256: str,
     live: bool,
-    codex_home: Path | None,
-    authenticated_isolated_home: bool,
     runtime_receipt: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     projection = _snapshot_projection(snapshot)
-    login_metadata_present: bool | None = None
-    if live:
-        if codex_home is None:
-            raise RuntimeProofError("--live requires an explicit isolated --codex-home")
-        login_metadata_present = _validate_isolated_home(codex_home)
-        if login_metadata_present and not authenticated_isolated_home:
-            raise RuntimeProofError(
-                "isolated login metadata requires an explicit operator acknowledgement"
-            )
-    elif codex_home is not None or authenticated_isolated_home or runtime_receipt is not None:
-        raise RuntimeProofError("isolated-home arguments require --live")
-    if live and login_metadata_present is False:
-        outcome = "auth-unavailable"
-        reason = "isolated home has no separately established login"
-    elif live and runtime_receipt is None:
+    if live and runtime_receipt is None:
         raise RuntimeProofError("authenticated live proof requires a runtime receipt")
     elif live:
         outcome = "supported"
-        reason = "isolated Codex V2 rollout attests configured profile and effective runtime fields"
+        reason = "current-session Codex V2 rollout attests project profile and effective runtime fields"
+    elif runtime_receipt is not None:
+        raise RuntimeProofError("a runtime receipt requires --live")
     else:
         outcome = "diagnostic"
-        reason = "source and configuration contract only; no live isolated receipt supplied"
+        reason = "source and configuration contract only; no live runtime receipt supplied"
     proof = {
         "schema_version": 2,
         "claim": "codex-v2-runtime-capability",
         "harness_sha256": _sha256(_read_regular(Path(__file__), "runtime proof harness")),
-        "mode": "isolated-live" if runtime_receipt is not None else "live-preflight" if live else "dry-run",
+        "mode": "current-session-live" if runtime_receipt is not None else "dry-run",
         "capability_outcome": outcome,
         "reason": reason,
         "snapshot_sha256": snapshot_sha256,
@@ -630,7 +602,6 @@ def build_proof(
         "operations": projection["operations"],
         "profiles": _profile_facts(),
         "project_discovery": _project_agent_facts(),
-        "isolated_login_metadata_present": login_metadata_present,
         "live_invocation_performed": runtime_receipt is not None,
         "runtime_receipt": runtime_receipt,
         "limitations": [
@@ -677,25 +648,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--snapshot", type=Path, default=DEFAULT_SNAPSHOT)
     parser.add_argument("--live", action="store_true")
-    parser.add_argument("--codex-home", type=Path)
-    parser.add_argument("--authenticated-isolated-home", action="store_true")
     parser.add_argument("--profile", default="review_high")
     parser.add_argument("--task-name", default="u1_probe")
     parser.add_argument("--pretty", action="store_true")
     args = parser.parse_args(argv)
     try:
         _reject_default_profile_input(args.snapshot, "capability snapshot")
-        if args.codex_home is not None:
-            _reject_default_profile_input(args.codex_home, "isolated CODEX_HOME")
         snapshot, digest = _load_json(args.snapshot, "capability snapshot")
         receipt = None
-        if args.live and args.codex_home is not None and _validate_isolated_home(args.codex_home):
-            if not args.authenticated_isolated_home:
-                raise RuntimeProofError(
-                    "isolated login metadata requires an explicit operator acknowledgement"
-                )
+        if args.live:
             receipt = run_live_probe(
-                codex_home=args.codex_home,
                 profile=args.profile,
                 task_name=args.task_name,
             )
@@ -703,8 +665,6 @@ def main(argv: Sequence[str] | None = None) -> int:
             snapshot=snapshot,
             snapshot_sha256=digest,
             live=args.live,
-            codex_home=args.codex_home,
-            authenticated_isolated_home=args.authenticated_isolated_home,
             runtime_receipt=receipt,
         )
     except RuntimeProofError as exc:
