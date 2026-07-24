@@ -42,8 +42,77 @@ def test_fabricated_runtime_profile_fails_closed() -> None:
     payload["receipt_set_sha256"] = M._canonical_sha256(
         {"catalog": payload["catalog"], "receipts": payload["receipts"]}
     )
-    with pytest.raises(M.MatrixError, match="profile receipt scan_low"):
+    with pytest.raises(M.MatrixError, match="profile_scan_low runtime tuple"):
         M.build_matrix(payload)
+
+
+@pytest.mark.parametrize(
+    ("case", "field", "value"),
+    [
+        ("nested_leaf", "model", "gpt-5.6-sol"),
+        ("nested_parent", "sandbox_mode", "workspace-write"),
+        ("lifecycle_child", "agent_role", "scan_low"),
+        ("no_history_child", "model", "gpt-5.6-sol"),
+        ("bounded_child", "reasoning_effort", "medium"),
+        ("typed_child", "agent_role", "review_high"),
+        ("ultra_root", "model", "gpt-5.6-terra"),
+        ("ultra_child", "terminal", True),
+    ],
+)
+def test_every_capability_receipt_field_is_fail_closed(
+    case: str, field: str, value: object
+) -> None:
+    payload = copy.deepcopy(receipts())
+    row = next(item for item in payload["receipts"] if item["case"] == case)
+    row[field] = value
+    payload["receipt_set_sha256"] = M._canonical_sha256(
+        {"catalog": payload["catalog"], "receipts": payload["receipts"]}
+    )
+    with pytest.raises(M.MatrixError, match=f"receipt {case} runtime tuple"):
+        M.build_matrix(payload)
+
+
+def test_rollout_parser_projects_runtime_and_typed_result(tmp_path: Path) -> None:
+    rows = [
+        {
+            "type": "session_meta",
+            "payload": {
+                "id": "child",
+                "parent_thread_id": "root",
+                "agent_path": "/root/typed_result",
+                "agent_role": "scan_low",
+                "model_provider": "openai",
+                "multi_agent_version": "v2",
+                "history_mode": "legacy",
+            },
+        },
+        {
+            "type": "turn_context",
+            "payload": {
+                "model": "gpt-5.6-terra",
+                "effort": "low",
+                "approval_policy": "never",
+                "permission_profile": {"type": "managed"},
+                "sandbox_policy": {"type": "read-only"},
+                "multi_agent_version": "v2",
+            },
+        },
+        {
+            "type": "event_msg",
+            "payload": {
+                "type": "task_complete",
+                "last_agent_message": json.dumps(M.TYPED_RESULT, separators=(",", ":")),
+            },
+        },
+    ]
+    path = tmp_path / "rollout.jsonl"
+    path.write_text("\n".join(json.dumps(row) for row in rows) + "\n")
+    projection, session_id, parent_id = M._parse_rollout("typed_child", path)
+    assert session_id == "child"
+    assert parent_id == "root"
+    assert projection["typed_result_valid"] is True
+    assert projection["terminal"] is True
+    assert projection["model"] == "gpt-5.6-terra"
 
 
 def test_rollout_digest_tampering_fails_before_derivation() -> None:

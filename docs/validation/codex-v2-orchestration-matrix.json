@@ -15,7 +15,7 @@
     "no_history_child_excluded_root_only_marker": true
   },
   "generated_from": {
-    "builder_sha256": "d63187062660201b657d4761a886eda2b0782fe21a240a844ed6c295bae64f0d",
+    "builder_sha256": "5c6e86180b80c23ecf6198843075732dca1e2b62756784de60e6f41f1d3baab1",
     "project_config_sha256": "25dd9c8da4aa333ea03da151cb023831b2ae20555aa8deb84f2d955440466806",
     "receipt_artifact": "docs/validation/codex-v2-orchestration-receipts.json",
     "receipt_set_sha256": "37c49a7aef5f4fb334e9329daecbf2b6c11c03c1488b587601e819dbdc926b14"

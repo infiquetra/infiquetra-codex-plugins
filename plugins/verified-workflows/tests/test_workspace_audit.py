@@ -94,6 +94,26 @@ def test_ignored_out_of_scope_content_change_fails(tmp_path: Path) -> None:
         W.validate_attempt_audit(before, after, declared_writes=["src"])
 
 
+def test_ignored_nested_repository_is_content_bound_without_git_metadata(
+    tmp_path: Path,
+) -> None:
+    repo = repository(tmp_path)
+    (repo / ".gitignore").write_text(".codex/proofs/\n")
+    git(repo, "add", ".gitignore")
+    git(repo, "commit", "-qm", "ignore proof workspaces")
+    nested = repo / ".codex" / "proofs" / "u8-seeded" / "tmp" / "plugin"
+    nested.mkdir(parents=True)
+    git(nested, "init", "-q")
+    (nested / "result.txt").write_text("first\n")
+
+    before = W.capture_workspace_audit(repo)
+    (nested / "result.txt").write_text("second\n")
+    after = W.capture_workspace_audit(repo)
+
+    with pytest.raises(W.WorkspaceAuditError, match="outside declared ownership"):
+        W.validate_attempt_audit(before, after, declared_writes=["src"])
+
+
 def test_non_head_ref_change_fails(tmp_path: Path) -> None:
     repo = repository(tmp_path)
     before = W.capture_workspace_audit(repo)

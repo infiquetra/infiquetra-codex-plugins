@@ -17,6 +17,7 @@ CREDENTIAL_KEY = re.compile(
 )
 PATTERNS = (
     ("bearer-token", re.compile(r"(?i)\bBearer\s+[A-Za-z0-9._~+/=-]{12,}")),
+    ("slack-token", re.compile(r"\bxox[a-zA-Z]-[A-Za-z0-9-]{8,}\b")),
     ("openai-key", re.compile(r"\bsk-[A-Za-z0-9_-]{16,}")),
     ("github-token", re.compile(r"\b(?:ghp|github_pat)_[A-Za-z0-9_]{16,}")),
     ("aws-access-key", re.compile(r"\b(?:AKIA|ASIA)[A-Z0-9]{16}\b")),

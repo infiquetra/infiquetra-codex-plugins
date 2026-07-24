@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import hashlib
 import io
-import re
 import shutil
 import subprocess
 import tarfile
@@ -13,6 +12,8 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+import external_action_egress as egress
 
 
 class WorkspaceError(RuntimeError):
@@ -23,13 +24,6 @@ MAX_PATCH_BYTES = 8 * 1024 * 1024
 MAX_CONTEXT_ARCHIVE_BYTES = 64 * 1024 * 1024
 SECRET_PATH_PARTS = frozenset(
     {".env", "secrets", "credentials", ".aws", ".ssh", ".gnupg", "private-keys"}
-)
-SECRET_CONTENT_PATTERNS = (
-    re.compile(rb"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"),
-    re.compile(rb"\bAKIA[0-9A-Z]{16}\b"),
-    re.compile(rb"\bgh[pousr]_[A-Za-z0-9]{20,}\b"),
-    re.compile(rb"\bsk-ant-[A-Za-z0-9_-]{20,}\b"),
-    re.compile(rb"\bsk-proj-[A-Za-z0-9_-]{20,}\b"),
 )
 
 
@@ -209,7 +203,11 @@ def _visible_member(path: str, visible: tuple[str, ...]) -> bool:
 
 
 def _contains_secret(content: bytes) -> bool:
-    return any(pattern.search(content) is not None for pattern in SECRET_CONTENT_PATTERNS)
+    try:
+        text = content.decode("utf-8")
+    except UnicodeDecodeError:
+        return True
+    return bool(egress.sanitize(text).detections)
 
 
 def _scan_checkout_for_secrets(checkout: Path) -> None:

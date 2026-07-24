@@ -109,41 +109,66 @@ def _status_entries(content: bytes) -> tuple[tuple[str, str], ...]:
                 raise ValueError
         except (IndexError, ValueError) as exc:
             raise WorkspaceAuditError("git porcelain-v2 output is malformed") from exc
-        normalized = dispatch._repo_path(path, "git status path")
+        normalized = _audit_repo_path(path, "git status path")
         entries.append((normalized, hashlib.sha256(record).hexdigest()))
     return tuple(sorted(entries))
 
 
-def _workspace_path_digest(repo_root: Path, relative: str) -> str:
-    path = repo_root / relative
+def _audit_repo_path(value: str, where: str) -> str:
     try:
-        metadata = path.lstat()
-    except FileNotFoundError:
-        return hashlib.sha256(b"missing").hexdigest()
-    mode = stat.S_IMODE(metadata.st_mode)
-    if stat.S_ISREG(metadata.st_mode):
-        if metadata.st_size > MAX_GIT_OUTPUT_BYTES:
-            raise WorkspaceAuditError(f"workspace path {relative!r} exceeds the audit ceiling")
-        payload = b"file\0" + f"{mode:o}\0".encode() + path.read_bytes()
-    elif stat.S_ISLNK(metadata.st_mode):
-        payload = b"symlink\0" + os.readlink(path).encode("utf-8", "surrogateescape")
-    elif stat.S_ISDIR(metadata.st_mode):
-        rows: list[bytes] = []
-        for child in sorted(path.rglob("*"), key=lambda item: item.as_posix()):
-            child_relative = child.relative_to(repo_root).as_posix()
-            rows.append(
-                child_relative.encode("utf-8", "surrogateescape")
-                + b"\0"
-                + _workspace_path_digest(repo_root, child_relative).encode()
+        return dispatch._repo_path(value, where)
+    except dispatch.WorkflowDispatchError as exc:
+        raise WorkspaceAuditError(f"{where} is invalid") from exc
+
+
+def _workspace_path_digest(repo_root: Path, relative: str) -> str:
+    budget = [MAX_GIT_OUTPUT_BYTES]
+
+    def consume(size: int) -> None:
+        budget[0] -= size
+        if budget[0] < 0:
+            raise WorkspaceAuditError(
+                f"workspace path {relative!r} exceeds the audit ceiling"
             )
-            if sum(map(len, rows)) > MAX_GIT_OUTPUT_BYTES:
+
+    def digest(path: Path) -> str:
+        try:
+            metadata = path.lstat()
+        except FileNotFoundError:
+            return hashlib.sha256(b"missing").hexdigest()
+        mode = stat.S_IMODE(metadata.st_mode)
+        if stat.S_ISREG(metadata.st_mode):
+            if metadata.st_size > MAX_GIT_OUTPUT_BYTES:
                 raise WorkspaceAuditError(
-                    f"workspace directory {relative!r} exceeds the audit ceiling"
+                    f"workspace path {relative!r} exceeds the audit ceiling"
                 )
-        payload = b"directory\0" + b"\n".join(rows)
-    else:
-        raise WorkspaceAuditError(f"workspace path {relative!r} has an unsupported file type")
-    return hashlib.sha256(payload).hexdigest()
+            content = path.read_bytes()
+            payload = b"file\0" + f"{mode:o}\0".encode() + content
+        elif stat.S_ISLNK(metadata.st_mode):
+            target = os.readlink(path).encode("utf-8", "surrogateescape")
+            consume(len(target))
+            payload = b"symlink\0" + target
+        elif stat.S_ISDIR(metadata.st_mode):
+            rows: list[bytes] = []
+            for child in sorted(path.iterdir(), key=lambda item: item.name):
+                if child.name == ".git":
+                    continue
+                child_relative = child.relative_to(repo_root).as_posix()
+                row = (
+                    child_relative.encode("utf-8", "surrogateescape")
+                    + b"\0"
+                    + digest(child).encode()
+                )
+                consume(len(row))
+                rows.append(row)
+            payload = b"directory\0" + f"{mode:o}\0".encode() + b"\n".join(rows)
+        else:
+            raise WorkspaceAuditError(
+                f"workspace path {relative!r} has an unsupported file type"
+            )
+        return hashlib.sha256(payload).hexdigest()
+
+    return digest(repo_root / relative)
 
 
 def _content_bound_entries(
@@ -155,9 +180,8 @@ def _content_bound_entries(
     for raw_path in ignored.split(b"\0"):
         if not raw_path:
             continue
-        path = dispatch._repo_path(
-            raw_path.decode("utf-8", "surrogateescape"), "ignored workspace path"
-        )
+        decoded = raw_path.decode("utf-8", "surrogateescape").rstrip("/")
+        path = _audit_repo_path(decoded, "ignored workspace path")
         records.setdefault(path, hashlib.sha256(b"ignored").hexdigest())
     return tuple(
         sorted(
@@ -288,7 +312,7 @@ def validate_attempt_audit(
     if concurrent_writable and not mutation_attribution:
         raise WorkspaceAuditError("concurrent writable attempts require proven per-agent attribution")
     allowed = tuple(
-        dispatch._repo_path(path, "declared write")
+        _audit_repo_path(path, "declared write")
         for path in declared_writes
         if not path.startswith("unit:")
     )

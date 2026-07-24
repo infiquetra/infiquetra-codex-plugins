@@ -79,6 +79,49 @@ PROFILE_CASES = {
     "scan_low": "profile_scan_low",
     "monitor_low": "profile_monitor_low",
 }
+RECEIPT_FIELDS = {
+    "case",
+    "rollout_sha256",
+    "agent_path",
+    "agent_role",
+    "model",
+    "reasoning_effort",
+    "model_provider",
+    "approval_policy",
+    "permission_profile",
+    "sandbox_mode",
+    "multi_agent_version",
+    "history_mode",
+    "terminal",
+    "operations",
+    "markers",
+    "typed_result_valid",
+    "parent_case",
+}
+EXPECTED_CASE_RUNTIME = {
+    "bounded_child": ("/root/bounded_context", "scan_low", "gpt-5.6-terra", "low", "read-only", True),
+    "bounded_root": ("/root", "root", "gpt-5.6-sol", "max", "read-only", True),
+    "lifecycle_child": ("/root/lifecycle", "review_high", "gpt-5.6-sol", "high", "read-only", True),
+    "lifecycle_root": ("/root", "root", "gpt-5.6-sol", "max", "read-only", True),
+    "nested_leaf": ("/root/nested_parent/nested_leaf", "scan_low", "gpt-5.6-terra", "low", "read-only", True),
+    "nested_parent": ("/root/nested_parent", "review_high", "gpt-5.6-sol", "high", "read-only", True),
+    "nested_root": ("/root", "root", "gpt-5.6-sol", "max", "read-only", True),
+    "no_history_child": ("/root/v2_config_probe", "scan_low", "gpt-5.6-terra", "low", "read-only", True),
+    "no_history_root": ("/root", "root", "gpt-5.6-sol", "max", "read-only", True),
+    "profile_monitor_low": ("/root/profile_monitor_low", "monitor_low", "gpt-5.6-terra", "low", "read-only", True),
+    "profile_read_root": ("/root", "root", "gpt-5.6-sol", "max", "read-only", True),
+    "profile_review_high": ("/root/profile_review_high", "review_high", "gpt-5.6-sol", "high", "read-only", True),
+    "profile_review_max": ("/root/profile_review_max", "review_max", "gpt-5.6-sol", "max", "read-only", True),
+    "profile_scan_low": ("/root/profile_scan_low", "scan_low", "gpt-5.6-terra", "low", "read-only", True),
+    "profile_test_medium": ("/root/profile_test_medium", "test_medium", "gpt-5.6-terra", "medium", "workspace-write", True),
+    "profile_work_high": ("/root/profile_work_high", "work_high", "gpt-5.6-sol", "high", "workspace-write", True),
+    "profile_write_root": ("/root", "root", "gpt-5.6-sol", "max", "workspace-write", True),
+    "typed_child": ("/root/typed_result", "scan_low", "gpt-5.6-terra", "low", "read-only", True),
+    "typed_root": ("/root", "root", "gpt-5.6-sol", "max", "read-only", True),
+    "ultra_child": ("/root/ultra_child", "review_max", "gpt-5.6-sol", "max", "read-only", False),
+    "ultra_request_root": ("/root", "root", "gpt-5.6-sol", "max", "read-only", True),
+    "ultra_root": ("/root", "root", "gpt-5.6-sol", "ultra", "read-only", True),
+}
 TYPED_RESULT = {
     "assignment_id": "v2-typed",
     "attempt_id": "a1",
@@ -273,6 +316,8 @@ def _closed_receipts(payload: object) -> tuple[dict[str, Any], dict[str, dict[st
         raise MatrixError("receipt artifact does not contain the exact required case set")
     for case, expected_parent in EXPECTED_PARENTS.items():
         row = by_case[case]
+        if set(row) != RECEIPT_FIELDS:
+            raise MatrixError(f"receipt {case} fields are not closed")
         if row.get("parent_case") != expected_parent:
             raise MatrixError(f"receipt {case} parent linkage is invalid")
         if not HEX64_RE.fullmatch(str(row.get("rollout_sha256"))):
@@ -281,6 +326,33 @@ def _closed_receipts(payload: object) -> tuple[dict[str, Any], dict[str, dict[st
             raise MatrixError(f"receipt {case} does not attest the expected V2 provider")
         if row.get("approval_policy") != "never" or row.get("permission_profile") != "managed":
             raise MatrixError(f"receipt {case} does not attest the expected managed policy")
+        runtime_tuple = (
+            row.get("agent_path"),
+            row.get("agent_role"),
+            row.get("model"),
+            row.get("reasoning_effort"),
+            row.get("sandbox_mode"),
+            row.get("terminal"),
+        )
+        if runtime_tuple != EXPECTED_CASE_RUNTIME[case]:
+            raise MatrixError(f"receipt {case} runtime tuple is invalid")
+        if row.get("history_mode") != "legacy":
+            raise MatrixError(f"receipt {case} history mode is invalid")
+        if (
+            not isinstance(row.get("operations"), list)
+            or not all(isinstance(item, str) for item in row["operations"])
+            or row["operations"] != sorted(set(row["operations"]))
+        ):
+            raise MatrixError(f"receipt {case} operation set is invalid")
+        markers = row.get("markers")
+        if (
+            not isinstance(markers, dict)
+            or set(markers) != set(MARKERS)
+            or not all(isinstance(value, bool) for value in markers.values())
+        ):
+            raise MatrixError(f"receipt {case} marker set is invalid")
+        if not isinstance(row.get("typed_result_valid"), bool):
+            raise MatrixError(f"receipt {case} typed-result state is invalid")
     expected_catalog = {
         "source": "native-model-cache",
         "sol_multi_agent_version": "v2",

@@ -25,6 +25,13 @@ def test_private_key_blocks_entire_payload() -> None:
     assert result.detections == ("private-key",)
 
 
+def test_slack_token_is_detected_and_redacted() -> None:
+    token = "xox" + "b-1234567890-abcdefghijklmnop"
+    result = egress.sanitize(f"authorization={token}")
+    assert token not in str(result.payload)
+    assert result.detections == ("slack-token",)
+
+
 def test_structured_credential_and_jwt_values_fail_closed_without_literals() -> None:
     token = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyIn0.signaturevalue"
     result = egress.sanitize({"api_key": "literal-secret", "nested": {"jwt": token}})

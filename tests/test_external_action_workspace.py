@@ -13,6 +13,7 @@ sys.path.insert(0, str(SCRIPTS))
 from external_action_workspace import (  # noqa: E402
     Workspace,
     WorkspaceError,
+    _contains_secret,
     import_approved_patch,
 )
 
@@ -110,6 +111,21 @@ def test_scoped_workspace_rejects_nested_secret_paths(tmp_path: Path) -> None:
             visible_paths=("src",),
             required_paths=("src",),
         )
+
+
+@pytest.mark.parametrize(
+    "content",
+    [
+        b"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyIn0.signaturevalue",
+        b"xox" + b"b-1234567890-abcdefghijklmnop",
+        b"ASIAABCDEFGHIJKLMNOP",
+        b"Authorization: Bearer abcdefghijklmnop",
+        b"password=correct-horse-battery-staple",
+        b"\xff\xfe\x00binary",
+    ],
+)
+def test_secret_content_detection_fails_closed(content: bytes) -> None:
+    assert _contains_secret(content)
 
 
 def test_root_import_applies_only_approval_bound_patch(tmp_path: Path) -> None:
