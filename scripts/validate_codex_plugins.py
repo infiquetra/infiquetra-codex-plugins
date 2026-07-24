@@ -284,7 +284,7 @@ STAGED_MARKETPLACE_SHA256 = (
     "42803919b39b720599b9692bfdcd95bcfe8c31b06ebb2c976aacaa890fdfea8a"
 )
 LEGACY_WORKFLOW_HISTORICAL_INVENTORY_SHA256 = (
-    "68c94ad7ef1ba96976ac5ab046ceecd87cb5e2a4535db58ccb6d0620c4d96352"
+    "ae44b6596d35489965715ff1aa39b35c8faecc0a5d56edcefed8f5092a9caf14"
 )
 LEGACY_WORKFLOW_INVENTORY = Path(
     "docs/validation/verified-workflows-legacy-token-inventory.json"
@@ -1196,7 +1196,10 @@ def validate_verified_workflows_runtime(root: Path, errors: list[str]) -> None:
         plugin_root / "scripts" / "run_record.py",
         plugin_root / "scripts" / "workspace_audit.py",
         root / "scripts" / "prove_verified_workflows_runtime.py",
+        root / "scripts" / "build_codex_v2_orchestration_matrix.py",
         root / "docs" / "validation" / "verified-workflows-runtime-proof.json",
+        root / "docs" / "validation" / "codex-v2-orchestration-receipts.json",
+        root / "docs" / "validation" / "codex-v2-orchestration-matrix.json",
     )
     retired = (
         plugin_root / "hooks" / "hooks.json",
@@ -1271,6 +1274,24 @@ def validate_verified_workflows_runtime(root: Path, errors: list[str]) -> None:
             raise RuntimeError("U4 tracked proof must not carry live-envelope evidence")
     except (OSError, RuntimeError, json.JSONDecodeError, subprocess.TimeoutExpired) as exc:
         errors.append(f"verified-workflows: U4 runtime proof validation failed: {exc}")
+    try:
+        matrix = subprocess.run(  # noqa: S603 - fixed repository proof builder
+            [
+                sys.executable,
+                str(root / "scripts" / "build_codex_v2_orchestration_matrix.py"),
+                "--check",
+            ],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+        if matrix.returncode:
+            detail = matrix.stderr.strip().splitlines()[-1] if matrix.stderr.strip() else "failed"
+            raise RuntimeError(detail)
+    except (OSError, RuntimeError, subprocess.TimeoutExpired) as exc:
+        errors.append(f"verified-workflows: U8 runtime matrix validation failed: {exc}")
 
 
 def is_cross_plugin_module(name: str) -> bool:

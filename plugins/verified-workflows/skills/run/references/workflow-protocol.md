@@ -43,7 +43,7 @@ Use the literal `External actions: []` when no external action is approved. Othe
 
 ## Compilation And Approval
 
-The compiler validates the three tables, sorts non-semantic sets and rows, and produces one canonical contract digest. The approval binding covers that digest plus the explicit approved plan revision. Whitespace, row order, and unordered-list order do not alter the contract digest; authority, ownership, graph, profile, model, effort, context, fallback order, check, or external-action changes do.
+The compiler validates the three tables, sorts non-semantic sets and rows, and produces one canonical contract digest. A separate authority digest binds the role registry, selected role-lens bytes, generated profile bytes, and exact reviewer mandate roster. The approval binding covers both digests plus the explicit approved plan revision. Whitespace, row order, and unordered-list order do not alter the contract digest; authority, ownership, graph, profile, model, effort, context, fallback order, check, external-action, registry, lens, profile-byte, or mandate changes invalidate approval.
 
 The compiler emits root-owned launch specifications only. It does not create intents, subjects, snapshots, receipts, barriers, retries, runtime status, or a second executable DAG. Codex V2 remains authoritative for hierarchy, liveness, messages, waits, interruption, and restoration.
 

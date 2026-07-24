@@ -121,9 +121,8 @@ cycle escalates.
 
 Saga owns external provider selection, approval fingerprints, egress policy, execution, status, and
 root adjudication. External providers receive only declared context in a contained workspace.
-Response-only routes return an artifact. A write-capable route may return a bounded patch only when
-the canonical registry and adapter advertise that capability; the root revalidates base, dirty
-overlap, digest, and changed paths before import.
+CLI routes are advisory and read-only, receive a minimal environment, and return an artifact.
+Non-empty external write sets fail closed until an enforceable filesystem boundary exists.
 
 External output is always `non-gating`. A finding affects the native gate only after independent root
 verification and explicit adoption.

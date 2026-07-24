@@ -32,6 +32,7 @@ _receipt = fleet_commons_shim.load("bridge_receipt")
 _attestation = fleet_commons_shim.load("output_attestation")
 Runner = Callable[[dict[str, Any]], dict[str, Any]]
 DEFAULT_REGISTRY = Path(__file__).resolve().parent.parent / "references" / "engine-registry.yaml"
+CHILD_ENV_KEYS = ("HOME", "PATH", "TMPDIR", "LANG", "LC_ALL", "LC_CTYPE", "TERM")
 
 
 @dataclass(frozen=True, slots=True)
@@ -54,6 +55,11 @@ def cli_runner(
     def run(invocation: dict[str, Any]) -> dict[str, Any]:
         base = str(invocation.get("base_revision") or "HEAD")
         write_set = tuple(str(item) for item in invocation.get("write_set", []))
+        if write_set:
+            return {
+                "status": "error",
+                "output": "external CLI writes are disabled without an enforceable filesystem boundary",
+            }
         context_scope = tuple(str(item) for item in invocation.get("context_scope", []))
         workspace = Workspace.create(
             repo_root,
@@ -72,6 +78,7 @@ def cli_runner(
                 stderr=subprocess.PIPE,
                 text=True,
                 start_new_session=True,
+                env=_minimal_child_env(),
             )
             try:
                 if on_launch is not None:
@@ -136,6 +143,12 @@ def cli_runner(
     return run
 
 
+def _minimal_child_env() -> dict[str, str]:
+    """Expose process basics and file-backed provider login, never root secret variables."""
+
+    return {key: os.environ[key] for key in CHILD_ENV_KEYS if os.environ.get(key)}
+
+
 def _kill_process_group(process: subprocess.Popen[str]) -> None:
     """Best-effort cleanup when launch persistence cannot be established."""
     if process.poll() is not None:
@@ -171,7 +184,7 @@ def runner_for(
                     os.devnull,
                     "--add-dir",
                     ".",
-                    "--dangerously-skip-permissions" if invocation.get("write_set") else "--sandbox",
+                    "--sandbox",
                     "--print",
                     str(invocation.get("task") or ""),
                 ],
@@ -191,16 +204,7 @@ def runner_for(
                     "claude",
                     "--safe-mode",
                     "--tools",
-                    (
-                        "Read,Edit,Write,Glob,Grep"
-                        if invocation.get("write_set")
-                        else ""
-                    ),
-                    *(
-                        ["--permission-mode", "acceptEdits"]
-                        if invocation.get("write_set")
-                        else []
-                    ),
+                    "Read,Glob,Grep",
                     "--disable-slash-commands",
                     "--print",
                     "--model",
@@ -379,16 +383,15 @@ def _validate_adapter_route(
         entry = registry.by_key(f"{engine_id}/{variant}")
     except engine_registry.RegistryError as exc:
         raise ValueError(str(exc)) from exc
+    if write_set:
+        raise ValueError(
+            "external CLI writes are disabled without an enforceable filesystem boundary"
+        )
     for field in ("write_capable", "patch_capture", "shared_workspace_import"):
         if invocation.get(field) != entry.invocation.get(field):
             raise ValueError(f"approved route {field} differs from the canonical registry")
-    if write_set and (
-        entry.transport != "cli"
-        or entry.invocation.get("write_capable") is not True
-        or entry.invocation.get("patch_capture") != "bounded"
-        or entry.invocation.get("shared_workspace_import") != "root-only"
-    ):
-        raise ValueError("selected route and adapter do not support bounded root patch import")
+    if entry.transport == "cli" and entry.invocation.get("write_capable") is not False:
+        raise ValueError("external CLI routes must be advisory and read-only")
 
 
 def _receipt_argv(argv: list[str], task: str) -> list[str]:

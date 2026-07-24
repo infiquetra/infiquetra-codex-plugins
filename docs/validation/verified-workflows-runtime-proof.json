@@ -2,10 +2,10 @@
   "capability_outcome": "diagnostic",
   "claim": "codex-v2-runtime-capability",
   "codex_cli_version": "0.145.0",
-  "harness_sha256": "4a4c14bf17acfd6b31da504d9d3772029c02db14233e8a3e28aa1f43950e492d",
+  "harness_sha256": "3c918e52f4377da71cbf8e42281521e3f6d9b229bd9a7f71a677590660847acc",
   "limitations": [
     "Codex 0.145.0 child permissions inherit the parent turn after profile loading",
-    "the profile probe covers one read-only configured child; the complete operation matrix remains U8",
+    "this minimal probe covers one read-only child; the receipt-derived matrix covers the full operation set",
     "requested spawn fields are never accepted as runtime identity without session_meta and turn_context"
   ],
   "live_invocation_performed": false,
@@ -95,7 +95,7 @@
   ],
   "runtime_receipt": null,
   "schema_version": 2,
-  "snapshot_sha256": "6e2e232edccee3fe61a9afaadaa8f5bbe64117f41384271d71c68fc74d464988",
+  "snapshot_sha256": "f89c79db0f511fe1804ba50fa3673ae53a9a4440cd9b5039c82d93cf0f33dde2",
   "spawn_request_fields": [
     "agent_type",
     "fork_turns",

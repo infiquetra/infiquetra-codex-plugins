@@ -21,9 +21,8 @@ DEFAULT_SNAPSHOT = REPO_ROOT / "docs" / "validation" / "codex-runtime-capability
 MAX_SNAPSHOT_BYTES = 4 * 1024 * 1024
 MAX_ROLLOUT_BYTES = 8 * 1024 * 1024
 AGENT_PATH_RE = re.compile(r"^/root(?:/[a-zA-Z0-9][a-zA-Z0-9_-]{0,127})+$")
-GIT_MUTATION_RE = re.compile(
-    r"(?:^|\s)git\s+(?:add|commit|merge|push|tag|checkout|switch|reset|rebase)(?:\s|$)", re.I
-)
+TASK_NAME_RE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$")
+GIT_INVOCATION_RE = re.compile(r"(?:^|[;&|()\s])(?:[^\s;&|()]+/)?git(?:\s|$)", re.I)
 
 
 class ProtocolProbeError(ValueError):
@@ -44,7 +43,7 @@ class RuntimeReceipt:
     sandbox_mode: str
     multi_agent_version: str
     terminal_observed: bool
-    git_mutation_observed: bool
+    git_invocation_observed: bool
     child_paths: tuple[str, ...]
     source_events: tuple[str, ...]
 
@@ -96,8 +95,8 @@ def parse_runtime_receipt(content: bytes) -> RuntimeReceipt:
     meta: dict[str, Any] | None = None
     context: dict[str, Any] | None = None
     terminal = False
-    git_mutation = False
-    child_paths: set[str] = set()
+    git_invocation = False
+    child_task_names: set[str] = set()
     event_types: set[str] = set()
     for number, raw_line in enumerate(content.splitlines(), 1):
         try:
@@ -129,12 +128,15 @@ def parse_runtime_receipt(content: bytes) -> RuntimeReceipt:
                     arguments = {"cmd": arguments}
             if name in {"exec_command", "write_stdin"} and isinstance(arguments, dict):
                 command = arguments.get("cmd", arguments.get("chars", ""))
-                if isinstance(command, str) and GIT_MUTATION_RE.search(command):
-                    git_mutation = True
+                if isinstance(command, str) and GIT_INVOCATION_RE.search(command):
+                    git_invocation = True
             if name == "spawn_agent" and isinstance(arguments, dict):
-                path = arguments.get("agent_path")
-                if isinstance(path, str):
-                    child_paths.add(path)
+                task_name = arguments.get("task_name")
+                if not isinstance(task_name, str) or TASK_NAME_RE.fullmatch(task_name) is None:
+                    raise ProtocolProbeError(
+                        "spawn_agent requires one canonical V2 arguments.task_name"
+                    )
+                child_task_names.add(task_name)
     if meta is None or context is None:
         raise ProtocolProbeError("runtime rollout requires both session_meta and turn_context")
 
@@ -144,14 +146,15 @@ def parse_runtime_receipt(content: bytes) -> RuntimeReceipt:
         subagent = source.get("subagent")
         if isinstance(subagent, dict) and isinstance(subagent.get("thread_spawn"), dict):
             spawn = subagent["thread_spawn"]
+    agent_path = _required_string(
+        meta.get("agent_path", spawn.get("agent_path")), "session_meta.agent_path"
+    )
     return RuntimeReceipt(
         session_id=_required_string(meta.get("id"), "session_meta.id"),
         parent_thread_id=_required_string(
             meta.get("parent_thread_id"), "session_meta.parent_thread_id"
         ),
-        agent_path=_required_string(
-            meta.get("agent_path", spawn.get("agent_path")), "session_meta.agent_path"
-        ),
+        agent_path=agent_path,
         agent_type=_required_string(
             meta.get("agent_role", spawn.get("agent_role")), "session_meta.agent_role"
         ),
@@ -170,8 +173,8 @@ def parse_runtime_receipt(content: bytes) -> RuntimeReceipt:
             "turn_context.multi_agent_version",
         ),
         terminal_observed=terminal,
-        git_mutation_observed=git_mutation,
-        child_paths=tuple(sorted(child_paths)),
+        git_invocation_observed=git_invocation,
+        child_paths=tuple(sorted(f"{agent_path}/{name}" for name in child_task_names)),
         source_events=tuple(sorted(event_types & {"session_meta", "turn_context"})),
     )
 
@@ -189,6 +192,7 @@ def validate_runtime_receipt(
     expected_permission_profile: str,
     expected_sandbox_mode: str,
     declared_descendant_paths: Sequence[str] = (),
+    descendant_receipts: Sequence[RuntimeReceipt] = (),
 ) -> None:
     """Fail closed unless host-issued V2 readback matches the approved launch."""
 
@@ -212,13 +216,34 @@ def validate_runtime_receipt(
             )
     if AGENT_PATH_RE.fullmatch(receipt.agent_path) is None:
         raise ProtocolProbeError("runtime agent_path is not canonical")
-    if receipt.git_mutation_observed:
-        raise ProtocolProbeError("worker runtime observed a prohibited Git mutation command")
+    if receipt.git_invocation_observed:
+        raise ProtocolProbeError("worker runtime observed a prohibited Git invocation")
     undeclared = [
         path for path in receipt.child_paths if not _path_is_declared(path, declared_descendant_paths)
     ]
     if undeclared:
         raise ProtocolProbeError(f"runtime receipt contains undeclared descendant paths {undeclared}")
+    receipt_by_path: dict[str, RuntimeReceipt] = {}
+    for child in descendant_receipts:
+        if child.agent_path in receipt_by_path:
+            raise ProtocolProbeError(
+                f"runtime descendant receipt repeats agent path {child.agent_path!r}"
+            )
+        receipt_by_path[child.agent_path] = child
+    missing_receipts = sorted(set(receipt.child_paths) - set(receipt_by_path))
+    extra_receipts = sorted(set(receipt_by_path) - set(receipt.child_paths))
+    if missing_receipts or extra_receipts:
+        raise ProtocolProbeError(
+            "runtime descendant receipt set does not match observed V2 spawns: "
+            f"missing={missing_receipts} unexpected={extra_receipts}"
+        )
+    for path, child in receipt_by_path.items():
+        if child.parent_thread_id != receipt.session_id:
+            raise ProtocolProbeError(
+                f"runtime descendant {path!r} parent thread does not match its spawning session"
+            )
+        if AGENT_PATH_RE.fullmatch(child.agent_path) is None:
+            raise ProtocolProbeError(f"runtime descendant {path!r} agent path is not canonical")
     if receipt.source_events != ("session_meta", "turn_context"):
         raise ProtocolProbeError("runtime receipt lacks both authoritative source events")
 

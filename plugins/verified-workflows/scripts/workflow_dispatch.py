@@ -136,6 +136,10 @@ class LaunchSpec:
     completion: str
     fallback: tuple[Fallback, ...]
     result_schema: str
+    registry_sha256: str
+    role_lens_sha256: str | None
+    profile_sha256: str | None
+    reviewer_mandate_ids: tuple[str, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -143,7 +147,9 @@ class WorkflowContract:
     schema_version: int
     plan_revision: str
     contract_sha256: str
+    authority_sha256: str
     approval_binding_sha256: str
+    registry_sha256: str
     assignments: tuple[Assignment, ...]
     checks: tuple[BlockingCheck, ...]
     external_actions: tuple[ExternalAction, ...]
@@ -590,21 +596,58 @@ def _canonical_contract_payload(
     }
 
 
-def _launch_spec(assignment: Assignment) -> LaunchSpec:
+def _mandate_slug(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", value.casefold()).strip("-")
+
+
+def _reviewer_mandate_ids(role: renderer.RoleSpec, roles_dir: Path) -> tuple[str, ...]:
+    if role.category != "reviewer":
+        return ()
+    if role.lens_path is None:
+        raise WorkflowDispatchError(f"reviewer role {role.role_id!r} lacks a role lens")
+    try:
+        content = renderer._regular_single_link(
+            roles_dir / Path(role.lens_path).name,
+            f"reviewer role lens {role.role_id}",
+            renderer.MAX_ROLE_BYTES,
+        )
+        text = content.decode("utf-8")
+    except (renderer.RoleRegistryError, UnicodeDecodeError) as exc:
+        raise WorkflowDispatchError(f"reviewer role lens {role.role_id!r} is unreadable") from exc
+    titles = re.findall(r"(?m)^[1-9][0-9]*\. \*\*(.+?)\*\*", text)
+    mandates = tuple(_mandate_slug(title) for title in titles)
+    if len(mandates) != 5 or any(not value for value in mandates) or len(set(mandates)) != 5:
+        raise WorkflowDispatchError(
+            f"reviewer role {role.role_id!r} must expose exactly five unique numbered mandates"
+        )
+    return mandates
+
+
+def _launch_spec(
+    assignment: Assignment,
+    *,
+    registry: renderer.RoleRegistry,
+    profile_sha256: Mapping[str, str],
+    roles_dir: Path,
+) -> LaunchSpec:
     if assignment.is_root:
         return LaunchSpec(
-            assignment.assignment_id,
-            assignment.depends,
-            assignment.parent,
-            assignment.role,
-            None,
-            assignment.model,
-            assignment.effort,
-            None,
-            assignment.writes,
-            assignment.completion,
-            assignment.fallback,
-            assignment.result_schema,
+            assignment_id=assignment.assignment_id,
+            depends=assignment.depends,
+            parent=assignment.parent,
+            role=assignment.role,
+            agent_type=None,
+            model=assignment.model,
+            reasoning_effort=assignment.effort,
+            fork_turns=None,
+            writes=assignment.writes,
+            completion=assignment.completion,
+            fallback=assignment.fallback,
+            result_schema=assignment.result_schema,
+            registry_sha256=registry.sha256,
+            role_lens_sha256=None,
+            profile_sha256=None,
+            reviewer_mandate_ids=(),
         )
     fork_turns: str | int
     if assignment.context == "none":
@@ -614,19 +657,24 @@ def _launch_spec(assignment: Assignment) -> LaunchSpec:
         if match is None:
             raise WorkflowDispatchError(f"assignment {assignment.assignment_id} context is invalid")
         fork_turns = int(match.group(1))
+    role = registry.role(assignment.role)
     return LaunchSpec(
-        assignment.assignment_id,
-        assignment.depends,
-        assignment.parent,
-        assignment.role,
-        assignment.profile,
-        assignment.model,
-        assignment.effort,
-        fork_turns,
-        assignment.writes,
-        assignment.completion,
-        assignment.fallback,
-        assignment.result_schema,
+        assignment_id=assignment.assignment_id,
+        depends=assignment.depends,
+        parent=assignment.parent,
+        role=assignment.role,
+        agent_type=assignment.profile,
+        model=assignment.model,
+        reasoning_effort=assignment.effort,
+        fork_turns=fork_turns,
+        writes=assignment.writes,
+        completion=assignment.completion,
+        fallback=assignment.fallback,
+        result_schema=assignment.result_schema,
+        registry_sha256=registry.sha256,
+        role_lens_sha256=role.lens_sha256,
+        profile_sha256=profile_sha256[assignment.profile],
+        reviewer_mandate_ids=_reviewer_mandate_ids(role, roles_dir),
     )
 
 
@@ -645,6 +693,7 @@ def compile_workflow_contract(
     try:
         registry = renderer.load_role_registry(registry_path, roles_dir)
         catalog = renderer.load_catalog_snapshot(catalog_snapshot_path)
+        bundle = renderer.render_bundle(registry, catalog)
     except renderer.RoleRegistryError as exc:
         raise WorkflowDispatchError(str(exc)) from exc
 
@@ -673,18 +722,49 @@ def compile_workflow_contract(
 
     canonical = _canonical_contract_payload(assignments, checks, external_actions)
     contract_sha256 = _canonical_sha256(canonical)
+    profile_sha256 = {profile.profile_id: profile.sha256 for profile in bundle.profiles}
+    launch_specs = tuple(
+        _launch_spec(
+            assignment,
+            registry=registry,
+            profile_sha256=profile_sha256,
+            roles_dir=roles_dir,
+        )
+        for assignment in assignments
+    )
+    authority_sha256 = _canonical_sha256(
+        {
+            "registry_sha256": registry.sha256,
+            "launch_authority": [
+                {
+                    "assignment_id": spec.assignment_id,
+                    "registry_sha256": spec.registry_sha256,
+                    "role_lens_sha256": spec.role_lens_sha256,
+                    "profile_sha256": spec.profile_sha256,
+                    "reviewer_mandate_ids": spec.reviewer_mandate_ids,
+                }
+                for spec in sorted(launch_specs, key=lambda value: value.assignment_id)
+            ],
+        }
+    )
     approval_binding_sha256 = _canonical_sha256(
-        {"plan_revision": plan_revision, "contract_sha256": contract_sha256}
+        {
+            "plan_revision": plan_revision,
+            "contract_sha256": contract_sha256,
+            "authority_sha256": authority_sha256,
+        }
     )
     return WorkflowContract(
-        schema_version=1,
+        schema_version=2,
         plan_revision=plan_revision,
         contract_sha256=contract_sha256,
+        authority_sha256=authority_sha256,
         approval_binding_sha256=approval_binding_sha256,
+        registry_sha256=registry.sha256,
         assignments=assignments,
         checks=checks,
         external_actions=external_actions,
-        launch_specs=tuple(_launch_spec(assignment) for assignment in assignments),
+        launch_specs=launch_specs,
     )
 
 

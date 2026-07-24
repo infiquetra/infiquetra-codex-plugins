@@ -2,9 +2,8 @@
 
 External engines are evidence providers behind a Codex-root chaperone. They are not native Codex
 children, workflow members, reviewers of record, or gatekeepers. Saga owns registry resolution,
-preflight, dispatch, economics, attestation, liveness, bounded patch capture, root-only import, and
-typed reconciliation. Verified Workflows projects only the resulting non-gating status, artifact
-digests, and root-audited changed paths into its concise run record.
+preflight, dispatch, economics, attestation, liveness, and typed reconciliation. Verified Workflows
+projects only the resulting non-gating status and artifact digests into its concise run record.
 
 ## Root-Owned Sequence
 
@@ -21,14 +20,12 @@ registry resolve + auth preflight + context-fit check
 generic CLI/HTTP bridge dispatch + receipt + liveness
         |
         v
-contained patch capture or advisory artifact
+read-only advisory artifact
         |
         v
 Codex-root verification + typed reconciliation
         |
-        +-- approved write-capable offload -> root-only patch import + normal tests
-        |
-        +-- response-only offload -> root-owned apply/test path
+        +-- implementation guidance -> root-owned apply/test path
         |
         +-- second opinion or divergence -> Saga action reference only
 ```
@@ -44,10 +41,9 @@ the validated registry invocation. Neither surface may impersonate the other.
 - A workflow external-action row enters Saga's immutable request and approval fingerprint. Its
   authority is always `non-gating`; requiredness may pause dispatch sequencing but cannot satisfy a
   workflow check or reviewer gate.
-- Only a canonical registry row and shipped CLI adapter may establish write capability. The
-  provider receives a scoped Git workspace containing only declared context and write paths, with
-  no undeclared source history; only the root can import the bounded, approval-bound patch into the
-  shared workspace.
+- CLI routes are advisory and read-only. They receive a scoped Git workspace containing only
+  declared context, a minimal environment, and no undeclared source history. Non-empty external
+  write sets fail closed until an enforceable filesystem boundary exists.
 - Every successful bridge receipt binds engine, variant, transport, model, effort, the complete
   secret-free invocation, output attestation, and non-negative finite telemetry.
 - A capability-routed result that differs from the operator-approved preview is

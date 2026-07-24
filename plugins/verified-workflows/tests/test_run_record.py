@@ -36,7 +36,7 @@ def receipt(path: str = "/root/test") -> P.RuntimeReceipt:
         sandbox_mode="workspace-write",
         multi_agent_version="v2",
         terminal_observed=False,
-        git_mutation_observed=False,
+        git_invocation_observed=False,
         child_paths=(),
         source_events=("session_meta", "turn_context"),
     )

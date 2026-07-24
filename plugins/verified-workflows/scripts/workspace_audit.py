@@ -15,6 +15,22 @@ import workflow_dispatch as dispatch
 
 
 MAX_GIT_OUTPUT_BYTES = 4 * 1024 * 1024
+GIT_OPERATION_FILES = frozenset(
+    {
+        "BISECT_LOG",
+        "BISECT_NAMES",
+        "BISECT_START",
+        "CHERRY_PICK_HEAD",
+        "FETCH_HEAD",
+        "MERGE_HEAD",
+        "MERGE_MSG",
+        "ORIG_HEAD",
+        "REBASE_HEAD",
+        "REVERT_HEAD",
+        "SQUASH_MSG",
+    }
+)
+GIT_OPERATION_DIRS = frozenset({"logs", "rebase-apply", "rebase-merge", "sequencer"})
 
 
 class WorkspaceAuditError(ValueError):
@@ -98,8 +114,98 @@ def _status_entries(content: bytes) -> tuple[tuple[str, str], ...]:
     return tuple(sorted(entries))
 
 
+def _workspace_path_digest(repo_root: Path, relative: str) -> str:
+    path = repo_root / relative
+    try:
+        metadata = path.lstat()
+    except FileNotFoundError:
+        return hashlib.sha256(b"missing").hexdigest()
+    mode = stat.S_IMODE(metadata.st_mode)
+    if stat.S_ISREG(metadata.st_mode):
+        if metadata.st_size > MAX_GIT_OUTPUT_BYTES:
+            raise WorkspaceAuditError(f"workspace path {relative!r} exceeds the audit ceiling")
+        payload = b"file\0" + f"{mode:o}\0".encode() + path.read_bytes()
+    elif stat.S_ISLNK(metadata.st_mode):
+        payload = b"symlink\0" + os.readlink(path).encode("utf-8", "surrogateescape")
+    elif stat.S_ISDIR(metadata.st_mode):
+        rows: list[bytes] = []
+        for child in sorted(path.rglob("*"), key=lambda item: item.as_posix()):
+            child_relative = child.relative_to(repo_root).as_posix()
+            rows.append(
+                child_relative.encode("utf-8", "surrogateescape")
+                + b"\0"
+                + _workspace_path_digest(repo_root, child_relative).encode()
+            )
+            if sum(map(len, rows)) > MAX_GIT_OUTPUT_BYTES:
+                raise WorkspaceAuditError(
+                    f"workspace directory {relative!r} exceeds the audit ceiling"
+                )
+        payload = b"directory\0" + b"\n".join(rows)
+    else:
+        raise WorkspaceAuditError(f"workspace path {relative!r} has an unsupported file type")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _content_bound_entries(
+    repo_root: Path,
+    status: bytes,
+    ignored: bytes,
+) -> tuple[tuple[str, str], ...]:
+    records = dict(_status_entries(status))
+    for raw_path in ignored.split(b"\0"):
+        if not raw_path:
+            continue
+        path = dispatch._repo_path(
+            raw_path.decode("utf-8", "surrogateescape"), "ignored workspace path"
+        )
+        records.setdefault(path, hashlib.sha256(b"ignored").hexdigest())
+    return tuple(
+        sorted(
+            (
+                path,
+                hashlib.sha256(
+                    f"{record_sha}\0{_workspace_path_digest(repo_root, path)}".encode()
+                ).hexdigest(),
+            )
+            for path, record_sha in records.items()
+        )
+    )
+
+
+def _git_operation_digest(git_dir: Path) -> str:
+    rows: list[bytes] = []
+    selected = [git_dir / name for name in sorted(GIT_OPERATION_FILES | GIT_OPERATION_DIRS)]
+    for path in selected:
+        if not path.exists() and not path.is_symlink():
+            continue
+        candidates = [path]
+        if path.is_dir() and not path.is_symlink():
+            candidates.extend(sorted(path.rglob("*"), key=lambda item: item.as_posix()))
+        for candidate in candidates:
+            relative = candidate.relative_to(git_dir).as_posix()
+            metadata = candidate.lstat()
+            if stat.S_ISDIR(metadata.st_mode):
+                rows.append(f"dir\0{relative}".encode())
+            elif stat.S_ISREG(metadata.st_mode):
+                if metadata.st_size > MAX_GIT_OUTPUT_BYTES:
+                    raise WorkspaceAuditError(
+                        f"Git operation file {relative!r} exceeds the audit ceiling"
+                    )
+                rows.append(
+                    f"file\0{relative}\0{stat.S_IMODE(metadata.st_mode):o}\0".encode()
+                    + hashlib.sha256(candidate.read_bytes()).hexdigest().encode()
+                )
+            else:
+                raise WorkspaceAuditError(
+                    f"Git operation path {relative!r} must be a regular file or directory"
+                )
+            if sum(map(len, rows)) > MAX_GIT_OUTPUT_BYTES:
+                raise WorkspaceAuditError("Git operation state exceeds the audit ceiling")
+    return hashlib.sha256(b"\n".join(rows)).hexdigest()
+
+
 def _control_digest(repo_root: Path) -> str:
-    refs = _run_git(repo_root, "for-each-ref", "--format=%(refname)%00%(objectname)", "refs/heads", "refs/tags")
+    refs = _run_git(repo_root, "for-each-ref", "--format=%(refname)%00%(objectname)")
     config = _run_git(repo_root, "config", "--local", "--null", "--list")
     git_dir_raw = _run_git(repo_root, "rev-parse", "--absolute-git-dir").decode().strip()
     git_dir = Path(git_dir_raw)
@@ -115,7 +221,17 @@ def _control_digest(repo_root: Path) -> str:
             hook_rows.append(
                 f"{child.name}:{stat.S_IMODE(metadata.st_mode):o}:{hashlib.sha256(child.read_bytes()).hexdigest()}"
             )
-    payload = b"refs\0" + refs + b"\0config\0" + config + b"\0hooks\0" + "\n".join(hook_rows).encode()
+    operation_sha256 = _git_operation_digest(git_dir)
+    payload = (
+        b"refs\0"
+        + refs
+        + b"\0config\0"
+        + config
+        + b"\0hooks\0"
+        + "\n".join(hook_rows).encode()
+        + b"\0operations\0"
+        + operation_sha256.encode()
+    )
     if len(payload) > MAX_GIT_OUTPUT_BYTES:
         raise WorkspaceAuditError("Git control state exceeds the bounded input ceiling")
     return hashlib.sha256(payload).hexdigest()
@@ -132,14 +248,16 @@ def capture_workspace_audit(repo_root: Path) -> WorkspaceAudit:
     if not index_path.is_absolute():
         index_path = root / index_path
     status = _run_git(root, "status", "--porcelain=v2", "-z", "--untracked-files=all")
+    ignored = _run_git(root, "ls-files", "--others", "--ignored", "--exclude-standard", "-z")
+    entries = _content_bound_entries(root, status, ignored)
     return WorkspaceAudit(
         repo_root=root.as_posix(),
         head=head,
         branch=branch,
         index_sha256=_hash_file(index_path),
         git_control_sha256=_control_digest(root),
-        status_sha256=hashlib.sha256(status).hexdigest(),
-        status_entries=_status_entries(status),
+        status_sha256=hashlib.sha256(repr(entries).encode()).hexdigest(),
+        status_entries=entries,
     )
 
 

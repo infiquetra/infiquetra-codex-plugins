@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import subprocess
 import sys
 from dataclasses import asdict
@@ -18,9 +17,6 @@ for path in (SAGA_SCRIPTS, WORKFLOW_SCRIPTS):
 import external_action_adapters as adapters  # noqa: E402
 import external_action_lifecycle as lifecycle  # noqa: E402
 import external_action_runtime as action_runtime  # noqa: E402
-import external_action_status as status_module  # noqa: E402
-import external_action_store as action_store  # noqa: E402
-import run_record  # noqa: E402
 import workflow_dispatch as dispatch  # noqa: E402
 
 
@@ -40,24 +36,8 @@ def _repo(path: Path) -> str:
     ).stdout.strip()
 
 
-def _fake_claude(path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    bin_dir = path / ".test-bin"
-    bin_dir.mkdir()
-    executable = bin_dir / "claude"
-    executable.write_text(
-        "#!/bin/sh\ncat >/dev/null\nprintf 'after\\n' > a.txt\nprintf 'bounded edit complete\\n'\n",
-        encoding="utf-8",
-    )
-    executable.chmod(0o755)
-    monkeypatch.setenv("PATH", f"{bin_dir}{os.pathsep}{os.environ['PATH']}")
-
-
-def test_approved_external_patch_is_imported_and_recorded_non_gating(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+def test_external_cli_write_request_fails_closed(tmp_path: Path) -> None:
     base = _repo(tmp_path)
-    _fake_claude(tmp_path, monkeypatch)
     external = dispatch.ExternalAction(
         action_id="external-edit",
         purpose="edit the approved file",
@@ -101,55 +81,9 @@ def test_approved_external_patch_is_imported_and_recorded_non_gating(
     )[0]
     lifecycle.approve_bundle([preview], operator="operator", approved_at="approved")
 
-    outcome = lifecycle.execute_bundle(
-        [preview],
-        executors={
-            "external-edit": adapters.executor_for_preview(preview, repo_root=tmp_path)
-        },
-        at="executed",
-    ).outcomes["external-edit"]
-    imported = lifecycle.import_workspace_patch(preview, repo_root=tmp_path, at="imported")
-
-    assert outcome.status == "available"
-    receipt_argv = outcome.detail["runner_receipt"]["runner"]["argv"]
-    assert "Read,Edit,Write,Glob,Grep" in receipt_argv
-    assert receipt_argv[receipt_argv.index("--permission-mode") + 1] == "acceptEdits"
-    assert imported.changed_paths == ("a.txt",)
-    assert (tmp_path / "a.txt").read_text(encoding="utf-8") == "after\n"
-    projected = status_module.project(action_store.read_snapshot(preview.store))
-    assert projected["authority"] == "non-gating"
-    assert projected["root_import"] == "imported"
-    assert projected["changed_paths"] == ["a.txt"]
-
-    contract = dispatch.WorkflowContract(
-        schema_version=1,
-        plan_revision="plan-revision",
-        contract_sha256="a" * 64,
-        approval_binding_sha256="b" * 64,
-        assignments=(),
-        checks=(),
-        external_actions=(external,),
-        launch_specs=(),
-    )
-    record = run_record.new_run_record(
-        repository_id="infiquetra/fixture",
-        run_id="run-1",
-        contract=contract,
-    )
-    record = run_record.record_external_action(
-        record,
-        action_id="external-edit",
-        provider="claude-cli",
-        model="opus",
-        status=projected["state"],
-        approval_fingerprint=projected["approval_fingerprint"],
-        artifact_sha256=outcome.artifact_sha256,
-        patch_sha256=projected["patch_sha256"],
-        changed_paths=projected["changed_paths"],
-        root_disposition=projected["root_import"],
-    )
-    assert record["external_actions"][0]["authority"] == "non-gating"
-    assert record["root_decision"] is None
+    with pytest.raises(ValueError, match="external CLI writes are disabled"):
+        adapters.executor_for_preview(preview, repo_root=tmp_path)
+    assert (tmp_path / "a.txt").read_text(encoding="utf-8") == "before\n"
 
 
 def test_caller_cannot_promote_response_only_registry_route(tmp_path: Path) -> None:

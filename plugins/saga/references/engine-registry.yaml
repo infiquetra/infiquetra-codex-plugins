@@ -30,10 +30,8 @@ engines:
     transport: cli
     invocation:
       via: claude:delegate
-      recipe: "claude --safe-mode --tools Read,Edit,Write,Glob,Grep --permission-mode acceptEdits --disable-slash-commands --print --model opus"
-      write_capable: true
-      patch_capture: bounded
-      shared_workspace_import: root-only
+      recipe: "claude --safe-mode --tools Read,Glob,Grep --disable-slash-commands --print --model opus"
+      write_capable: false
       model: opus
       effort: high
       cli: claude
@@ -51,11 +49,11 @@ engines:
     last_validated: 2026-07-11
     receipt_emitter: claude-delegate
     capability_profile:
-      code-generation: {rating: STRONG, note: "supervised contained patch generation"}
+      code-generation: {rating: STRONG, note: "advisory implementation guidance; external writes are disabled"}
       adversarial-review: {rating: STRONG, note: "cross-family review from Codex root"}
       second-opinion: {rating: STRONG, note: "independent Claude CLI opinion"}
       debug: {rating: STRONG, note: "contained diagnostic and patch lane"}
-      refactor: {rating: STRONG, note: "contained multi-file refactoring"}
+      refactor: {rating: STRONG, note: "advisory refactoring guidance; external writes are disabled"}
       long-form-writing: {rating: STRONG, note: "expert prose lane"}
     prompting_protocol:
       - "Use the approved bounded task and repository clone only."

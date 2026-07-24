@@ -79,12 +79,13 @@ def test_active_host_and_v2_contract_are_separate_truths() -> None:
     runtime = snapshot["runtime"]
 
     assert runtime["codex_cli_version"] == "0.145.0"
-    assert snapshot["features"]["multi_agent_v2"] == {"stage": "stable", "enabled": False}
+    assert snapshot["features"]["multi_agent_v2"] == {"stage": "stable", "enabled": True}
     assert runtime["multi_agent_v2_config"]["enabled"] is True
     assert runtime["configured_max_threads"] == 6
     assert runtime["configured_max_threads_key"] == "max_threads"
     assert runtime["configured_v2_total_threads"] == 7
     assert runtime["configured_v2_total_threads_source"] == "agents-plus-root"
+    assert runtime["configured_max_depth"] == 2
     assert runtime["host_total_slots"] is None
 
 

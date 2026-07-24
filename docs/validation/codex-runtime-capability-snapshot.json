@@ -27,7 +27,7 @@
     "configured_max_threads_key": "max_threads",
     "configured_v2_total_threads": 7,
     "configured_v2_total_threads_source": "agents-plus-root",
-    "configured_max_depth": 1,
+    "configured_max_depth": 2,
     "configured_max_depth_source": "config",
     "host_total_slots": null,
     "effective_total_slots": null,
@@ -117,7 +117,7 @@
   },
   "features": {
     "multi_agent": {"stage": "stable", "enabled": true},
-    "multi_agent_v2": {"stage": "stable", "enabled": false},
+    "multi_agent_v2": {"stage": "stable", "enabled": true},
     "hooks": {"stage": "stable", "enabled": true},
     "goals": {"stage": "stable", "enabled": true},
     "plugins": {"stage": "stable", "enabled": true}

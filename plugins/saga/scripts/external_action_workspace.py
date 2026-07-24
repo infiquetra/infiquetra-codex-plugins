@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import hashlib
 import io
+import re
 import shutil
 import subprocess
 import tarfile
@@ -22,6 +23,13 @@ MAX_PATCH_BYTES = 8 * 1024 * 1024
 MAX_CONTEXT_ARCHIVE_BYTES = 64 * 1024 * 1024
 SECRET_PATH_PARTS = frozenset(
     {".env", "secrets", "credentials", ".aws", ".ssh", ".gnupg", "private-keys"}
+)
+SECRET_CONTENT_PATTERNS = (
+    re.compile(rb"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"),
+    re.compile(rb"\bAKIA[0-9A-Z]{16}\b"),
+    re.compile(rb"\bgh[pousr]_[A-Za-z0-9]{20,}\b"),
+    re.compile(rb"\bsk-ant-[A-Za-z0-9_-]{20,}\b"),
+    re.compile(rb"\bsk-proj-[A-Za-z0-9_-]{20,}\b"),
 )
 
 
@@ -65,6 +73,7 @@ class Workspace:
                         _git(checkout, "remote", "remove", remote.strip())
                 _git(checkout, "checkout", "--detach", resolved_base)
                 workspace_revision = resolved_base
+                _scan_checkout_for_secrets(checkout)
             else:
                 workspace_revision = _create_scoped_checkout(
                     repo_root,
@@ -158,12 +167,18 @@ def _create_scoped_checkout(
             for member in members:
                 if (
                     not _safe_path(member.name.rstrip("/"))
-                    or not _allowed(member.name.rstrip("/"), visible)
+                    or not _visible_member(member.name.rstrip("/"), visible)
                     or member.issym()
                     or member.islnk()
                     or not (member.isfile() or member.isdir())
                 ):
                     raise WorkspaceError("declared external context contains an unsafe member")
+                if member.isfile():
+                    handle = payload.extractfile(member)
+                    if handle is None or _contains_secret(handle.read()):
+                        raise WorkspaceError(
+                            f"declared external context contains secret-like content: {member.name}"
+                        )
             payload.extractall(checkout, members=members, filter="data")
     _git(checkout, "init", "-q")
     _git(checkout, "config", "user.email", "saga-external-action@invalid")
@@ -185,6 +200,28 @@ def _git_path_exists(repo_root: Path, revision: str, path: str) -> bool:
     if result.returncode not in {0, 1, 128}:
         raise WorkspaceError("cannot inspect declared external context")
     return result.returncode == 0
+
+
+def _visible_member(path: str, visible: tuple[str, ...]) -> bool:
+    return _allowed(path, visible) or any(
+        item.startswith(path.rstrip("/") + "/") for item in visible
+    )
+
+
+def _contains_secret(content: bytes) -> bool:
+    return any(pattern.search(content) is not None for pattern in SECRET_CONTENT_PATTERNS)
+
+
+def _scan_checkout_for_secrets(checkout: Path) -> None:
+    for path in sorted(checkout.rglob("*"), key=lambda item: item.as_posix()):
+        if ".git" in path.relative_to(checkout).parts or not path.is_file():
+            continue
+        if path.stat().st_size > MAX_CONTEXT_ARCHIVE_BYTES:
+            raise WorkspaceError("external context file exceeds the bounded size ceiling")
+        if _contains_secret(path.read_bytes()):
+            raise WorkspaceError(
+                f"external context contains secret-like content: {path.relative_to(checkout)}"
+            )
 
 
 def _git_control_sha256(repo_root: Path) -> str:

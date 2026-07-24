@@ -6,8 +6,8 @@
 
 - Bind approved Verified Workflows external-action rows to Saga's existing provider, approval,
   egress, status, and adjudication lifecycle.
-- Add contained write-capable provider workspaces with bounded patch capture and root-only import;
-  external results remain visible and non-gating.
+- Add scoped, read-only provider workspaces with minimal child environments and secret-content
+  screening; external writes fail closed and results remain visible and non-gating.
 
 ### Changed
 

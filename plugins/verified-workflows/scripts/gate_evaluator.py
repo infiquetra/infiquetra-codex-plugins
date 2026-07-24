@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
 import sys
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -17,6 +18,19 @@ import workflow_dispatch as dispatch
 MAX_INPUT_BYTES = 4 * 1024 * 1024
 MAX_REMEDIATION_ROUNDS = 3
 CHECK_STATUSES = {"pass", "warn", "failed", "blocked"}
+HEX64_RE = re.compile(r"^[0-9a-f]{64}$")
+AGENT_PATH_RE = re.compile(r"^/root(?:/[a-zA-Z0-9][a-zA-Z0-9_-]{0,127})+$")
+ATTEMPT_AUTHORITY_FIELDS = {
+    "attempt_id",
+    "session_id",
+    "agent_path",
+    "parent_thread_id",
+    "execution_root_id",
+    "runtime_receipt_sha256",
+    "registry_sha256",
+    "role_lens_sha256",
+    "profile_sha256",
+}
 
 
 class GateEvaluationError(ValueError):
@@ -49,13 +63,31 @@ def _root_finding(value: object, index: int) -> dict[str, Any]:
     return {**finding, "source": value["source"].strip(), "authority": "root-adopted"}
 
 
-def _validate_reviewer_scores(result: Mapping[str, Any], assignment_id: str) -> list[str]:
+def _validate_reviewer_scores(
+    result: Mapping[str, Any],
+    assignment_id: str,
+    *,
+    expected_mandates: Sequence[str],
+) -> list[str]:
     dimensions = result.get("dimensions")
     exclusions = result.get("exclusions")
     if not isinstance(dimensions, list) or not dimensions:
         raise GateEvaluationError(f"reviewer {assignment_id} has no applicable dimensions")
     if not isinstance(exclusions, list):
         raise GateEvaluationError(f"reviewer {assignment_id} exclusions are invalid")
+    observed_mandates = [
+        item.get("dimension_id")
+        for item in [*dimensions, *exclusions]
+        if isinstance(item, dict)
+    ]
+    if (
+        len(observed_mandates) != len(dimensions) + len(exclusions)
+        or len(observed_mandates) != len(set(observed_mandates))
+        or set(observed_mandates) != set(expected_mandates)
+    ):
+        raise GateEvaluationError(
+            f"reviewer {assignment_id} mandate roster does not match its approved role lens"
+        )
     scores = [item.get("score") for item in dimensions if isinstance(item, dict)]
     if len(scores) != len(dimensions) or any(
         isinstance(score, bool) or not isinstance(score, (int, float)) for score in scores
@@ -81,6 +113,44 @@ def _validate_reviewer_scores(result: Mapping[str, Any], assignment_id: str) -> 
     return issues
 
 
+def _attempt_authority(
+    value: object,
+    assignment_id: str,
+    launch: dispatch.LaunchSpec,
+) -> dict[str, str]:
+    if not isinstance(value, dict) or set(value) != ATTEMPT_AUTHORITY_FIELDS:
+        raise GateEvaluationError(
+            f"attempt authority {assignment_id} fields are not closed"
+        )
+    normalized: dict[str, str] = {}
+    for field in ATTEMPT_AUTHORITY_FIELDS:
+        item = value.get(field)
+        if not isinstance(item, str) or not item.strip():
+            raise GateEvaluationError(f"attempt authority {assignment_id}.{field} is invalid")
+        normalized[field] = item.strip()
+    if AGENT_PATH_RE.fullmatch(normalized["agent_path"]) is None:
+        raise GateEvaluationError(f"attempt authority {assignment_id}.agent_path is not canonical")
+    for field in (
+        "runtime_receipt_sha256",
+        "registry_sha256",
+        "role_lens_sha256",
+        "profile_sha256",
+    ):
+        if HEX64_RE.fullmatch(normalized[field]) is None:
+            raise GateEvaluationError(f"attempt authority {assignment_id}.{field} is invalid")
+    expected = {
+        "registry_sha256": launch.registry_sha256,
+        "role_lens_sha256": launch.role_lens_sha256,
+        "profile_sha256": launch.profile_sha256,
+    }
+    for field, expected_value in expected.items():
+        if normalized[field] != expected_value:
+            raise GateEvaluationError(
+                f"attempt authority {assignment_id}.{field} does not match the approved launch"
+            )
+    return normalized
+
+
 def _finding_issue(finding: Mapping[str, Any], *, revalidated: set[str]) -> str | None:
     finding_id = str(finding["finding_id"])
     if finding.get("resolved") is True:
@@ -100,8 +170,8 @@ def evaluate_gate(
     contract: dispatch.WorkflowContract,
     *,
     results: Mapping[str, object],
+    attempt_authorities: Mapping[str, object],
     check_outcomes: Mapping[str, object],
-    reviewer_roots: Mapping[str, str],
     implementation_root_identity: str,
     adopted_root_findings: Sequence[object] = (),
     remediation_round: int = 0,
@@ -124,6 +194,59 @@ def evaluate_gate(
             f"missing={sorted(set(expected_children) - set(results))} "
             f"unexpected={sorted(set(results) - set(expected_children))}"
         )
+    if set(attempt_authorities) != set(expected_children):
+        raise GateEvaluationError(
+            "attempt authority set must exactly cover delegated assignments: "
+            f"missing={sorted(set(expected_children) - set(attempt_authorities))} "
+            f"unexpected={sorted(set(attempt_authorities) - set(expected_children))}"
+        )
+
+    authorities = {
+        assignment_id: _attempt_authority(
+            attempt_authorities[assignment_id], assignment_id, launch
+        )
+        for assignment_id, launch in expected_children.items()
+    }
+    assignments = {assignment.assignment_id: assignment for assignment in contract.assignments}
+    for assignment_id, authority in authorities.items():
+        assignment = assignments[assignment_id]
+        parent = assignment.parent
+        if parent == "root":
+            expected_parent = implementation_root_identity
+            expected_root = implementation_root_identity
+            expected_path = f"/root/{assignment_id}"
+        elif parent.startswith("fresh-root:"):
+            expected_parent = authority["execution_root_id"]
+            expected_root = authority["execution_root_id"]
+            expected_path = f"/root/{assignment_id}"
+            if expected_root == implementation_root_identity:
+                raise GateEvaluationError(
+                    f"reviewer {assignment_id} fresh root reuses the implementation root"
+                )
+        else:
+            parent_assignment = assignments[parent]
+            if parent_assignment.is_root:
+                expected_parent = implementation_root_identity
+                expected_root = implementation_root_identity
+                parent_path = "/root"
+            else:
+                parent_authority = authorities[parent]
+                expected_parent = parent_authority["session_id"]
+                expected_root = parent_authority["execution_root_id"]
+                parent_path = parent_authority["agent_path"]
+            expected_path = f"{parent_path}/{assignment_id}"
+        if authority["parent_thread_id"] != expected_parent:
+            raise GateEvaluationError(
+                f"attempt authority {assignment_id} parent thread does not match the approved graph"
+            )
+        if authority["execution_root_id"] != expected_root:
+            raise GateEvaluationError(
+                f"attempt authority {assignment_id} execution root does not match the approved graph"
+            )
+        if authority["agent_path"] != expected_path:
+            raise GateEvaluationError(
+                f"attempt authority {assignment_id} agent path does not match the approved graph"
+            )
 
     issues: list[str] = []
     hard_stops: list[str] = []
@@ -132,16 +255,13 @@ def evaluate_gate(
         raw = results[assignment_id]
         if not isinstance(raw, dict):
             raise GateEvaluationError(f"result {assignment_id} must be a typed object")
-        attempt_id = raw.get("attempt_id")
-        agent_path = raw.get("agent_path")
-        if not isinstance(attempt_id, str) or not isinstance(agent_path, str):
-            raise GateEvaluationError(f"result {assignment_id} lacks attempt identity")
+        authority = authorities[assignment_id]
         try:
             normalized = result_contract.validate_result(
                 raw,
                 launch,
-                expected_attempt_id=attempt_id,
-                expected_agent_path=agent_path,
+                expected_attempt_id=authority["attempt_id"],
+                expected_agent_path=authority["agent_path"],
             )
         except result_contract.ResultContractError as exc:
             raise GateEvaluationError(str(exc)) from exc
@@ -151,7 +271,13 @@ def evaluate_gate(
                 f"assignment {assignment_id} terminal status is {normalized['terminal_status']}"
             )
         if launch.result_schema == "reviewer-result.v1":
-            issues.extend(_validate_reviewer_scores(normalized, assignment_id))
+            issues.extend(
+                _validate_reviewer_scores(
+                    normalized,
+                    assignment_id,
+                    expected_mandates=launch.reviewer_mandate_ids,
+                )
+            )
 
     independent_reviewers = [
         assignment
@@ -162,10 +288,7 @@ def evaluate_gate(
         hard_stops.append("no independent fresh-root reviewer is selected")
     roots_seen: set[str] = set()
     for reviewer in independent_reviewers:
-        root_identity = reviewer_roots.get(reviewer.assignment_id)
-        if not isinstance(root_identity, str) or not root_identity.strip():
-            hard_stops.append(f"reviewer {reviewer.assignment_id} lacks a validated fresh-root identity")
-            continue
+        root_identity = authorities[reviewer.assignment_id]["execution_root_id"]
         if root_identity == implementation_root_identity or root_identity in roots_seen:
             hard_stops.append(f"reviewer {reviewer.assignment_id} is not independent")
         roots_seen.add(root_identity)
@@ -223,9 +346,10 @@ def evaluate_gate(
         verdict = "pass"
         next_round = None
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "verdict": verdict,
         "contract_sha256": contract.contract_sha256,
+        "authority_sha256": contract.authority_sha256,
         "approval_binding_sha256": contract.approval_binding_sha256,
         "remediation_round": remediation_round,
         "next_remediation_round": next_round,
@@ -247,8 +371,8 @@ def _read_input(path: Path) -> dict[str, Any]:
         raise GateEvaluationError("gate input must be an object")
     expected = {
         "results",
+        "attempt_authorities",
         "check_outcomes",
-        "reviewer_roots",
         "implementation_root_identity",
         "adopted_root_findings",
         "remediation_round",

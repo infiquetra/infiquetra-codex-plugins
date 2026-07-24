@@ -74,7 +74,7 @@ def rollout(**overrides: object) -> bytes:
                 "type": "response_item",
                 "payload": {
                     "name": "agents.spawn_agent",
-                    "arguments": {"agent_path": child},
+                    "arguments": {"task_name": child},
                 },
             }
         )
@@ -136,17 +136,46 @@ def test_requested_only_identity_is_not_runtime_proof() -> None:
         P.parse_runtime_receipt(content)
 
 
-def test_worker_git_mutation_command_fails() -> None:
-    receipt = P.parse_runtime_receipt(rollout(command="git commit -am bad"))
-    with pytest.raises(P.ProtocolProbeError, match="prohibited Git mutation"):
+@pytest.mark.parametrize("command", ["git status --short", "env git diff", "/usr/bin/git log -1"])
+def test_worker_git_invocation_fails(command: str) -> None:
+    receipt = P.parse_runtime_receipt(rollout(command=command))
+    with pytest.raises(P.ProtocolProbeError, match="prohibited Git invocation"):
         validate(receipt)
 
 
 def test_undeclared_descendant_fails() -> None:
-    receipt = P.parse_runtime_receipt(rollout(children=["/root/test/nested"]))
+    receipt = P.parse_runtime_receipt(rollout(children=["nested"]))
     with pytest.raises(P.ProtocolProbeError, match="undeclared descendant"):
         validate(receipt)
-    validate(receipt, declared_descendant_paths=("/root/test/nested",))
+    child = P.parse_runtime_receipt(
+        rollout(path="/root/test/nested", parent="child-thread", terminal=True)
+    )
+    validate(
+        receipt,
+        declared_descendant_paths=("/root/test/nested",),
+        descendant_receipts=(child,),
+    )
+
+
+def test_spawn_requires_real_v2_task_name() -> None:
+    content = rollout(children=["nested"]).replace(b'"task_name": "nested"', b'"agent_path": "/root/test/nested"')
+    with pytest.raises(P.ProtocolProbeError, match="arguments.task_name"):
+        P.parse_runtime_receipt(content)
+
+
+def test_spawn_requires_authoritative_matching_child_receipt() -> None:
+    receipt = P.parse_runtime_receipt(rollout(children=["nested"]))
+    with pytest.raises(P.ProtocolProbeError, match="missing=.*nested"):
+        validate(receipt, declared_descendant_paths=("/root/test/nested",))
+    wrong_parent = P.parse_runtime_receipt(
+        rollout(path="/root/test/nested", parent="different-thread")
+    )
+    with pytest.raises(P.ProtocolProbeError, match="parent thread"):
+        validate(
+            receipt,
+            declared_descendant_paths=("/root/test/nested",),
+            descendant_receipts=(wrong_parent,),
+        )
 
 
 def test_cli_projects_receipt_without_claiming_result(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:

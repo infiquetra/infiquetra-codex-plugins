@@ -85,26 +85,13 @@ no signature break for any existing caller). `dispatch()` populates it from the 
 - persisted legacy fallback dispositions retain their historical value; a new halted path carries
   no receipt because there is nothing to prove.
 
-## Bounded write-capable routes
+## Read-only CLI routes
 
-External writes use the same registry and adapter path as response-only actions. A workflow row may
-carry a non-empty write set only when the canonical registry invocation declares all three fields:
-
-- `write_capable: true`
-- `patch_capture: bounded`
-- `shared_workspace_import: root-only`
-
-Caller-supplied route data cannot add or alter those capabilities. Workflow actions run in a
-contained Git workspace materialized only from the approved context and write paths; it carries no
-undeclared source history or remote. Before accepting its patch, the adapter verifies the workspace
-base, index, refs, local config, hooks, size ceiling, changed paths, and secret/Git-metadata denials. The
-patch is stored as a private content-addressed artifact; provider output never applies directly to
-the shared worktree.
-
-The Codex root imports that patch only while the approved base revision and dirty-overlap facts
-still match. `git apply --numstat` must reproduce the audited path set, and `git apply --check`
-must pass before application. The resulting changed paths and patch digest are root-audited facts,
-not provider claims.
+CLI actions run in a scoped Git workspace materialized only from approved context. They receive a
+minimal environment and provider-native read-only tools; secret-like paths and high-confidence
+secret content fail before materialization. Non-empty external write sets fail closed until the
+adapter has an enforceable filesystem boundary. Caller-supplied route data cannot promote a route,
+and provider output never applies directly to the shared worktree.
 
 ## Never a gatekeeper (R6/#387 AC6, restated for the bridge)
 

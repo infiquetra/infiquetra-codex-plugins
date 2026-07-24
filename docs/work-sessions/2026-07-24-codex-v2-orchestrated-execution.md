@@ -95,9 +95,12 @@ separate-login requirement on 2026-07-24.
 
 - Replaced the diagnostic protocol fixture with a closed parser and validator over Codex V2 `session_meta` plus `turn_context`.
 - Bound strict work to the exact canonical agent path, configured profile, model, effort, provider, permission, sandbox, and V2 mode; requested fields, profile bytes, messages, and hooks cannot satisfy the receipt.
-- Added undeclared-descendant and worker-Git-command rejection while keeping messages coordination-only.
+- Added real V2 `task_name` descendant derivation, authoritative child-receipt reconciliation, and
+  rejection of every worker Git invocation while keeping messages coordination-only.
 - Added closed `assignment-result.v1` and `reviewer-result.v1` validation, including changed-path ownership, check/finding types, reviewer exclusions, denominator, and arithmetic.
-- Added the lightweight pre/post workspace audit over HEAD, branch, index, refs, local config, hooks, and porcelain-v2 paths. Sequential writers work without native attribution; concurrent writers require it.
+- Added the lightweight pre/post workspace audit over HEAD, branch, index, all refs, local config,
+  hooks, logs, operation state, and content-bound dirty, untracked, and ignored paths. Sequential
+  writers work without native attribution; concurrent writers require it.
 - Added one owner-controlled, identity-guarded, atomically replaced run record. Same-attempt restoration preserves the path; retry, remediation, and revalidation require a fresh path and classified partial edits.
 - Removed V1 and hook-attestation instructions from the active run and selector skills.
 
@@ -144,7 +147,11 @@ separate-login requirement on 2026-07-24.
 
 ## U5: Reduce Assurance And Bound Remediation
 
-- Replaced receipt-chain adjudication with one root reducer over the approved contract, typed V2 results, deterministic check outcomes, fresh-root reviewer identities, verified root-adopted findings, and remediation state.
+- Replaced receipt-chain adjudication with one root reducer over the approved contract, root-issued
+  attempt authorities, typed V2 results, deterministic check outcomes, fresh-root reviewer
+  identities, verified root-adopted findings, and remediation state.
+- Bound approval and gate evaluation to the registry, exact role-lens bytes, selected generated
+  profile bytes, runtime receipt digest, canonical graph identity, and exact reviewer mandate roster.
 - Made reviewer average `>=9.0`, every applicable dimension `>=7.0`, exact arithmetic, typed exclusions, accepted verdict, and no role hard stop blocking requirements.
 - Kept severity-first behavior: unresolved P0, P1, security, and role hard-stop findings block independently of score; unresolved P2/P3 findings also require remediation.
 - Required every blocking check to be present and pass, with fresh focused revalidation after any remediation.
@@ -164,22 +171,16 @@ separate-login requirement on 2026-07-24.
 - Imported approved workflow external rows into Saga's existing work-stage action lifecycle while
   binding provider, model, cost, egress allowlist, context, writes, requiredness, and fixed
   `non-gating` authority.
-- Required write routes to match the canonical registry's `write_capable`, bounded patch-capture,
-  and root-only shared-workspace import capabilities. Caller route data cannot promote a
-  response-only provider.
-- Scoped workflow external workspaces to approved context and write paths only, without undeclared
-  source history or remotes. Missing context, secret-bearing members, Git metadata mutation,
-  out-of-scope edits, oversized patches, or unsafe paths fail before import.
-- Captured patches as private content-addressed artifacts and made the root recheck approval-bound
-  base, dirty overlap, patch digest, audited paths, `git apply --numstat`, and `git apply --check`
-  before changing the shared workspace.
+- Made current external CLI routes advisory and read-only. They receive a minimal child environment,
+  provider-native read tools, and only declared context after path and high-confidence
+  secret-content screening. Non-empty external write sets fail closed until an enforceable
+  filesystem boundary exists.
 - Added conditional status projection for new action facts without changing retained
   `status.v1` release-proof hashes, and projected external route outcomes into the same concise
   Verified Workflows run record.
 - Expanded structural rejection of gate-shaped provider fields and retained the existing root-only
   independently verified finding-adoption path.
-- Corrected the canonical Claude write adapter to expose only scoped file tools with accepted edits;
-  response-only calls still receive no tools.
+- Removed Claude edit tools, accepted-edit mode, and the `agy` permission bypass.
 
 ## U6 Checks
 
@@ -217,8 +218,12 @@ separate-login requirement on 2026-07-24.
 - Repository validator, legacy inventory, port classification, Saga facts, and Saga assets: passed.
 - `git diff --check`: passed.
 
-## Next Step
+## Review Remediation And Next Step
 
-Execute U8: run the authority preflight and current-session V2 matrix with the existing Codex login,
-apply the approved Luna fallback if needed, mint aligned candidate versions, obtain the independent
-reviews, and stop at the explicit PR/merge/install approval boundary.
+- Fresh testing, architecture, and security reviewers found gaps in the curated matrix, descendant
+  receipts, gate authority binding, audit coverage, external CLI containment, and project V2 config.
+- The remediation uses current Codex authentication, project-level V2 enablement, a nested depth of
+  two, receipt-derived matrix generation, and no Hermes or credential mutation.
+- Next: regenerate affected proofs and release metadata, rerun focused and full validation, rerun all
+  three fresh V2 reviewers, then continue the approved PR, merge, install, rollback, reapply, and
+  fresh-session proof sequence.

@@ -104,10 +104,17 @@ def copy_verified_workflows_runtime_target(tmp_path: Path) -> Path:
         REPO_ROOT / "scripts" / "prove_verified_workflows_runtime.py",
         root / "scripts" / "prove_verified_workflows_runtime.py",
     )
+    shutil.copy2(
+        REPO_ROOT / "scripts" / "build_codex_v2_orchestration_matrix.py",
+        root / "scripts" / "build_codex_v2_orchestration_matrix.py",
+    )
     shutil.copytree(REPO_ROOT / ".codex" / "agents", root / ".codex" / "agents")
+    shutil.copy2(REPO_ROOT / ".codex" / "config.toml", root / ".codex" / "config.toml")
     (root / "docs" / "validation").mkdir(parents=True)
     for name in (
         "codex-runtime-capability-snapshot.json",
+        "codex-v2-orchestration-receipts.json",
+        "codex-v2-orchestration-matrix.json",
         "verified-workflows-runtime-proof.json",
     ):
         shutil.copy2(

@@ -53,17 +53,15 @@ and root adjudication. For each compiled external row:
    provider, model, cost, and egress allowlist.
 2. Show the Saga route preview and approval fingerprint before dispatch. Provider, model, context,
    writes, cost, egress, or authority drift returns to the complete workflow preview.
-3. Dispatch through Saga's canonical registry and shipped adapter. Response-only routes produce an
-   artifact. A write route must advertise canonical bounded patch capture and root-only import, and
-   receives only the declared context and write paths in its contained workspace.
-4. Let the root verify the artifact or import the approval-bound patch after the base, dirty overlap,
-   digest, and changed-path checks pass. The provider never writes the shared workspace directly.
-5. Project provider/model, status, approval fingerprint, artifact and patch digests, root-audited
-   changed paths, and root disposition through `run_record.record_external_action` in the same run
-   record.
+3. Dispatch through Saga's canonical registry and shipped adapter. CLI routes receive only declared
+   context, a minimal environment, and read-only provider tools. Non-empty external write sets fail
+   closed until an enforceable filesystem boundary exists.
+4. Let the root verify the advisory artifact. The provider never writes the shared workspace.
+5. Project provider/model, status, approval fingerprint, artifact digest, and root disposition
+   through `run_record.record_external_action` in the same run record.
 
 External results remain `non-gating`. Verified Workflows consumes only the validated advisory result
-or bounded root-imported patch described by the approved external-action row. An external finding
+described by the approved external-action row. An external finding
 enters gate evaluation only after independent root verification and explicit root adoption.
 
 ## Boundaries

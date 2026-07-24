@@ -5,12 +5,12 @@
       "schema_path": "docs/validation/codex-runtime-capability-snapshot.schema-r3.json",
       "schema_sha256": "a9c1baddcfbb3eba80b108fb838a430764236cd73ca803604cd47afb338e8ce7",
       "schema_version": 2,
-      "sha256": "6e2e232edccee3fe61a9afaadaa8f5bbe64117f41384271d71c68fc74d464988"
+      "sha256": "f89c79db0f511fe1804ba50fa3673ae53a9a4440cd9b5039c82d93cf0f33dde2"
     },
     "classification_path": "docs/portability/classifications/2026-07-24-codex-v2-orchestration.md",
     "plan": {
       "path": "docs/plans/2026-07-24-codex-v2-orchestrated-execution-system-plan.md",
-      "sha256": "fe34e66737816d5296fbad30f65476148f2b91ec7f8487c48ec125ae4046b9eb"
+      "sha256": "29e8399d7fa567bec1975086b5b09da68bbe1ed24ca56c8b19e879fb2aba0cd0"
     },
     "reviews": [
       {
@@ -50,9 +50,9 @@
     "expected_count": 2,
     "inventory_sha256": "392939792bce1099ba9cb9ee1e6c0fd24ab5468b1cfceff571f82956b18b7f5b",
     "observed_refs": {
-      "head": "a9dae032bd1ed96804892a787b55401a650005c8",
-      "local_main": "03c2640ca4338e70bba796c7e84db694b1aeade8",
-      "origin_main": "03c2640ca4338e70bba796c7e84db694b1aeade8"
+      "head": "f26f4d1ccd96a30e5824f3011f7a9b73100089ac",
+      "local_main": "f26f4d1ccd96a30e5824f3011f7a9b73100089ac",
+      "origin_main": "f26f4d1ccd96a30e5824f3011f7a9b73100089ac"
     },
     "pathspecs": [
       "plugins/team-execution/skills/team-execution/references/reviewer-registry.md",

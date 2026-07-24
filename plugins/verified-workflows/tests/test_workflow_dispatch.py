@@ -168,7 +168,7 @@ def compile_fixture(
 def test_valid_mixed_contract_compiles_to_root_owned_launch_specs() -> None:
     contract = compile_fixture(external_actions=[external()])
 
-    assert contract.schema_version == 1
+    assert contract.schema_version == 2
     assert len(contract.assignments) == 3
     assert len(contract.external_actions) == 1
     specs = {spec.assignment_id: spec for spec in contract.launch_specs}
@@ -177,6 +177,17 @@ def test_valid_mixed_contract_compiles_to_root_owned_launch_specs() -> None:
     assert specs["review"].fork_turns == "none"
     assert specs["test"].fork_turns == 4
     assert specs["test"].result_schema == "assignment-result.v1"
+    assert specs["review"].reviewer_mandate_ids == (
+        "assumption-validity",
+        "edge-case-coverage",
+        "failure-mode-analysis",
+        "scope-creep-risk",
+        "alternatives-considered",
+    )
+    assert specs["review"].registry_sha256 == contract.registry_sha256
+    assert specs["review"].role_lens_sha256
+    assert specs["review"].profile_sha256
+    assert contract.authority_sha256
     assert contract.external_actions[0].authority == "non-gating"
 
 
@@ -206,6 +217,27 @@ def test_material_edit_invalidates_approval_binding() -> None:
             approved_contract_sha256=approved.contract_sha256,
             approved_binding_sha256=approved.approval_binding_sha256,
         )
+
+
+def test_role_or_profile_authority_changes_invalidate_approval_binding(tmp_path: Path) -> None:
+    approved = compile_fixture()
+    changed_registry = tmp_path / "role-registry.yaml"
+    changed_registry.write_bytes(W.renderer.DEFAULT_REGISTRY.read_bytes())
+    changed_roles = tmp_path / "roles"
+    changed_roles.mkdir()
+    for source in W.renderer.DEFAULT_ROLES_DIR.iterdir():
+        (changed_roles / source.name).write_bytes(source.read_bytes())
+    target = changed_roles / "devils-advocate-reviewer.md"
+    target.write_text(target.read_text().replace("Assumption Validity", "Assumption Soundness"))
+    changed = W.compile_workflow_contract(
+        plan([assignment("implement"), reviewer(), worker()]),
+        plan_revision=approved.plan_revision,
+        registry_path=changed_registry,
+        roles_dir=changed_roles,
+    )
+    assert changed.contract_sha256 == approved.contract_sha256
+    assert changed.authority_sha256 != approved.authority_sha256
+    assert changed.approval_binding_sha256 != approved.approval_binding_sha256
 
 
 def test_exact_approved_binding_passes() -> None:

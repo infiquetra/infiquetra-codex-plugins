@@ -17,7 +17,7 @@ none of the above ---------------------------------> pass
 
 Every selected reviewer returns at least one applicable dimension. Exclusions are dimension-specific and use only `static-non-applicable`. Overall is the arithmetic mean of applicable dimensions. A high average never overrides a typed finding or hard stop.
 
-The implementer and its descendants cannot supply authority-bearing review. Every required reviewer has a separately validated fresh-root identity, no implementation turns, a read-only profile, and its typed reviewer result. Additional reviewers are risk-triggered, not mandatory ceremony.
+The implementer and its descendants cannot supply authority-bearing review. Every delegated result is checked against a root-issued attempt authority containing the runtime receipt digest, canonical path, session and parent linkage, execution-root identity, and approved registry/lens/profile digests. Every required reviewer therefore has a separately validated fresh execution root, no implementation turns, a read-only profile, the exact role-lens mandate roster, and its typed reviewer result. Additional reviewers are risk-triggered, not mandatory ceremony.
 
 Only the root adopts independently verified findings and releases dependencies. Messages, raw model output, external advisory output, and claimed success flags have no gate authority.
 

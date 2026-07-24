@@ -71,6 +71,56 @@ def test_preexisting_dirty_overlap_fails(tmp_path: Path) -> None:
         W.validate_attempt_audit(before, after, declared_writes=["README.md"])
 
 
+def test_preexisting_dirty_out_of_scope_content_change_fails(tmp_path: Path) -> None:
+    repo = repository(tmp_path)
+    (repo / "README.md").write_text("dirty one\n")
+    before = W.capture_workspace_audit(repo)
+    (repo / "README.md").write_text("dirty two\n")
+    after = W.capture_workspace_audit(repo)
+    with pytest.raises(W.WorkspaceAuditError, match="outside declared ownership"):
+        W.validate_attempt_audit(before, after, declared_writes=["src"])
+
+
+def test_ignored_out_of_scope_content_change_fails(tmp_path: Path) -> None:
+    repo = repository(tmp_path)
+    (repo / ".gitignore").write_text("ignored.txt\n")
+    git(repo, "add", ".gitignore")
+    git(repo, "commit", "-qm", "ignore fixture")
+    (repo / "ignored.txt").write_text("first\n")
+    before = W.capture_workspace_audit(repo)
+    (repo / "ignored.txt").write_text("second\n")
+    after = W.capture_workspace_audit(repo)
+    with pytest.raises(W.WorkspaceAuditError, match="outside declared ownership"):
+        W.validate_attempt_audit(before, after, declared_writes=["src"])
+
+
+def test_non_head_ref_change_fails(tmp_path: Path) -> None:
+    repo = repository(tmp_path)
+    before = W.capture_workspace_audit(repo)
+    git(repo, "update-ref", "refs/remotes/origin/main", "HEAD")
+    after = W.capture_workspace_audit(repo)
+    with pytest.raises(W.WorkspaceAuditError, match="refs"):
+        W.validate_attempt_audit(before, after, declared_writes=["src"])
+
+
+def test_git_operation_state_change_fails(tmp_path: Path) -> None:
+    repo = repository(tmp_path)
+    before = W.capture_workspace_audit(repo)
+    git_dir = Path(
+        subprocess.run(
+            ["git", "rev-parse", "--absolute-git-dir"],
+            cwd=repo,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+    )
+    (git_dir / "MERGE_HEAD").write_text("0" * 40 + "\n")
+    after = W.capture_workspace_audit(repo)
+    with pytest.raises(W.WorkspaceAuditError, match="refs"):
+        W.validate_attempt_audit(before, after, declared_writes=["src"])
+
+
 def test_concurrent_write_requires_native_attribution(tmp_path: Path) -> None:
     repo = repository(tmp_path)
     before = W.capture_workspace_audit(repo)

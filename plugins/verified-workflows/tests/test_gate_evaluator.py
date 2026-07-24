@@ -32,10 +32,43 @@ def contract():
 
 
 def valid_results() -> dict[str, dict[str, object]]:
-    return {
+    values = {
         "test": result(),
         "review": result(assignment_id="review", reviewer=True),
     }
+    mandates = next(
+        spec.reviewer_mandate_ids
+        for spec in contract().launch_specs
+        if spec.assignment_id == "review"
+    )
+    values["review"]["dimensions"] = [
+        {"dimension_id": mandate, "score": 10.0, "notes": "satisfied"}
+        for mandate in mandates
+    ]
+    values["review"]["denominator"] = len(mandates)
+    values["review"]["overall"] = 10.0
+    return values
+
+
+def valid_authorities() -> dict[str, dict[str, str]]:
+    values: dict[str, dict[str, str]] = {}
+    for spec in contract().launch_specs:
+        if spec.agent_type is None:
+            continue
+        fresh = spec.assignment_id == "review"
+        root = "fresh-review-root-1" if fresh else "implementation-root"
+        values[spec.assignment_id] = {
+            "attempt_id": f"{spec.assignment_id}-attempt-1",
+            "session_id": f"{spec.assignment_id}-session",
+            "agent_path": f"/root/{spec.assignment_id}",
+            "parent_thread_id": root,
+            "execution_root_id": root,
+            "runtime_receipt_sha256": "a" * 64,
+            "registry_sha256": spec.registry_sha256,
+            "role_lens_sha256": str(spec.role_lens_sha256),
+            "profile_sha256": str(spec.profile_sha256),
+        }
+    return values
 
 
 def valid_checks() -> dict[str, dict[str, str]]:
@@ -48,8 +81,8 @@ def valid_checks() -> dict[str, dict[str, str]]:
 def evaluate(**overrides: object) -> dict[str, object]:
     values: dict[str, object] = {
         "results": valid_results(),
+        "attempt_authorities": valid_authorities(),
         "check_outcomes": valid_checks(),
-        "reviewer_roots": {"review": "fresh-review-root-1"},
         "implementation_root_identity": "implementation-root",
         "adopted_root_findings": [],
         "remediation_round": 0,
@@ -85,7 +118,7 @@ def test_invalid_exclusion_fails_closed() -> None:
 
 def test_arithmetic_mismatch_fails_closed() -> None:
     results = valid_results()
-    results["review"]["overall"] = 10.0
+    results["review"]["overall"] = 9.9
     with pytest.raises(G.GateEvaluationError, match="arithmetic mean"):
         evaluate(results=results)
 
@@ -93,9 +126,10 @@ def test_arithmetic_mismatch_fails_closed() -> None:
 def test_average_below_nine_blocks() -> None:
     results = valid_results()
     results["review"]["dimensions"] = [
-        {"dimension_id": "correctness", "score": 8.0, "notes": "needs work"}
+        {"dimension_id": item["dimension_id"], "score": 8.0, "notes": "needs work"}
+        for item in results["review"]["dimensions"]
     ]
-    results["review"]["denominator"] = 1
+    results["review"]["denominator"] = 5
     results["review"]["overall"] = 8.0
     decision = evaluate(results=results)
     assert decision["verdict"] == "block"
@@ -104,12 +138,10 @@ def test_average_below_nine_blocks() -> None:
 
 def test_dimension_below_seven_blocks() -> None:
     results = valid_results()
-    results["review"]["dimensions"] = [
-        {"dimension_id": "correctness", "score": 6.0, "notes": "bad"},
-        {"dimension_id": "risk", "score": 10.0, "notes": "bounded"},
-    ]
-    results["review"]["denominator"] = 2
-    results["review"]["overall"] = 8.0
+    results["review"]["dimensions"][0]["score"] = 6.0
+    results["review"]["dimensions"][0]["notes"] = "bad"
+    results["review"]["denominator"] = 5
+    results["review"]["overall"] = 9.2
     decision = evaluate(results=results)
     assert decision["verdict"] == "block"
     assert "below 7.0" in " ".join(decision["blocking_reasons"])
@@ -134,16 +166,40 @@ def test_severity_and_role_hard_stops_block(updates: dict[str, object], message:
     assert message in " ".join(decision["blocking_reasons"])
 
 
-def test_missing_independent_reviewer_identity_blocks() -> None:
-    decision = evaluate(reviewer_roots={})
-    assert decision["verdict"] == "block"
-    assert "lacks a validated fresh-root identity" in " ".join(decision["blocking_reasons"])
+def test_missing_attempt_authority_fails_closed() -> None:
+    authorities = valid_authorities()
+    authorities.pop("review")
+    with pytest.raises(G.GateEvaluationError, match="exactly cover"):
+        evaluate(attempt_authorities=authorities)
 
 
 def test_implementation_root_or_reused_review_root_is_not_independent() -> None:
-    decision = evaluate(reviewer_roots={"review": "implementation-root"})
-    assert decision["verdict"] == "block"
-    assert "not independent" in " ".join(decision["blocking_reasons"])
+    authorities = valid_authorities()
+    authorities["review"]["execution_root_id"] = "implementation-root"
+    authorities["review"]["parent_thread_id"] = "implementation-root"
+    with pytest.raises(G.GateEvaluationError, match="reuses the implementation root"):
+        evaluate(attempt_authorities=authorities)
+
+
+def test_result_cannot_select_its_own_attempt_identity() -> None:
+    results = valid_results()
+    results["test"]["attempt_id"] = "test-attempt-2"
+    with pytest.raises(G.GateEvaluationError, match="attempt_id mismatch"):
+        evaluate(results=results)
+
+
+def test_attempt_authority_must_match_approved_role_and_profile_digests() -> None:
+    authorities = valid_authorities()
+    authorities["test"]["profile_sha256"] = "b" * 64
+    with pytest.raises(G.GateEvaluationError, match="profile_sha256.*approved launch"):
+        evaluate(attempt_authorities=authorities)
+
+
+def test_reviewer_mandate_roster_must_match_role_lens() -> None:
+    results = valid_results()
+    results["review"]["dimensions"][0]["dimension_id"] = "fabricated"
+    with pytest.raises(G.GateEvaluationError, match="mandate roster"):
+        evaluate(results=results)
 
 
 def test_missing_or_failed_blocking_check_blocks() -> None:
@@ -242,8 +298,8 @@ def test_cli_returns_pass(tmp_path: Path, capsys: pytest.CaptureFixture[str]) ->
     )
     payload = {
         "results": valid_results(),
+        "attempt_authorities": valid_authorities(),
         "check_outcomes": valid_checks(),
-        "reviewer_roots": {"review": "fresh-root"},
         "implementation_root_identity": "implementation-root",
         "adopted_root_findings": [],
         "remediation_round": 0,

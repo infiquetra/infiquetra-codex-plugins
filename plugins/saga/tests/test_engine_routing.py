@@ -220,7 +220,7 @@ def test_capability_dispatch_returns_variant_protocol_and_payload(registry: Any)
     assert resolution.effort == "high"
     assert "claude --safe-mode" in resolution.recipe
     assert resolution.payload == "\n".join(resolution.protocol) + "\n\n" + context
-    assert resolution.write_capable is True
+    assert resolution.write_capable is False
     assert resolution.fallback is None
     assert resolution.halt is None
 

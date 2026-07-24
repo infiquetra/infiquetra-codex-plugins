@@ -25,8 +25,9 @@ remain separate facts. A read-only label or profile is requested policy until ru
 the root workspace audit agree. Broad permission modes remain outside gate-authoritative work.
 Requested read-only output needs a root-recorded pre/post mutation-audit digest with no observed
 writes before it can enter the gate; otherwise it remains advisory. The audit covers repository
-files regardless of Git ignore state, modes, symlinks, empty directories, plus hashed Git HEAD,
-index, config, hooks, refs, logs, and operation state. Quiesce every other root/test/Git writer for
+dirty, untracked, and ignored files with content, mode, and symlink readback, plus hashed Git HEAD,
+index, config, hooks, all refs, logs, and operation state. Empty directories are outside the audit
+claim because they do not affect repository content. Quiesce every other root/test/Git writer for
 the audit interval so a concurrent legitimate write cannot invalidate or be mistaken for child
 behavior.
 
@@ -34,13 +35,10 @@ Use a fresh attempt ID and canonical agent path for remediation or revalidation.
 is optional and never required for correctness. Backpressure, missing named-profile selection, or
 runtime receipt mismatch blocks required independence.
 
-Approved external-action rows are dispatched through Saga, not through the native agent DAG. An
-external route with writes must match a canonical `write_capable` registry entry whose shipped CLI
-adapter supports bounded patch capture and `root-only` shared-workspace import. The external process
-works in a contained Git workspace with only declared context and write paths, no undeclared source
-history, and cannot apply its own changes to the shared worktree. Before root
-import, the approved base, dirty overlap, patch digest, path set, Git metadata, and secret-path
-denials must still hold. The action's status and changed paths may be recorded in the same workflow
+Approved external-action rows are dispatched through Saga, not through the native agent DAG. CLI
+routes are advisory and read-only, receive a minimal environment, and materialize only declared
+context after path and secret-content checks. Non-empty external write sets fail closed until an
+enforceable filesystem boundary exists. The action's status may be recorded in the same workflow
 run record, but its authority remains `non-gating`.
 
 Codex V2 `session_meta` plus `turn_context` provide runtime identity and effective-permission

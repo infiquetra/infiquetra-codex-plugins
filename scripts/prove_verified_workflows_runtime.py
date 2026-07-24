@@ -450,10 +450,6 @@ def run_live_probe(
         "--json",
         "--ignore-rules",
         "--strict-config",
-        "--enable",
-        "multi_agent",
-        "--enable",
-        "multi_agent_v2",
         "-C",
         str(REPO_ROOT),
         "--sandbox",
@@ -607,7 +603,7 @@ def build_proof(
         "runtime_receipt": runtime_receipt,
         "limitations": [
             "Codex 0.145.0 child permissions inherit the parent turn after profile loading",
-            "the profile probe covers one read-only configured child; the complete operation matrix remains U8",
+            "this minimal probe covers one read-only child; the receipt-derived matrix covers the full operation set",
             "requested spawn fields are never accepted as runtime identity without session_meta and turn_context",
         ],
     }

@@ -275,5 +275,5 @@ def test_live_command_reuses_current_auth_and_project_profiles() -> None:
     assert '"models_cache.json"' in source
     assert "infiquetra-v1.json" not in source
     assert '"--strict-config"' in source
-    assert '"multi_agent_v2"' in source
+    assert '"--enable"' not in source
     assert "str(REPO_ROOT)" in source

@@ -42,9 +42,9 @@ root with no implementation history. The root reduces typed results, determinist
 findings, and reviewer assurance into one gate decision and one concise run record.
 
 Saga remains the authority for external provider approval, egress, execution, status, and
-adjudication. Response-only output stays an artifact. Write-capable output is imported only as a
-validated bounded patch by the root. External output remains non-gating unless the root independently
-verifies and adopts a finding.
+adjudication. External CLI routes are advisory and read-only; non-empty external write sets fail
+closed until an enforceable filesystem boundary exists. Output stays a non-gating artifact unless
+the root independently verifies and adopts a finding.
 
 ## Removed Active Machinery
 
