@@ -52,6 +52,7 @@ ATTEMPT_FIELDS = {
     "checks",
     "findings",
     "residual_risks",
+    "review",
     "prior_edit_disposition",
 }
 
@@ -255,6 +256,7 @@ def start_attempt(
             "checks": [],
             "findings": [],
             "residual_risks": [],
+            "review": None,
             "prior_edit_disposition": prior_edit_disposition,
         }
     )
@@ -282,6 +284,21 @@ def finish_attempt(record: Mapping[str, Any], result: Mapping[str, Any]) -> dict
             "checks": copy.deepcopy(result["checks"]),
             "findings": copy.deepcopy(result["findings"]),
             "residual_risks": list(result["residual_risks"]),
+            "review": (
+                {
+                    field: copy.deepcopy(result[field])
+                    for field in (
+                        "dimensions",
+                        "exclusions",
+                        "denominator",
+                        "overall",
+                        "verdict",
+                        "hard_stop",
+                    )
+                }
+                if "dimensions" in result
+                else None
+            ),
         }
     )
     updated["findings"] = [

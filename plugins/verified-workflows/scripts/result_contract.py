@@ -122,6 +122,15 @@ def _finding(value: object, index: int) -> dict[str, Any]:
     }
 
 
+def validate_finding(value: object, *, where: str = "finding") -> dict[str, Any]:
+    """Validate one standalone typed finding for root adoption."""
+
+    try:
+        return _finding(value, 0)
+    except ResultContractError as exc:
+        raise ResultContractError(f"{where}: {exc}") from exc
+
+
 def _reviewer_extension(payload: Mapping[str, Any]) -> dict[str, Any]:
     dimensions_raw = payload["dimensions"]
     exclusions_raw = payload["exclusions"]

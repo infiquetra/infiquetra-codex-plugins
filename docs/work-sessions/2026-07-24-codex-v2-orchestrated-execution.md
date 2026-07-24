@@ -106,6 +106,23 @@ U1 is complete. The frozen Claude lineage, Codex 0.145.0 capability contract, cu
 - `git diff --check`: passed.
 - Authenticated isolated strict-worker and fresh-reviewer runtime execution remains unclaimed because the isolated home is not logged in; it stays part of the blocking U8 matrix.
 
+## U5: Reduce Assurance And Bound Remediation
+
+- Replaced receipt-chain adjudication with one root reducer over the approved contract, typed V2 results, deterministic check outcomes, fresh-root reviewer identities, verified root-adopted findings, and remediation state.
+- Made reviewer average `>=9.0`, every applicable dimension `>=7.0`, exact arithmetic, typed exclusions, accepted verdict, and no role hard stop blocking requirements.
+- Kept severity-first behavior: unresolved P0, P1, security, and role hard-stop findings block independently of score; unresolved P2/P3 findings also require remediation.
+- Required every blocking check to be present and pass, with fresh focused revalidation after any remediation.
+- Enforced one workflow-wide remediation counter with rounds zero through three; unresolved work at round three escalates and a fourth automatic round is rejected.
+- Preserved compact reviewer score data in the run record without adding events or evidence chains.
+- Replaced validator/evidence documentation with the compact check, worker, result, and gate contracts.
+
+## U5 Checks
+
+- Gate, result, run-record, runtime, audit, compiler, and feasibility pytest: 88 passed.
+- Focused Ruff: passed.
+- Repository validator and legacy inventory regeneration: passed.
+- `git diff --check`: passed.
+
 ## Next Step
 
-Execute U5: reduce assurance to deterministic checks, independent reviewer scoring, root-adopted findings, and at most three shared remediation rounds.
+Execute U6: connect approved external actions to Saga's existing preview, egress, provider, patch-import, and root-adjudication control plane without granting gate authority.
