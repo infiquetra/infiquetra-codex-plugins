@@ -53,8 +53,8 @@ def test_full_catalog_renders_exact_six_model_pinned_profiles() -> None:
         "review_high": ("gpt-5.6-sol", "high", "read-only"),
         "work_high": ("gpt-5.6-sol", "high", "workspace-write"),
         "test_medium": ("gpt-5.6-terra", "medium", "workspace-write"),
-        "scan_low": ("gpt-5.6-luna", "low", "read-only"),
-        "monitor_low": ("gpt-5.6-luna", "low", "read-only"),
+        "scan_low": ("gpt-5.6-terra", "low", "read-only"),
+        "monitor_low": ("gpt-5.6-terra", "low", "read-only"),
     }
 
     assert {profile.profile_id for profile in bundle.profiles} == set(expected)
@@ -80,7 +80,7 @@ def test_scan_and_monitor_remain_distinct_at_the_same_model_effort() -> None:
     scan = tomllib.loads(profiles["scan_low"].content.decode("utf-8"))
     monitor = tomllib.loads(profiles["monitor_low"].content.decode("utf-8"))
 
-    assert scan["model"] == monitor["model"] == "gpt-5.6-luna"
+    assert scan["model"] == monitor["model"] == "gpt-5.6-terra"
     assert scan["model_reasoning_effort"] == monitor["model_reasoning_effort"] == "low"
     assert "external access: none" in scan["developer_instructions"]
     assert "external access: allowlisted-read" in monitor["developer_instructions"]

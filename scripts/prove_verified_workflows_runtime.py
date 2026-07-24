@@ -28,9 +28,9 @@ DEFAULT_SNAPSHOT = REPO_ROOT / "docs" / "validation" / "codex-runtime-capability
 PROJECT_AGENTS = REPO_ROOT / ".codex" / "agents"
 MAX_BYTES = 4 * 1024 * 1024
 MAX_NEW_ROLLOUTS = 16
-TERMINAL_MARKER = "U1_V2_CHILD_OK"
-ROOT_MARKER = "U1_V2_ROOT_OK"
-PARENT_ONLY_MARKER = "U1_V2_PARENT_ONLY_CONTEXT"
+TERMINAL_MARKER = "V2_PROFILE_CHILD_OK"
+ROOT_MARKER = "V2_PROFILE_ROOT_OK"
+PARENT_ONLY_MARKER = "V2_PROFILE_PARENT_ONLY_CONTEXT"
 TASK_NAME_RE = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
 SECRET_KEY = re.compile(r"(?i)(token|secret|password|credential|authorization|api[_-]?key|auth_json)")
 SECRET_VALUE = re.compile(
@@ -118,6 +118,7 @@ def _native_model_cache(
         "source": "native-model-cache",
         "sha256": digest,
         "required_v2_models": required,
+        "luna_multi_agent_version": versions.get("gpt-5.6-luna"),
     }
 
 
@@ -418,13 +419,13 @@ def _thread_id_from_exec_output(stdout: bytes) -> str | None:
 
 
 def run_live_probe(
-    *, profile: str = "review_high", task_name: str = "u1_probe"
+    *, profile: str = "review_high", task_name: str = "v2_profile_probe"
 ) -> dict[str, Any]:
     if not TASK_NAME_RE.fullmatch(task_name):
         raise RuntimeProofError("task name is invalid")
     expected_profile = _project_profile_expectation(profile)
     if expected_profile["sandbox_mode"] != "read-only":
-        raise RuntimeProofError("the minimal U1 live probe requires a read-only profile")
+        raise RuntimeProofError("the minimal V2 live probe requires a read-only profile")
     codex_home = Path(os.environ.get("CODEX_HOME", Path.home() / ".codex")).expanduser()
     if not codex_home.is_dir():
         raise RuntimeProofError("the active Codex home is unavailable")
@@ -606,7 +607,7 @@ def build_proof(
         "runtime_receipt": runtime_receipt,
         "limitations": [
             "Codex 0.145.0 child permissions inherit the parent turn after profile loading",
-            "the U1 probe covers one read-only configured child; the complete operation matrix remains U8",
+            "the profile probe covers one read-only configured child; the complete operation matrix remains U8",
             "requested spawn fields are never accepted as runtime identity without session_meta and turn_context",
         ],
     }
@@ -649,7 +650,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--snapshot", type=Path, default=DEFAULT_SNAPSHOT)
     parser.add_argument("--live", action="store_true")
     parser.add_argument("--profile", default="review_high")
-    parser.add_argument("--task-name", default="u1_probe")
+    parser.add_argument("--task-name", default="v2_profile_probe")
     parser.add_argument("--pretty", action="store_true")
     args = parser.parse_args(argv)
     try:

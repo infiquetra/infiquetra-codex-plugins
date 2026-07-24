@@ -119,7 +119,7 @@ def test_spawn_contract_separates_request_response_and_runtime_readback() -> Non
     assert load_snapshot()["collaboration"]["context"]["child_permissions_inherit_parent_turn"] is True
 
 
-def test_v2_operation_inventory_and_remaining_proof_are_explicit() -> None:
+def test_v2_operation_inventory_and_live_matrix_status_are_explicit() -> None:
     collaboration = load_snapshot()["collaboration"]
     statuses = {row["name"]: row["status"] for row in collaboration["required_capabilities"]}
 
@@ -131,10 +131,42 @@ def test_v2_operation_inventory_and_remaining_proof_are_explicit() -> None:
         "spawn_agent",
         "wait_agent",
     ]
-    assert statuses["configured-agent-selection"] == "source-confirmed"
-    assert statuses["nested-delegation"] == "pending-u8"
-    assert statuses["typed-results"] == "pending-u4"
-    assert statuses["luna-leaf"] == statuses["ultra-root-only"] == "pending-u8"
+    assert statuses["configured-agent-selection"] == "supported"
+    assert statuses["nested-delegation"] == "supported"
+    assert statuses["typed-results"] == "supported"
+    assert statuses["luna-leaf"] == "unavailable"
+    assert statuses["ultra-root-only"] == "supported"
+
+
+def test_v2_live_matrix_records_profiles_luna_decision_and_runtime_operations() -> None:
+    matrix = json.loads(
+        (ROOT / "docs/validation/codex-v2-orchestration-matrix.json").read_text()
+    )
+
+    assert matrix["capability_outcome"] == "supported"
+    assert matrix["authentication_mode"] == "current-codex-home-reused"
+    assert matrix["catalog"]["luna_multi_agent_version"] == "v1"
+    assert matrix["luna_decision"]["outcome"] == "fallback-selected"
+    assert [row["profile"] for row in matrix["profiles"]] == [
+        "review_max",
+        "review_high",
+        "work_high",
+        "test_medium",
+        "scan_low",
+        "monitor_low",
+    ]
+    assert all(row["multi_agent_version"] == "v2" for row in matrix["profiles"])
+    assert matrix["nested_delegation"]["leaf_path"] == "/root/nested_parent/nested_leaf"
+    assert matrix["lifecycle"]["operations"] == [
+        "spawn_agent",
+        "send_message",
+        "list_agents",
+        "interrupt_agent",
+        "followup_task",
+        "wait_agent",
+    ]
+    assert matrix["ultra"]["root_effective_effort"] == "ultra"
+    assert matrix["ultra"]["child_ultra_effective"] is False
 
 
 def test_hooks_are_not_runtime_authority() -> None:

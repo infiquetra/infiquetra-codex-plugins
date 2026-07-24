@@ -118,14 +118,14 @@ PROFILE_POLICY = {
     },
     "scan_low": {
         "description": "Low-cost read-only scanning with no external access.",
-        "model": "gpt-5.6-luna",
+        "model": "gpt-5.6-terra",
         "effort": "low",
         "workspace": "read-only",
         "external": "none",
     },
     "monitor_low": {
         "description": "Low-cost read-only monitoring through allowlisted external reads.",
-        "model": "gpt-5.6-luna",
+        "model": "gpt-5.6-terra",
         "effort": "low",
         "workspace": "read-only",
         "external": "allowlisted-read",

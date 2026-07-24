@@ -71,11 +71,12 @@ workflow selects one of six generated profiles:
 | `review_high` | `gpt-5.6-sol` | `high` | read-only | Normal independent review |
 | `work_high` | `gpt-5.6-sol` | `high` | declared write | Complex bounded implementation |
 | `test_medium` | `gpt-5.6-terra` | `medium` | declared write | Ordinary implementation and testing |
-| `scan_low` | `gpt-5.6-luna` | `low` | read-only | Low-cost repository scanning |
-| `monitor_low` | `gpt-5.6-luna` | `low` | read-only | Allowlisted external observation |
+| `scan_low` | `gpt-5.6-terra` | `low` | read-only | Low-cost repository scanning |
+| `monitor_low` | `gpt-5.6-terra` | `low` | read-only | Allowlisted external observation |
 
 Ultra is root-only. Codex 0.145.0 children inherit the parent turn's effective permission profile;
 profile sandbox fields express intent and cannot independently widen or narrow that permission.
+Luna remains a V1-only child model in this runtime, so the V2-only low profiles use Terra/low.
 
 Generate and verify the maintained source profiles:
 

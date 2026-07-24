@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "claim": "codex-v2-orchestration-matrix",
+  "capability_outcome": "supported",
+  "codex_cli_version": "0.145.0",
+  "authentication_mode": "current-codex-home-reused",
+  "catalog": {
+    "source": "native-model-cache",
+    "sha256": "490e0edbfbdcd93d85c8f79c175f3f5bf2962a4bbcfea778f2b3f0eca329b668",
+    "sol_multi_agent_version": "v2",
+    "terra_multi_agent_version": "v2",
+    "luna_multi_agent_version": "v1"
+  },
+  "luna_decision": {
+    "outcome": "fallback-selected",
+    "reason": "Luna is unavailable to MultiAgent V2",
+    "scan_low_model": "gpt-5.6-terra",
+    "monitor_low_model": "gpt-5.6-terra",
+    "effort": "low"
+  },
+  "profiles": [
+    {"profile": "review_max", "model": "gpt-5.6-sol", "effort": "max", "sandbox": "read-only", "permission": "managed", "provider": "openai", "multi_agent_version": "v2", "sha256": "02326611dccfcc6e4666a4e825c1a94044ff651a7e1be5c47842533ce9d8cce8"},
+    {"profile": "review_high", "model": "gpt-5.6-sol", "effort": "high", "sandbox": "read-only", "permission": "managed", "provider": "openai", "multi_agent_version": "v2", "sha256": "3c0b9d8070e300cb84c456fd2ca09ef5999408d84d5a6ee8964303c8b38683d0"},
+    {"profile": "work_high", "model": "gpt-5.6-sol", "effort": "high", "sandbox": "workspace-write", "permission": "managed", "provider": "openai", "multi_agent_version": "v2", "sha256": "520fcdd1f404adb2e6ac911a50054e5cb230ae557eec693d20ccc54cba322d98"},
+    {"profile": "test_medium", "model": "gpt-5.6-terra", "effort": "medium", "sandbox": "workspace-write", "permission": "managed", "provider": "openai", "multi_agent_version": "v2", "sha256": "45105c90ed7e2c51b8b0ecffafed16a1dfb2a0ab24c8cdf47a2f5790a672da60"},
+    {"profile": "scan_low", "model": "gpt-5.6-terra", "effort": "low", "sandbox": "read-only", "permission": "managed", "provider": "openai", "multi_agent_version": "v2", "sha256": "caca93d44de56bf12839f50fc30e013bb210bd19d13b0c6098a6dfb256d80ac7"},
+    {"profile": "monitor_low", "model": "gpt-5.6-terra", "effort": "low", "sandbox": "read-only", "permission": "managed", "provider": "openai", "multi_agent_version": "v2", "sha256": "633a29e67fb570814ba079015ce7d6a372ea67fd44d1dc9c156276247375ef36"}
+  ],
+  "context": {
+    "no_history_child_excluded_root_only_marker": true,
+    "bounded_history_child_observed_current_root_marker": true
+  },
+  "nested_delegation": {
+    "parent_path": "/root/nested_parent",
+    "parent_profile": "review_high",
+    "leaf_path": "/root/nested_parent/nested_leaf",
+    "leaf_profile": "scan_low",
+    "leaf_model": "gpt-5.6-terra",
+    "leaf_effort": "low",
+    "terminal": true
+  },
+  "typed_result": {
+    "schema": "assignment-result.v1",
+    "role": "dependency-scanner",
+    "profile": "scan_low",
+    "validated": true
+  },
+  "lifecycle": {
+    "canonical_path": "/root/lifecycle",
+    "operations": ["spawn_agent", "send_message", "list_agents", "interrupt_agent", "followup_task", "wait_agent"],
+    "restored_same_path": true,
+    "terminal": true
+  },
+  "ultra": {
+    "root_model": "gpt-5.6-sol",
+    "root_effective_effort": "ultra",
+    "child_requested_effort": "ultra",
+    "child_profile": "review_max",
+    "child_effective_effort": "max",
+    "child_ultra_effective": false
+  },
+  "limitations": [
+    "Child permissions inherit the parent turn in Codex 0.145.0",
+    "The pre-merge proof selects the unmodified native model cache while the user V1 catalog pointer remains installed for rollback",
+    "Installed package and post-cutover configuration readback remain release-phase checks"
+  ]
+}

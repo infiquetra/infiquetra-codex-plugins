@@ -112,8 +112,8 @@ def test_full_catalog_resolves_exact_five_classes(full_snapshot) -> None:
         "review-max": ("gpt-5.6-sol", "max"),
         "review-high": ("gpt-5.6-sol", "high"),
         "test-medium": ("gpt-5.6-terra", "medium"),
-        "scan-low": ("gpt-5.6-luna", "low"),
-        "monitor-low": ("gpt-5.6-luna", "low"),
+        "scan-low": ("gpt-5.6-terra", "low"),
+        "monitor-low": ("gpt-5.6-terra", "low"),
     }
     for execution_class, pair in expected.items():
         result = resolver.resolve_execution_class(execution_class, full_snapshot)
@@ -166,19 +166,18 @@ def test_review_max_clamps_down_to_gpt55_strongest_scalar() -> None:
 
 
 def test_no_compatible_fallback_and_upward_clamp_fail_loud() -> None:
-    snapshot = _snapshot(_row("gpt-5.6-luna", ("medium", "high")))
+    snapshot = _snapshot(_row("gpt-5.6-terra", ("medium", "high")))
     with pytest.raises(resolver.TierResolverError, match="no compatible selectable model"):
         resolver.resolve_execution_class("scan-low", snapshot)
 
 
 def test_hidden_or_api_unsupported_model_is_not_selectable() -> None:
     snapshot = _snapshot(
-        _row("gpt-5.6-luna", ("low",), visibility="hide"),
         _row("gpt-5.6-terra", ("low",), supported_in_api=False),
-        _row("gpt-5.4-mini", ("low",)),
+        _row("gpt-5.6-sol", ("low",)),
     )
     result = resolver.resolve_execution_class("scan-low", snapshot)
-    assert result.effective_model == "gpt-5.4-mini"
+    assert result.effective_model == "gpt-5.6-sol"
 
 
 def test_unknown_class_and_leaf_ultra_policy_fail() -> None:

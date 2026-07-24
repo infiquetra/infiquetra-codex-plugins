@@ -121,6 +121,27 @@ separate-login requirement on 2026-07-24.
 - Removed the generated isolated proof home's authentication file and login log. No Hermes or current
   Codex authentication state was modified.
 
+## U8 Luna Decision
+
+- Codex 0.145.0's native model cache reports Luna as MultiAgent V1 while Sol and Terra report V2.
+  Luna therefore cannot satisfy the V2-only leaf requirement.
+- Applied the plan's preapproved fallback: `scan_low` and `monitor_low` now use Terra/low with their
+  existing read-only and external-access boundaries unchanged. Sol/low is their only ordered V2
+  fallback.
+
+## U8 Live Matrix Observations
+
+- All six project-discovered profiles launched through V2 with exact runtime model and effort
+  readback. Read-only profiles inherited a read-only managed parent; `work_high` and `test_medium`
+  inherited a workspace-write managed parent and made no file changes.
+- Nested delegation completed at `/root/nested_parent/nested_leaf`: `review_high` launched
+  `scan_low`, whose receipt reported Terra/low and V2.
+- One canonical child path completed `send_message`, `list_agents`, `interrupt_agent`,
+  `followup_task`, `wait_agent`, and restoration, finishing with the follow-up result.
+- A root launched at Sol/Ultra and reported effective Ultra. An Ultra request for a `review_max`
+  child produced a normal child whose runtime receipt remained at the profile's Max ceiling; child
+  Ultra was not effective even though the launch request was accepted.
+
 ## U5: Reduce Assurance And Bound Remediation
 
 - Replaced receipt-chain adjudication with one root reducer over the approved contract, typed V2 results, deterministic check outcomes, fresh-root reviewer identities, verified root-adopted findings, and remediation state.

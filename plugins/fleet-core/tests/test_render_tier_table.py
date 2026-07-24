@@ -90,4 +90,4 @@ def test_resolved_table_consumes_one_supplied_snapshot() -> None:
     table = renderer.render_resolved_table(snapshot)
     assert table.count(snapshot.normalized_sha256[:12]) == len(palette.EXECUTION_CLASSES)
     assert "| `review-max` | `gpt-5.6-sol` | `max` | `max` |" in table
-    assert "| `monitor-low` | `gpt-5.6-luna` | `low` | `low` |" in table
+    assert "| `monitor-low` | `gpt-5.6-terra` | `low` | `low` |" in table

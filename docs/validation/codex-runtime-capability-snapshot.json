@@ -32,7 +32,7 @@
     "host_total_slots": null,
     "effective_total_slots": null,
     "effective_max_children": null,
-    "session_fact_source": "current-v1-session-and-official-v2-contract",
+    "session_fact_source": "current-v2-live-matrix-and-official-v2-contract",
     "multi_agent_v2_config": {
       "enabled": true,
       "tool_namespace": "collaboration",
@@ -193,20 +193,20 @@
     },
     "child_result_delivery": "mailbox-and-final-status",
     "required_capabilities": [
-      {"name": "configured-agent-selection", "status": "source-confirmed"},
-      {"name": "model-effort-readback", "status": "source-confirmed"},
-      {"name": "provider-readback", "status": "source-confirmed"},
-      {"name": "effective-permission-readback", "status": "source-confirmed"},
-      {"name": "bounded-context", "status": "source-confirmed"},
-      {"name": "nested-delegation", "status": "pending-u8"},
-      {"name": "typed-results", "status": "pending-u4"},
-      {"name": "messaging", "status": "pending-u8"},
-      {"name": "follow-up", "status": "pending-u8"},
-      {"name": "wait-list", "status": "pending-u8"},
-      {"name": "interruption", "status": "pending-u8"},
-      {"name": "restoration", "status": "pending-u8"},
-      {"name": "luna-leaf", "status": "pending-u8"},
-      {"name": "ultra-root-only", "status": "pending-u8"}
+      {"name": "configured-agent-selection", "status": "supported"},
+      {"name": "model-effort-readback", "status": "supported"},
+      {"name": "provider-readback", "status": "supported"},
+      {"name": "effective-permission-readback", "status": "supported"},
+      {"name": "bounded-context", "status": "supported"},
+      {"name": "nested-delegation", "status": "supported"},
+      {"name": "typed-results", "status": "supported"},
+      {"name": "messaging", "status": "supported"},
+      {"name": "follow-up", "status": "supported"},
+      {"name": "wait-list", "status": "supported"},
+      {"name": "interruption", "status": "supported"},
+      {"name": "restoration", "status": "supported"},
+      {"name": "luna-leaf", "status": "unavailable"},
+      {"name": "ultra-root-only", "status": "supported"}
     ]
   },
   "hook_capabilities": {

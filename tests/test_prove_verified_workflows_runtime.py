@@ -30,7 +30,7 @@ def rollout(
     sandbox: str = "read-only",
     permission: str = "managed",
     role: str = "review_high",
-    path: str = "/root/u1_probe",
+    path: str = "/root/v2_profile_probe",
     parent: str | None = "root-thread",
     marker: str = P.TERMINAL_MARKER,
     include_parent_marker: bool = False,
@@ -82,7 +82,7 @@ def rollout(
 
 def expected() -> dict[str, object]:
     return {
-        "agent_path": "/root/u1_probe",
+        "agent_path": "/root/v2_profile_probe",
         "agent_role": "review_high",
         "model": "gpt-5.6-sol",
         "reasoning_effort": "high",
@@ -132,6 +132,7 @@ def test_native_model_cache_requires_v2_rows(tmp_path: Path) -> None:
     assert path == cache
     assert receipt["source"] == "native-model-cache"
     assert receipt["required_v2_models"] == ["gpt-5.6-sol"]
+    assert receipt["luna_multi_agent_version"] is None
     with pytest.raises(P.RuntimeProofError, match="not V2"):
         P._native_model_cache(home, ("gpt-5.6-terra",))
 
@@ -143,7 +144,7 @@ def test_rollout_parser_combines_session_meta_and_turn_context() -> None:
         "session_id": "child-thread",
         "parent_thread_id": "root-thread",
         "parent_thread_present": True,
-        "agent_path": "/root/u1_probe",
+        "agent_path": "/root/v2_profile_probe",
         "agent_role": "review_high",
         "model": "gpt-5.6-sol",
         "reasoning_effort": "high",
@@ -187,7 +188,7 @@ def test_requested_fields_without_runtime_context_fail() -> None:
             "payload": {
                 "id": "child",
                 "agent_role": "review_high",
-                "agent_path": "/root/u1_probe",
+                "agent_path": "/root/v2_profile_probe",
             },
         }
     ).encode()

@@ -57,7 +57,7 @@
     "project_profile_discovery": "source-bytes-match",
     "runtime_receipt": "supported-current-session-native-cache",
     "permission_behavior": "child-inherits-parent-turn",
-    "full_matrix": "pending-u8"
+    "full_matrix": "supported-current-session"
   },
   "rollback": {
     "committed_exact_bytes": false,

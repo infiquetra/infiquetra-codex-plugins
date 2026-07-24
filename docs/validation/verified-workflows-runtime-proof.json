@@ -2,10 +2,10 @@
   "capability_outcome": "diagnostic",
   "claim": "codex-v2-runtime-capability",
   "codex_cli_version": "0.145.0",
-  "harness_sha256": "8547e7f9a9f0066426f5fe2c92a6dc3f22aba7cb035ab214f440e7abd21baec1",
+  "harness_sha256": "4a4c14bf17acfd6b31da504d9d3772029c02db14233e8a3e28aa1f43950e492d",
   "limitations": [
     "Codex 0.145.0 child permissions inherit the parent turn after profile loading",
-    "the U1 probe covers one read-only configured child; the complete operation matrix remains U8",
+    "the profile probe covers one read-only configured child; the complete operation matrix remains U8",
     "requested spawn fields are never accepted as runtime identity without session_meta and turn_context"
   ],
   "live_invocation_performed": false,
@@ -42,19 +42,19 @@
     {
       "profile_id": "scan_low",
       "runtime_agent_name": "scan_low",
-      "sha256": "8ef81d4fee4ccc7905767923e3c58224149a00d3cb8ef3795b44fcdc5e0bbbf3"
+      "sha256": "caca93d44de56bf12839f50fc30e013bb210bd19d13b0c6098a6dfb256d80ac7"
     },
     {
       "profile_id": "monitor_low",
       "runtime_agent_name": "monitor_low",
-      "sha256": "25055c2f7e1d7d19a3572bd24bd65ea469866a06e86f1a96df0ed3d8e43becee"
+      "sha256": "633a29e67fb570814ba079015ce7d6a372ea67fd44d1dc9c156276247375ef36"
     }
   ],
   "project_discovery": {
     "files": [
       {
         "filename": "monitor_low.toml",
-        "sha256": "25055c2f7e1d7d19a3572bd24bd65ea469866a06e86f1a96df0ed3d8e43becee"
+        "sha256": "633a29e67fb570814ba079015ce7d6a372ea67fd44d1dc9c156276247375ef36"
       },
       {
         "filename": "review_high.toml",
@@ -66,7 +66,7 @@
       },
       {
         "filename": "scan_low.toml",
-        "sha256": "8ef81d4fee4ccc7905767923e3c58224149a00d3cb8ef3795b44fcdc5e0bbbf3"
+        "sha256": "caca93d44de56bf12839f50fc30e013bb210bd19d13b0c6098a6dfb256d80ac7"
       },
       {
         "filename": "test_medium.toml",
@@ -95,7 +95,7 @@
   ],
   "runtime_receipt": null,
   "schema_version": 2,
-  "snapshot_sha256": "55db69b01ec7bcda10c18597f78d1b8a08b37b587867f46c869b2c0d513ec182",
+  "snapshot_sha256": "6e2e232edccee3fe61a9afaadaa8f5bbe64117f41384271d71c68fc74d464988",
   "spawn_request_fields": [
     "agent_type",
     "fork_turns",
