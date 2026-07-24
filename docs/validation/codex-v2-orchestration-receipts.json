@@ -7,7 +7,7 @@
     "terra_multi_agent_version": "v2"
   },
   "claim": "sanitized-codex-v2-runtime-receipts",
-  "receipt_set_sha256": "68e403e0a18cc7b00c2c6ea5d51ce029a6d22830c02efbd19bc02ab27da138e5",
+  "receipt_set_sha256": "37c49a7aef5f4fb334e9329daecbf2b6c11c03c1488b587601e819dbdc926b14",
   "receipts": [
     {
       "agent_path": "/root/bounded_context",
@@ -43,7 +43,7 @@
       "parent_case": "bounded_root",
       "permission_profile": "managed",
       "reasoning_effort": "low",
-      "rollout_sha256": "971b77e3575837c8578b82aec087528c9e875923079fec6537dfc2a7712770c6",
+      "rollout_sha256": "78361f97b7f090c13b965ad1cd7f7edb1c5874090f4365473126a46208b994fa",
       "sandbox_mode": "read-only",
       "terminal": true,
       "typed_result_valid": false
@@ -86,7 +86,7 @@
       "parent_case": null,
       "permission_profile": "managed",
       "reasoning_effort": "max",
-      "rollout_sha256": "c59232e43e9cc07233ff6d9bb144ed9c800f5ae0ae108138ff60a676a0aec132",
+      "rollout_sha256": "f56412164d052fe64549f6bc23b6322ac6d5b20a556c1b9d028ae6f88588b116",
       "sandbox_mode": "read-only",
       "terminal": true,
       "typed_result_valid": false
@@ -125,7 +125,7 @@
       "parent_case": "lifecycle_root",
       "permission_profile": "managed",
       "reasoning_effort": "high",
-      "rollout_sha256": "cd0dc0e4d1adf75514545805f963e373e799393f0c7895f28bfac9813ad6c86f",
+      "rollout_sha256": "5d4e51eb5e0af5424ac3f09ec990d93d62b4cd862375eaaf4fa2ca9cbc7a41fe",
       "sandbox_mode": "read-only",
       "terminal": true,
       "typed_result_valid": false
@@ -171,7 +171,7 @@
       "parent_case": null,
       "permission_profile": "managed",
       "reasoning_effort": "max",
-      "rollout_sha256": "48ca707d5410ede384c16394cda4bd6aef0146bf52164b8b7df1733efebf9ed6",
+      "rollout_sha256": "05a631cbecfc2682b8eb6133eb5fdc7e98e0244cac75e8dd2fc5074ff60d41a9",
       "sandbox_mode": "read-only",
       "terminal": true,
       "typed_result_valid": false
@@ -210,7 +210,7 @@
       "parent_case": "nested_parent",
       "permission_profile": "managed",
       "reasoning_effort": "low",
-      "rollout_sha256": "ee93c30582620c7ab0b4917c3ac4260de91e6c21ba6a5fda39fbea551a60fa18",
+      "rollout_sha256": "7f3107f5f2f46bb418e6214566e946d11383803f82ddc4d5c74bd079120fee9b",
       "sandbox_mode": "read-only",
       "terminal": true,
       "typed_result_valid": false
@@ -253,7 +253,7 @@
       "parent_case": "nested_root",
       "permission_profile": "managed",
       "reasoning_effort": "high",
-      "rollout_sha256": "6499654425f0a4bb575c5d1d284cef660243bf3e119984573f7ad6be81976804",
+      "rollout_sha256": "998f24ed5ed8892314052f2f0387fd5acf2fb60cf8a1c311a58d0919293bc3e6",
       "sandbox_mode": "read-only",
       "terminal": true,
       "typed_result_valid": false
@@ -296,13 +296,13 @@
       "parent_case": null,
       "permission_profile": "managed",
       "reasoning_effort": "max",
-      "rollout_sha256": "5d8c11d735d139d75633bdc7468b741c4c861a1724d45fc3752b7ffa44b7ab96",
+      "rollout_sha256": "94c6fd36de7944af42b9bfb80c9766f0b3e7338fca349d361c64d7f740821279",
       "sandbox_mode": "read-only",
       "terminal": true,
       "typed_result_valid": false
     },
     {
-      "agent_path": "/root/v2_profile_probe",
+      "agent_path": "/root/v2_config_probe",
       "agent_role": "scan_low",
       "approval_policy": "never",
       "case": "no_history_child",
@@ -335,7 +335,7 @@
       "parent_case": "no_history_root",
       "permission_profile": "managed",
       "reasoning_effort": "low",
-      "rollout_sha256": "baa09d6ce68d9a3625e7d190db82231d6b7b9f4ee62eb9cfbd9a3f512edbe01d",
+      "rollout_sha256": "4c45ab0adc47cf2c0f0338bdf6acb62231cb2d4e276d2a057f51ec050f959bc5",
       "sandbox_mode": "read-only",
       "terminal": true,
       "typed_result_valid": false
@@ -378,7 +378,7 @@
       "parent_case": null,
       "permission_profile": "managed",
       "reasoning_effort": "max",
-      "rollout_sha256": "1dd1d346d885b3b60cd3898304929ca0de1afb04146c14cbe5be4e071bc7470b",
+      "rollout_sha256": "3dbffe32e29c9b6ac9ba756a1d32c9fc7d8771c13e2d47004e3cec6b65c7fe27",
       "sandbox_mode": "read-only",
       "terminal": true,
       "typed_result_valid": false
@@ -417,7 +417,7 @@
       "parent_case": "profile_read_root",
       "permission_profile": "managed",
       "reasoning_effort": "low",
-      "rollout_sha256": "0198c66a4dee77bfb04eec62d9a218d8ad042895c0744bef7dc6d9cfc02c4d12",
+      "rollout_sha256": "f780db61c570c2e9dcf642d0e49ccf5e67cd595c49ac0ee89f2d455d4e5b4ae4",
       "sandbox_mode": "read-only",
       "terminal": true,
       "typed_result_valid": false
@@ -436,7 +436,7 @@
         "V2_NESTED_LEAF_OK": false,
         "V2_NESTED_PARENT_OK": false,
         "V2_NESTED_ROOT_OK": false,
-        "V2_PROFILE_CHILD_OK": true,
+        "V2_PROFILE_CHILD_OK": false,
         "V2_PROFILE_MONITOR_LOW_OK": true,
         "V2_PROFILE_PARENT_ONLY_CONTEXT": false,
         "V2_PROFILE_REVIEW_HIGH_OK": true,
@@ -460,7 +460,7 @@
       "parent_case": null,
       "permission_profile": "managed",
       "reasoning_effort": "max",
-      "rollout_sha256": "e7107c6192ea0056708151b2d3c7806437121539a93e8d541045c45dc5c2dd59",
+      "rollout_sha256": "bccdbb4c2738f6365196c65d5edb91334b660a49062e59d37ba0f7de73f2e15b",
       "sandbox_mode": "read-only",
       "terminal": true,
       "typed_result_valid": false
@@ -499,7 +499,7 @@
       "parent_case": "profile_read_root",
       "permission_profile": "managed",
       "reasoning_effort": "high",
-      "rollout_sha256": "dc12229e14e6eaa3d12a44ac6484cdcb635f7fe7f8b0592823a76a1b7744a4cb",
+      "rollout_sha256": "22e40b1522ffacd2133147992ee4817c7d853e645ac0420f3aff4b6b75e26351",
       "sandbox_mode": "read-only",
       "terminal": true,
       "typed_result_valid": false
@@ -538,7 +538,7 @@
       "parent_case": "profile_read_root",
       "permission_profile": "managed",
       "reasoning_effort": "max",
-      "rollout_sha256": "558bb5f227a4e8c7f65e7ae44641da24fa02b282a9bc721bed06a9089b28c89c",
+      "rollout_sha256": "1f37b67f8257eb3e43fed9122b188e7d377807476231b12c515a70c08737d55b",
       "sandbox_mode": "read-only",
       "terminal": true,
       "typed_result_valid": false
@@ -577,7 +577,7 @@
       "parent_case": "profile_read_root",
       "permission_profile": "managed",
       "reasoning_effort": "low",
-      "rollout_sha256": "458f20c0e7d046353d499cbd2723931ed9a8b988af0f9bb2f5e1e95ae559ed5d",
+      "rollout_sha256": "8ecbf97fe6e850feb1d48bf632461aa0fb379d73e757add21f398853689ee5f5",
       "sandbox_mode": "read-only",
       "terminal": true,
       "typed_result_valid": false
@@ -616,7 +616,7 @@
       "parent_case": "profile_write_root",
       "permission_profile": "managed",
       "reasoning_effort": "medium",
-      "rollout_sha256": "f8971d320bfa4f9edda2c456a44f69bbe0bd3bad0335057f045044ae52e93503",
+      "rollout_sha256": "299cd63c3ba9f84ff4b75a461ec7296c4f2cd0535121ac5a70ed654706948590",
       "sandbox_mode": "workspace-write",
       "terminal": true,
       "typed_result_valid": false
@@ -655,7 +655,7 @@
       "parent_case": "profile_write_root",
       "permission_profile": "managed",
       "reasoning_effort": "high",
-      "rollout_sha256": "ad86681de21dcc010c4ebf0ddfe6857f94e3fe8ed71740a0c84fa5e0b544b673",
+      "rollout_sha256": "392bbf25eafe02287c0d61987ffbb0b370d1ac03da2f0ec22ce80f1d9e85c69f",
       "sandbox_mode": "workspace-write",
       "terminal": true,
       "typed_result_valid": false
@@ -698,7 +698,7 @@
       "parent_case": null,
       "permission_profile": "managed",
       "reasoning_effort": "max",
-      "rollout_sha256": "0390d65f4fa0f301060d0fd456dab08ff22683393ee2bcac0d9305cb8b9a1b67",
+      "rollout_sha256": "d8e9082c22ba9d6a8cf0c5e80d909df6cc40af5baa67892088bc85caa7de1a15",
       "sandbox_mode": "workspace-write",
       "terminal": true,
       "typed_result_valid": false
@@ -737,7 +737,7 @@
       "parent_case": "typed_root",
       "permission_profile": "managed",
       "reasoning_effort": "low",
-      "rollout_sha256": "6c0daadc9b708066bee34ad2aae015b5f1e13a29558f79230f186b7fe59c18ca",
+      "rollout_sha256": "f087f3362e3c6ee6f90f7e8819e257cb0bcd1faf38a1a58a94a814fc900c2a34",
       "sandbox_mode": "read-only",
       "terminal": true,
       "typed_result_valid": true
@@ -780,7 +780,7 @@
       "parent_case": null,
       "permission_profile": "managed",
       "reasoning_effort": "max",
-      "rollout_sha256": "38d9d06445839ba473a3e3750d2547fe82cf659a22ae06a2fdb2b711e28424c0",
+      "rollout_sha256": "3d5d14be7c9bcd4458ad0da6dd2d7ae4d3e222d77983ed9301f3f4be46485b09",
       "sandbox_mode": "read-only",
       "terminal": true,
       "typed_result_valid": false
@@ -815,11 +815,14 @@
       "model": "gpt-5.6-sol",
       "model_provider": "openai",
       "multi_agent_version": "v2",
-      "operations": [],
+      "operations": [
+        "send_message",
+        "wait_agent"
+      ],
       "parent_case": "ultra_request_root",
       "permission_profile": "managed",
       "reasoning_effort": "max",
-      "rollout_sha256": "cfaf64989904f53cdd1cc8eeba396598479da6ffdac8e35bcb50f7932d41c7bc",
+      "rollout_sha256": "ac10baaf77efde2353df4f1f5f27daa0dff3b837295c304c2c994fe8201b9cb0",
       "sandbox_mode": "read-only",
       "terminal": false,
       "typed_result_valid": false
@@ -855,12 +858,13 @@
       "model_provider": "openai",
       "multi_agent_version": "v2",
       "operations": [
-        "spawn_agent"
+        "spawn_agent",
+        "wait_agent"
       ],
       "parent_case": null,
       "permission_profile": "managed",
       "reasoning_effort": "max",
-      "rollout_sha256": "5c495a1797267f5e9ad6baba8c3282d1637cfd3a6ad91c7ea878c47d5c6644da",
+      "rollout_sha256": "d745dfa58223250f7595987987003089ff47c9ff706c392cdbc0b4335b4315ca",
       "sandbox_mode": "read-only",
       "terminal": true,
       "typed_result_valid": false
@@ -899,7 +903,7 @@
       "parent_case": null,
       "permission_profile": "managed",
       "reasoning_effort": "ultra",
-      "rollout_sha256": "35fa1e08e6c567b8e093b27b4e35e89412ee0eb7fbe348d5863c98d101e3fdef",
+      "rollout_sha256": "1bddd9a91836a31288fe9e219ebda3316ea6e32bce713977c5e36e495f7e06b0",
       "sandbox_mode": "read-only",
       "terminal": true,
       "typed_result_valid": false

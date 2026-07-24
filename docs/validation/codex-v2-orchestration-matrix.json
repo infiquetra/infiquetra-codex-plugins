@@ -18,7 +18,7 @@
     "builder_sha256": "d63187062660201b657d4761a886eda2b0782fe21a240a844ed6c295bae64f0d",
     "project_config_sha256": "25dd9c8da4aa333ea03da151cb023831b2ae20555aa8deb84f2d955440466806",
     "receipt_artifact": "docs/validation/codex-v2-orchestration-receipts.json",
-    "receipt_set_sha256": "68e403e0a18cc7b00c2c6ea5d51ce029a6d22830c02efbd19bc02ab27da138e5"
+    "receipt_set_sha256": "37c49a7aef5f4fb334e9329daecbf2b6c11c03c1488b587601e819dbdc926b14"
   },
   "lifecycle": {
     "canonical_path": "/root/lifecycle",
@@ -62,7 +62,7 @@
       "permission": "managed",
       "profile": "review_max",
       "provider": "openai",
-      "rollout_sha256": "558bb5f227a4e8c7f65e7ae44641da24fa02b282a9bc721bed06a9089b28c89c",
+      "rollout_sha256": "1f37b67f8257eb3e43fed9122b188e7d377807476231b12c515a70c08737d55b",
       "sandbox": "read-only",
       "sha256": "02326611dccfcc6e4666a4e825c1a94044ff651a7e1be5c47842533ce9d8cce8"
     },
@@ -73,7 +73,7 @@
       "permission": "managed",
       "profile": "review_high",
       "provider": "openai",
-      "rollout_sha256": "dc12229e14e6eaa3d12a44ac6484cdcb635f7fe7f8b0592823a76a1b7744a4cb",
+      "rollout_sha256": "22e40b1522ffacd2133147992ee4817c7d853e645ac0420f3aff4b6b75e26351",
       "sandbox": "read-only",
       "sha256": "3c0b9d8070e300cb84c456fd2ca09ef5999408d84d5a6ee8964303c8b38683d0"
     },
@@ -84,7 +84,7 @@
       "permission": "managed",
       "profile": "work_high",
       "provider": "openai",
-      "rollout_sha256": "ad86681de21dcc010c4ebf0ddfe6857f94e3fe8ed71740a0c84fa5e0b544b673",
+      "rollout_sha256": "392bbf25eafe02287c0d61987ffbb0b370d1ac03da2f0ec22ce80f1d9e85c69f",
       "sandbox": "workspace-write",
       "sha256": "520fcdd1f404adb2e6ac911a50054e5cb230ae557eec693d20ccc54cba322d98"
     },
@@ -95,7 +95,7 @@
       "permission": "managed",
       "profile": "test_medium",
       "provider": "openai",
-      "rollout_sha256": "f8971d320bfa4f9edda2c456a44f69bbe0bd3bad0335057f045044ae52e93503",
+      "rollout_sha256": "299cd63c3ba9f84ff4b75a461ec7296c4f2cd0535121ac5a70ed654706948590",
       "sandbox": "workspace-write",
       "sha256": "45105c90ed7e2c51b8b0ecffafed16a1dfb2a0ab24c8cdf47a2f5790a672da60"
     },
@@ -106,7 +106,7 @@
       "permission": "managed",
       "profile": "scan_low",
       "provider": "openai",
-      "rollout_sha256": "458f20c0e7d046353d499cbd2723931ed9a8b988af0f9bb2f5e1e95ae559ed5d",
+      "rollout_sha256": "8ecbf97fe6e850feb1d48bf632461aa0fb379d73e757add21f398853689ee5f5",
       "sandbox": "read-only",
       "sha256": "caca93d44de56bf12839f50fc30e013bb210bd19d13b0c6098a6dfb256d80ac7"
     },
@@ -117,7 +117,7 @@
       "permission": "managed",
       "profile": "monitor_low",
       "provider": "openai",
-      "rollout_sha256": "0198c66a4dee77bfb04eec62d9a218d8ad042895c0744bef7dc6d9cfc02c4d12",
+      "rollout_sha256": "f780db61c570c2e9dcf642d0e49ccf5e67cd595c49ac0ee89f2d455d4e5b4ae4",
       "sandbox": "read-only",
       "sha256": "633a29e67fb570814ba079015ce7d6a372ea67fd44d1dc9c156276247375ef36"
     }
@@ -126,7 +126,7 @@
   "typed_result": {
     "profile": "scan_low",
     "role": "dependency-scanner",
-    "rollout_sha256": "6c0daadc9b708066bee34ad2aae015b5f1e13a29558f79230f186b7fe59c18ca",
+    "rollout_sha256": "f087f3362e3c6ee6f90f7e8819e257cb0bcd1faf38a1a58a94a814fc900c2a34",
     "schema": "assignment-result.v1",
     "validated": true
   },

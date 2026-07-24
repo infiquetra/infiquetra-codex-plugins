@@ -127,7 +127,7 @@ def test_caller_cannot_promote_response_only_registry_route(tmp_path: Path) -> N
     )[0]
     lifecycle.approve_bundle([preview], operator="operator", approved_at="approved")
 
-    with pytest.raises(ValueError, match="differs from the canonical registry"):
+    with pytest.raises(ValueError, match="external CLI writes are disabled"):
         adapters.executor_for_preview(preview, repo_root=tmp_path)
 
 
