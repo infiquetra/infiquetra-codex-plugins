@@ -1,35 +1,45 @@
 {
-  "schema_version": 1,
-  "captured_at": "2026-07-12T01:19:40Z",
+  "schema_version": 2,
+  "captured_at": "2026-07-24T14:38:14Z",
   "refs": {
     "codex": {
-      "historical_plan_base": "39f0a2f466cb6f58e203ce3e586a959ff853a342",
-      "execution_base": "d8f5d165ad0e859af9c7d7f1ba7461b00ec1ae95",
-      "observed_origin_main": "39f0a2f466cb6f58e203ce3e586a959ff853a342"
+      "historical_plan_base": "b95f69380fa044fc5f94c3463d83987218f9e261",
+      "execution_base": "b95f69380fa044fc5f94c3463d83987218f9e261",
+      "observed_origin_main": "f3e1af75d06ac4c64a499f05e99c54903d978f35"
     },
     "claude": {
-      "source_base": "38742ece89880a6b140be237edad6d3f13c97b54",
-      "source_target": "675712b1d6a55ead11f3e971ed0e119354621bf2",
-      "observed_head": "675712b1d6a55ead11f3e971ed0e119354621bf2",
-      "observed_main": "478f3e7f9c0c491a86092b33eb7bf6d0f1d6ae6f",
-      "observed_origin_main": "478f3e7f9c0c491a86092b33eb7bf6d0f1d6ae6f",
+      "source_base": "9470edca65b1db06d2f7562eeb2d5a9e48c34dec",
+      "source_target": "46fefb6f17f0c9d0d63858978536d3369ab57dfe",
+      "observed_head": "03c2640ca4338e70bba796c7e84db694b1aeade8",
+      "observed_main": "03c2640ca4338e70bba796c7e84db694b1aeade8",
+      "observed_origin_main": "03c2640ca4338e70bba796c7e84db694b1aeade8",
       "target_reachable": true
     }
   },
   "runtime": {
-    "codex_cli_version": "0.144.1",
+    "codex_cli_version": "0.145.0",
     "effective_parent_permission_mode": {
       "sandbox_mode": "danger-full-access",
       "approval_policy": "never"
     },
     "configured_max_threads": 6,
     "configured_max_threads_source": "config",
+    "configured_max_threads_key": "max_threads",
+    "configured_v2_total_threads": 7,
+    "configured_v2_total_threads_source": "agents-plus-root",
     "configured_max_depth": 1,
     "configured_max_depth_source": "config",
-    "host_total_slots": 4,
-    "effective_total_slots": 4,
-    "effective_max_children": 3,
-    "session_fact_source": "session-tool-contract"
+    "host_total_slots": null,
+    "effective_total_slots": null,
+    "effective_max_children": null,
+    "session_fact_source": "current-v1-session-and-official-v2-contract",
+    "multi_agent_v2_config": {
+      "enabled": true,
+      "tool_namespace": "collaboration",
+      "hide_spawn_agent_metadata": true,
+      "expose_spawn_agent_model_overrides": true,
+      "non_code_mode_only": true
+    }
   },
   "configured_defaults": {
     "model": "gpt-5.6-sol",
@@ -99,6 +109,7 @@
   },
   "features": {
     "multi_agent": {"stage": "stable", "enabled": true},
+    "multi_agent_v2": {"stage": "stable", "enabled": false},
     "hooks": {"stage": "stable", "enabled": true},
     "goals": {"stage": "stable", "enabled": true},
     "plugins": {"stage": "stable", "enabled": true}
@@ -114,34 +125,81 @@
       "mcp_servers",
       "skills.config"
     ],
-    "repo_managed_source_count": 25,
-    "installed_custom_agent_count": 4,
-    "installed_team_execution_managed_count": 0,
-    "installed_verified_workflows_managed_count": 0
+    "repo_managed_source_count": 5,
+    "installed_custom_agent_count": 9,
+    "installed_verified_workflows_managed_count": 5
   },
   "collaboration": {
     "spawn": {
       "available": true,
+      "contract_version": "v2",
       "tool_namespace": "agents",
       "hide_spawn_agent_metadata": false,
       "request_fields": ["agent_type", "fork_turns", "message", "model", "reasoning_effort", "service_tier", "task_name"],
+      "response_fields": ["nickname", "task_name"],
       "default_fork_turns": "all",
       "profile_selection_fork_turns": ["none", "positive-integer"],
       "per_child_agent_type": true,
       "per_child_model": true,
       "per_child_effort": true,
       "per_child_sandbox": false,
-      "selection_readback_fields": ["agent_type", "effort", "model", "sandbox_mode"]
+      "runtime_receipt_sources": ["session_meta", "turn_context"],
+      "selection_readback_fields": [
+        "agent_path",
+        "agent_role",
+        "model",
+        "reasoning_effort",
+        "model_provider",
+        "approval_policy",
+        "permission_profile",
+        "sandbox_policy",
+        "multi_agent_version"
+      ]
     },
-    "steer": {
-      "available": true,
-      "operations": ["followup", "interrupt", "message"]
+    "operations": ["followup_task", "interrupt_agent", "list_agents", "send_message", "spawn_agent", "wait_agent"],
+    "context": {
+      "fork_turns": ["none", "all", "positive-integer"],
+      "full_history_profile_override": false,
+      "child_permissions_inherit_parent_turn": true
+    },
+    "messaging": {
+      "queue_only": "send_message",
+      "trigger_turn": "followup_task"
     },
     "wait": {
-      "available": true,
-      "request_fields": ["timeout_ms"]
+      "request_fields": ["timeout_ms"],
+      "response_fields": ["message", "timed_out"],
+      "content_delivered_out_of_band": true
     },
-    "child_result_delivery": "mailbox-and-final-result"
+    "list": {
+      "request_fields": ["path_prefix"],
+      "response_fields": ["agent_name", "agent_status"]
+    },
+    "interruption": {
+      "operation": "interrupt_agent",
+      "agent_remains_addressable": true
+    },
+    "restoration": {
+      "same_path_operation": "followup_task",
+      "root_resume_surface": "codex-exec-resume"
+    },
+    "child_result_delivery": "mailbox-and-final-status",
+    "required_capabilities": [
+      {"name": "configured-agent-selection", "status": "source-confirmed"},
+      {"name": "model-effort-readback", "status": "source-confirmed"},
+      {"name": "provider-readback", "status": "source-confirmed"},
+      {"name": "effective-permission-readback", "status": "source-confirmed"},
+      {"name": "bounded-context", "status": "source-confirmed"},
+      {"name": "nested-delegation", "status": "pending-u8"},
+      {"name": "typed-results", "status": "pending-u4"},
+      {"name": "messaging", "status": "pending-u8"},
+      {"name": "follow-up", "status": "pending-u8"},
+      {"name": "wait-list", "status": "pending-u8"},
+      {"name": "interruption", "status": "pending-u8"},
+      {"name": "restoration", "status": "pending-u8"},
+      {"name": "luna-leaf", "status": "pending-u8"},
+      {"name": "ultra-root-only", "status": "pending-u8"}
+    ]
   },
   "hook_capabilities": {
     "plugin_hooks_supported": true,
@@ -150,7 +208,8 @@
     "subagent_event_allowlist": ["SubagentStart", "SubagentStop"],
     "observes_active_model": true,
     "observes_agent_type": true,
-    "observes_reasoning_effort": false
+    "observes_reasoning_effort": false,
+    "runtime_authority": false
   },
   "capability_dimensions": {
     "lifecycle_owner": [
@@ -163,34 +222,30 @@
     "workflow_modes": [
       {"name": "inline", "status": "available"},
       {"name": "manual", "status": "available"},
-      {"name": "team-execution", "status": "legacy-current"},
       {"name": "verified-workflow", "status": "planned-unproved"},
       {"name": "source-workflow", "status": "unsupported"}
     ],
     "step_vehicles": [
       {"name": "inline", "status": "available"},
       {"name": "deterministic-tool", "status": "available"},
-      {"name": "generic-subagent", "status": "available"},
-      {"name": "named-profile-subagent", "status": "available"}
+      {"name": "v2-configured-agent", "status": "source-confirmed"}
     ],
     "role_identities": [
-      {"name": "generic", "status": "available"},
-      {"name": "logical-role-attested", "status": "planned-unproved"}
+      {"name": "logical-role", "status": "available"},
+      {"name": "runtime-agent-role", "status": "source-confirmed"}
     ],
     "execution_class_controls": [
-      {"name": "prompt-steered", "status": "advisory-only"},
-      {"name": "custom-agent-file", "status": "available"},
-      {"name": "per-spawn-override", "status": "available"}
+      {"name": "configured-agent-file", "status": "available"},
+      {"name": "per-spawn-model-effort", "status": "available"},
+      {"name": "per-child-permission", "status": "unavailable"}
     ],
     "hook_roles": [
-      {"name": "observe", "status": "configurable"},
-      {"name": "persist", "status": "planned-unproved"},
-      {"name": "guard", "status": "deferred"}
+      {"name": "historical-observation", "status": "legacy-current"},
+      {"name": "runtime-authority", "status": "rejected"}
     ]
   },
   "official_sources": [
-    {"title": "Codex models", "url": "https://learn.chatgpt.com/docs/models"},
-    {"title": "Codex subagents", "url": "https://learn.chatgpt.com/docs/agent-configuration/subagents"},
-    {"title": "Codex hooks", "url": "https://learn.chatgpt.com/docs/hooks"}
+    {"title": "Codex subagents", "url": "https://developers.openai.com/codex/subagents"},
+    {"title": "Codex 0.145.0 source", "url": "https://github.com/openai/codex/tree/rust-v0.145.0"}
   ]
 }

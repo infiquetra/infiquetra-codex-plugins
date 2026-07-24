@@ -19,9 +19,8 @@ except ImportError:
     from port_contract import MAX_GIT_OUTPUT, canonical_json_bytes, sha256_bytes
 
 
-SELECTED_FEATURES = ("multi_agent", "hooks", "goals", "plugins")
+SELECTED_FEATURES = ("multi_agent", "multi_agent_v2", "hooks", "goals", "plugins")
 EFFORTS = {"none", "minimal", "low", "medium", "high", "xhigh", "max", "ultra"}
-TEAM_EXECUTION_MARKER = '# managed_by = "infiquetra-codex-plugins/team-execution"'
 VERIFIED_WORKFLOWS_MARKER = '# managed_by = "infiquetra-codex-plugins/verified-workflows"'
 Run = Callable[[Sequence[str]], subprocess.CompletedProcess[bytes]]
 
@@ -30,7 +29,12 @@ class CaptureError(RuntimeError):
     """Raised when the safe capability projection cannot be captured."""
 
 
-def _default_run(argv: Sequence[str]) -> subprocess.CompletedProcess[bytes]:
+def _default_run(
+    argv: Sequence[str], *, codex_home: Path | None = None
+) -> subprocess.CompletedProcess[bytes]:
+    env = os.environ.copy()
+    if codex_home is not None:
+        env["CODEX_HOME"] = str(codex_home)
     try:
         return subprocess.run(
             list(argv),
@@ -38,7 +42,7 @@ def _default_run(argv: Sequence[str]) -> subprocess.CompletedProcess[bytes]:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             timeout=15,
-            env=os.environ.copy(),
+            env=env,
         )
     except subprocess.TimeoutExpired as exc:
         raise CaptureError(f"command timed out: {' '.join(argv)}") from exc
@@ -147,17 +151,70 @@ def read_config(path: Path) -> dict[str, Any]:
     agents = payload.get("agents", {})
     if not isinstance(agents, dict):
         raise CaptureError("Codex config `[agents]` must be a table")
-    max_threads_configured = isinstance(agents, dict) and "max_threads" in agents
+    canonical_threads_configured = "max_concurrent_threads_per_session" in agents
+    legacy_threads_configured = "max_threads" in agents
+    configured_children = agents.get(
+        "max_concurrent_threads_per_session", agents.get("max_threads", 6)
+    )
+    if not isinstance(configured_children, int) or isinstance(configured_children, bool):
+        raise CaptureError("Codex configured child concurrency must be an integer")
     max_depth_configured = isinstance(agents, dict) and "max_depth" in agents
+    features = payload.get("features", {})
+    if not isinstance(features, dict):
+        raise CaptureError("Codex config `[features]` must be a table")
+    v2_value = features.get("multi_agent_v2", False)
+    if isinstance(v2_value, bool):
+        v2_config: dict[str, Any] = {"enabled": v2_value}
+    elif isinstance(v2_value, dict):
+        v2_config = v2_value
+    else:
+        raise CaptureError("Codex config `features.multi_agent_v2` must be a boolean or table")
+    v2_total = v2_config.get("max_concurrent_threads_per_session")
+    v2_total_source = "feature-table"
+    if v2_total is None:
+        v2_total = configured_children + 1 if (
+            canonical_threads_configured or legacy_threads_configured
+        ) else 4
+        v2_total_source = (
+            "agents-plus-root"
+            if canonical_threads_configured or legacy_threads_configured
+            else "default"
+        )
+    if not isinstance(v2_total, int) or isinstance(v2_total, bool):
+        raise CaptureError("Codex V2 total concurrency must be an integer")
     return {
         "configured_defaults": {
             "model": payload.get("model"),
             "model_reasoning_effort": payload.get("model_reasoning_effort"),
         },
-        "configured_max_threads": agents.get("max_threads", 6),
-        "configured_max_threads_source": "config" if max_threads_configured else "default",
+        "configured_max_threads": configured_children,
+        "configured_max_threads_source": (
+            "config"
+            if canonical_threads_configured or legacy_threads_configured
+            else "default"
+        ),
+        "configured_max_threads_key": (
+            "max_concurrent_threads_per_session"
+            if canonical_threads_configured
+            else "max_threads"
+            if legacy_threads_configured
+            else "default"
+        ),
+        "configured_v2_total_threads": v2_total,
+        "configured_v2_total_threads_source": v2_total_source,
         "configured_max_depth": agents.get("max_depth", 1),
         "configured_max_depth_source": "config" if max_depth_configured else "default",
+        "multi_agent_v2_config": {
+            "enabled": v2_config.get("enabled", False),
+            "tool_namespace": v2_config.get("tool_namespace", "collaboration"),
+            "hide_spawn_agent_metadata": v2_config.get(
+                "hide_spawn_agent_metadata", True
+            ),
+            "expose_spawn_agent_model_overrides": v2_config.get(
+                "expose_spawn_agent_model_overrides", True
+            ),
+            "non_code_mode_only": v2_config.get("non_code_mode_only", True),
+        },
     }
 
 
@@ -176,10 +233,9 @@ def count_custom_agents(codex_home: Path, repo_root: Path) -> dict[str, int]:
 
     return {
         "repo_managed_source_count": len(
-            list((repo_root / "plugins" / "team-execution" / "agents").glob("*.toml"))
+            list((repo_root / "plugins" / "verified-workflows" / "agents").glob("*.toml"))
         ),
         "installed_custom_agent_count": len(installed),
-        "installed_team_execution_managed_count": marker_count(TEAM_EXECUTION_MARKER),
         "installed_verified_workflows_managed_count": marker_count(VERIFIED_WORKFLOWS_MARKER),
     }
 
@@ -191,11 +247,16 @@ def capture_projection(
     run: Run = _default_run,
 ) -> dict[str, Any]:
     repo_root = repo_root or Path(__file__).resolve().parent.parent
-    source, models = capture_catalog(run)
-    version_text = _run_text(("codex", "--version"), run)
+    effective_run = (
+        (lambda argv: _default_run(argv, codex_home=codex_home))
+        if run is _default_run
+        else run
+    )
+    source, models = capture_catalog(effective_run)
+    version_text = _run_text(("codex", "--version"), effective_run)
     if not version_text.startswith("codex-cli "):
         raise CaptureError("unexpected `codex --version` output")
-    features = parse_features(_run_text(("codex", "features", "list"), run))
+    features = parse_features(_run_text(("codex", "features", "list"), effective_run))
     config = read_config(codex_home / "config.toml")
     return {
         "codex_cli_version": version_text.removeprefix("codex-cli "),
@@ -225,6 +286,9 @@ def compare_snapshot(
     for field in (
         "configured_max_threads",
         "configured_max_threads_source",
+        "configured_max_threads_key",
+        "configured_v2_total_threads",
+        "configured_v2_total_threads_source",
         "configured_max_depth",
         "configured_max_depth_source",
     ):
@@ -234,6 +298,10 @@ def compare_snapshot(
         errors.append("normalized model catalog differs from the committed snapshot")
     if snapshot.get("features") != projection.get("features"):
         errors.append("selected feature state differs from the committed snapshot")
+    if snapshot.get("runtime", {}).get("multi_agent_v2_config") != projection.get(
+        "multi_agent_v2_config"
+    ):
+        errors.append("MultiAgent V2 config differs from the committed snapshot")
     snapshot_counts = {
         key: value
         for key, value in snapshot.get("custom_agents", {}).items()

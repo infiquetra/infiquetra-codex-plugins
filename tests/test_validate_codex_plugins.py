@@ -689,6 +689,13 @@ def test_legacy_workflow_tokens_require_an_explicit_path_classification(tmp_path
     )
 
 
+def test_active_capability_capture_has_no_legacy_workflow_tokens():
+    assert (
+        "scripts/capture_codex_runtime_capabilities.py"
+        not in legacy_workflow_file_facts(REPO_ROOT)
+    )
+
+
 def test_nested_codex_directory_is_not_hidden_from_legacy_scan(tmp_path):
     writer = tmp_path / "plugins" / "other" / ".codex" / "writer.py"
     writer.parent.mkdir(parents=True)

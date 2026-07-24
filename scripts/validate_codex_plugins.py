@@ -276,7 +276,7 @@ STAGED_MARKETPLACE_SHA256 = (
     "42803919b39b720599b9692bfdcd95bcfe8c31b06ebb2c976aacaa890fdfea8a"
 )
 LEGACY_WORKFLOW_HISTORICAL_INVENTORY_SHA256 = (
-    "e2826bd6814db2253b9d9065f02816d58f896b2bf068f34468208c7043569851"
+    "68c94ad7ef1ba96976ac5ab046ceecd87cb5e2a4535db58ccb6d0620c4d96352"
 )
 LEGACY_WORKFLOW_INVENTORY = Path(
     "docs/validation/verified-workflows-legacy-token-inventory.json"
@@ -332,7 +332,6 @@ LEGACY_WORKFLOW_EXACT_CLASSIFICATIONS = {
     Path("plugins/verified-workflows/CHANGELOG.md"): "lineage-documentation",
     Path("scripts/build_legacy_workflow_inventory.py"): "inventory-builder",
     Path("scripts/build_saga_docs_facts.py"): "current-target-projection",
-    Path("scripts/capture_codex_runtime_capabilities.py"): "historical-evidence",
     Path("scripts/port_contract.py"): "frozen-source-contract",
     Path("scripts/prove_codex_plugin_profile.py"): "migration-documentation",
     Path("scripts/render_saga_docs_assets.py"): "migration-documentation",

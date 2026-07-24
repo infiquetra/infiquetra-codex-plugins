@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Characterize or attest the Verified Workflows runtime boundary safely."""
+"""Prove the minimal Codex V2 runtime identity boundary in an isolated home."""
 
 from __future__ import annotations
 
@@ -10,9 +10,12 @@ import math
 import os
 import re
 import stat
+import subprocess
 import sys
+import tempfile
+import tomllib
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping, Sequence
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PLUGIN_ROOT = REPO_ROOT / "plugins" / "verified-workflows"
@@ -25,18 +28,21 @@ import render_codex_agents as renderer  # noqa: E402
 DEFAULT_SNAPSHOT = REPO_ROOT / "docs" / "validation" / "codex-runtime-capability-snapshot.json"
 PROJECT_AGENTS = REPO_ROOT / ".codex" / "agents"
 MAX_BYTES = 4 * 1024 * 1024
+MAX_ROLLOUTS = 64
+TERMINAL_MARKER = "U1_V2_CHILD_OK"
+ROOT_MARKER = "U1_V2_ROOT_OK"
+PARENT_ONLY_MARKER = "U1_V2_PARENT_ONLY_CONTEXT"
+TASK_NAME_RE = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
 SECRET_KEY = re.compile(r"(?i)(token|secret|password|credential|authorization|api[_-]?key|auth_json)")
 SECRET_VALUE = re.compile(
     r"(?i)(?:\bsk-[A-Za-z0-9_-]{8,}|\bgh[pousr]_[A-Za-z0-9]{8,}|"
     r"\bBearer\s+[A-Za-z0-9._~-]{8,}|\beyJ[A-Za-z0-9_-]{8,}\."
     r"[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,})"
 )
-HEX64 = re.compile(r"^[0-9a-f]{64}$")
-ROOT_TASK_REF = re.compile(r"^root-task:[0-9a-f]{64}$")
 
 
 class RuntimeProofError(RuntimeError):
-    """Raised when proof inputs could leak secrets or overstate runtime capability."""
+    """Raised when proof inputs are unsafe, incomplete, or contradict runtime truth."""
 
 
 def _sha256(content: bytes) -> str:
@@ -50,11 +56,11 @@ def _read_regular(path: Path, where: str, limit: int = MAX_BYTES) -> bytes:
     except OSError as exc:
         raise RuntimeProofError(f"{where} is unreadable") from exc
     try:
-        metadata = os.fstat(descriptor)
+        before = os.fstat(descriptor)
         if (
-            not stat.S_ISREG(metadata.st_mode)
-            or metadata.st_nlink != 1
-            or metadata.st_size > limit
+            not stat.S_ISREG(before.st_mode)
+            or before.st_nlink != 1
+            or before.st_size > limit
         ):
             raise RuntimeProofError(f"{where} must be a bounded single-link regular file")
         chunks: list[bytes] = []
@@ -69,19 +75,9 @@ def _read_regular(path: Path, where: str, limit: int = MAX_BYTES) -> bytes:
         after = os.fstat(descriptor)
         if (
             len(content) > limit
-            or len(content) != metadata.st_size
-            or (
-                metadata.st_dev,
-                metadata.st_ino,
-                metadata.st_size,
-                metadata.st_mtime_ns,
-            )
-            != (
-                after.st_dev,
-                after.st_ino,
-                after.st_size,
-                after.st_mtime_ns,
-            )
+            or len(content) != before.st_size
+            or (before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns)
+            != (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns)
         ):
             raise RuntimeProofError(f"{where} changed while it was read")
         return content
@@ -154,47 +150,41 @@ def _validate_isolated_home(path: Path) -> bool:
     return auth.st_size > 0
 
 
-def _snapshot_projection(snapshot: dict[str, Any]) -> dict[str, Any]:
+def _snapshot_projection(snapshot: Mapping[str, Any]) -> dict[str, Any]:
     runtime = snapshot.get("runtime")
     collaboration = snapshot.get("collaboration")
-    hooks = snapshot.get("hook_capabilities")
-    if not isinstance(runtime, dict) or not isinstance(collaboration, dict) or not isinstance(
-        hooks, dict
-    ):
+    if not isinstance(runtime, dict) or not isinstance(collaboration, dict):
         raise RuntimeProofError("capability snapshot lacks required closed sections")
     version = runtime.get("codex_cli_version")
-    if not isinstance(version, str) or not re.fullmatch(r"[0-9A-Za-z.+-]{1,32}", version):
-        raise RuntimeProofError("capability snapshot Codex version is invalid")
+    if version != "0.145.0":
+        raise RuntimeProofError("capability snapshot must target Codex 0.145.0")
     spawn = collaboration.get("spawn")
     expected_spawn_fields = {
         "available",
+        "contract_version",
         "tool_namespace",
         "hide_spawn_agent_metadata",
         "request_fields",
+        "response_fields",
         "default_fork_turns",
         "profile_selection_fork_turns",
         "per_child_agent_type",
         "per_child_model",
         "per_child_effort",
         "per_child_sandbox",
+        "runtime_receipt_sources",
         "selection_readback_fields",
     }
     if not isinstance(spawn, dict) or set(spawn) != expected_spawn_fields:
-        raise RuntimeProofError("capability snapshot spawn schema is not closed")
-    boolean_fields = {
-        "available",
-        "per_child_agent_type",
-        "per_child_model",
-        "per_child_effort",
-        "per_child_sandbox",
-    }
-    if any(not isinstance(spawn[field], bool) for field in boolean_fields):
-        raise RuntimeProofError("capability snapshot spawn booleans are invalid")
-    request_fields = spawn["request_fields"]
-    readback_fields = spawn["selection_readback_fields"]
-    if spawn["tool_namespace"] != "agents" or spawn["hide_spawn_agent_metadata"] is not False:
-        raise RuntimeProofError("capability snapshot named-profile bootstrap drifted")
-    if request_fields != [
+        raise RuntimeProofError("capability snapshot V2 spawn schema is not closed")
+    if (
+        spawn["available"] is not True
+        or spawn["contract_version"] != "v2"
+        or spawn["tool_namespace"] != "agents"
+        or spawn["hide_spawn_agent_metadata"] is not False
+    ):
+        raise RuntimeProofError("capability snapshot V2 selection contract drifted")
+    expected_requests = [
         "agent_type",
         "fork_turns",
         "message",
@@ -202,144 +192,157 @@ def _snapshot_projection(snapshot: dict[str, Any]) -> dict[str, Any]:
         "reasoning_effort",
         "service_tier",
         "task_name",
-    ]:
-        raise RuntimeProofError("capability snapshot spawn request fields drifted")
+    ]
+    expected_readback = [
+        "agent_path",
+        "agent_role",
+        "model",
+        "reasoning_effort",
+        "model_provider",
+        "approval_policy",
+        "permission_profile",
+        "sandbox_policy",
+        "multi_agent_version",
+    ]
+    if spawn["request_fields"] != expected_requests:
+        raise RuntimeProofError("capability snapshot V2 request fields drifted")
+    if spawn["response_fields"] != ["nickname", "task_name"]:
+        raise RuntimeProofError("capability snapshot V2 response fields drifted")
+    if spawn["runtime_receipt_sources"] != ["session_meta", "turn_context"]:
+        raise RuntimeProofError("capability snapshot V2 receipt sources drifted")
+    if spawn["selection_readback_fields"] != expected_readback:
+        raise RuntimeProofError("capability snapshot V2 readback fields drifted")
     if spawn["default_fork_turns"] != "all" or spawn[
         "profile_selection_fork_turns"
     ] != ["none", "positive-integer"]:
-        raise RuntimeProofError("capability snapshot profile-selection fork contract drifted")
-    if not isinstance(readback_fields, list) or any(
-        value not in {"agent_type", "model", "effort", "sandbox_mode"}
-        for value in readback_fields
-    ):
-        raise RuntimeProofError("capability snapshot selection readback fields are invalid")
-    expected_hook_fields = {
-        "plugin_hooks_supported",
-        "trust_required",
-        "writable_data_environment",
-        "subagent_event_allowlist",
-        "observes_active_model",
-        "observes_agent_type",
-        "observes_reasoning_effort",
+        raise RuntimeProofError("capability snapshot V2 context contract drifted")
+    for field in ("per_child_agent_type", "per_child_model", "per_child_effort"):
+        if spawn[field] is not True:
+            raise RuntimeProofError(f"capability snapshot must enable {field}")
+    if spawn["per_child_sandbox"] is not False:
+        raise RuntimeProofError("Codex 0.145.0 does not support per-child sandbox override")
+    operations = collaboration.get("operations")
+    if operations != [
+        "followup_task",
+        "interrupt_agent",
+        "list_agents",
+        "send_message",
+        "spawn_agent",
+        "wait_agent",
+    ]:
+        raise RuntimeProofError("capability snapshot V2 operation inventory drifted")
+    return {"version": version, "spawn": spawn, "operations": operations}
+
+
+def _task_name_from_tool(name: object) -> str | None:
+    if not isinstance(name, str) or not name:
+        return None
+    normalized = name.rsplit(".", 1)[-1].rsplit("__", 1)[-1]
+    return normalized if normalized in {
+        "spawn_agent",
+        "send_message",
+        "followup_task",
+        "wait_agent",
+        "interrupt_agent",
+        "list_agents",
+    } else None
+
+
+def parse_rollout_receipt(content: bytes) -> dict[str, Any]:
+    """Project one rollout into the allowlisted V2 identity and permission receipt."""
+
+    meta: dict[str, Any] | None = None
+    context: dict[str, Any] | None = None
+    terminal = False
+    terminal_marker = False
+    operations: set[str] = set()
+    for number, raw_line in enumerate(content.splitlines(), 1):
+        try:
+            row = json.loads(raw_line)
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise RuntimeProofError(f"rollout line {number} is invalid JSON") from exc
+        if not isinstance(row, dict):
+            raise RuntimeProofError(f"rollout line {number} must be an object")
+        payload = row.get("payload")
+        if not isinstance(payload, dict):
+            continue
+        if row.get("type") == "session_meta":
+            if meta is not None:
+                raise RuntimeProofError("rollout repeats session_meta")
+            meta = payload
+        elif row.get("type") == "turn_context":
+            context = payload
+        elif row.get("type") == "event_msg" and payload.get("type") == "task_complete":
+            terminal = True
+            terminal_marker = payload.get("last_agent_message") == TERMINAL_MARKER
+        elif row.get("type") == "response_item":
+            operation = _task_name_from_tool(payload.get("name"))
+            if operation is not None:
+                operations.add(operation)
+    if meta is None or context is None:
+        raise RuntimeProofError("rollout lacks session_meta or turn_context")
+    source = meta.get("source")
+    spawn = {}
+    if isinstance(source, dict):
+        subagent = source.get("subagent")
+        if isinstance(subagent, dict) and isinstance(subagent.get("thread_spawn"), dict):
+            spawn = subagent["thread_spawn"]
+    sandbox = context.get("sandbox_policy")
+    sandbox_mode = sandbox.get("type") if isinstance(sandbox, dict) else sandbox
+    permission = context.get("permission_profile")
+    permission_kind = permission.get("type") if isinstance(permission, dict) else None
+    receipt = {
+        "session_id": meta.get("id"),
+        "parent_thread_id": meta.get("parent_thread_id"),
+        "parent_thread_present": isinstance(meta.get("parent_thread_id"), str),
+        "agent_path": meta.get("agent_path", spawn.get("agent_path")),
+        "agent_role": meta.get("agent_role", spawn.get("agent_role")),
+        "model": context.get("model"),
+        "reasoning_effort": context.get("effort"),
+        "model_provider": meta.get("model_provider"),
+        "approval_policy": context.get("approval_policy"),
+        "sandbox_mode": sandbox_mode,
+        "permission_profile": permission_kind,
+        "multi_agent_version": context.get(
+            "multi_agent_version", meta.get("multi_agent_version")
+        ),
+        "history_mode": meta.get("history_mode"),
+        "parent_context_marker_observed": PARENT_ONLY_MARKER.encode() in content,
+        "terminal_status": "completed" if terminal else "incomplete",
+        "terminal_marker_observed": terminal_marker,
+        "operations_observed": sorted(operations),
     }
-    if set(hooks) != expected_hook_fields:
-        raise RuntimeProofError("capability snapshot hook schema is not closed")
-    if hooks["subagent_event_allowlist"] != ["SubagentStart", "SubagentStop"]:
-        raise RuntimeProofError("capability snapshot hook events drifted")
-    if hooks["writable_data_environment"] != "PLUGIN_DATA" or any(
-        not isinstance(hooks[field], bool)
-        for field in (
-            "plugin_hooks_supported",
-            "trust_required",
-            "observes_active_model",
-            "observes_agent_type",
-            "observes_reasoning_effort",
-        )
-    ):
-        raise RuntimeProofError("capability snapshot hook capabilities are invalid")
-    return {"version": version, "spawn": spawn, "hooks": hooks}
+    validate_sanitized_proof(receipt, "runtime_receipt")
+    return receipt
 
 
-def _contained_relative(root: Path, value: object, where: str) -> Path:
-    if (
-        not isinstance(value, str)
-        or not value
-        or value.startswith(("/", "~"))
-        or any(part in {"", ".", ".."} for part in value.split("/"))
-        or not re.fullmatch(r"[A-Za-z0-9._/-]+", value)
-    ):
-        raise RuntimeProofError(f"{where} is not a safe relative path")
-    candidate = root / value
-    try:
-        candidate.resolve(strict=False).relative_to(root.resolve(strict=True))
-    except (FileNotFoundError, ValueError) as exc:
-        raise RuntimeProofError(f"{where} escapes the isolated home") from exc
-    return candidate
-
-
-def _validate_installed_readback(
-    codex_home: Path,
-    install: object,
+def validate_runtime_receipt(
+    receipt: Mapping[str, Any], expected: Mapping[str, Any]
 ) -> None:
-    if not isinstance(install, dict) or set(install) != {
-        "plugin_root",
-        "agents_root",
-    }:
-        raise RuntimeProofError("live envelope install fields are not closed")
-    installed_plugin = _contained_relative(
-        codex_home, install["plugin_root"], "installed plugin root"
+    fields = (
+        "agent_path",
+        "agent_role",
+        "model",
+        "reasoning_effort",
+        "model_provider",
+        "approval_policy",
+        "sandbox_mode",
+        "permission_profile",
+        "multi_agent_version",
     )
-    installed_agents = _contained_relative(
-        codex_home, install["agents_root"], "installed agents root"
-    )
-    for relative in (Path("hooks/hooks.json"), Path("hooks/agent_receipt.py")):
-        if _read_regular(
-            installed_plugin / relative, "installed hook readback"
-        ) != _read_regular(PLUGIN_ROOT / relative, "source hook readback"):
-            raise RuntimeProofError("installed hook bytes do not match the source package")
-    for fact in _profile_facts():
-        filename = f"{fact['runtime_agent_name']}.toml"
-        if _read_regular(
-            installed_agents / filename, "installed profile readback"
-        ) != _read_regular(
-            PLUGIN_ROOT / "agents" / filename, "source profile readback"
-        ):
-            raise RuntimeProofError("installed profile bytes do not match the source package")
-
-
-def build_live_envelope(codex_home: Path, task_ref: str) -> dict[str, Any]:
-    """Record root-mediated fresh-task fallback plus isolated installed-byte readback."""
-
-    if not _validate_isolated_home(codex_home):
-        raise RuntimeProofError(
-            "live envelope production requires separately established isolated login metadata"
-        )
-    if not isinstance(task_ref, str) or ROOT_TASK_REF.fullmatch(task_ref) is None:
-        raise RuntimeProofError("live envelope requires a protected root task reference")
-    install = {
-        "plugin_root": "plugins/verified-workflows",
-        "agents_root": "agents",
-    }
-    _validate_installed_readback(codex_home, install)
-    envelope = {
-        "schema_version": 1,
-        "claim": "root-accountability-fresh-session",
-        "install": install,
-        "fresh_task": {
-            "spawn_surface": "generic",
-            "outcome": "inline-only",
-            "task_ref": task_ref,
-        },
-    }
-    validate_sanitized_proof(envelope, "live_envelope")
-    return envelope
-
-
-def _load_live_envelope(path: Path, codex_home: Path) -> tuple[dict[str, Any], str]:
-    _reject_default_profile_input(path, "live envelope")
-    _validate_isolated_home(codex_home)
-    envelope, digest = _load_json(path, "live envelope")
-    if set(envelope) != {"schema_version", "claim", "install", "fresh_task"}:
-        raise RuntimeProofError("live envelope fields are not closed")
-    if (
-        envelope["schema_version"] != 1
-        or envelope["claim"] != "root-accountability-fresh-session"
-    ):
-        raise RuntimeProofError("live envelope identity is invalid")
-    install = envelope["install"]
-    _validate_installed_readback(codex_home, install)
-    fresh_task = envelope["fresh_task"]
-    if (
-        not isinstance(fresh_task, dict)
-        or set(fresh_task) != {"spawn_surface", "outcome", "task_ref"}
-        or fresh_task["spawn_surface"] != "generic"
-        or fresh_task["outcome"] != "inline-only"
-        or not isinstance(fresh_task["task_ref"], str)
-        or ROOT_TASK_REF.fullmatch(fresh_task["task_ref"]) is None
-    ):
-        raise RuntimeProofError("live envelope fresh task is invalid")
-    validate_sanitized_proof(envelope, "live_envelope")
-    return envelope, digest
+    for field in fields:
+        if receipt.get(field) != expected.get(field):
+            raise RuntimeProofError(f"runtime receipt {field} mismatch")
+    if not isinstance(receipt.get("permission_profile"), str):
+        raise RuntimeProofError("runtime receipt permission_profile is missing")
+    if receipt.get("parent_thread_present") is not True:
+        raise RuntimeProofError("runtime receipt lacks parent thread identity")
+    if receipt.get("terminal_status") != "completed":
+        raise RuntimeProofError("runtime receipt is not terminal")
+    if receipt.get("terminal_marker_observed") is not True:
+        raise RuntimeProofError("runtime receipt terminal result mismatch")
+    if receipt.get("parent_context_marker_observed") is not False:
+        raise RuntimeProofError("runtime receipt inherited root-only context")
 
 
 def _profile_facts() -> list[dict[str, str]]:
@@ -354,17 +357,14 @@ def _profile_facts() -> list[dict[str, str]]:
                 "sha256": _sha256(content),
             }
         )
-    if len(facts) != 5:
-        raise RuntimeProofError("managed profile source must contain exactly five profiles")
+    if not facts:
+        raise RuntimeProofError("managed profile source is empty")
     return facts
 
 
 def _project_agent_facts() -> dict[str, Any]:
-    """Prove project discovery files are regular and byte-identical to plugin source."""
-
     expected = {
-        f"{runtime_name}.toml"
-        for runtime_name in renderer.RUNTIME_AGENT_NAMES.values()
+        f"{runtime_name}.toml" for runtime_name in renderer.RUNTIME_AGENT_NAMES.values()
     }
     try:
         children = list(PROJECT_AGENTS.iterdir())
@@ -376,14 +376,10 @@ def _project_agent_facts() -> dict[str, Any]:
     files: list[dict[str, str]] = []
     for filename in sorted(expected):
         project_content = _read_regular(
-            PROJECT_AGENTS / filename,
-            "project agent discovery profile",
-            1024 * 1024,
+            PROJECT_AGENTS / filename, "project agent discovery profile", 1024 * 1024
         )
         source_content = _read_regular(
-            PLUGIN_ROOT / "agents" / filename,
-            "source agent profile",
-            1024 * 1024,
+            PLUGIN_ROOT / "agents" / filename, "source agent profile", 1024 * 1024
         )
         if project_content != source_content:
             raise RuntimeProofError("project agent discovery bytes drifted")
@@ -396,6 +392,196 @@ def _project_agent_facts() -> dict[str, Any]:
     }
 
 
+def _installed_profile_expectation(codex_home: Path, profile: str) -> dict[str, str]:
+    if not TASK_NAME_RE.fullmatch(profile):
+        raise RuntimeProofError("profile name is invalid")
+    source = PLUGIN_ROOT / "agents" / f"{profile}.toml"
+    installed = codex_home / "agents" / f"{profile}.toml"
+    source_bytes = _read_regular(source, "source profile", 1024 * 1024)
+    installed_bytes = _read_regular(installed, "installed isolated profile", 1024 * 1024)
+    if source_bytes != installed_bytes:
+        raise RuntimeProofError("isolated profile bytes do not match source")
+    try:
+        payload = tomllib.loads(source_bytes.decode("utf-8"))
+    except (UnicodeDecodeError, tomllib.TOMLDecodeError) as exc:
+        raise RuntimeProofError("source profile is invalid TOML") from exc
+    model = payload.get("model")
+    effort = payload.get("model_reasoning_effort")
+    sandbox = payload.get("sandbox_mode")
+    if not all(isinstance(value, str) for value in (model, effort, sandbox)):
+        raise RuntimeProofError("source profile lacks model, effort, or sandbox")
+    return {
+        "agent_role": profile,
+        "model": model,
+        "reasoning_effort": effort,
+        "sandbox_mode": sandbox,
+        "sha256": _sha256(source_bytes),
+    }
+
+
+def _rollout_paths(codex_home: Path) -> set[Path]:
+    sessions = codex_home / "sessions"
+    if not sessions.exists():
+        return set()
+    paths = set(sessions.glob("**/rollout-*.jsonl"))
+    if len(paths) > MAX_ROLLOUTS:
+        raise RuntimeProofError("isolated home contains too many rollout files")
+    return paths
+
+
+def _thread_id_from_exec_output(stdout: bytes) -> str | None:
+    for raw_line in stdout.splitlines():
+        try:
+            row = json.loads(raw_line)
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            continue
+        if isinstance(row, dict) and row.get("type") == "thread.started":
+            thread_id = row.get("thread_id")
+            if isinstance(thread_id, str):
+                return thread_id
+    return None
+
+
+def run_live_probe(
+    *, codex_home: Path, profile: str = "review_high", task_name: str = "u1_probe"
+) -> dict[str, Any]:
+    if not _validate_isolated_home(codex_home):
+        raise RuntimeProofError("isolated home has no separately established login")
+    if not TASK_NAME_RE.fullmatch(task_name):
+        raise RuntimeProofError("task name is invalid")
+    expected_profile = _installed_profile_expectation(codex_home, profile)
+    if expected_profile["sandbox_mode"] != "read-only":
+        raise RuntimeProofError("the minimal U1 live probe requires a read-only profile")
+    before = _rollout_paths(codex_home)
+    prompt = (
+        f"Retain this root-only marker and never include it in the child message: "
+        f"{PARENT_ONLY_MARKER}. Use spawn_agent exactly once with task_name {task_name}, "
+        f"agent_type {profile}, "
+        f"fork_turns none, model {expected_profile['model']}, and reasoning_effort "
+        f"{expected_profile['reasoning_effort']}. Ask the child to return exactly "
+        f"{TERMINAL_MARKER} and do nothing else. Use list_agents and wait_agent until it "
+        f"completes. Return exactly {ROOT_MARKER}."
+    )
+    env = os.environ.copy()
+    env["CODEX_HOME"] = str(codex_home)
+    with tempfile.TemporaryDirectory(prefix="u1-v2-probe-", dir=codex_home) as workspace:
+        argv = [
+            "codex",
+            "exec",
+            "--json",
+            "--skip-git-repo-check",
+            "--ignore-rules",
+            "--strict-config",
+            "-C",
+            workspace,
+            "--sandbox",
+            "read-only",
+            "-m",
+            "gpt-5.6-sol",
+            "-c",
+            'model_reasoning_effort="max"',
+            prompt,
+        ]
+        try:
+            result = subprocess.run(
+                argv,
+                check=False,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                timeout=240,
+                env=env,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise RuntimeProofError("Codex V2 live probe timed out") from exc
+    if len(result.stdout) > MAX_BYTES or len(result.stderr) > MAX_BYTES:
+        raise RuntimeProofError("Codex V2 live probe exceeded the output ceiling")
+    if result.returncode:
+        raise RuntimeProofError(f"Codex V2 live probe failed with exit {result.returncode}")
+    after = _rollout_paths(codex_home)
+    created = sorted(after - before)
+    if not created:
+        raise RuntimeProofError("Codex V2 live probe produced no rollout receipts")
+    parsed = []
+    for path in created:
+        content = _read_regular(path, "live rollout")
+        parsed.append((parse_rollout_receipt(content), content))
+    root_thread_id = _thread_id_from_exec_output(result.stdout)
+    child_path = f"/root/{task_name}"
+    children = [pair for pair in parsed if pair[0].get("agent_path") == child_path]
+    if len(children) != 1:
+        raise RuntimeProofError("Codex V2 live probe did not produce one canonical child")
+    child, _child_content = children[0]
+    roots = [
+        receipt
+        for receipt, _content in parsed
+        if receipt.get("session_id") == root_thread_id
+        or (
+            receipt.get("parent_thread_id") is None
+            and receipt.get("agent_path") in {None, "/root"}
+        )
+    ]
+    if len(roots) != 1:
+        raise RuntimeProofError("Codex V2 live probe did not identify one root receipt")
+    root = roots[0]
+    expected = {
+        **expected_profile,
+        "agent_path": child_path,
+        "model_provider": root.get("model_provider"),
+        "approval_policy": root.get("approval_policy"),
+        "permission_profile": root.get("permission_profile"),
+        "multi_agent_version": "v2",
+    }
+    validate_runtime_receipt(child, expected)
+    if child.get("parent_thread_id") != root.get("session_id"):
+        raise RuntimeProofError("Codex V2 child is not attached to the observed root")
+    if root.get("multi_agent_version") != "v2":
+        raise RuntimeProofError("Codex V2 root receipt reports a different backend")
+    if root.get("model") != "gpt-5.6-sol" or root.get("reasoning_effort") != "max":
+        raise RuntimeProofError("Codex V2 root model or reasoning effort drifted")
+    if root.get("approval_policy") != "never":
+        raise RuntimeProofError("Codex V2 root approval policy drifted")
+    if root.get("sandbox_mode") != expected_profile["sandbox_mode"]:
+        raise RuntimeProofError("Codex V2 root permission does not match the profile ceiling")
+    root_ops = set(root.get("operations_observed", []))
+    required_operations = {"spawn_agent", "list_agents", "wait_agent"}
+    if not required_operations.issubset(root_ops):
+        raise RuntimeProofError("Codex V2 root receipt lacks required probe operations")
+    return {
+        "root": {
+            key: root.get(key)
+            for key in (
+                "model",
+                "reasoning_effort",
+                "model_provider",
+                "approval_policy",
+                "sandbox_mode",
+                "permission_profile",
+                "multi_agent_version",
+                "operations_observed",
+            )
+        },
+        "child": {
+            key: child.get(key)
+            for key in (
+                "agent_path",
+                "agent_role",
+                "model",
+                "reasoning_effort",
+                "model_provider",
+                "approval_policy",
+                "sandbox_mode",
+                "permission_profile",
+                "multi_agent_version",
+                "history_mode",
+                "parent_context_marker_observed",
+                "terminal_status",
+                "terminal_marker_observed",
+            )
+        },
+        "profile_sha256": expected_profile["sha256"],
+    }
+
+
 def build_proof(
     *,
     snapshot: dict[str, Any],
@@ -403,17 +589,9 @@ def build_proof(
     live: bool,
     codex_home: Path | None,
     authenticated_isolated_home: bool,
-    live_envelope: tuple[dict[str, Any], str] | None = None,
+    runtime_receipt: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     projection = _snapshot_projection(snapshot)
-    spawn = projection["spawn"]
-    hooks = projection["hooks"]
-    if spawn.get("available") is not True:
-        spawn_surface = "absent"
-    elif spawn.get("per_child_agent_type") is True:
-        spawn_surface = "named"
-    else:
-        spawn_surface = "generic"
     login_metadata_present: bool | None = None
     if live:
         if codex_home is None:
@@ -423,95 +601,49 @@ def build_proof(
             raise RuntimeProofError(
                 "isolated login metadata requires an explicit operator acknowledgement"
             )
-    elif codex_home is not None or authenticated_isolated_home or live_envelope is not None:
+    elif codex_home is not None or authenticated_isolated_home or runtime_receipt is not None:
         raise RuntimeProofError("isolated-home arguments require --live")
     if live and login_metadata_present is False:
         outcome = "auth-unavailable"
         reason = "isolated home has no separately established login"
-        if live_envelope is not None:
-            raise RuntimeProofError("auth-unavailable proof cannot consume a live envelope")
+    elif live and runtime_receipt is None:
+        raise RuntimeProofError("authenticated live proof requires a runtime receipt")
     elif live:
-        if live_envelope is None:
-            raise RuntimeProofError(
-                "authenticated --live requires an isolated install readback envelope"
-            )
-        _envelope, _envelope_sha = live_envelope
-        outcome = "inline-only"
-        reason = (
-            "isolated installed bytes were read back; no host-attested fresh task was performed"
-        )
-    elif spawn_surface != "named":
-        outcome = "inline-only"
-        reason = (
-            "active collaboration spawn schema lacks agent_type and selection readback"
-        )
+        outcome = "supported"
+        reason = "isolated Codex V2 rollout attests configured profile and effective runtime fields"
     else:
         outcome = "diagnostic"
-        reason = (
-            "configured named-profile selection is available; tracked characterization carries "
-            "no live child receipt"
-        )
-    hook_content = _read_regular(PLUGIN_ROOT / "hooks" / "hooks.json", "hook definition")
-    hook_handler = _read_regular(
-        PLUGIN_ROOT / "hooks" / "agent_receipt.py", "hook handler"
-    )
-    registry_content = _read_regular(
-        PLUGIN_ROOT / "config" / "role-registry.yaml", "role registry"
-    )
-    envelope_sha256 = live_envelope[1] if live_envelope is not None else None
+        reason = "source and configuration contract only; no live isolated receipt supplied"
     proof = {
-        "schema_version": 1,
-        "claim": "runtime-capability-characterization",
+        "schema_version": 2,
+        "claim": "codex-v2-runtime-capability",
         "harness_sha256": _sha256(_read_regular(Path(__file__), "runtime proof harness")),
-        "mode": (
-            "isolated-readback"
-            if live_envelope is not None
-            else "live-preflight"
-            if live
-            else "dry-run"
-        ),
+        "mode": "isolated-live" if runtime_receipt is not None else "live-preflight" if live else "dry-run",
         "capability_outcome": outcome,
         "reason": reason,
         "snapshot_sha256": snapshot_sha256,
         "codex_cli_version": projection["version"],
-        "spawn_surface": spawn_surface,
-        "spawn_request_fields": spawn.get("request_fields", []),
-        "hook_capabilities": {
-            "events": hooks.get("subagent_event_allowlist", []),
-            "observes_active_model": hooks.get("observes_active_model"),
-            "observes_agent_type": hooks.get("observes_agent_type"),
-            "observes_reasoning_effort": hooks.get("observes_reasoning_effort"),
-            "trust_required": hooks.get("trust_required"),
-            "trust_readback": "unobserved",
-            "installed_bytes_readback": live_envelope is not None,
-            "definition_sha256": _sha256(hook_content),
-            "handler_sha256": _sha256(hook_handler),
-        },
-        "role_registry_sha256": _sha256(registry_content),
+        "tool_namespace": projection["spawn"]["tool_namespace"],
+        "spawn_request_fields": projection["spawn"]["request_fields"],
+        "spawn_response_fields": projection["spawn"]["response_fields"],
+        "runtime_readback_fields": projection["spawn"]["selection_readback_fields"],
+        "operations": projection["operations"],
         "profiles": _profile_facts(),
         "project_discovery": _project_agent_facts(),
-        "live_invocation_performed": False,
-        "root_mediated_task_reported": False,
         "isolated_login_metadata_present": login_metadata_present,
-        "live_envelope_sha256": envelope_sha256,
-        "runtime_receipt_ref": None,
-        "runtime_receipt_sha256": None,
+        "live_invocation_performed": runtime_receipt is not None,
+        "runtime_receipt": runtime_receipt,
         "limitations": [
-            "project profile discovery is expected configuration, not runtime selection",
-            "hook permission_mode is not effective sandbox_mode",
-            "reasoning effort is expected from the exact profile digest, not observed by hooks",
-            "profile-selected work requires agent_type with fork_turns none or a positive integer",
-            "tracked characterization does not contain a live child turn_context receipt",
-            "isolated readback proves bytes only; it does not prove hook trust or task execution",
+            "Codex 0.145.0 child permissions inherit the parent turn after profile loading",
+            "the U1 probe covers one read-only configured child; the complete operation matrix remains U8",
+            "requested spawn fields are never accepted as runtime identity without session_meta and turn_context",
         ],
     }
     validate_sanitized_proof(proof)
     return proof
 
 
-def validate_sanitized_proof(
-    payload: object, path: str = "proof", depth: int = 0
-) -> None:
+def validate_sanitized_proof(payload: object, path: str = "proof", depth: int = 0) -> None:
     if depth > 8:
         raise RuntimeProofError(f"{path} exceeds the proof nesting ceiling")
     if isinstance(payload, dict):
@@ -528,7 +660,7 @@ def validate_sanitized_proof(
             validate_sanitized_proof(value, f"{path}[{index}]", depth + 1)
     elif isinstance(payload, str):
         if (
-            payload.startswith(("/", "~", "file:"))
+            payload.startswith(("/Users/", "~", "file:"))
             or SECRET_KEY.search(payload)
             or SECRET_VALUE.search(payload)
         ):
@@ -541,50 +673,39 @@ def validate_sanitized_proof(
         raise RuntimeProofError(f"{path} contains an unsupported value")
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--snapshot", type=Path, default=DEFAULT_SNAPSHOT)
     parser.add_argument("--live", action="store_true")
     parser.add_argument("--codex-home", type=Path)
     parser.add_argument("--authenticated-isolated-home", action="store_true")
-    parser.add_argument("--live-envelope", type=Path)
-    parser.add_argument("--emit-live-envelope", action="store_true")
+    parser.add_argument("--profile", default="review_high")
+    parser.add_argument("--task-name", default="u1_probe")
     parser.add_argument("--pretty", action="store_true")
     args = parser.parse_args(argv)
     try:
-        if args.emit_live_envelope:
-            if (
-                args.codex_home is None
-                or args.live
-                or args.live_envelope is not None
-                or args.authenticated_isolated_home
-            ):
-                raise RuntimeProofError(
-                    "envelope production requires only --codex-home"
-                )
-            output = build_live_envelope(args.codex_home)
-            print(json.dumps(output, indent=2 if args.pretty else None, sort_keys=True))
-            return 0
         _reject_default_profile_input(args.snapshot, "capability snapshot")
-        if args.live_envelope is not None:
-            _reject_default_profile_input(args.live_envelope, "live envelope")
         if args.codex_home is not None:
-            _validate_isolated_home(args.codex_home)
+            _reject_default_profile_input(args.codex_home, "isolated CODEX_HOME")
         snapshot, digest = _load_json(args.snapshot, "capability snapshot")
-        live_envelope = (
-            _load_live_envelope(args.live_envelope, args.codex_home)
-            if args.live_envelope and args.codex_home is not None
-            else None
-        )
-        if args.live_envelope is not None and args.codex_home is None:
-            raise RuntimeProofError("--live-envelope requires --codex-home")
+        receipt = None
+        if args.live and args.codex_home is not None and _validate_isolated_home(args.codex_home):
+            if not args.authenticated_isolated_home:
+                raise RuntimeProofError(
+                    "isolated login metadata requires an explicit operator acknowledgement"
+                )
+            receipt = run_live_probe(
+                codex_home=args.codex_home,
+                profile=args.profile,
+                task_name=args.task_name,
+            )
         proof = build_proof(
             snapshot=snapshot,
             snapshot_sha256=digest,
             live=args.live,
             codex_home=args.codex_home,
             authenticated_isolated_home=args.authenticated_isolated_home,
-            live_envelope=live_envelope,
+            runtime_receipt=receipt,
         )
     except RuntimeProofError as exc:
         print(f"verified workflow runtime proof failed: {exc}", file=sys.stderr)

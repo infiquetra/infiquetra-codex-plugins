@@ -1,16 +1,16 @@
 {
-  "capability_outcome": "diagnostic",
+  "capability_outcome": "auth-unavailable",
   "claim": "codex-v2-runtime-capability",
   "codex_cli_version": "0.145.0",
   "harness_sha256": "318d98231d6f21adbb6518057c943dd803c87d8930d29956a04bbedc6407c1bb",
-  "isolated_login_metadata_present": null,
+  "isolated_login_metadata_present": false,
   "limitations": [
     "Codex 0.145.0 child permissions inherit the parent turn after profile loading",
     "the U1 probe covers one read-only configured child; the complete operation matrix remains U8",
     "requested spawn fields are never accepted as runtime identity without session_meta and turn_context"
   ],
   "live_invocation_performed": false,
-  "mode": "dry-run",
+  "mode": "live-preflight",
   "operations": [
     "followup_task",
     "interrupt_agent",
@@ -73,7 +73,7 @@
     "regular_files_only": true,
     "source_bytes_match": true
   },
-  "reason": "source and configuration contract only; no live isolated receipt supplied",
+  "reason": "isolated home has no separately established login",
   "runtime_readback_fields": [
     "agent_path",
     "agent_role",

@@ -311,6 +311,14 @@
     },
     {
       "classification": "lineage-documentation",
+      "path": "docs/portability/classifications/2026-07-24-codex-v2-orchestration.md",
+      "sha256": "ba11998c324532ca5a3fe85ea520b5960104af1cef0b6a8b49d6ff4783eadfb3",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "lineage-documentation",
       "path": "docs/portability/claude-to-codex-plugin-port-runbook.md",
       "sha256": "8dc16667009b745a1d0f8e8f45e0542a5a5744dc40cc16e16930648509d24678",
       "tokens": [
@@ -373,6 +381,22 @@
       "sha256": "1da9e147b0c59bf306e987f9e6e3f29d1c24be57e2d2ab5db6f483afa6cac498",
       "tokens": [
         "Team Execution",
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "lineage-documentation",
+      "path": "docs/portability/ports/2026-07-24-codex-v2-orchestration-version-policy.json",
+      "sha256": "d1bda5cf32948c6a056f111712d26e28ae338591356d4dd107cd4653d3c82b31",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "lineage-documentation",
+      "path": "docs/portability/ports/2026-07-24-codex-v2-orchestration.json",
+      "sha256": "1c9a16c8b450f6441c66660df25798ef716dfe121e47bef96b7704093636fc0c",
+      "tokens": [
         "team-execution"
       ]
     },
@@ -512,14 +536,6 @@
       "classification": "migration-documentation",
       "path": "docs/validation/codex-plugin-modernization-u7.json",
       "sha256": "80dd7b6ce8098783abea8d54b0ce92aa674ecbf29741a5bc05fc352db3bfea93",
-      "tokens": [
-        "team-execution"
-      ]
-    },
-    {
-      "classification": "historical-evidence",
-      "path": "docs/validation/codex-runtime-capability-snapshot.json",
-      "sha256": "800e81b32bf0922a3427cc4b49e09926b874850e49df3316a84ebd0f97ffdfa5",
       "tokens": [
         "team-execution"
       ]
@@ -1005,18 +1021,9 @@
       ]
     },
     {
-      "classification": "historical-evidence",
-      "path": "scripts/capture_codex_runtime_capabilities.py",
-      "sha256": "2cd634aa40b24faea8d87538e404f13608403a01ff3c0a4e68652a29a4f8b21e",
-      "tokens": [
-        "# managed_by = \"infiquetra-codex-plugins/team-execution\"",
-        "team-execution"
-      ]
-    },
-    {
       "classification": "frozen-source-contract",
       "path": "scripts/port_contract.py",
-      "sha256": "a205cc4ed5c1eabab3e83eb603dc11f87e7594947d43d00d0986326305d9de65",
+      "sha256": "06d8f8735d936c519211e185911d9e243e9d7d9e6f5dece7034802729492cb2c",
       "tokens": [
         "team-execution"
       ]
@@ -1034,6 +1041,14 @@
       "classification": "migration-fixture",
       "path": "tests/test_capability_degrade.py",
       "sha256": "6dd2808b1b0ab3c4b93f087a88ca965dd8852dd74ac419460970d846c1843961",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-fixture",
+      "path": "tests/test_codex_v2_orchestration_port_contract.py",
+      "sha256": "9af8e854555b98ba0dd828bda1b6649b4b0d9b328089d426a77e496f4e6d537d",
       "tokens": [
         "team-execution"
       ]
@@ -1098,6 +1113,14 @@
     },
     {
       "classification": "migration-fixture",
+      "path": "tests/test_port_contract.py",
+      "sha256": "940ec2e690832a16ce94785194d030bd36538caa6f1c9b24275bd94279c14da1",
+      "tokens": [
+        "team-execution"
+      ]
+    },
+    {
+      "classification": "migration-fixture",
       "path": "tests/test_port_runbook.py",
       "sha256": "7174cf371fb3907d2d239e4072c4c61e56c6db55f12ce495d21c5b5733927fa4",
       "tokens": [
@@ -1144,7 +1167,7 @@
     {
       "classification": "migration-fixture",
       "path": "tests/test_validate_codex_plugins.py",
-      "sha256": "96eb09b75c113be2d17a9e6e4fe5ba7e467fa24ee844f2bd6046b3ca2c5bb845",
+      "sha256": "b5c4fd6a1cb924f0c18196dc966d49326b57d136fa80c5f535dec3925dbf8cc3",
       "tokens": [
         ".codex/team-execution/",
         "team-execution",
@@ -1191,7 +1214,7 @@
     }
   ],
   "generated_by": "scripts/build_legacy_workflow_inventory.py",
-  "historical_inventory_sha256": "e2826bd6814db2253b9d9065f02816d58f896b2bf068f34468208c7043569851",
+  "historical_inventory_sha256": "68c94ad7ef1ba96976ac5ab046ceecd87cb5e2a4535db58ccb6d0620c4d96352",
   "history_sentinels": {
     "docs/investigations/2026-06-30-team-execution-saga-orchestration-debug-report.md": {
       "sha256": "ecc08eceda3a67dc81d15b1930753fe236ca7c1ae9b3ad9dd506cdecfb0ac4fa",

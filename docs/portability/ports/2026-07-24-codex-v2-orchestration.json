@@ -1,0 +1,164 @@
+{
+  "authority": {
+    "capability_snapshot": {
+      "path": "docs/validation/codex-runtime-capability-snapshot.json",
+      "schema_path": "docs/validation/codex-runtime-capability-snapshot.schema-r3.json",
+      "schema_sha256": "4896c6bd1ca75332cc64e687195b7d63b7fd6fb0f4ac0c8d9aac0d7bf0c6673c",
+      "schema_version": 2,
+      "sha256": "28d3e39c9c601dff2c44b158c95a4a88e3d577bea46f424cf4a2e1fffaef11c7"
+    },
+    "classification_path": "docs/portability/classifications/2026-07-24-codex-v2-orchestration.md",
+    "plan": {
+      "path": "docs/plans/2026-07-24-codex-v2-orchestrated-execution-system-plan.md",
+      "sha256": "ca14265e3d35bbcb4bc759b9b9b86efbd5b872028637073294c39ec674bbbc7d"
+    },
+    "reviews": [
+      {
+        "path": "docs/reviews/2026-07-24-codex-v2-orchestrated-execution-system-plan-review.md",
+        "sha256": "7eddeeb1aa9ebdf81a74764fe5cbd2a714e32c897555c79959ea865988df78f7"
+      }
+    ],
+    "runbook": {
+      "path": "docs/portability/claude-to-codex-plugin-port-runbook.md",
+      "sha256": "8dc16667009b745a1d0f8e8f45e0542a5a5744dc40cc16e16930648509d24678",
+      "version": 3
+    }
+  },
+  "codex": {
+    "evidence_ref": "refs/tags/evidence/codex-v2-orchestration-20260724",
+    "execution_base": "b95f69380fa044fc5f94c3463d83987218f9e261",
+    "expected_count": 0,
+    "historical_plan_base": "b95f69380fa044fc5f94c3463d83987218f9e261",
+    "inventory_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "observed_origin_main": "f3e1af75d06ac4c64a499f05e99c54903d978f35",
+    "repository_id": "infiquetra/infiquetra-codex-plugins",
+    "rows": []
+  },
+  "evidence": [],
+  "port_id": "codex-v2-orchestration-2026-07-24",
+  "refresh_changes": [],
+  "release_evidence": {
+    "cutover": null,
+    "fresh_session": null,
+    "isolated_install": null,
+    "review": null,
+    "rollback": null
+  },
+  "schema_version": 1,
+  "source": {
+    "base_ref": "9470edca65b1db06d2f7562eeb2d5a9e48c34dec",
+    "expected_count": 2,
+    "inventory_sha256": "392939792bce1099ba9cb9ee1e6c0fd24ab5468b1cfceff571f82956b18b7f5b",
+    "observed_refs": {
+      "head": "03c2640ca4338e70bba796c7e84db694b1aeade8",
+      "local_main": "03c2640ca4338e70bba796c7e84db694b1aeade8",
+      "origin_main": "03c2640ca4338e70bba796c7e84db694b1aeade8"
+    },
+    "pathspecs": [
+      "plugins/team-execution/skills/team-execution/references/reviewer-registry.md",
+      "plugins/team-execution/skills/team-execution/references/validator-registry.md"
+    ],
+    "repository_id": "infiquetra/infiquetra-claude-plugins",
+    "rows": [
+      {
+        "capability_refs": [
+          "capability:external-advisory-routing"
+        ],
+        "change": "M",
+        "codex_invariant_refs": [
+          "external-results-remain-non-gating",
+          "root-owned-gate-authority"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "plugins/team-execution/skills/team-execution/references/reviewer-registry.md",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/verified-workflows/config/role-registry.yaml",
+          "plugins/verified-workflows/skills/run/references/external-engine-workers.md",
+          "plugins/saga/scripts/external_action_contract.py"
+        ],
+        "planned_tests": [
+          "plugins/verified-workflows/tests/test_role_lens_equivalence.py",
+          "tests/test_external_action_integration.py",
+          "tests/test_verified_workflow_advisory.py"
+        ],
+        "rationale": "Adapt the non-scoring external advisory seat into U6's shared Saga control plane while preserving root-owned native review and gate authority.",
+        "row_id": "src-7ca0384cf8d21d44",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "reference",
+        "treatment": "codex-adapt",
+        "units": [
+          "U6"
+        ]
+      },
+      {
+        "capability_refs": [
+          "capability:external-advisory-routing"
+        ],
+        "change": "M",
+        "codex_invariant_refs": [
+          "external-output-is-untrusted-data",
+          "root-owned-gate-authority"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "plugins/team-execution/skills/team-execution/references/validator-registry.md",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/saga/references/engine-output-trust-boundary.md",
+          "plugins/saga/scripts/external_action_runtime.py",
+          "plugins/verified-workflows/skills/run/references/delegation-safety.md"
+        ],
+        "planned_tests": [
+          "tests/test_external_action_runtime.py",
+          "tests/test_verified_workflow_advisory.py"
+        ],
+        "rationale": "Preserve the validator trust boundary in U6: external findings remain opaque, non-gating input until independently verified and adopted by the root.",
+        "row_id": "src-76516b36df832272",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "reference",
+        "treatment": "codex-adapt",
+        "units": [
+          "U6"
+        ]
+      }
+    ],
+    "target_reachable": true,
+    "target_ref": "46fefb6f17f0c9d0d63858978536d3369ab57dfe"
+  },
+  "version_policy": [
+    {
+      "current_codex_identity": "fleet-core",
+      "current_codex_version": "0.10.0+codex.20260720120109",
+      "policy": "lineage-with-codex-adaptation",
+      "release_unit": "U8",
+      "source_plugin": "fleet-core",
+      "source_version": "0.8.4",
+      "target_codex_identity": "fleet-core",
+      "target_codex_version": "pending-u8-candidate"
+    },
+    {
+      "current_codex_identity": "saga",
+      "current_codex_version": "0.78.0+codex.20260720120109",
+      "policy": "lineage-with-codex-adaptation",
+      "release_unit": "U8",
+      "source_plugin": "saga",
+      "source_version": "0.75.17",
+      "target_codex_identity": "saga",
+      "target_codex_version": "pending-u8-candidate"
+    },
+    {
+      "current_codex_identity": "verified-workflows",
+      "current_codex_version": "1.0.3+codex.20260718134043",
+      "policy": "identity-migration-no-byte-parity",
+      "release_unit": "U8",
+      "source_plugin": "team-execution",
+      "source_version": "2.14.3",
+      "target_codex_identity": "verified-workflows",
+      "target_codex_version": "pending-u8-candidate"
+    }
+  ]
+}

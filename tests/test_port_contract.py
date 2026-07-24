@@ -71,6 +71,20 @@ def test_active_contract_rejects_shifted_identity_or_frozen_refs() -> None:
     assert any("codex.evidence_ref must remain" in error for error in errors)
 
 
+def test_custom_contract_requires_a_safe_dedicated_evidence_tag() -> None:
+    manifest = load_manifest()
+    custom_plan = ROOT / "docs/plans/2026-07-24-codex-v2-orchestrated-execution-system-plan.md"
+    manifest["authority"]["plan"] = {
+        "path": custom_plan.relative_to(ROOT).as_posix(),
+        "sha256": contract.sha256_file(custom_plan),
+    }
+    manifest["codex"]["evidence_ref"] = "refs/heads/not-evidence"
+
+    errors = contract.validate_manifest(ROOT, manifest, stage="classification")
+
+    assert any("codex.evidence_ref must be a safe evidence tag" in error for error in errors)
+
+
 def test_self_consistent_removed_codex_row_still_fails_frozen_inventory() -> None:
     manifest = load_manifest()
     manifest["codex"]["rows"].pop()
@@ -91,6 +105,21 @@ def test_row_identity_ignores_classification_fields() -> None:
     row = manifest["source"]["rows"][0]
 
     assert contract.row_id("src", row) == row["row_id"]
+
+
+def test_source_row_construction_does_not_depend_on_manifest_authority() -> None:
+    row = {
+        "change": "M",
+        "old_path": None,
+        "new_path": "plugins/team-execution/references/reviewer-registry.md",
+        "similarity": None,
+    }
+
+    result = contract._source_contract_row(row)
+
+    assert result["surface_kind"] == "reference"
+    assert result["state"] == "unclassified"
+    assert result["capability_refs"] == []
 
 
 def test_name_status_parser_handles_rename_delete_and_unusual_names() -> None:
@@ -193,7 +222,7 @@ def test_nested_capability_schema_is_closed() -> None:
         (ROOT / "docs/validation/codex-runtime-capability-snapshot.json").read_text(encoding="utf-8")
     )
     schema = json.loads(
-        (ROOT / "docs/validation/codex-runtime-capability-snapshot.schema.json").read_text(
+        (ROOT / "docs/validation/codex-runtime-capability-snapshot.schema-r3.json").read_text(
             encoding="utf-8"
         )
     )
@@ -382,6 +411,22 @@ def test_init_refuses_to_overwrite_existing_manifest() -> None:
         assert "refuses to overwrite" in str(exc)
     else:
         raise AssertionError("init overwrote or accepted an existing contract")
+
+
+def test_init_review_override_does_not_append_the_legacy_default() -> None:
+    parser = contract.build_parser()
+
+    args = parser.parse_args(
+        [
+            "init",
+            "--source-repo",
+            "../infiquetra-claude-plugins",
+            "--review",
+            "docs/reviews/current-review.md",
+        ]
+    )
+
+    assert args.review == ["docs/reviews/current-review.md"]
 
 
 def test_manifest_digest_changes_when_classification_changes() -> None:

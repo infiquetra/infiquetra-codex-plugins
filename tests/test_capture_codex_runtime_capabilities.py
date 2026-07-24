@@ -104,13 +104,20 @@ def test_normalizer_rejects_duplicates_and_unknown_effort() -> None:
 def test_feature_parser_selects_only_allowlisted_rows() -> None:
     text = """\
 multi_agent stable true
+multi_agent_v2 stable false
 hooks stable true
 goals stable true
 plugins stable true
 memories experimental true
 """
 
-    assert set(capture.parse_features(text)) == {"multi_agent", "hooks", "goals", "plugins"}
+    assert set(capture.parse_features(text)) == {
+        "multi_agent",
+        "multi_agent_v2",
+        "hooks",
+        "goals",
+        "plugins",
+    }
 
 
 def test_config_reader_drops_unrelated_and_sensitive_fields(tmp_path: Path) -> None:
@@ -125,8 +132,18 @@ def test_config_reader_drops_unrelated_and_sensitive_fields(tmp_path: Path) -> N
         "configured_defaults": {"model": "gpt-5.6-sol", "model_reasoning_effort": "max"},
         "configured_max_threads": 6,
         "configured_max_threads_source": "config",
+        "configured_max_threads_key": "max_threads",
+        "configured_v2_total_threads": 7,
+        "configured_v2_total_threads_source": "agents-plus-root",
         "configured_max_depth": 1,
         "configured_max_depth_source": "config",
+        "multi_agent_v2_config": {
+            "enabled": False,
+            "tool_namespace": "collaboration",
+            "hide_spawn_agent_metadata": True,
+            "expose_spawn_agent_model_overrides": True,
+            "non_code_mode_only": True,
+        },
     }
 
 
@@ -138,8 +155,36 @@ def test_config_reader_marks_absent_agent_limits_as_defaults(tmp_path: Path) -> 
 
     assert result["configured_max_threads"] == 6
     assert result["configured_max_threads_source"] == "default"
+    assert result["configured_max_threads_key"] == "default"
+    assert result["configured_v2_total_threads"] == 4
+    assert result["configured_v2_total_threads_source"] == "default"
     assert result["configured_max_depth"] == 1
     assert result["configured_max_depth_source"] == "default"
+
+
+def test_config_reader_projects_v2_feature_table_and_canonical_limit(tmp_path: Path) -> None:
+    config = tmp_path / "config.toml"
+    config.write_text(
+        "[agents]\nmax_concurrent_threads_per_session = 3\n"
+        "[features.multi_agent_v2]\nenabled = true\n"
+        'tool_namespace = "agents"\nhide_spawn_agent_metadata = false\n'
+        "max_concurrent_threads_per_session = 5\n",
+        encoding="utf-8",
+    )
+
+    result = capture.read_config(config)
+
+    assert result["configured_max_threads"] == 3
+    assert result["configured_max_threads_key"] == "max_concurrent_threads_per_session"
+    assert result["configured_v2_total_threads"] == 5
+    assert result["configured_v2_total_threads_source"] == "feature-table"
+    assert result["multi_agent_v2_config"] == {
+        "enabled": True,
+        "tool_namespace": "agents",
+        "hide_spawn_agent_metadata": False,
+        "expose_spawn_agent_model_overrides": True,
+        "non_code_mode_only": True,
+    }
 
 
 def test_compare_snapshot_checks_only_discoverable_projection() -> None:
@@ -148,8 +193,18 @@ def test_compare_snapshot_checks_only_discoverable_projection() -> None:
             "codex_cli_version": "0.144.1",
             "configured_max_threads": 6,
             "configured_max_threads_source": "config",
+            "configured_max_threads_key": "max_threads",
+            "configured_v2_total_threads": 7,
+            "configured_v2_total_threads_source": "agents-plus-root",
             "configured_max_depth": 1,
             "configured_max_depth_source": "config",
+            "multi_agent_v2_config": {
+                "enabled": True,
+                "tool_namespace": "agents",
+                "hide_spawn_agent_metadata": False,
+                "expose_spawn_agent_model_overrides": True,
+                "non_code_mode_only": True,
+            },
             "host_total_slots": 4,
             "effective_total_slots": 4,
             "effective_max_children": 3,
@@ -164,7 +219,6 @@ def test_compare_snapshot_checks_only_discoverable_projection() -> None:
         "custom_agents": {
             "repo_managed_source_count": 25,
             "installed_custom_agent_count": 4,
-            "installed_team_execution_managed_count": 0,
             "installed_verified_workflows_managed_count": 0,
         },
         "collaboration": {"spawn": {"available": True}},
@@ -174,8 +228,12 @@ def test_compare_snapshot_checks_only_discoverable_projection() -> None:
         "codex_cli_version": "0.144.1",
         "configured_max_threads": 6,
         "configured_max_threads_source": "config",
+        "configured_max_threads_key": "max_threads",
+        "configured_v2_total_threads": 7,
+        "configured_v2_total_threads_source": "agents-plus-root",
         "configured_max_depth": 1,
         "configured_max_depth_source": "config",
+        "multi_agent_v2_config": snapshot["runtime"]["multi_agent_v2_config"],
         "configured_defaults": snapshot["configured_defaults"],
         "catalog": snapshot["catalog"],
         "features": snapshot["features"],
