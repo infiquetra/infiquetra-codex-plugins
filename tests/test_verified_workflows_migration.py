@@ -105,11 +105,11 @@ def test_legacy_token_inventory_is_exact_digest_bound_and_current() -> None:
     )
     assert sum(
         entry["classification"] == "historical-evidence" for entry in entries.values()
-    ) == 49
+    ) == 47
     assert all(len(entry["sha256"]) == 64 for entry in entries.values())
 
 
-def test_target_manifest_skills_and_u4_runtime_surfaces_are_complete() -> None:
+def test_target_manifest_skills_and_native_v2_runtime_surfaces_are_complete() -> None:
     manifest = json.loads(
         (TARGET_ROOT / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8")
     )
@@ -167,23 +167,23 @@ def test_target_manifest_skills_and_u4_runtime_surfaces_are_complete() -> None:
         "**Validation**",
     ):
         assert marker in appsec_contract
-    hooks = json.loads((TARGET_ROOT / "hooks" / "hooks.json").read_text())
-    assert set(hooks["hooks"]) == {"SubagentStart", "SubagentStop"}
-    assert (TARGET_ROOT / "hooks" / "agent_receipt.py").is_file()
     assert {
-        "dispatch_receipt.py",
         "gate_evaluator.py",
-        "named_child_attestation.py",
         "protocol_probe.py",
-        "protected_store.py",
-        "raw_hook_maintenance.py",
-        "workflow_records.py",
+        "result_contract.py",
+        "run_record.py",
         "workflow_dispatch.py",
-        "workspace_evidence.py",
+        "workflow_feasibility.py",
+        "workspace_audit.py",
     } <= {path.name for path in (TARGET_ROOT / "scripts").glob("*.py")}
+    hooks = TARGET_ROOT / "hooks"
+    assert not hooks.exists() or not any(
+        path for path in hooks.rglob("*") if "__pycache__" not in path.parts
+    )
     assert {path.name for path in (TARGET_ROOT / "agents").glob("*.toml")} == {
         "review_max.toml",
         "review_high.toml",
+        "work_high.toml",
         "test_medium.toml",
         "scan_low.toml",
         "monitor_low.toml",

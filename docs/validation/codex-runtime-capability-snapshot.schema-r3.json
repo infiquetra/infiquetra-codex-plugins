@@ -128,13 +128,14 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["slug", "default_effort", "supported_efforts", "visibility", "supported_in_api"],
+            "required": ["slug", "default_effort", "supported_efforts", "visibility", "supported_in_api", "multi_agent_version"],
             "properties": {
               "slug": {"type": "string"},
               "default_effort": {"$ref": "#/$defs/effort"},
               "supported_efforts": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/effort"}},
               "visibility": {"enum": ["list", "hide"]},
-              "supported_in_api": {"type": "boolean"}
+              "supported_in_api": {"type": "boolean"},
+              "multi_agent_version": {"enum": ["v1", "v2", null]}
             }
           }
         }

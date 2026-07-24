@@ -20,10 +20,9 @@ exposes that option. A follow-up message is limited to status or clarification i
 attempt; it cannot revise the intent or create gate evidence.
 
 Subagents inherit parent permission choices, and live overrides can supersede profile defaults.
-Therefore the hook's observed `permission_mode` and the profile's configured `sandbox_mode` remain
-separate facts. A read-only label or profile is requested policy until the runtime provides proof.
-Only `default` and `plan` permission modes may enter a candidate receipt; `acceptEdits`, `dontAsk`,
-and `bypassPermissions` are too broad for gate-authoritative work.
+Therefore the V2 `turn_context` permission profile and the profile's configured `sandbox_mode`
+remain separate facts. A read-only label or profile is requested policy until runtime readback and
+the root workspace audit agree. Broad permission modes remain outside gate-authoritative work.
 Requested read-only output needs a root-recorded pre/post mutation-audit digest with no observed
 writes before it can enter the gate; otherwise it remains advisory. The audit covers repository
 files regardless of Git ignore state, modes, symlinks, empty directories, plus hashed Git HEAD,
@@ -31,10 +30,9 @@ index, config, hooks, refs, logs, and operation state. Quiesce every other root/
 the audit interval so a concurrent legitimate write cannot invalidate or be mistaken for child
 behavior.
 
-Use a new intent and fresh execution context for remediation or revalidation. Peer communication is
-optional and never required for correctness. Backpressure, missing named-profile selection,
-missing hook trust, or receipt mismatch causes truthful inline fallback for preferred independence
-or a block for required independence.
+Use a fresh attempt ID and canonical agent path for remediation or revalidation. Peer communication
+is optional and never required for correctness. Backpressure, missing named-profile selection, or
+runtime receipt mismatch blocks required independence.
 
 Approved external-action rows are dispatched through Saga, not through the native agent DAG. An
 external route with writes must match a canonical `write_capable` registry entry whose shipped CLI
@@ -45,11 +43,9 @@ import, the approved base, dirty overlap, patch digest, path set, Git metadata, 
 denials must still hold. The action's status and changed paths may be recorded in the same workflow
 run record, but its authority remains `non-gating`.
 
-Hook receipts plus root-observed installed-byte readback from a Verified Workflows path contained
-in the declared Codex home provide an auditable root-accountability diagnostic. Current hook events
-are not signed and Codex provides no host-issued child attestation, so the chain cannot satisfy a
-gate or required independence and is not cryptographic proof against another process running as the
-same operating-system user.
+Codex V2 `session_meta` plus `turn_context` provide runtime identity and effective-permission
+readback. The root validates those events against the approved launch and combines them with the
+typed terminal result and workspace audit; plugin hooks are not part of the active authority path.
 
 Official current behavior: [Codex subagents](https://learn.chatgpt.com/docs/agent-configuration/subagents)
 and [Codex hooks](https://learn.chatgpt.com/docs/hooks).

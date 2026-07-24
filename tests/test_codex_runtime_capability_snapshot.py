@@ -69,6 +69,9 @@ def test_catalog_projection_reproduces_digest() -> None:
     assert by_slug["gpt-5.6-sol"]["supported_efforts"][-1] == "ultra"
     assert by_slug["gpt-5.6-terra"]["supported_efforts"][-1] == "ultra"
     assert "ultra" not in by_slug["gpt-5.6-luna"]["supported_efforts"]
+    assert by_slug["gpt-5.6-sol"]["multi_agent_version"] == "v2"
+    assert by_slug["gpt-5.6-terra"]["multi_agent_version"] == "v2"
+    assert by_slug["gpt-5.6-luna"]["multi_agent_version"] == "v1"
 
 
 def test_active_host_and_v2_contract_are_separate_truths() -> None:

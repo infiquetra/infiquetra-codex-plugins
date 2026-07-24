@@ -2,6 +2,25 @@
 
 All notable changes to this plugin are documented here.
 
+## [Unreleased]
+
+### Changed
+
+- Replace the parallel intent, hook receipt, protected-record, workspace-evidence, and workflow-state
+  machinery with a compact Codex V2 contract compiler, runtime probe, typed result validator,
+  bounded workspace audit, severity-first gate, and one root-owned run record.
+- Expand the managed profile set to six with `work_high`, preserve native catalog V2 metadata, and
+  require matching `session_meta` plus `turn_context` readback before delegated work counts.
+- Require one independent reviewer beneath a fresh V2 review root and add risk-triggered reviewers
+  only when the work warrants them.
+- Integrate approval-bound Saga external actions into the same contract and run record while keeping
+  all provider output non-gating.
+
+### Removed
+
+- Remove executable V1 fallback, plugin hooks, protected evidence stores, receipt chains, and hidden
+  inline downgrade paths from active workflow execution.
+
 ## [1.0.3] - 2026-07-18
 
 ### Added

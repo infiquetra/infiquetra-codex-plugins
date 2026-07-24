@@ -30,6 +30,7 @@ def raw_model(slug: str = "gpt-5.6-sol") -> dict:
         ],
         "visibility": "list",
         "supported_in_api": True,
+        "multi_agent_version": "v2",
         "base_instructions": "must be dropped",
         "model_messages": {"secret": "must be dropped"},
         "unknown": "must be dropped",
@@ -46,6 +47,7 @@ def test_normalizer_projects_only_allowlisted_model_fields() -> None:
             "supported_efforts": ["low", "max"],
             "visibility": "list",
             "supported_in_api": True,
+            "multi_agent_version": "v2",
         }
     ]
     assert "instructions" not in json.dumps(models).lower()

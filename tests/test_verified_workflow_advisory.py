@@ -49,23 +49,6 @@ def _load_reconciler() -> ModuleType:
 AR: Any = _load_reconciler()
 
 
-def _load_gate_evaluator() -> ModuleType:
-    scripts = ROOT / "plugins" / "verified-workflows" / "scripts"
-    if str(scripts) not in sys.path:
-        sys.path.insert(0, str(scripts))
-    path = scripts / "gate_evaluator.py"
-    spec = importlib.util.spec_from_file_location("gate_evaluator_for_advisory", path)
-    assert spec is not None
-    assert spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    sys.modules["gate_evaluator_for_advisory"] = module
-    spec.loader.exec_module(module)
-    return module
-
-
-GATE: Any = _load_gate_evaluator()
-
-
 def test_external_seat_is_summarized_without_competing_gate_math() -> None:
     result = C.summarize_panel(
         [
@@ -171,26 +154,6 @@ def test_advisory_record_is_structural_bounded_and_non_authoritative() -> None:
     assert marker.encode() not in AR.canonical_bytes(record)
 
 
-def test_advisory_record_persists_in_protected_store(tmp_path: Path) -> None:
-    plugin_data = tmp_path / "plugin-data"
-    plugin_data.mkdir(mode=0o700)
-    record = AR.build_advisory_record(
-        [C.Finding("shared/finding", "same")],
-        [C.Finding("shared/finding", "same")],
-        source_evidence_ref="sha256:" + "b" * 64,
-    )
-
-    reference = AR.persist_advisory_record(plugin_data, record)
-    loaded, loaded_bytes = AR.protected_store.load_protected_record(
-        plugin_data, reference, "advisory"
-    )
-
-    assert reference.startswith("record:advisory:")
-    assert loaded == record
-    assert loaded_bytes == AR.canonical_bytes(record)
-    assert GATE._load_advisory_record(plugin_data, reference) == record
-
-
 def test_markdown_rendering_escapes_untrusted_external_text() -> None:
     marker = "[run](command)\n<script>alert(1)</script> `code`"
     report = C.build_convergence_report([], [C.Finding("external/one", marker)])
@@ -224,7 +187,7 @@ def test_u7_docs_bind_external_evidence_outside_workflow_gates() -> None:
     retro = (ROOT / "plugins" / "saga" / "skills" / "retro" / "SKILL.md").read_text()
 
     for text in (protocol, workers, external):
-        assert "gate_authority" in text
-        assert "none" in text
+        assert "authority" in text
+        assert "non-gating" in text
     assert "engine-generated" in ideate
     assert "derive_recipe_update_proposal" in retro

@@ -11,10 +11,8 @@ from pathlib import Path
 from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "scripts"))
 
 import consensus_advisory as consensus
-import protected_store
 
 MAX_FINDINGS_PER_SIDE = 256
 MAX_TEXT_BYTES = 4096
@@ -71,11 +69,6 @@ def build_advisory_record(
 
 
 def canonical_bytes(record: dict[str, Any]) -> bytes:
-    """Canonical bytes suitable for a protected evidence record."""
+    """Canonical bytes suitable for the root-owned concise run record."""
 
     return (json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
-
-
-def persist_advisory_record(plugin_data: Path, record: dict[str, Any]) -> str:
-    """Persist a structural advisory record in the root-owned protected store."""
-    return protected_store.persist_protected_record(plugin_data, record)

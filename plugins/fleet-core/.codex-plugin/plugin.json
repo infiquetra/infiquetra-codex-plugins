@@ -1,7 +1,7 @@
 {
   "name": "fleet-core",
   "version": "0.10.0+codex.20260720120109",
-  "description": "Fleet-commons library plugin (Codex adapter): canonical home for cross-plugin shared primitives (tier palette, tier resolver, effort rider, retry/backoff) plus the vendored resolution shim's canonical copy. Scripts-only \u2014 no skills, commands, or agents.",
+  "description": "Scripts-only shared Codex library for native model metadata, profile resolution, effort policy, retry behavior, audit primitives, and compatibility readers.",
   "author": {
     "name": "Infiquetra",
     "email": "hello@infiquetra.com",
@@ -22,8 +22,8 @@
   ],
   "interface": {
     "displayName": "Fleet Core",
-    "shortDescription": "Shared model, effort, retry, and compatibility primitives.",
-    "longDescription": "Provides the scripts-only shared library used by Infiquetra Codex plugins for model catalogs, execution classes, effort policy, retry behavior, and compatibility readers.",
+    "shortDescription": "Shared native model, effort, retry, and compatibility primitives.",
+    "longDescription": "Provides the scripts-only shared library used by Infiquetra Codex plugins to preserve native model-catalog metadata, resolve profile policy, enforce effort and retry contracts, and read closed historical compatibility vocabulary.",
     "developerName": "Infiquetra",
     "category": "Coding",
     "capabilities": [

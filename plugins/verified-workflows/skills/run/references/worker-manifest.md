@@ -11,3 +11,7 @@ Messages coordinate one attempt but do not complete it. `followup_task` restores
 Writable attempts are enclosed by the lightweight root-owned workspace and Git audit. The root rejects out-of-scope paths, dirty overlap, worker Git commands, and changes to HEAD, branch, index, refs, config, or hooks. Concurrent writable attempts require native per-agent mutation attribution; otherwise they run sequentially with the root quiescent.
 
 One bounded run record retains only the approved binding, validated runtime identity, typed outcomes, checks, findings, remediation count, and root decision. It does not copy Codex events, messages, transcripts, prompts, tool arguments, stdout, stderr, credentials, or raw model output.
+
+External actions are not worker manifests or role results. Their contract authority is always
+`non-gating`; the run record may project Saga-validated status and root-audited paths, but provider
+output cannot release a dependency or satisfy a workflow gate.

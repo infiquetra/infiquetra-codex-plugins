@@ -30,7 +30,7 @@ Codex-root verification + typed reconciliation
         |
         +-- response-only offload -> root-owned apply/test path
         |
-        +-- second opinion or divergence -> protected advisory reference only
+        +-- second opinion or divergence -> Saga action reference only
 ```
 
 Native Codex agents never appear in the external-engine registry. Model and effort for native

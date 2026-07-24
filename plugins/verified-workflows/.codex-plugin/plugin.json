@@ -1,7 +1,7 @@
 {
   "name": "verified-workflows",
   "version": "1.0.3+codex.20260718134043",
-  "description": "Root-owned Codex workflow orchestration with deterministic feasibility review and opt-in strict receipt gates.",
+  "description": "Root-owned Codex V2 workflow orchestration with approved contracts, runtime readback, typed results, and concise gates.",
   "author": {
     "name": "Infiquetra",
     "email": "hello@infiquetra.com",
@@ -20,8 +20,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Verified Workflows",
-    "shortDescription": "Run root-owned workflows with feasible evidence gates.",
-    "longDescription": "Defines Codex-native workflow DAGs, logical roles, reviewer and validator gates, and evidence contracts while the root thread retains mutation and completion authority. Strict child receipts are opt-in when the runtime can attest them.",
+    "shortDescription": "Run root-owned Codex V2 workflows with explicit gates.",
+    "longDescription": "Compiles operator-approved workflow contracts into exact Codex V2 launches, validates runtime identity and typed results, audits bounded writes, and evaluates reviewer and deterministic gates while the root retains orchestration, Git, and completion authority.",
     "developerName": "Infiquetra",
     "category": "Coding",
     "capabilities": [

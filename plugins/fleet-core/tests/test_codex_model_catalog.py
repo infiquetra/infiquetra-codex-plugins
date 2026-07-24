@@ -34,6 +34,7 @@ def _raw_row(
     *,
     visibility: str = "list",
     supported_in_api: bool = True,
+    multi_agent_version: str | None = "v2",
 ) -> dict:
     return {
         "slug": slug,
@@ -43,6 +44,7 @@ def _raw_row(
         ],
         "visibility": visibility,
         "supported_in_api": supported_in_api,
+        "multi_agent_version": multi_agent_version,
         "base_instructions": "must never survive normalization",
         "unknown": {"nested": "dropped"},
     }
@@ -67,6 +69,7 @@ def test_normalization_allowlists_fields_and_accepts_both_shapes() -> None:
             "supported_efforts",
             "visibility",
             "supported_in_api",
+            "multi_agent_version",
         }
         rendered = json.dumps(snapshot.to_jsonable())
         assert "base_instructions" not in rendered
@@ -83,6 +86,7 @@ def test_normalized_digest_matches_committed_capability_snapshot() -> None:
             tuple(row["supported_efforts"]),
             visibility=row["visibility"],
             supported_in_api=row["supported_in_api"],
+            multi_agent_version=row["multi_agent_version"],
         )
         raw["default_reasoning_level"] = row["default_effort"]
         raw_models.append(raw)
@@ -177,6 +181,10 @@ def test_refreshed_failure_tries_bundled_once(first_failure: str) -> None:
             "malformed reasoning level",
         ),
         ({"models": [_raw_row(slug="bad\nslug")]}, "missing or duplicate slug"),
+        (
+            {"models": [_raw_row(multi_agent_version="future")]},
+            "unsupported multi-agent version",
+        ),
     ],
 )
 def test_malformed_projection_fails_loud(payload: object, match: str) -> None:

@@ -2,6 +2,15 @@
 
 All notable changes to the Codex `fleet-core` plugin are documented here.
 
+## Unreleased
+
+### Changed
+
+- Preserve each native Codex catalog row's `multi_agent_version` in normalized snapshots and
+  profile-resolution digests.
+- Remove the executable Sol/Terra V1 catalog override; current workflow profiles use native Codex
+  V2 selection and runtime readback.
+
 ## 0.10.0 — 2026-07-20
 
 ### Security - Audit-store ancestor hardening (#43, re-ported from infiquetra-claude-plugins#624)

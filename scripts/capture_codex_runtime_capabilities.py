@@ -62,6 +62,7 @@ def normalize_catalog(payload: Any) -> list[dict[str, Any]]:
         levels = raw.get("supported_reasoning_levels")
         visibility = raw.get("visibility")
         supported_in_api = raw.get("supported_in_api")
+        multi_agent_version = raw.get("multi_agent_version")
         if not isinstance(slug, str) or not slug or slug in seen:
             raise CaptureError(f"model row {index} has a missing or duplicate slug")
         if default not in EFFORTS:
@@ -78,6 +79,8 @@ def normalize_catalog(payload: Any) -> list[dict[str, Any]]:
             efforts.append(effort)
         if visibility not in {"list", "hide"} or not isinstance(supported_in_api, bool):
             raise CaptureError(f"model `{slug}` has malformed visibility/API support")
+        if multi_agent_version not in {None, "v1", "v2"}:
+            raise CaptureError(f"model `{slug}` has an unsupported multi-agent version")
         seen.add(slug)
         models.append(
             {
@@ -86,6 +89,7 @@ def normalize_catalog(payload: Any) -> list[dict[str, Any]]:
                 "supported_efforts": efforts,
                 "visibility": visibility,
                 "supported_in_api": supported_in_api,
+                "multi_agent_version": multi_agent_version,
             }
         )
     return models

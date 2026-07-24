@@ -23,59 +23,59 @@
     {
       "profile_id": "review_max",
       "runtime_agent_name": "review_max",
-      "sha256": "65e15b6348f97ba0be4af6512e11f1e1e490e4e592678dd8cf1ef0b563149df5"
+      "sha256": "02326611dccfcc6e4666a4e825c1a94044ff651a7e1be5c47842533ce9d8cce8"
     },
     {
       "profile_id": "review_high",
       "runtime_agent_name": "review_high",
-      "sha256": "dc2b9f930927452a61bf91dec6f87505284c2ba4256554e94223e79cbc1cbde0"
+      "sha256": "3c0b9d8070e300cb84c456fd2ca09ef5999408d84d5a6ee8964303c8b38683d0"
     },
     {
       "profile_id": "work_high",
       "runtime_agent_name": "work_high",
-      "sha256": "55841c5065b5517c00766ecced560f017ca4e3afbfab200f35c98d035112a5e2"
+      "sha256": "520fcdd1f404adb2e6ac911a50054e5cb230ae557eec693d20ccc54cba322d98"
     },
     {
       "profile_id": "test_medium",
       "runtime_agent_name": "test_medium",
-      "sha256": "24bb62bd5b28c0b29754e89fd9ffe92b21c050ac008065923b6394f4eef8cd2f"
+      "sha256": "45105c90ed7e2c51b8b0ecffafed16a1dfb2a0ab24c8cdf47a2f5790a672da60"
     },
     {
       "profile_id": "scan_low",
       "runtime_agent_name": "scan_low",
-      "sha256": "d6e9494f5fccf83c879946428e8897a77588f7ee33f5ec1cb6dd54ab4af9682c"
+      "sha256": "8ef81d4fee4ccc7905767923e3c58224149a00d3cb8ef3795b44fcdc5e0bbbf3"
     },
     {
       "profile_id": "monitor_low",
       "runtime_agent_name": "monitor_low",
-      "sha256": "140f03d50fc677e9d4eea7bb4871c7419148fbca8ea6ad25092a1e6b8a39310d"
+      "sha256": "25055c2f7e1d7d19a3572bd24bd65ea469866a06e86f1a96df0ed3d8e43becee"
     }
   ],
   "project_discovery": {
     "files": [
       {
         "filename": "monitor_low.toml",
-        "sha256": "140f03d50fc677e9d4eea7bb4871c7419148fbca8ea6ad25092a1e6b8a39310d"
+        "sha256": "25055c2f7e1d7d19a3572bd24bd65ea469866a06e86f1a96df0ed3d8e43becee"
       },
       {
         "filename": "review_high.toml",
-        "sha256": "dc2b9f930927452a61bf91dec6f87505284c2ba4256554e94223e79cbc1cbde0"
+        "sha256": "3c0b9d8070e300cb84c456fd2ca09ef5999408d84d5a6ee8964303c8b38683d0"
       },
       {
         "filename": "review_max.toml",
-        "sha256": "65e15b6348f97ba0be4af6512e11f1e1e490e4e592678dd8cf1ef0b563149df5"
+        "sha256": "02326611dccfcc6e4666a4e825c1a94044ff651a7e1be5c47842533ce9d8cce8"
       },
       {
         "filename": "scan_low.toml",
-        "sha256": "d6e9494f5fccf83c879946428e8897a77588f7ee33f5ec1cb6dd54ab4af9682c"
+        "sha256": "8ef81d4fee4ccc7905767923e3c58224149a00d3cb8ef3795b44fcdc5e0bbbf3"
       },
       {
         "filename": "test_medium.toml",
-        "sha256": "24bb62bd5b28c0b29754e89fd9ffe92b21c050ac008065923b6394f4eef8cd2f"
+        "sha256": "45105c90ed7e2c51b8b0ecffafed16a1dfb2a0ab24c8cdf47a2f5790a672da60"
       },
       {
         "filename": "work_high.toml",
-        "sha256": "55841c5065b5517c00766ecced560f017ca4e3afbfab200f35c98d035112a5e2"
+        "sha256": "520fcdd1f404adb2e6ac911a50054e5cb230ae557eec693d20ccc54cba322d98"
       }
     ],
     "location": ".codex/agents",
@@ -96,7 +96,7 @@
   ],
   "runtime_receipt": null,
   "schema_version": 2,
-  "snapshot_sha256": "f29aa421042ac8f975188ba78c6b799fd08f987cd9d5c625077f5fb494807f7e",
+  "snapshot_sha256": "55db69b01ec7bcda10c18597f78d1b8a08b37b587867f46c869b2c0d513ec182",
   "spawn_request_fields": [
     "agent_type",
     "fork_turns",

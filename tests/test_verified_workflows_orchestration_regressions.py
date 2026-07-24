@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 ROOT = Path(__file__).parents[1]
@@ -18,33 +17,75 @@ def test_run_skill_links_every_runtime_contract() -> None:
     ):
         assert f"references/{name}" in skill
         assert (PLUGIN / "skills" / "run" / "references" / name).is_file()
-    assert "Python scripts parse, normalize, and evaluate state" in skill
-    assert "they never spawn, steer, wait for, or impersonate" in skill
-    assert "Peer messaging is optional and never required" in skill
-    assert "cannot approve changes to their own implementation" in skill
-    assert "--agents-dir <agents-dir>" in skill
-    assert "content-addressed `intent` record" in skill
-    assert "root-accountability chain" in skill
-    assert "every workflow step exactly" in skill
+    assert "Codex V2 owns the live hierarchy" in skill
+    assert "session_meta" in skill
+    assert "turn_context" in skill
+    assert "fresh V2 review root" in skill
+    assert "one bounded run record" in skill
 
 
-def test_hook_receipts_cover_only_supported_events_and_use_plugin_paths() -> None:
-    payload = json.loads((PLUGIN / "hooks" / "hooks.json").read_text())
-    assert set(payload["hooks"]) == {"SubagentStart", "SubagentStop"}
-    for groups in payload["hooks"].values():
-        command = groups[0]["hooks"][0]["command"]
-        assert "$PLUGIN_ROOT/hooks/agent_receipt.py" in command
-        assert "/Users/" not in command
+def test_retired_v1_and_evidence_chain_surfaces_are_absent() -> None:
+    for relative in (
+        "hooks/hooks.json",
+        "hooks/agent_receipt.py",
+        "scripts/dispatch_receipt.py",
+        "scripts/protected_store.py",
+        "scripts/workspace_evidence.py",
+        "scripts/workflow_records.py",
+        "scripts/named_child_attestation.py",
+        "scripts/raw_hook_maintenance.py",
+    ):
+        assert not (PLUGIN / relative).exists()
+
+
+def test_active_guidance_and_runtime_have_no_v1_or_retired_chain_fallback() -> None:
+    active_guidance = (
+        ROOT / "README.md",
+        ROOT / "plugins" / "fleet-core" / "README.md",
+        PLUGIN / "README.md",
+        PLUGIN / "skills" / "run" / "SKILL.md",
+        PLUGIN / "skills" / "review-workflow" / "SKILL.md",
+        PLUGIN / "skills" / "select-agent" / "SKILL.md",
+        ROOT / "plugins" / "saga" / "references" / "operator-choice.md",
+    )
+    forbidden_guidance = (
+        "codex_v1_catalog.py",
+        "exactly five managed",
+        "five maintained profiles",
+        "select stable MultiAgent V1",
+        "generated full-catalog override",
+        "multi_agent_v2=false",
+    )
+    for path in active_guidance:
+        text = path.read_text()
+        for token in forbidden_guidance:
+            assert token not in text, f"{path}: active legacy guidance `{token}`"
+
+    retired_modules = (
+        "protected_store",
+        "workspace_evidence",
+        "dispatch_receipt",
+        "named_child_attestation",
+        "raw_hook_maintenance",
+        "workflow_records",
+    )
+    for path in (PLUGIN / "scripts").glob("*.py"):
+        text = path.read_text()
+        for module in retired_modules:
+            assert f"import {module}" not in text
+            assert f"from {module}" not in text
 
 
 def test_runtime_scripts_do_not_import_sibling_workflow_plugins() -> None:
     legacy_plugin_path = "plugins/" + "team-" + "execution"
     for path in (
         PLUGIN / "scripts" / "workflow_dispatch.py",
-        PLUGIN / "scripts" / "dispatch_receipt.py",
+        PLUGIN / "scripts" / "workflow_feasibility.py",
         PLUGIN / "scripts" / "gate_evaluator.py",
         PLUGIN / "scripts" / "protocol_probe.py",
-        PLUGIN / "hooks" / "agent_receipt.py",
+        PLUGIN / "scripts" / "result_contract.py",
+        PLUGIN / "scripts" / "run_record.py",
+        PLUGIN / "scripts" / "workspace_audit.py",
     ):
         text = path.read_text()
         assert "plugins.saga" not in text

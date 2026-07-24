@@ -7,6 +7,10 @@ description: Run an approved Infiquetra Workflow Contract as a root-owned Codex 
 
 Use this skill only after the operator approves the complete `## Workflow Contract` defined in [workflow-protocol.md](references/workflow-protocol.md). The main Codex session is the sole orchestrator and Git owner. Codex V2 owns the live hierarchy, liveness, messaging, waiting, interruption, and restoration.
 
+Apply the canonical [gate policy](references/gate-policy.md), [validator evidence
+state](references/validator-evidence-state.md), [worker manifest](references/worker-manifest.md), and
+[delegation safety](references/delegation-safety.md) contracts throughout the run.
+
 ## Approval Gate
 
 Render all three contract tables, the explicit plan revision, canonical contract digest, and approval binding. Do not launch work before explicit approval. Any material assignment, check, fallback, write, context, external-action, or authority edit requires a complete new preview and approval.

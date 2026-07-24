@@ -2,7 +2,11 @@
 
 ## Status
 
-U1 through U6 are complete. The compact V2 compiler, runtime receipt and result contracts, root-owned assurance gate, and Saga external-action control-plane integration are committed or ready to commit. The isolated live receipt remains blocked because two device-auth attempts expired without browser authorization; no capability was promoted from source-confirmed to runtime-supported.
+U1 through U7 are complete. The compact V2 compiler, runtime receipt and result contracts,
+root-owned assurance gate, Saga external-action integration, and closed V1/evidence-chain removal are
+implemented and validated. The isolated live receipt remains blocked because two device-auth
+attempts expired without browser authorization; no capability was promoted from source-confirmed to
+runtime-supported.
 
 ## U1: Freeze Lineage And Establish The Runtime Contract
 
@@ -154,7 +158,35 @@ U1 through U6 are complete. The compact V2 compiler, runtime receipt and result 
 - Repository validator: passed.
 - `git diff --check`: passed.
 
+## U7: Remove Active V1 And Evidence-Chain Surfaces
+
+- Deleted the executable Fleet Core V1 catalog override and its compatibility tests.
+- Deleted Verified Workflows hooks, intent and receipt writers, protected stores, named-child
+  attestation, raw-hook maintenance, full workspace evidence, and the corresponding test suites.
+- Preserved only the compact V2 compiler, feasibility review, runtime probe, typed result contract,
+  workspace audit, gate reducer, and root-owned run record.
+- Extended Fleet Core's normalized catalog projection and schema to preserve each native
+  `multi_agent_version` value without rewriting model rows.
+- Regenerated all six maintained profiles and project-discovery copies against the updated catalog
+  digest, then refreshed both current proof artifacts.
+- Rewrote active root, Fleet Core, Verified Workflows, Saga operator-choice, cutover, portability,
+  manifest, and changelog guidance for native V2. The previous modernization cutover is explicitly
+  historical.
+- Added active-surface regressions against V1 install guidance, forced V1 configuration, five-profile
+  claims, hidden fallback, and retired module imports.
+- Regenerated the legacy-token inventory, Saga facts/assets, and port classification from canonical
+  inputs without versioning the three release candidates.
+
+## U7 Checks
+
+- Full repository pytest: 2,540 passed.
+- Focused U7 migration/regression pytest: 73 passed after the full-suite drift corrections.
+- `uv run ruff check .`: passed.
+- Repository validator, legacy inventory, port classification, Saga facts, and Saga assets: passed.
+- `git diff --check`: passed.
+
 ## Next Step
 
-Execute U7: remove the closed inventory of active V1 and evidence-chain surfaces, regenerate active
-documentation and inventories, and prepare the three plugin release surfaces without versioning.
+Execute U8: run the authority preflight and authenticated isolated V2 matrix, apply the approved Luna
+fallback if needed, mint aligned candidate versions, obtain the independent reviews, and stop at the
+explicit PR/merge/install approval boundary.

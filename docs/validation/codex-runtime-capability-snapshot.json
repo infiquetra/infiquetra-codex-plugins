@@ -47,63 +47,71 @@
   },
   "catalog": {
     "source": "refreshed",
-    "normalized_sha256": "cab542b9fc6f07bc2eaf282a6ebe85b4b4b1a807a68fb22e51b11863d146d511",
+    "normalized_sha256": "65713d343d35827f75d43c006d2750e17cde1c676b60354859fb828ff289dc99",
     "models": [
       {
         "slug": "gpt-5.6-sol",
         "default_effort": "low",
         "supported_efforts": ["low", "medium", "high", "xhigh", "max", "ultra"],
         "visibility": "list",
-        "supported_in_api": true
+        "supported_in_api": true,
+        "multi_agent_version": "v2"
       },
       {
         "slug": "gpt-5.6-terra",
         "default_effort": "medium",
         "supported_efforts": ["low", "medium", "high", "xhigh", "max", "ultra"],
         "visibility": "list",
-        "supported_in_api": true
+        "supported_in_api": true,
+        "multi_agent_version": "v2"
       },
       {
         "slug": "gpt-5.6-luna",
         "default_effort": "medium",
         "supported_efforts": ["low", "medium", "high", "xhigh", "max"],
         "visibility": "list",
-        "supported_in_api": true
+        "supported_in_api": true,
+        "multi_agent_version": "v1"
       },
       {
         "slug": "gpt-5.5",
         "default_effort": "medium",
         "supported_efforts": ["low", "medium", "high", "xhigh"],
         "visibility": "list",
-        "supported_in_api": true
+        "supported_in_api": true,
+        "multi_agent_version": null
       },
       {
         "slug": "gpt-5.4",
         "default_effort": "medium",
         "supported_efforts": ["low", "medium", "high", "xhigh"],
         "visibility": "list",
-        "supported_in_api": true
+        "supported_in_api": true,
+        "multi_agent_version": null
       },
       {
         "slug": "gpt-5.4-mini",
         "default_effort": "medium",
         "supported_efforts": ["low", "medium", "high", "xhigh"],
         "visibility": "list",
-        "supported_in_api": true
+        "supported_in_api": true,
+        "multi_agent_version": null
       },
       {
         "slug": "gpt-5.3-codex-spark",
         "default_effort": "high",
         "supported_efforts": ["low", "medium", "high", "xhigh"],
         "visibility": "list",
-        "supported_in_api": false
+        "supported_in_api": false,
+        "multi_agent_version": null
       },
       {
         "slug": "codex-auto-review",
         "default_effort": "medium",
         "supported_efforts": ["low", "medium", "high", "xhigh"],
         "visibility": "hide",
-        "supported_in_api": true
+        "supported_in_api": true,
+        "multi_agent_version": null
       }
     ]
   },

@@ -463,9 +463,9 @@ def test_verified_workflows_runtime_surfaces_are_part_of_repo_validation() -> No
     assert errors == []
 
 
-def test_verified_workflows_runtime_rejects_missing_hook(tmp_path: Path) -> None:
+def test_verified_workflows_runtime_rejects_missing_v2_surface(tmp_path: Path) -> None:
     root = copy_verified_workflows_runtime_target(tmp_path)
-    (root / "plugins" / "verified-workflows" / "hooks" / "hooks.json").unlink()
+    (root / "plugins" / "verified-workflows" / "scripts" / "run_record.py").unlink()
     errors: list[str] = []
 
     validate_verified_workflows_runtime(root, errors)
@@ -473,17 +473,15 @@ def test_verified_workflows_runtime_rejects_missing_hook(tmp_path: Path) -> None
     assert any("runtime surfaces missing" in error for error in errors)
 
 
-def test_verified_workflows_runtime_rejects_open_hook_definition(tmp_path: Path) -> None:
+def test_verified_workflows_runtime_rejects_retired_evidence_surface(tmp_path: Path) -> None:
     root = copy_verified_workflows_runtime_target(tmp_path)
-    hook_path = root / "plugins" / "verified-workflows" / "hooks" / "hooks.json"
-    payload = json.loads(hook_path.read_text())
-    payload["extra"] = True
-    hook_path.write_text(json.dumps(payload))
+    retired = root / "plugins" / "verified-workflows" / "scripts" / "protected_store.py"
+    retired.write_text("# retired fixture\n", encoding="utf-8")
     errors: list[str] = []
 
     validate_verified_workflows_runtime(root, errors)
 
-    assert any("top-level fields" in error for error in errors)
+    assert any("retired V1/evidence-chain surfaces remain" in error for error in errors)
 
 
 def test_verified_workflows_runtime_rejects_stale_proof(tmp_path: Path) -> None:

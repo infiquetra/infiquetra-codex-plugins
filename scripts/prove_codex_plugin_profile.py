@@ -59,6 +59,7 @@ def run_command(
     env: dict[str, str] | None = None,
     input_text: str | None = None,
     timeout: int = 30,
+    stdout_limit: int = 2000,
 ) -> dict[str, Any]:
     result = subprocess.run(
         args,
@@ -73,7 +74,7 @@ def run_command(
     return {
         "command": command_for_artifact(args),
         "returncode": result.returncode,
-        "stdout_excerpt": redact_excerpt(result.stdout),
+        "stdout_excerpt": redact_excerpt(result.stdout, limit=stdout_limit),
         "stderr_excerpt": redact_excerpt(result.stderr),
     }
 
@@ -303,19 +304,16 @@ def prove_mission_control(repo_root: Path, proof_dir: Path) -> dict[str, Any]:
 def prove_verified_workflows(repo_root: Path) -> dict[str, Any]:
     command = [
         sys.executable,
-        "plugins/verified-workflows/scripts/protocol_probe.py",
-        "--spawn-surface",
-        "absent",
-        "--hook-pair",
-        "absent",
+        "scripts/prove_verified_workflows_runtime.py",
+        "--pretty",
     ]
-    result = run_command(command, cwd=repo_root)
+    result = run_command(command, cwd=repo_root, stdout_limit=32 * 1024)
     payload = json_from_mixed_stdout(result["stdout_excerpt"])
     return {
         "command": result,
         "claim": payload.get("claim"),
-        "runtime_proof": payload.get("runtime_proof") is True,
-        "outcome": payload.get("outcome"),
+        "runtime_proof": payload.get("runtime_receipt") is not None,
+        "outcome": payload.get("capability_outcome"),
         "limitations": payload.get("limitations", []),
         "root_acceptance_required": True,
     }
@@ -537,7 +535,7 @@ Required Saga namespace skills resolved to the Saga plugin:
   `{str(flows["mission_control"]["readiness_passed"]).lower()}`, mutation plan present
   `{str(flows["mission_control"]["mutation_plan_present"]).lower()}`, confirmation refused
   `{str(flows["mission_control"]["confirmation_refused"]).lower()}`
-- Verified Workflows static degradation probe: outcome
+- Verified Workflows static V2 capability probe: outcome
   `{flows["verified_workflows"]["outcome"]}`, runtime proof
   `{str(flows["verified_workflows"]["runtime_proof"]).lower()}`; root acceptance remains required.
 

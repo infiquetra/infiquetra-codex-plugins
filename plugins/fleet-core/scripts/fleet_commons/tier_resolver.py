@@ -87,8 +87,8 @@ class Resolution:
 class ClassResolution:
     """Catalog-bound expected configuration for one leaf execution class.
 
-    This is policy resolution, not proof that a spawned child used the selected profile. U4 joins
-    profile and hook receipts before making an effective-execution claim.
+    This is policy resolution, not proof that a spawned child used the selected profile. Effective
+    execution requires matching Codex V2 runtime readback and a validated typed result.
     """
 
     execution_class: str

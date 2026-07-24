@@ -3,9 +3,9 @@
     "capability_snapshot": {
       "path": "docs/validation/codex-runtime-capability-snapshot.json",
       "schema_path": "docs/validation/codex-runtime-capability-snapshot.schema-r3.json",
-      "schema_sha256": "4896c6bd1ca75332cc64e687195b7d63b7fd6fb0f4ac0c8d9aac0d7bf0c6673c",
+      "schema_sha256": "9bbb8958f6ec05f389525ed27d5b4a3c11313defbc6291c6d4e3bbfa9c948b4a",
       "schema_version": 2,
-      "sha256": "f29aa421042ac8f975188ba78c6b799fd08f987cd9d5c625077f5fb494807f7e"
+      "sha256": "55db69b01ec7bcda10c18597f78d1b8a08b37b587867f46c869b2c0d513ec182"
     },
     "classification_path": "docs/portability/classifications/2026-07-24-codex-v2-orchestration.md",
     "plan": {

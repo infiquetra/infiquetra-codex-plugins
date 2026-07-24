@@ -1176,22 +1176,29 @@ def validate_verified_workflows_project_agents(
 
 
 def validate_verified_workflows_runtime(root: Path, errors: list[str]) -> None:
-    """Validate the closed U4 hook, workflow, receipt, gate, and proof surfaces."""
+    """Validate the closed native V2 workflow, result, audit, gate, and proof surfaces."""
 
     plugin_root = root / "plugins" / "verified-workflows"
     required = (
+        plugin_root / "scripts" / "workflow_dispatch.py",
+        plugin_root / "scripts" / "workflow_feasibility.py",
+        plugin_root / "scripts" / "gate_evaluator.py",
+        plugin_root / "scripts" / "protocol_probe.py",
+        plugin_root / "scripts" / "result_contract.py",
+        plugin_root / "scripts" / "run_record.py",
+        plugin_root / "scripts" / "workspace_audit.py",
+        root / "scripts" / "prove_verified_workflows_runtime.py",
+        root / "docs" / "validation" / "verified-workflows-runtime-proof.json",
+    )
+    retired = (
         plugin_root / "hooks" / "hooks.json",
         plugin_root / "hooks" / "agent_receipt.py",
-        plugin_root / "scripts" / "workflow_dispatch.py",
         plugin_root / "scripts" / "dispatch_receipt.py",
         plugin_root / "scripts" / "protected_store.py",
         plugin_root / "scripts" / "workspace_evidence.py",
         plugin_root / "scripts" / "workflow_records.py",
         plugin_root / "scripts" / "named_child_attestation.py",
-        plugin_root / "scripts" / "gate_evaluator.py",
-        plugin_root / "scripts" / "protocol_probe.py",
-        root / "scripts" / "prove_verified_workflows_runtime.py",
-        root / "docs" / "validation" / "verified-workflows-runtime-proof.json",
+        plugin_root / "scripts" / "raw_hook_maintenance.py",
     )
     references = {
         "workflow-protocol.md",
@@ -1208,45 +1215,13 @@ def validate_verified_workflows_runtime(root: Path, errors: list[str]) -> None:
         if not (reference_root / name).is_file()
     )
     if missing:
-        errors.append(f"verified-workflows: U4 runtime surfaces missing {missing}")
+        errors.append(f"verified-workflows: native V2 runtime surfaces missing {missing}")
         return
-    hooks_path = plugin_root / "hooks" / "hooks.json"
-    hooks = load_json(hooks_path, errors)
-    expected_matcher = "^(review_max|review_high|work_high|test_medium|scan_low|monitor_low)$"
-    expected_command = 'python3 "$PLUGIN_ROOT/hooks/agent_receipt.py"'
-    if not isinstance(hooks, dict) or set(hooks) != {"hooks"}:
-        errors.append("verified-workflows hooks: top-level fields must be exactly `hooks`")
-    else:
-        events = hooks.get("hooks")
-        if not isinstance(events, dict) or set(events) != {"SubagentStart", "SubagentStop"}:
-            errors.append("verified-workflows hooks: only SubagentStart/Stop are allowed")
-        else:
-            for event_name, groups in events.items():
-                expected_status = (
-                    "Recording Verified Workflows agent start"
-                    if event_name == "SubagentStart"
-                    else "Recording Verified Workflows agent stop"
-                )
-                valid = (
-                    isinstance(groups, list)
-                    and len(groups) == 1
-                    and isinstance(groups[0], dict)
-                    and set(groups[0]) == {"matcher", "hooks"}
-                    and groups[0].get("matcher") == expected_matcher
-                    and isinstance(groups[0].get("hooks"), list)
-                    and len(groups[0]["hooks"]) == 1
-                    and isinstance(groups[0]["hooks"][0], dict)
-                    and set(groups[0]["hooks"][0])
-                    == {"type", "command", "timeout", "statusMessage"}
-                    and groups[0]["hooks"][0].get("type") == "command"
-                    and groups[0]["hooks"][0].get("command") == expected_command
-                    and groups[0]["hooks"][0].get("timeout") == 10
-                    and groups[0]["hooks"][0].get("statusMessage") == expected_status
-                )
-                if not valid:
-                    errors.append(
-                        f"verified-workflows hooks: {event_name} definition is not closed"
-                    )
+    present_retired = [path.relative_to(root).as_posix() for path in retired if path.exists()]
+    if present_retired:
+        errors.append(
+            f"verified-workflows: retired V1/evidence-chain surfaces remain {present_retired}"
+        )
     proof_path = root / "docs" / "validation" / "verified-workflows-runtime-proof.json"
     proof = load_json(proof_path, errors)
     if proof is None:

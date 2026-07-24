@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Bind approved Verified Workflows external-action rows to Saga's existing provider, approval,
+  egress, status, and adjudication lifecycle.
+- Add contained write-capable provider workspaces with bounded patch capture and root-only import;
+  external results remain visible and non-gating.
+
+### Changed
+
+- Update operator guidance for native Codex V2 profile selection and combined runtime readback.
+
 ## 0.78.0 - 2026-07-20
 
 ### Changed - Dispatcher lease seam activated (#43, PA-2 of infiquetra-claude-plugins#605)

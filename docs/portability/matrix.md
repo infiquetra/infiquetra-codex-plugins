@@ -1,6 +1,6 @@
 # Portability Matrix
 
-Verified: 2026-07-19
+Verified: 2026-07-24
 
 Source snapshot:
 
@@ -20,7 +20,7 @@ tool-specific orchestration.
 | `deploy` | proof-port | yes | no | Deployment operations are part of the Saga-family replacement and need Codex mutation gates before activation. | Port skills and scripts with dry-run, preview, exact-plan confirmation, auth provenance, and proof-owned mutation guards. |
 | `discord-identity-assets` | proof-port | no | no | Codex-born reusable Discord visual identity workflow extracted from home-lab scripts and Norns/Mimir operating evidence. | Add one Codex skill plus deterministic scripts for bot and guild manifest validation, image post-processing, Discord upload/readback, receipt writeback, and secret-safe dry-run/live gates. |
 | `docs-generator` | deferred | yes | yes | Documentation generation needs separate proof for repo-specific output conventions. | Reassess after `test-suite` proof and validation patterns settle. |
-| `fleet-core` | proof-port | yes | no | Shared Codex model, effort, cost, proof, and compatibility policy for the current modernization. | Keep policy canonical in `plugins/fleet-core`; consumer shims are synchronized derivatives. Port only contract-classified source rows. |
+| `fleet-core` | proof-port | yes | no | Shared Codex model, effort, cost, audit, and compatibility policy for the current modernization. | Keep policy canonical in `plugins/fleet-core`, preserve native model-catalog V2 metadata, and keep consumer shims synchronized. Port only contract-classified source rows. |
 | `home-lab-ops` | included | yes | yes | Already visible in Codex cache and mostly instruction/reference content. | Keep skills and references, omit top-level agent persona. |
 | `identity-toolkit` | deferred | yes | yes | Identity flows are higher risk and need fresh Codex-specific validation before porting. | Inventory only for MVP. |
 | `marketplace-lister` | deferred | yes | yes | Marketplace mechanics differ by host and should wait for Codex marketplace validation. | Revisit after this repo is installed from a trusted source. |
@@ -28,7 +28,7 @@ tool-specific orchestration.
 | `pagerduty` | deferred | yes | yes | Operational API client with credentials and mutation paths needs separate smoke tests. | Do not port in MVP. |
 | `python-toolkit` | included | yes | yes | Already visible in Codex cache and skill content is portable after README rewrite. | Keep skills and references, omit top-level Python expert agent. |
 | `redis-channel` | deferred | yes | no | Not present in Antigravity and includes service/server packaging beyond skill docs. | Needs separate server-boundary proof. |
-| `saga` | proof-port | yes | no | Saga is the new lifecycle spine and must be ported as Codex skills with namespaced source-parity names. | Port skills, references, scripts, lifecycle state, and handoff envelopes; omit command files and Claude-only backend choices. |
+| `saga` | proof-port | yes | no | Saga is the lifecycle spine and external-action authority for Codex work. | Port skills, references, scripts, lifecycle state, handoff envelopes, and approval-bound provider adapters; omit command files and Claude-only backend choices. |
 | `sdk-lifecycle` | deferred | yes | yes | Lifecycle automation needs design review for Codex usage model. | Inventory only for MVP. |
 | `slack` | deferred | yes | yes | Credentialed API client with workspace access; requires credential and dry-run policy review. | Do not port in MVP. |
 | `splunk` | deferred | yes | yes | Credentialed search client; requires separate auth and query-safety validation. | Do not port in MVP. |
@@ -38,6 +38,11 @@ tool-specific orchestration.
 | `unifi` | included | yes | yes | Already visible in Codex cache and skill-plus-script payload is portable with confirmation gates. | Keep skills, references, and scripts. |
 
 ## Notes
+
+- 2026-07-24: the native Codex V2 workflow migration removes active V1 catalog and hook/evidence
+  writers, publishes six exact managed profiles, and reduces workflow state to the operator-approved
+  contract, runtime readback, typed results, bounded workspace audits, gates, and one root run record.
+  Existing proof and lineage artifacts remain explicitly historical until the aligned U8 release.
 
 - 2026-07-19: the lease-safe substrate port (#33) lands the frozen `a6f3bcff..cf15a09f`
   fleet_commons broker/orphan/policy/audit modules and the saga settlement adapter inside the

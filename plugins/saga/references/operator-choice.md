@@ -1,80 +1,65 @@
 # Codex Operator-Choice Framework
 
-**Status:** U5 canonical workflow boundary; installed cutover remains gated by U8.
-
-Do not use one backend menu to describe unrelated Codex capabilities. A feature flag, installed
+Do not use one backend label to describe unrelated Codex capabilities. A feature flag, installed
 file, requested model, or caller boolean is not proof that a workflow or child executed.
 
 ## Capability Dimensions
 
 | Dimension | Current choices | Meaning |
 |---|---|---|
-| Lifecycle and state | `saga` | Saga owns durable lifecycle, outcome state, routing, and handoff receipts. |
-| Continuation | `turn`; explicit `goal` | The current task is the default. Goal is opt-in long-running continuation and requires a stable tool result before binding. |
-| Workflow mode | `inline`; `manual`; `verified-workflow`; legacy-readable `team-execution` | A root-owned method for steps, roles, gates, and receipts. Claude Workflow is unsupported. |
-| Step vehicle | `inline`; `deterministic-tool`; `generic-subagent`; runtime-selected `named-profile-subagent` | How one workflow step actually runs. A subagent is a vehicle, not a Saga backend. |
-| Role identity | `generic`; `named-profile-selected`; planned-unproved `logical-role-attested` | Whether evidence proves only a child, a selected profile, or the complete logical role/lens binding. |
-| Execution-class control | prompt steering is advisory; stable V1 `agent_type` selects custom-agent TOML; direct model/effort overrides are not workflow policy | Model, effort, sandbox, instructions, and tool policy belong to a reusable profile; effectiveness still needs child readback. |
-| Hooks | observe and bounded persistence are implemented; guarding is deferred | Hooks extend events. They are not workflow modes, continuation modes, or leaf executors. |
+| Lifecycle and state | `saga` | Saga owns durable lifecycle, outcome state, routing, and handoff pointers. |
+| Continuation | `turn`; explicit `goal` | The current turn is default; Goal is opt-in long-running continuation. |
+| Workflow mode | `inline`; `manual`; `verified-workflow`; legacy-readable `team-execution` | Root-owned method for steps, roles, checks, and gates. |
+| Step vehicle | `inline`; `deterministic-tool`; `named-profile-subagent`; approved external action | How one bounded assignment runs. |
+| Role identity | `generic`; `named-profile-selected`; `logical-role-validated` | The level of identity established by V2 readback plus validated role/result contracts. |
+| Execution-class control | exact V2 profile, model, effort, and bounded `fork_turns` | Profile selection is provisional until runtime readback agrees. |
+| Hooks | none in active workflow execution | Historical hook events are not current identity, state, or gate evidence. |
+| External action | Saga registry route | Provider output is approval-bound, contained, root-adjudicated, and non-gating. |
 
-The digest-bound snapshot at `../../../docs/validation/codex-runtime-capability-snapshot.json` is
-historical V2 port evidence. Current runtime truth comes from the active spawn schema, the generated
-Fleet Core V1 catalog readback, and child activity.
+The digest-bound capability snapshot at
+`../../../docs/validation/codex-runtime-capability-snapshot.json` records the accepted Codex 0.145.0
+contract and preserves native `multi_agent_version` metadata. Current runtime truth still comes from
+the active launch schema and combined `session_meta` plus `turn_context` readback.
 
-## Model, Effort, And Profile Truth
+## Model, Effort, Profile, And Permission Truth
 
-Current custom-agent files configure `model`, `model_reasoning_effort`, `sandbox_mode`, and bounded
-instructions. Current Sol/Terra sessions use the Fleet Core full-catalog override to select stable
-MultiAgent V1. A fresh task dispatches `agent_type=<runtime_agent_name>` with `fork_context=false`;
-some host wrappers spell that equivalent as `fork_turns="none"`. If the active schema omits
-`agent_type`, `model`, or `reasoning_effort`, install or refresh the V1 catalog, restart Codex, and
-start a new session rather than attempting the V2 namespace workaround.
-
+Current profiles configure `model`, `model_reasoning_effort`, `sandbox_mode`, and bounded
+instructions. A V2 launch selects the exact underscore-form profile and an approved history bound.
 Therefore:
 
-- a prompt or task label may request a class but cannot attest selection;
-- an installed TOML proves configuration bytes, not that a child used the profile;
-- generic subagent output remains generic evidence;
-- profile selection requires the parent launch plus matching host-issued child role/model/effort
-  readback;
-- a profile sandbox is configured intent, not proof that a child narrowed the live parent permission
-  boundary; verify effective permission independently;
-- gate-authoritative named workflow evidence additionally requires a receipt joining logical role,
-  selected profile, active hook-reported model, installed-profile digest, child identity, and result
-  vehicle;
-- hook model readback does not prove reasoning effort. The exact profile digest binds expected effort.
+- prompts, task labels, and TOML bytes express requested configuration only;
+- selected profile, model, effort, provider, permission, and V2 mode require matching runtime
+  readback on the canonical agent path;
+- child self-report and coordination messages never establish runtime identity;
+- Codex 0.145.0 children inherit the parent turn's effective permission profile, so a profile cannot
+  independently widen or narrow it;
+- a logical role becomes gate-capable only after its role lens, selected profile, runtime identity,
+  typed result, workspace audit, and root decision all validate;
+- Ultra is a root-only orchestration control, not a child effort tier.
 
-Ultra is a root orchestration control because it adds automatic delegation. It is not the next leaf
-effort above `max` and cannot satisfy a workflow role by itself.
+Missing or mismatched readback fails visibly. Do not fall back to another agent mode while claiming
+that the approved profile ran.
 
 ## Current Recommendation
 
-`plugins/saga/scripts/lifecycle_state.py recommend-backend` returns canonical `inline`, `manual`, or
-`verified-workflow`. Treat that result as a workflow recommendation, not capability attestation. It
-must not activate source Workflow, fork, Goal, hooks, or a subagent as an executor solely from
-caller-supplied booleans.
+`plugins/saga/scripts/lifecycle_state.py recommend-backend` returns `inline`, `manual`, or
+`verified-workflow`. Treat that result as a workflow recommendation, not capability attestation.
 
 Use `inline` when the root can safely own the work. Use `manual` when automation is unsafe or
-unavailable. Existing `team-execution` values remain readable but cannot authorize a new run. A new
-`verified-workflow` run requires canonical readiness plus matching runtime evidence; U8 still owns
-installed cutover. The U4 fresh-task proof establishes named profile selection only; it does not grant
-an unjoined logical-role result gate authority.
+unavailable. A `verified-workflow` run requires an approved three-table contract, successful
+feasibility compilation, and matching V2 runtime evidence. Existing `team-execution` values remain
+readable history and cannot authorize a new run.
 
 ## Transitional Saga State
 
-Saga v1 currently records the effective workflow recommendation in `orchestration_mode`, the
-recommendation in `orchestration_recommended`, the operator choice in
-`orchestration_operator_choice`, any downgrade in `orchestration_downgrade`, and the receipt pointer
-in `orchestration_ref`.
-
-These fields remain parser-compatible through the migration. An explicit operator choice must not be
-inferred from the effective mode. A mismatch requires a non-empty downgrade reason. Legacy
-`team-execution` and `## Team Structure` receipts remain read-only history; new writes use canonical
-workflow, continuation, vehicle, and identity vocabulary only.
+Saga records the effective choice in `orchestration_mode`, its recommendation in
+`orchestration_recommended`, the operator choice in `orchestration_operator_choice`, any explicit
+downgrade in `orchestration_downgrade`, and the concise run-record pointer in `orchestration_ref`.
+An operator choice must not be inferred from the effective mode. A mismatch requires a non-empty
+downgrade reason.
 
 ## Non-Executors
 
-Source `cc-workflows-ultracode`, fork, Goal, hooks, and generic subagents must never be advertised as
-active workflow backends. Goal may bind continuation, hooks may observe events, and subagents may run
-steps, but each needs its own typed adapter and evidence. Unsupported choices halt or remain explicit
-legacy evidence; they do not silently fall back while claiming the unavailable capability ran.
+Goal continuation, messages, waits, profile files, capability snapshots, and external provider
+responses are not workflow engines or gate decisions. They may contribute bounded state or evidence,
+but the main Codex session remains the sole orchestrator and final authority.

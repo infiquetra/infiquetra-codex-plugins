@@ -1293,7 +1293,14 @@ def load_catalog_snapshot(path: Path = DEFAULT_CATALOG_SNAPSHOT) -> Any:
     for index, row in enumerate(rows):
         row = _closed_keys(
             row,
-            {"slug", "default_effort", "supported_efforts", "visibility", "supported_in_api"},
+            {
+                "slug",
+                "default_effort",
+                "supported_efforts",
+                "visibility",
+                "supported_in_api",
+                "multi_agent_version",
+            },
             f"catalog model {index}",
         )
         efforts = _string_list(
@@ -1308,6 +1315,7 @@ def load_catalog_snapshot(path: Path = DEFAULT_CATALOG_SNAPSHOT) -> Any:
                 ],
                 "visibility": row.get("visibility"),
                 "supported_in_api": row.get("supported_in_api"),
+                "multi_agent_version": row.get("multi_agent_version"),
             }
         )
     try:

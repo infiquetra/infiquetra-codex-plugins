@@ -3,7 +3,7 @@
 # profile_id = "scan_low"
 # runtime_agent_name = "scan_low"
 # registry_sha256 = "eb6385b978d8064b35572c136a941d3fee40c3dc69c2044126fde3ccf382a4cf"
-# catalog_sha256 = "cab542b9fc6f07bc2eaf282a6ebe85b4b4b1a807a68fb22e51b11863d146d511"
+# catalog_sha256 = "65713d343d35827f75d43c006d2750e17cde1c676b60354859fb828ff289dc99"
 name = "scan_low"
 description = "Low-cost read-only scanning with no external access."
 model = "gpt-5.6-luna"
