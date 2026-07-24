@@ -552,14 +552,15 @@ def test_dispatch_short_circuits_when_resolution_already_halted() -> None:
     assert evidence.provenance["status"] == "halted"
 
 
-def test_external_gatekeeper_fields_are_rejected_structurally() -> None:
+@pytest.mark.parametrize("gate_key", sorted(D._GATEKEEPER_KEYS))
+def test_external_gatekeeper_fields_are_rejected_structurally(gate_key: str) -> None:
     with pytest.raises(D.DispatchError, match="never gatekeepers"):
         D.dispatch(
             _resolution(),
             runner=lambda _invocation: {
                 "status": "ok",
                 "output": "plausible text",
-                "verdict": "pass",
+                gate_key: "provider-claimed-authority",
             },
         )
 

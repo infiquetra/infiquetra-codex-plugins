@@ -2,7 +2,7 @@
 
 ## Status
 
-U1 is complete. The frozen Claude lineage, Codex 0.145.0 capability contract, current-host baseline, isolated profile preflight, and mandatory classification gate are recorded. The isolated live receipt remains blocked because two device-auth attempts expired without browser authorization; no capability was promoted from source-confirmed to runtime-supported.
+U1 through U6 are complete. The compact V2 compiler, runtime receipt and result contracts, root-owned assurance gate, and Saga external-action control-plane integration are committed or ready to commit. The isolated live receipt remains blocked because two device-auth attempts expired without browser authorization; no capability was promoted from source-confirmed to runtime-supported.
 
 ## U1: Freeze Lineage And Establish The Runtime Contract
 
@@ -123,6 +123,38 @@ U1 is complete. The frozen Claude lineage, Codex 0.145.0 capability contract, cu
 - Repository validator and legacy inventory regeneration: passed.
 - `git diff --check`: passed.
 
+## U6: Join External Actions To The Shared Control Plane
+
+- Imported approved workflow external rows into Saga's existing work-stage action lifecycle while
+  binding provider, model, cost, egress allowlist, context, writes, requiredness, and fixed
+  `non-gating` authority.
+- Required write routes to match the canonical registry's `write_capable`, bounded patch-capture,
+  and root-only shared-workspace import capabilities. Caller route data cannot promote a
+  response-only provider.
+- Scoped workflow external workspaces to approved context and write paths only, without undeclared
+  source history or remotes. Missing context, secret-bearing members, Git metadata mutation,
+  out-of-scope edits, oversized patches, or unsafe paths fail before import.
+- Captured patches as private content-addressed artifacts and made the root recheck approval-bound
+  base, dirty overlap, patch digest, audited paths, `git apply --numstat`, and `git apply --check`
+  before changing the shared workspace.
+- Added conditional status projection for new action facts without changing retained
+  `status.v1` release-proof hashes, and projected external route outcomes into the same concise
+  Verified Workflows run record.
+- Expanded structural rejection of gate-shaped provider fields and retained the existing root-only
+  independently verified finding-adoption path.
+- Corrected the canonical Claude write adapter to expose only scoped file tools with accepted edits;
+  response-only calls still receive no tools.
+
+## U6 Checks
+
+- External action, registry, dispatch, run-record, gate, and workflow-integration pytest: 210 passed.
+- End-to-end fixture proved approved Claude-route patch capture, root import, status, and same-record
+  projection without a live provider call.
+- Focused Ruff: passed.
+- Repository validator: passed.
+- `git diff --check`: passed.
+
 ## Next Step
 
-Execute U6: connect approved external actions to Saga's existing preview, egress, provider, patch-import, and root-adjudication control plane without granting gate authority.
+Execute U7: remove the closed inventory of active V1 and evidence-chain surfaces, regenerate active
+documentation and inventories, and prepare the three plugin release surfaces without versioning.

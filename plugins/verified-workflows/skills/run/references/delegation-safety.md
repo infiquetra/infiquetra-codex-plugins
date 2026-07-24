@@ -36,6 +36,15 @@ optional and never required for correctness. Backpressure, missing named-profile
 missing hook trust, or receipt mismatch causes truthful inline fallback for preferred independence
 or a block for required independence.
 
+Approved external-action rows are dispatched through Saga, not through the native agent DAG. An
+external route with writes must match a canonical `write_capable` registry entry whose shipped CLI
+adapter supports bounded patch capture and `root-only` shared-workspace import. The external process
+works in a contained Git workspace with only declared context and write paths, no undeclared source
+history, and cannot apply its own changes to the shared worktree. Before root
+import, the approved base, dirty overlap, patch digest, path set, Git metadata, and secret-path
+denials must still hold. The action's status and changed paths may be recorded in the same workflow
+run record, but its authority remains `non-gating`.
+
 Hook receipts plus root-observed installed-byte readback from a Verified Workflows path contained
 in the declared Codex home provide an auditable root-accountability diagnostic. Current hook events
 are not signed and Codex provides no host-issued child attestation, so the chain cannot satisfy a

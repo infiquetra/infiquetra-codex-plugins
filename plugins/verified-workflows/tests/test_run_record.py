@@ -131,3 +131,34 @@ def test_repository_identity_marker_blocks_cross_repo_reuse(tmp_path: Path) -> N
     state = records.initialize_user_state_root(first, state_parent=tmp_path / "state")
     with pytest.raises(records.RunRecordError, match="does not match"):
         records.validate_state_root(second, state)
+
+
+def test_external_action_is_non_gating_in_same_record() -> None:
+    updated = records.record_external_action(
+        new_record(),
+        action_id="external-edit",
+        provider="claude-cli",
+        model="opus",
+        status="accepted",
+        approval_fingerprint="a" * 64,
+        artifact_sha256="b" * 64,
+        patch_sha256="c" * 64,
+        changed_paths=["src/output.py"],
+        root_disposition="imported",
+    )
+
+    assert updated["external_actions"] == [
+        {
+            "action_id": "external-edit",
+            "provider": "claude-cli",
+            "model": "opus",
+            "status": "accepted",
+            "approval_fingerprint": "a" * 64,
+            "authority": "non-gating",
+            "artifact_sha256": "b" * 64,
+            "patch_sha256": "c" * 64,
+            "changed_paths": ["src/output.py"],
+            "root_disposition": "imported",
+        }
+    ]
+    assert updated["root_decision"] is None

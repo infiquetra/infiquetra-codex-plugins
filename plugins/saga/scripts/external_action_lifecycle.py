@@ -11,6 +11,7 @@ import external_action_policy as policy
 import external_action_runtime as runtime
 import external_action_status as status_module
 import external_action_store as store_module
+import external_action_workspace as workspace_module
 import reconcile
 
 
@@ -40,6 +41,19 @@ def inspect_bundle(
 ) -> StageBundle:
     resolved = policy.resolve(stage, repo_root=repo_root, explicit_actions=explicit_actions)
     return StageBundle(stage=stage, source=resolved.source, actions=resolved.actions)
+
+
+def inspect_workflow_contract_actions(
+    *,
+    rows: Sequence[Mapping[str, Any]],
+) -> StageBundle:
+    """Use approved workflow rows as the explicit work-stage action bundle."""
+
+    try:
+        actions = policy.workflow_rows_to_templates(rows)
+    except policy.PolicyError as exc:
+        raise LifecycleError(str(exc)) from exc
+    return StageBundle(stage="work", source="workflow-contract", actions=actions)
 
 
 def bundle_payload(bundle: StageBundle) -> dict[str, Any]:
@@ -189,6 +203,68 @@ def execute_bundle(
             break
     cards = status_cards(previews)
     return StageRun(outcomes=outcomes, paused_action_id=paused, status_cards=cards)
+
+
+def import_workspace_patch(
+    preview: runtime.Preview,
+    *,
+    repo_root: Path,
+    at: str,
+) -> workspace_module.ImportResult:
+    """Root-import one approval-bound patch and record its non-gating disposition."""
+
+    snapshot = store_module.read_snapshot(preview.store)
+    approval = snapshot.approval
+    complete = next(
+        (event for event in reversed(snapshot.events) if event.get("event") == "complete"),
+        None,
+    )
+    if approval is None or snapshot.state.value != "available" or complete is None:
+        raise LifecycleError("workspace patch import requires one available approved action")
+    detail = dict(complete.get("detail", {}))
+    patch_ref = detail.get("patch_ref")
+    patch_sha256 = detail.get("patch_sha256")
+    changed_paths = detail.get("changed_paths")
+    if (
+        detail.get("authority") != "non-gating"
+        or not isinstance(patch_ref, str)
+        or not isinstance(patch_sha256, str)
+        or not isinstance(changed_paths, list)
+    ):
+        raise LifecycleError("available action lacks a root-auditable bounded patch")
+    try:
+        result = workspace_module.import_approved_patch(
+            repo_root=repo_root,
+            approval=approval,
+            patch_path=Path(patch_ref),
+            patch_sha256=patch_sha256,
+            changed_paths=tuple(str(path) for path in changed_paths),
+        )
+    except workspace_module.WorkspaceError as exc:
+        runtime.adjudicate(
+            preview.store,
+            accepted=False,
+            at=at,
+            detail={
+                "authority": "non-gating",
+                "root_import": "rejected",
+                "reason": str(exc),
+            },
+        )
+        raise LifecycleError(str(exc)) from exc
+    runtime.adjudicate(
+        preview.store,
+        accepted=True,
+        at=at,
+        detail={
+            "authority": "non-gating",
+            "root_import": "imported",
+            "changed_paths": list(result.changed_paths),
+            "patch_sha256": result.patch_sha256,
+            "base_revision": result.base_revision,
+        },
+    )
+    return result
 
 
 def load_action(

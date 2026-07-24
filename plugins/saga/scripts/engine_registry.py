@@ -277,6 +277,20 @@ def _validate_invocation_transport(
     _require_string(invocation, "effort", f"{where}: invocation")
     via = _require_string(invocation, "via", f"{where}: invocation")
     recipe = _require_string(invocation, "recipe", f"{where}: invocation")
+    write_capable = _require_bool(invocation, "write_capable", f"{where}: invocation")
+    if write_capable:
+        if invocation.get("patch_capture") != "bounded":
+            raise RegistryError(
+                f"{where}: write-capable invocation requires patch_capture='bounded'"
+            )
+        if invocation.get("shared_workspace_import") != "root-only":
+            raise RegistryError(
+                f"{where}: write-capable invocation requires shared_workspace_import='root-only'"
+            )
+    elif "patch_capture" in invocation or "shared_workspace_import" in invocation:
+        raise RegistryError(
+            f"{where}: response-only invocation cannot advertise patch import capabilities"
+        )
     if via == "codex:delegate":
         raise RegistryError(f"{where}: codex:delegate is not a Codex external-engine transport")
     if re.search(r"(?:^|\s)--effort(?:\s|=)", recipe):

@@ -33,8 +33,21 @@ RECORD_FIELDS = {
     "remediation_round",
     "attempts",
     "checks",
+    "external_actions",
     "findings",
     "root_decision",
+}
+EXTERNAL_ACTION_FIELDS = {
+    "action_id",
+    "provider",
+    "model",
+    "status",
+    "approval_fingerprint",
+    "authority",
+    "artifact_sha256",
+    "patch_sha256",
+    "changed_paths",
+    "root_disposition",
 }
 ATTEMPT_FIELDS = {
     "assignment_id",
@@ -177,6 +190,7 @@ def new_run_record(
         "remediation_round": 0,
         "attempts": [],
         "checks": [],
+        "external_actions": [],
         "findings": [],
         "root_decision": None,
     }
@@ -197,6 +211,12 @@ def _validate_record(record: object) -> dict[str, Any]:
     for attempt in attempts:
         if not isinstance(attempt, dict) or set(attempt) != ATTEMPT_FIELDS:
             raise RunRecordError("run record attempt fields are not closed")
+    external_actions = record.get("external_actions")
+    if not isinstance(external_actions, list) or len(external_actions) > 64:
+        raise RunRecordError("run record external actions must be bounded")
+    for action in external_actions:
+        if not isinstance(action, dict) or set(action) != EXTERNAL_ACTION_FIELDS:
+            raise RunRecordError("run record external action fields are not closed")
     stack: list[object] = [record]
     while stack:
         value = stack.pop()
@@ -304,6 +324,73 @@ def finish_attempt(record: Mapping[str, Any], result: Mapping[str, Any]) -> dict
     updated["findings"] = [
         finding for item in updated["attempts"] for finding in item["findings"]
     ]
+    return updated
+
+
+def record_external_action(
+    record: Mapping[str, Any],
+    *,
+    action_id: str,
+    provider: str,
+    model: str,
+    status: str,
+    approval_fingerprint: str,
+    artifact_sha256: str | None,
+    patch_sha256: str | None,
+    changed_paths: list[str],
+    root_disposition: str,
+) -> dict[str, Any]:
+    """Project one Saga external action into the same concise workflow record."""
+
+    updated = copy.deepcopy(_validate_record(dict(record)))
+    if RUN_ID_RE.fullmatch(action_id) is None:
+        raise RunRecordError("external action_id is invalid")
+    if not provider.strip() or not model.strip():
+        raise RunRecordError("external action provider and model are required")
+    if status not in {
+        "available",
+        "accepted",
+        "consumed",
+        "rejected",
+        "not-launched",
+        "unavailable",
+        "timed-out",
+        "interrupted",
+        "canceled",
+        "invalid-evidence",
+    }:
+        raise RunRecordError("external action status is invalid")
+    if not re.fullmatch(r"[0-9a-f]{64}", approval_fingerprint):
+        raise RunRecordError("external action approval fingerprint is invalid")
+    for name, digest in (("artifact", artifact_sha256), ("patch", patch_sha256)):
+        if digest is not None and re.fullmatch(r"[0-9a-f]{64}", digest) is None:
+            raise RunRecordError(f"external action {name} digest is invalid")
+    if root_disposition not in {"pending", "adopted", "ignored", "imported", "rejected"}:
+        raise RunRecordError("external action root disposition is invalid")
+    if not isinstance(changed_paths, list) or any(
+        not isinstance(path, str) or not path.strip() for path in changed_paths
+    ):
+        raise RunRecordError("external action changed paths are invalid")
+    if len(set(changed_paths)) != len(changed_paths):
+        raise RunRecordError("external action changed paths contain duplicates")
+    entry = {
+        "action_id": action_id,
+        "provider": provider.strip(),
+        "model": model.strip(),
+        "status": status,
+        "approval_fingerprint": approval_fingerprint,
+        "authority": "non-gating",
+        "artifact_sha256": artifact_sha256,
+        "patch_sha256": patch_sha256,
+        "changed_paths": sorted(changed_paths),
+        "root_disposition": root_disposition,
+    }
+    actions = updated["external_actions"]
+    existing = [index for index, item in enumerate(actions) if item["action_id"] == action_id]
+    if existing:
+        actions[existing[0]] = entry
+    else:
+        actions.append(entry)
     return updated
 
 

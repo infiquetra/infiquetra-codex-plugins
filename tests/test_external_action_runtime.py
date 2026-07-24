@@ -339,6 +339,58 @@ def test_dirty_overlap_fails_closed_when_git_status_fails(
         )
 
 
+def test_write_action_requires_bounded_root_import_route(tmp_path: Path) -> None:
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    write_template = policy.ActionTemplate.from_mapping(
+        {
+            "action_id": "bounded-write",
+            "intent": "offload",
+            "trigger": "edit one file",
+            "consumption_point": "before root verification",
+            "write_set": ["src/output.py"],
+        }
+    )
+    route = {
+        "stage": "work",
+        "engine_id": "claude-cli",
+        "variant": "opus",
+        "invocation": {"write_capable": True},
+    }
+
+    with pytest.raises(runtime.RuntimeError, match="bounded patch capture"):
+        runtime.prepare(
+            repo_root=tmp_path,
+            saga_id="task-write-route",
+            run_id="run-1",
+            template=write_template,
+            route=route,
+            cost_class="metered",
+            route_egress={},
+            base_revision="a" * 40,
+            payload="safe",
+            created_at="prepared",
+        )
+
+    route["invocation"] = {
+        "write_capable": True,
+        "patch_capture": "bounded",
+        "shared_workspace_import": "root-only",
+    }
+    prepared = runtime.prepare(
+        repo_root=tmp_path,
+        saga_id="task-write-route",
+        run_id="run-2",
+        template=write_template,
+        route=route,
+        cost_class="metered",
+        route_egress={},
+        base_revision="a" * 40,
+        payload="safe",
+        created_at="prepared",
+    )
+    assert prepared.request.write_set == ("src/output.py",)
+
+
 def test_dirty_overlap_preserves_both_rename_paths(tmp_path: Path) -> None:
     subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
     subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=tmp_path, check=True)

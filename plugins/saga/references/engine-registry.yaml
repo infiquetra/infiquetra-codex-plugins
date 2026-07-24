@@ -30,8 +30,10 @@ engines:
     transport: cli
     invocation:
       via: claude:delegate
-      recipe: "claude --safe-mode --tools '' --disable-slash-commands --print --model opus"
+      recipe: "claude --safe-mode --tools Read,Edit,Write,Glob,Grep --permission-mode acceptEdits --disable-slash-commands --print --model opus"
       write_capable: true
+      patch_capture: bounded
+      shared_workspace_import: root-only
       model: opus
       effort: high
       cli: claude

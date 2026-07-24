@@ -42,7 +42,25 @@ At least one authority-bearing reviewer starts under a separately launched fresh
 
 ## External Actions
 
-Saga owns external preview, approval fingerprint, provider execution, egress sanitization, status, and root adjudication. External results remain `non-gating`. Verified Workflows consumes only the validated advisory result or bounded root-imported patch described by the approved external-action row.
+Saga owns external preview, approval fingerprint, provider execution, egress sanitization, status,
+and root adjudication. For each compiled external row:
+
+1. Convert the compiler row to Saga's work-stage action bundle and resolve the exact approved
+   provider, model, cost, and egress allowlist.
+2. Show the Saga route preview and approval fingerprint before dispatch. Provider, model, context,
+   writes, cost, egress, or authority drift returns to the complete workflow preview.
+3. Dispatch through Saga's canonical registry and shipped adapter. Response-only routes produce an
+   artifact. A write route must advertise canonical bounded patch capture and root-only import, and
+   receives only the declared context and write paths in its contained workspace.
+4. Let the root verify the artifact or import the approval-bound patch after the base, dirty overlap,
+   digest, and changed-path checks pass. The provider never writes the shared workspace directly.
+5. Project provider/model, status, approval fingerprint, artifact and patch digests, root-audited
+   changed paths, and root disposition through `run_record.record_external_action` in the same run
+   record.
+
+External results remain `non-gating`. Verified Workflows consumes only the validated advisory result
+or bounded root-imported patch described by the approved external-action row. An external finding
+enters gate evaluation only after independent root verification and explicit root adoption.
 
 ## Boundaries
 

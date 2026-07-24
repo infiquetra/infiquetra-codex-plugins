@@ -85,11 +85,32 @@ no signature break for any existing caller). `dispatch()` populates it from the 
 - persisted legacy fallback dispositions retain their historical value; a new halted path carries
   no receipt because there is nothing to prove.
 
+## Bounded write-capable routes
+
+External writes use the same registry and adapter path as response-only actions. A workflow row may
+carry a non-empty write set only when the canonical registry invocation declares all three fields:
+
+- `write_capable: true`
+- `patch_capture: bounded`
+- `shared_workspace_import: root-only`
+
+Caller-supplied route data cannot add or alter those capabilities. Workflow actions run in a
+contained Git workspace materialized only from the approved context and write paths; it carries no
+undeclared source history or remote. Before accepting its patch, the adapter verifies the workspace
+base, index, refs, local config, hooks, size ceiling, changed paths, and secret/Git-metadata denials. The
+patch is stored as a private content-addressed artifact; provider output never applies directly to
+the shared worktree.
+
+The Codex root imports that patch only while the approved base revision and dirty-overlap facts
+still match. `git apply --numstat` must reproduce the audited path set, and `git apply --check`
+must pass before application. The resulting changed paths and patch digest are root-audited facts,
+not provider claims.
+
 ## Never a gatekeeper (R6/#387 AC6, restated for the bridge)
 
 No code path in the bridge table lets an engine result set or override a gate/verdict field. A
-runner result carrying a gate-shaped key (`verdict`, `gate_status`, `adjudicated`) is **structurally
-rejected** — `dispatch()` raises `DispatchError` — not merely policy-rejected. This is the same
+runner result carrying a gate-shaped key (`verdict`, `gate_status`, `adjudicated`, `blocking`,
+`hard_stop`, `overall`) is **structurally rejected** — `dispatch()` raises `DispatchError` — not merely policy-rejected. This is the same
 binding decision as the CLI paths (`{#external-engines-never-gatekeepers}` #283), now enforced
 identically across both transports.
 

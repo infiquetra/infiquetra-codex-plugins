@@ -73,6 +73,8 @@ def prepare(
     attempt: int = 1,
     predecessor_request_sha256: str | None = None,
 ) -> Preview:
+    _validate_write_route(template, route)
+    _validate_workflow_route(template, route, route_egress, cost_class)
     sanitized = egress.sanitize(payload)
     if sanitized.blocked:
         raise RuntimeError(f"outbound payload blocked: {', '.join(sanitized.detections)}")
@@ -146,6 +148,59 @@ def prepare(
         frozen_payload,
         sanitized.detections,
     )
+
+
+def _validate_write_route(
+    template: policy.ActionTemplate,
+    route: Mapping[str, Any],
+) -> None:
+    invocation = route.get("invocation")
+    invocation = dict(invocation) if isinstance(invocation, Mapping) else {}
+    if not template.write_set:
+        return
+    if invocation.get("write_capable") is not True:
+        raise RuntimeError("caller cannot promote a response-only route to write-capable")
+    if invocation.get("patch_capture") != "bounded":
+        raise RuntimeError("write-capable route lacks bounded patch capture")
+    if invocation.get("shared_workspace_import") != "root-only":
+        raise RuntimeError("write-capable route lacks root-only shared-workspace import")
+
+
+def _validate_workflow_route(
+    template: policy.ActionTemplate,
+    route: Mapping[str, Any],
+    route_egress: Mapping[str, Any],
+    cost_class: str,
+) -> None:
+    constraints = dict(template.provider_constraints)
+    if constraints.get("authority") != contract.AUTHORITY:
+        return
+    invocation = route.get("invocation")
+    invocation = dict(invocation) if isinstance(invocation, Mapping) else {}
+    provider = constraints.get("provider")
+    model = constraints.get("model")
+    resolved_model = invocation.get("model") or route.get("model") or route.get("variant")
+    if route.get("engine_id") != provider or resolved_model != model:
+        raise RuntimeError("external route provider or model differs from the workflow contract")
+    if cost_class != constraints.get("cost"):
+        raise RuntimeError("external route cost class differs from the workflow contract")
+    approved_egress = constraints.get("egress")
+    if not isinstance(approved_egress, list) or any(
+        not isinstance(item, str) or not item for item in approved_egress
+    ):
+        raise RuntimeError("workflow external egress allowlist is invalid")
+    actual_egress: set[str] = set()
+    for value in route_egress.values():
+        if isinstance(value, str) and value:
+            actual_egress.add(value)
+        elif isinstance(value, (list, tuple)) and all(
+            isinstance(item, str) and item for item in value
+        ):
+            actual_egress.update(value)
+        else:
+            raise RuntimeError("external route egress contains an unsupported value")
+    if not actual_egress or not actual_egress.issubset(set(approved_egress)):
+        raise RuntimeError("external route egress widens the workflow contract")
 
 
 def _stage_from_route(route: Mapping[str, Any]) -> str:
@@ -278,6 +333,11 @@ def execute(store: store_module.Store, *, executor: Executor, at: str) -> Execut
         artifact, artifact_sha256 = _validate_evidence_artifact(
             snapshot, approval, evidence_path
         )
+        external_audit = _audit_external_detail(
+            outcome.detail,
+            approval=approval,
+            evidence_root=store.root,
+        )
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         return _post_launch_failure(
             store,
@@ -317,10 +377,79 @@ def execute(store: store_module.Store, *, executor: Executor, at: str) -> Execut
             "evidence_digest": artifact["evidence_digest"],
             "finding_count": len(artifact["findings"]),
             "runner_receipt": artifact["runner_receipt"],
+            **external_audit,
         },
     )
     status_module.refresh(store)
     return outcome
+
+
+def _audit_external_detail(
+    detail: Mapping[str, Any] | None,
+    *,
+    approval: contract.ActionApproval,
+    evidence_root: Path,
+) -> dict[str, Any]:
+    """Persist only root-auditable, non-gating adapter facts."""
+
+    value = dict(detail or {})
+    gatekeeper_keys = contract.GATEKEEPER_KEYS.intersection(value)
+    if gatekeeper_keys:
+        raise ValueError(f"external outcome carries gate-shaped keys {sorted(gatekeeper_keys)}")
+    if value.get("authority", contract.AUTHORITY) != contract.AUTHORITY:
+        raise ValueError("external outcome authority must remain non-gating")
+    raw_paths = value.get("changed_paths", [])
+    if not isinstance(raw_paths, list) or any(
+        not isinstance(path, str) or not path.strip() for path in raw_paths
+    ):
+        raise ValueError("external outcome changed_paths must be a list of paths")
+    changed_paths = tuple(sorted(path.strip() for path in raw_paths))
+    if len(set(changed_paths)) != len(changed_paths):
+        raise ValueError("external outcome changed_paths must not contain duplicates")
+    if any(not _approved_path(path, approval.write_set) for path in changed_paths):
+        raise ValueError("external outcome changed_paths exceed approved safe writes")
+    patch_ref = value.get("patch_ref")
+    patch_sha256 = value.get("patch_sha256")
+    if not changed_paths:
+        if patch_ref is not None or patch_sha256 is not None:
+            raise ValueError("external outcome patch requires audited changed paths")
+    else:
+        if not isinstance(patch_ref, str) or not re.fullmatch(
+            r"[0-9a-f]{64}", str(patch_sha256)
+        ):
+            raise ValueError("external outcome patch reference or digest is invalid")
+        patch_path = Path(patch_ref)
+        resolved_root = evidence_root.resolve()
+        resolved_patch = patch_path.resolve(strict=False)
+        if (
+            patch_path.is_symlink()
+            or not resolved_patch.is_relative_to(resolved_root)
+            or not resolved_patch.is_file()
+            or hashlib.sha256(resolved_patch.read_bytes()).hexdigest() != patch_sha256
+        ):
+            raise ValueError("external outcome patch artifact is unbound or invalid")
+    return {
+        "authority": contract.AUTHORITY,
+        "changed_paths": list(changed_paths),
+        "patch_ref": patch_ref,
+        "patch_sha256": patch_sha256,
+    }
+
+
+def _approved_path(path: str, write_set: tuple[str, ...]) -> bool:
+    parts = Path(path).parts
+    if (
+        not path
+        or path.startswith("/")
+        or ".." in parts
+        or ".git" in parts
+        or policy.SECRET_PATH_PARTS & set(parts)
+    ):
+        return False
+    return any(
+        path == allowed or path.startswith(allowed.rstrip("/") + "/")
+        for allowed in write_set
+    )
 
 
 def _post_launch_failure(

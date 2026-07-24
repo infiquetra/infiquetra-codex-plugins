@@ -19,7 +19,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import engine_bridge_http  # noqa: E402
 import engine_dispatch  # noqa: E402
+import engine_registry  # noqa: E402
 import engine_resolver  # noqa: E402
+import external_action_contract as contract  # noqa: E402
 import external_action_runtime as runtime  # noqa: E402
 import external_action_store as store_module  # noqa: E402
 import fleet_commons_shim  # noqa: E402
@@ -29,6 +31,7 @@ from external_action_workspace import Workspace  # noqa: E402
 _receipt = fleet_commons_shim.load("bridge_receipt")
 _attestation = fleet_commons_shim.load("output_attestation")
 Runner = Callable[[dict[str, Any]], dict[str, Any]]
+DEFAULT_REGISTRY = Path(__file__).resolve().parent.parent / "references" / "engine-registry.yaml"
 
 
 @dataclass(frozen=True, slots=True)
@@ -51,7 +54,13 @@ def cli_runner(
     def run(invocation: dict[str, Any]) -> dict[str, Any]:
         base = str(invocation.get("base_revision") or "HEAD")
         write_set = tuple(str(item) for item in invocation.get("write_set", []))
-        workspace = Workspace.create(repo_root, base)
+        context_scope = tuple(str(item) for item in invocation.get("context_scope", []))
+        workspace = Workspace.create(
+            repo_root,
+            base,
+            visible_paths=tuple(dict.fromkeys((*context_scope, *write_set))),
+            required_paths=context_scope,
+        )
         started = time.monotonic()
         try:
             argv = config.argv_builder(invocation)
@@ -93,8 +102,8 @@ def cli_runner(
             if escaped:
                 return {"status": "error", "output": "write-set escape", "changed_paths": list(changed)}
             output = stdout.strip()
-            if patch:
-                output = output + ("\n\n" if output else "") + patch
+            if patch and not output:
+                output = "bounded patch captured for root import"
             if not output:
                 return {"status": "error", "output": "provider produced no output"}
             elapsed = max(time.monotonic() - started, 0.0)
@@ -114,7 +123,13 @@ def cli_runner(
                 invocation_sha256=_receipt.digest_invocation(invocation),
                 output_attestation=_attestation.emit_attestation(artifact="evidence", content=output),
             )
-            return {"status": "ok", "output": output, "receipt": receipt, "changed_paths": list(changed)}
+            return {
+                "status": "ok",
+                "output": output,
+                "receipt": receipt,
+                "changed_paths": list(changed),
+                "patch": patch,
+            }
         finally:
             workspace.close()
 
@@ -176,7 +191,16 @@ def runner_for(
                     "claude",
                     "--safe-mode",
                     "--tools",
-                    "",
+                    (
+                        "Read,Edit,Write,Glob,Grep"
+                        if invocation.get("write_set")
+                        else ""
+                    ),
+                    *(
+                        ["--permission-mode", "acceptEdits"]
+                        if invocation.get("write_set")
+                        else []
+                    ),
                     "--disable-slash-commands",
                     "--print",
                     "--model",
@@ -217,10 +241,17 @@ def executor_for_preview(
     invocation = route.get("invocation")
     if not engine_id or not variant or not isinstance(invocation, dict):
         raise ValueError("approved route requires engine_id, variant, and invocation")
+    _validate_adapter_route(
+        engine_id=engine_id,
+        variant=variant,
+        invocation=invocation,
+        write_set=approval.write_set,
+    )
     payload = _payload_text(approval.payload)
     invocation = dict(invocation)
     invocation["base_revision"] = approval.base_revision
     invocation["write_set"] = list(approval.write_set)
+    invocation["context_scope"] = list(approval.context_scope)
     resolution = engine_resolver.Resolution(
         engine_id=engine_id,
         variant=variant,
@@ -247,8 +278,17 @@ def executor_for_preview(
             variant=variant,
             on_launch=launch,
         )
+        captured_patch: dict[str, Any] = {"patch": "", "changed_paths": []}
+
         def typed_runner(invocation_payload: dict[str, Any]) -> dict[str, Any]:
             result = dict(provider_runner(invocation_payload))
+            if result.get("status") == "ok":
+                patch = result.pop("patch", "")
+                changed_paths = result.pop("changed_paths", [])
+                if not isinstance(patch, str) or not isinstance(changed_paths, list):
+                    return {"status": "error", "output": "adapter patch output is malformed"}
+                captured_patch["patch"] = patch
+                captured_patch["changed_paths"] = [str(item) for item in changed_paths]
             if (
                 preview.request.intent in {"second-opinion", "divergence"}
                 and result.get("status") == "ok"
@@ -298,6 +338,13 @@ def executor_for_preview(
             "runner_receipt": evidence.runner_receipt,
         }
         artifact_path, artifact_sha256 = _write_evidence(preview.store.root, artifact)
+        patch_path: Path | None = None
+        patch_sha256: str | None = None
+        if captured_patch["patch"]:
+            patch_path, patch_sha256 = _write_patch(
+                preview.store.root,
+                str(captured_patch["patch"]),
+            )
         return runtime.ExecutionOutcome(
             "available",
             str(artifact_path),
@@ -306,12 +353,42 @@ def executor_for_preview(
                 "findings": findings,
                 "runner_receipt": evidence.runner_receipt,
                 "artifact_sha256": artifact_sha256,
+                "patch_ref": str(patch_path) if patch_path else None,
+                "patch_sha256": patch_sha256,
+                "changed_paths": list(captured_patch["changed_paths"]),
+                "authority": contract.AUTHORITY,
             },
             validated=True,
             artifact_sha256=artifact_sha256,
         )
 
     return executor
+
+
+def _validate_adapter_route(
+    *,
+    engine_id: str,
+    variant: str,
+    invocation: dict[str, Any],
+    write_set: tuple[str, ...],
+) -> None:
+    """Prove write capability from the canonical registry and shipped adapter, not caller input."""
+
+    registry = engine_registry.Registry.load(DEFAULT_REGISTRY)
+    try:
+        entry = registry.by_key(f"{engine_id}/{variant}")
+    except engine_registry.RegistryError as exc:
+        raise ValueError(str(exc)) from exc
+    for field in ("write_capable", "patch_capture", "shared_workspace_import"):
+        if invocation.get(field) != entry.invocation.get(field):
+            raise ValueError(f"approved route {field} differs from the canonical registry")
+    if write_set and (
+        entry.transport != "cli"
+        or entry.invocation.get("write_capable") is not True
+        or entry.invocation.get("patch_capture") != "bounded"
+        or entry.invocation.get("shared_workspace_import") != "root-only"
+    ):
+        raise ValueError("selected route and adapter do not support bounded root patch import")
 
 
 def _receipt_argv(argv: list[str], task: str) -> list[str]:
@@ -355,6 +432,28 @@ def _write_evidence(root: Path, artifact: dict[str, Any]) -> tuple[Path, str]:
     temporary = Path(name)
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+        os.chmod(path, 0o600)
+    finally:
+        temporary.unlink(missing_ok=True)
+    return path, digest
+
+
+def _write_patch(root: Path, patch: str) -> tuple[Path, str]:
+    payload = patch.encode("utf-8")
+    digest = hashlib.sha256(payload).hexdigest()
+    path = root / f"patch-{digest}.diff"
+    if path.exists():
+        if path.read_bytes() != payload:
+            raise ValueError("patch artifact differs from its digest")
+        return path, digest
+    fd, name = tempfile.mkstemp(prefix=".patch-", suffix=".tmp", dir=root)
+    temporary = Path(name)
+    try:
+        with os.fdopen(fd, "wb") as handle:
             handle.write(payload)
             handle.flush()
             os.fsync(handle.fileno())
