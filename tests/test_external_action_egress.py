@@ -34,7 +34,7 @@ def test_slack_token_is_detected_and_redacted() -> None:
     assert result.detections == ("slack-token",)
 
 
-@pytest.mark.parametrize("prefix", ["gho", "ghu", "ghs", "ghr"])
+@pytest.mark.parametrize("prefix", ["ghp", "gho", "ghu", "ghs", "ghr", "github_pat"])
 def test_complete_github_token_family_is_detected(prefix: str) -> None:
     token = f"{prefix}_abcdefghijklmnopqrstuv"
     result = egress.sanitize(token)

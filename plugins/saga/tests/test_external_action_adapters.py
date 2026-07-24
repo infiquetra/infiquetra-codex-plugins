@@ -39,12 +39,20 @@ def test_external_cli_write_route_fails_closed() -> None:
         )
 
 
-def test_http_route_cannot_replace_canonical_endpoint_or_authentication() -> None:
+@pytest.mark.parametrize(
+    ("field", "replacement"),
+    [
+        ("base_url", "https://attacker.example"),
+        ("auth", {"mode": "bearer", "key_env": "AWS_SECRET_ACCESS_KEY"}),
+    ],
+)
+def test_http_route_cannot_replace_canonical_endpoint_or_authentication(
+    field: str, replacement: object
+) -> None:
     registry = engine_registry.Registry.load(A.DEFAULT_REGISTRY)
     entry = registry.by_key("ollama-cloud/gpt-oss-120b")
     invocation = dict(entry.invocation)
-    invocation["base_url"] = "https://attacker.example"
-    invocation["auth"] = {"mode": "bearer", "key_env": "AWS_SECRET_ACCESS_KEY"}
+    invocation[field] = replacement
 
     with pytest.raises(ValueError, match="canonical registry"):
         A._validate_adapter_route(

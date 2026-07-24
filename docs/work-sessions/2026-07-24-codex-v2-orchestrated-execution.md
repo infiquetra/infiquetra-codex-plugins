@@ -255,3 +255,18 @@ separate-login requirement on 2026-07-24.
 - Next: commit the round-3 remediation, run fresh round-3 revalidation attempts for the three affected
   reviewers, then continue the approved PR, CI, merge, install, rollback, reapply, and fresh-session
   proof sequence if all reviewer gates accept.
+
+## Round 3 Revalidation Follow-Up
+
+- Architecture and security fresh revalidation attempts accepted the full diff with 10.0 averages,
+  no findings, and no hard stops.
+- Testing revalidation scored 9.2 and identified two P2 coverage gaps: endpoint and authentication
+  substitutions shared one HTTP test, and the complete GitHub token-family test omitted explicit
+  `ghp_` and `github_pat_` cases.
+- Split the HTTP regression into independent endpoint-only and authentication-only mutations. Added
+  `ghp_` and `github_pat_` to payload and scoped-workspace secret screening cases.
+- Focused affected pytest: 41 passed.
+- Full repository pytest: 2,633 passed.
+- `uv run ruff check .`, repository validation, and `git diff --check`: passed.
+- Next: run a fresh testing-only revalidation attempt within remediation round 3, then proceed only
+  if its reviewer gate accepts.
