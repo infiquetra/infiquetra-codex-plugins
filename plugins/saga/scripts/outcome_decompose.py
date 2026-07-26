@@ -254,6 +254,7 @@ def prune(
     *,
     issue_close: Callable[[str], bool] | None = None,
     worktree_ops: Any | None = None,
+    lease_authority: Any | None = None,
     at: str = "",
 ) -> dict[str, Any]:
     """Remove a node + drop every edge to it (atomic), then reconcile its orphans (R33).
@@ -276,6 +277,38 @@ def prune(
     Returns a reconcile summary so ``/outcome`` can show exactly what was cleaned up.
     """
     node = _require_node(spec, subplot_id, "prune")
+    import outcome_worktrees
+
+    # The reap authority is proven BEFORE the graph mutation (#45 R8): a prune that cannot prove the
+    # exact broker lease must leave the node, its edges, the registry, the path, and the lease intact.
+    # Refusing after ``_commit`` would leave a pruned spec pointing at an unreapable worktree.
+    try:
+        reap_preflight = outcome_worktrees.prevalidate_reap_authority(
+            store,
+            subplot_id,
+            lease_authority,
+            expected_outcome_id=spec.outcome_id,
+        )
+    except outcome_worktrees.WorktreeAuthorityError as exc:
+        if worktree_ops is None or lease_authority is None:
+            raise DecomposeError(
+                f"prune: {subplot_id!r} has a lease-bound worktree and requires both worktree_ops "
+                "and the exact lease_authority; the node, registry, path, and lease were retained"
+            ) from exc
+        raise DecomposeError(
+            f"prune: {subplot_id!r} lease authority prevalidation failed before graph mutation: "
+            f"{exc}"
+        ) from exc
+    except outcome_worktrees.WorktreeError as exc:
+        raise DecomposeError(
+            f"prune: {subplot_id!r} worktree registry prevalidation failed before graph mutation: "
+            f"{exc}"
+        ) from exc
+    if reap_preflight is not None and reap_preflight.lease_id and worktree_ops is None:
+        raise DecomposeError(
+            f"prune: {subplot_id!r} has a lease-bound worktree and requires both worktree_ops "
+            "and the exact lease_authority; the node, registry, path, and lease were retained"
+        )
     state = _live_state(spec, store, subplot_id)
     if state in _IN_FLIGHT:
         raise DecomposeError(
@@ -310,10 +343,8 @@ def prune(
     if issue_ref and issue_close is not None and issue_close(issue_ref):
         summary["closed_issue"] = issue_ref
     if worktree_ops is not None:
-        import outcome_worktrees
-
         summary["reaped_worktree"] = outcome_worktrees.reap_worktree(
-            store, subplot_id, worktree_ops, at=at
+            store, subplot_id, worktree_ops, at=at, lease_authority=lease_authority
         )
     return summary
 

@@ -1419,6 +1419,24 @@
       "recorded_at": "2026-07-19T18:55:00Z",
       "repo_head": "c01611d62b3b20f399aaa85eef77cd1d66244b7e",
       "unit": "U5"
+    },
+    {
+      "argv": [
+        "uv",
+        "run",
+        "pytest",
+        "-q",
+        "plugins/saga/tests/test_outcome_worktrees.py"
+      ],
+      "artifact_path": "docs/validation/lease-safe-substrate-u6.json",
+      "artifact_sha256": "315d42368efff0588c392c059a05d00d886bf50bbad15a4c3e6d41c132d4ed04",
+      "cwd": ".",
+      "evidence_id": "u6-cor3-worktree-authority-check-20260726",
+      "exit_code": 0,
+      "kind": "check",
+      "recorded_at": "2026-07-26T03:02:50Z",
+      "repo_head": "d00b81da5c6c32f5797927637dbf57c274f35313",
+      "unit": "U6"
     }
   ],
   "port_id": "lease-safe-substrate-2026-07-19",
@@ -2060,21 +2078,24 @@
         "codex_invariant_refs": [
           "MAP-SCRIPT-CONFIG"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u6-cor3-worktree-authority-check-20260726"
+        ],
         "host_primitives": [],
         "new_path": "plugins/saga/scripts/outcome_worktrees.py",
         "old_path": null,
         "planned_targets": [
           "plugins/saga/scripts/outcome_worktrees.py",
-          "plugins/saga/scripts/outcome.py"
+          "plugins/saga/scripts/outcome.py",
+          "plugins/saga/scripts/outcome_decompose.py"
         ],
         "planned_tests": [
           "plugins/saga/tests/test_outcome_worktrees.py"
         ],
-        "rationale": "PROMOTED defer -> codex-adapt on 2026-07-25 by infiquetra/infiquetra-codex-plugins#45 (R4b). The original deferral read: Worktree reconciliation consumes the guard at Claude seams; Codex worktree parity is #34 scope. codex#34 closed on 2026-07-20 without treating this row, leaving it an orphaned defer pointing at a discharged issue. It cannot be re-derived in the successor contract docs/portability/ports/2026-07-25-codex-627-seam-refreeze.json because outcome_worktrees.py has zero changed lines across cf15a09f..b464d090, so #45 discharges it here. Scope (COR3/R8/KTD4): port the lease-authority subsystem the 505-line Codex module lacks entirely -- WorktreeAuthorityError, ReapPreflight, read_registry_strict, _lease_binding, prevalidate_reap_authority, _arm_worktree, stale_worktree_debits, _reap_prevalidated, reconcile_worktree_leases, and the authority-carrying reap_worktree / harvest_worktrees signatures -- wired at the production_worktree_processor seam in outcome.py, not through the prune/advance subparsers. UNIT ID MAPPING: this row claims U6, a free id in this manifest (U2-U5 are already claimed here); U6 here IS the U5 of the #45 plan. U1-U5 of the #45 plan are tracked in the successor contract.",
+        "rationale": "PROMOTED defer -> codex-adapt on 2026-07-25 by infiquetra/infiquetra-codex-plugins#45 (R4b). The original deferral read: Worktree reconciliation consumes the guard at Claude seams; Codex worktree parity is #34 scope. codex#34 closed on 2026-07-20 without treating this row, leaving it an orphaned defer pointing at a discharged issue. It cannot be re-derived in the successor contract docs/portability/ports/2026-07-25-codex-627-seam-refreeze.json because outcome_worktrees.py has zero changed lines across cf15a09f..b464d090, so #45 discharges it here. Scope (COR3/R8/KTD4): port the lease-authority subsystem the 505-line Codex module lacks entirely -- WorktreeAuthorityError, ReapPreflight, read_registry_strict, _lease_binding, prevalidate_reap_authority, _arm_worktree, stale_worktree_debits, _reap_prevalidated, reconcile_worktree_leases, and the authority-carrying reap_worktree / harvest_worktrees signatures -- wired at the production_worktree_processor seam in outcome.py, not through the prune/advance subparsers. UNIT ID MAPPING: this row claims U6, a free id in this manifest (U2-U5 are already claimed here); U6 here IS the U5 of the #45 plan. U1-U5 of the #45 plan are tracked in the successor contract. IMPLEMENTED then VERIFIED on 2026-07-26 by #45 U5. Scope adaptation recorded here rather than silently: plugins/saga/scripts/outcome_decompose.py joins the planned targets. Arming worktree leases makes an authority-free prune raise WorktreeAuthorityError AFTER _commit has already mutated the spec, so the pre-graph-mutation prevalidate_reap_authority arm Claude carries at outcome_decompose.py:282-309 (b464d090) is part of this port, not a separate change.",
         "row_id": "src-b63c5ebf1ea04461",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "script",
         "treatment": "codex-adapt",
         "units": [
@@ -2355,7 +2376,9 @@
         "codex_invariant_refs": [
           "MAP-TEST"
         ],
-        "evidence_refs": [],
+        "evidence_refs": [
+          "u6-cor3-worktree-authority-check-20260726"
+        ],
         "host_primitives": [],
         "new_path": "tests/test_outcome_worktrees.py",
         "old_path": null,
@@ -2365,10 +2388,10 @@
         "planned_tests": [
           "plugins/saga/tests/test_outcome_worktrees.py"
         ],
-        "rationale": "PROMOTED defer -> codex-adapt on 2026-07-25 by infiquetra/infiquetra-codex-plugins#45 (R4b). The original deferral read: Claude worktree-reconciliation oracle; #34 scope. codex#34 closed on 2026-07-20 without treating it, so this is an orphaned defer against a discharged issue and #45 is its home. Adapt the Claude oracle onto a new Codex module covering the ported authority subsystem: lease_authority=None characterization, classify_token refusal with no worktree removal, preflight-before-mutation ordering, the production_worktree_processor / main() wiring, release_authority=False lease retention, missing lease binding, second-reap idempotency, malformed receipt, post-preflight registry mutation (TOCTOU), removal failure, and authority-release failure. UNIT ID MAPPING: claims U6 in this manifest (free here; U2-U5 are claimed), and U6 here IS the U5 of the #45 plan.",
+        "rationale": "PROMOTED defer -> codex-adapt on 2026-07-25 by infiquetra/infiquetra-codex-plugins#45 (R4b). The original deferral read: Claude worktree-reconciliation oracle; #34 scope. codex#34 closed on 2026-07-20 without treating it, so this is an orphaned defer against a discharged issue and #45 is its home. Adapt the Claude oracle onto a new Codex module covering the ported authority subsystem: lease_authority=None characterization, classify_token refusal with no worktree removal, preflight-before-mutation ordering, the production_worktree_processor / main() wiring, release_authority=False lease retention, missing lease binding, second-reap idempotency, malformed receipt, post-preflight registry mutation (TOCTOU), removal failure, and authority-release failure. UNIT ID MAPPING: claims U6 in this manifest (free here; U2-U5 are claimed), and U6 here IS the U5 of the #45 plan. IMPLEMENTED then VERIFIED on 2026-07-26 by #45 U5: plugins/saga/tests/test_outcome_worktrees.py now carries all eleven scenarios, red-first replayed with the final test file (20 failed / 3 passed pre-port; 23 passed post-port).",
         "row_id": "src-cfa1aa6b86772f6b",
         "similarity": null,
-        "state": "classified",
+        "state": "verified",
         "surface_kind": "test",
         "treatment": "codex-adapt",
         "units": [

@@ -1,5 +1,30 @@
 # Learnings
 
+## 2026-07-26: A Partial Authority Port Turns A Refusal Into A Half-Applied Mutation
+
+**Evidence:** `plugins/saga/scripts/outcome_decompose.py` — codex `prune` called
+`outcome_worktrees.reap_worktree(store, subplot_id, worktree_ops, at=at)` AFTER `_commit(spec, ...)`
+had already removed the node, dropped its edges, and bumped `spec_revision`. The #45 U5 port arms
+worktree registry entries with a broker lease, and the ported `reap_worktree` refuses a lease-bound
+entry it cannot prove authority for. Porting only the two files the plan scoped
+(`outcome_worktrees.py`, `outcome.py`) would therefore have made a lease-bound prune raise
+`WorktreeAuthorityError` against an already-mutated spec. Upstream Claude at `b464d090` carries the
+matching preflight at `outcome_decompose.py:282-309`, which runs `prevalidate_reap_authority` BEFORE
+`_live_state` and before any spec edit. `plugins/saga/tests/test_outcome_worktrees.py::
+test_prune_prevalidates_before_the_graph_mutation` pins it.
+
+**Mechanism:** the new refusal was introduced upstream of an existing mutation, not downstream of it.
+A subsystem port that adds a fail-closed check changes the failure *timing* of every caller that
+already invoked the ported function — and a caller that mutates first and cleans up second flips from
+"best-effort cleanup failed, reported in the summary" to "canonical state advanced, then raised".
+Counting the port's line surface (55 `lease_authority` lines across three modules) found the seam; it
+did not find the caller whose ordering the new refusal invalidates.
+
+**Generalizable rule:** When a port adds a refusal to a shared function, enumerate its existing call
+sites and check what each one has already mutated by the time the call happens. Any caller that
+mutates before calling needs the refusal hoisted above its mutation in the same change — a scope
+boundary drawn by file count will silently ship a half-applied write.
+
 ## 2026-07-25: Dict Literal Ordering Decides Whether A Halt Record Exists At All
 
 **Evidence:** `plugins/saga/scripts/outcome.py` — the `DispatcherError` reconcile arm builds its halt

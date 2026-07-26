@@ -171,24 +171,27 @@ def test_every_planned_target_exists_in_the_codex_tree() -> None:
         assert (ROOT / target).is_file(), target
 
 
-def test_planned_artifacts_not_yet_written_resolve_to_a_real_codex_directory() -> None:
-    """U2 has landed (`plugins/saga/tests/test_outcome_compat.py` now exists); the modules U4 and
-    U5 still create do not exist yet, so `is_file` cannot guard them. Their parent directory still
-    must be a real Codex test root -- naming `tests/` where this repo uses `plugins/saga/tests/`
-    (or vice versa) is the same wrong-tree mistake KTD6 warns about."""
+def test_planned_artifacts_resolve_to_a_real_codex_directory() -> None:
+    """Every planned artifact must live under a real Codex directory -- naming `tests/` where this
+    repo uses `plugins/saga/tests/` (or vice versa) is the wrong-tree mistake KTD6 warns about.
+
+    This guard was originally written while U4's and U5's test modules were still unwritten, so it
+    pinned an exact pending list and could only check their parent directory. U5 landed
+    `plugins/saga/tests/test_outcome_worktrees.py`, the last of them, so the pending list is now
+    empty and pinning it would assert a permanently stale fact. The directory check is kept for any
+    artifact a later unit has yet to create, and the stronger `is_file` check now covers the rest.
+    """
     planned = {
         artifact
         for manifest in (_manifest(), _predecessor())
         for row in manifest["source"]["rows"]
         for artifact in [*row["planned_targets"], *row["planned_tests"]]
     }
+    assert planned
     pending = sorted(artifact for artifact in planned if not (ROOT / artifact).is_file())
 
-    assert pending == [
-        "plugins/saga/tests/test_outcome_dispatcher.py",
-        "plugins/saga/tests/test_outcome_worktrees.py",
-    ]
-    for artifact in pending:
+    assert pending == []
+    for artifact in sorted(planned):
         assert (ROOT / artifact).parent.is_dir(), artifact
 
 
@@ -204,7 +207,13 @@ def test_broker_row_targets_the_fleet_core_copy_not_the_saga_copy() -> None:
 
 def test_promoted_defers_claim_a_unit_id_free_in_the_predecessor_manifest() -> None:
     """R4b: codex#34 closed on 2026-07-20 without treating these rows, so codex#45 discharges
-    them in place. U2-U5 are already claimed in that manifest; the promotion must not reuse one."""
+    them in place. U2-U5 are already claimed in that manifest; the promotion must not reuse one.
+
+    The guard is about the PROMOTION (treatment, unit id, targets, tests, rationale), not about the
+    row standing still: the promoted rows are meant to advance `classified -> implemented -> verified`
+    as the claiming unit lands. Pinning `classified` would make this test fail the moment the port it
+    authorizes actually ships, so the state assertion allows any post-promotion state.
+    """
     predecessor = _predecessor()
     rows = {row["new_path"]: row for row in predecessor["source"]["rows"]}
 
@@ -221,7 +230,7 @@ def test_promoted_defers_claim_a_unit_id_free_in_the_predecessor_manifest() -> N
     for path in PROMOTED_PREDECESSOR_ROWS:
         row = rows[path]
         assert row["treatment"] == "codex-adapt", path
-        assert row["state"] == "classified", path
+        assert row["state"] in {"classified", "implemented", "verified"}, path
         assert row["units"] == [PROMOTED_UNIT], path
         assert row["planned_targets"], path
         assert row["planned_tests"], path
