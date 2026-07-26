@@ -1,5 +1,28 @@
 # Learnings
 
+## 2026-07-25: Dict Literal Ordering Decides Whether A Halt Record Exists At All
+
+**Evidence:** `plugins/saga/scripts/outcome.py` — the `DispatcherError` reconcile arm builds its halt
+record spread-first / literal-last (`{**receipt, "receipt_kind": ..., "kind": "dispatch"}`), while the
+three sibling halt appends in the same function (the degrade halt, the orchestration-ref halt, and the
+`BackendHaltError` arm) build theirs literal-first / spread-last. A probe against a real store shows the
+sibling arms persist `{"phase": "halt", "kind": "halt", ...}`: the receipt's own `kind` overwrites the
+literal, `outcome_store.reduce_dispatch_ledger` matches no branch for it, and
+`outcome_report._halted_subplots` returns an empty set for a leaf that just halted. Upstream Claude at
+`b464d090` writes the same record spread-first / literal-last and IS reducer-visible.
+
+**Mechanism:** `reduce_dispatch_ledger` dispatches on the `(kind, phase)` pair. Every halt receipt
+carries `kind: "halt"` of its own, so any append that spreads the receipt LAST silently rewrites the
+routing key the reducer reads. The record is still durably on disk and still returned in the in-memory
+`halted` list, so the tick looks correct in every signal except the derived one — the operator page.
+This is the #628 invisibility shape: an orphaned intent, a store lock leaking to its TTL, and a silent
+re-dispatch.
+
+**Generalizable rule:** When a dict literal both spreads a payload and sets the field a reducer routes
+on, put the routing literal LAST and preserve the payload's own value under a distinct key
+(`receipt_kind`). Test the reducer's output, never the append — asserting "a record was written" passes
+against a record no consumer can see.
+
 ## 2026-07-18: Read-Only Validation Can Still Leave Lock Files
 
 **Evidence:** Repository validation and the code-review action-bundle read each created six zero-byte
