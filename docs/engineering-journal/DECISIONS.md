@@ -1,5 +1,40 @@
 # Decisions
 
+## 2026-07-26: A Frozen Port Range Can Enforce An Exclusion That Prose Cannot
+
+codex#54 ports Claude `#617`'s registry forward-compatibility. The obvious framing — "copy Claude's
+broker, minus the parts we don't want" — was rejected, and the reason inverts the issue's own premise.
+
+The issue anticipated that Codex carried content Claude lacks, so a byte-copy would destroy it. It
+does not: every symbol tested is present in both files, the class lists are identical (25 classes,
+same order), and all 46 removed lines in the raw diff are one half of a modification pair. A
+byte-copy was therefore mechanically viable. It was rejected anyway, because the real constraint runs
+the other way — what Claude carries that Codex must **not** receive: ~21–30 lines of `#616`
+`isolation` semantics that this port is forbidden to import, plus ~89 lines of unrelated drift
+(`_renew_batch_member`, `_renew_live_batch_siblings`, `record_child_terminal`, `spawn_failed`,
+`assert_write_target`) that would land under no contract row — precisely the defect class codex#45's
+review flagged as P1 #5.
+
+The decision that matters is how that exclusion is *enforced*. Picking the frozen source range as
+`4eb2fe15..1648a21b` — the `#617` merge and its parent, rather than a convenient wide range ending at
+`origin/main` — makes the exclusion structural. Two measurements:
+
+- `git diff 1648a21b..b464d090` over both pathspecs is **empty**, so the narrow range is not stale;
+  the frozen target is byte-equivalent to current `origin/main` for exactly these paths.
+- Every excluded-drift symbol already exists at `4eb2fe15`, i.e. *before* the range opens.
+
+Those lines cannot land under a contract row because the range does not contain them. codex#45's
+P1 #5 was a file ported under zero contract rows; the guarantee here runs the other direction, and
+`tests/test_lease_registry_forward_compat_port_contract.py` pins both measurements so a later
+widening of the range is a test failure rather than a silent scope creep.
+
+**Rejected alternative:** range `cf15a09f..b464d090` (chaining off codex#45's frozen target). It
+would have covered `#617` but also swept in the unrelated drift, leaving R10 to reviewer discipline.
+
+**Revisit when:** a port needs content from more than one upstream merge. The narrow-range technique
+only buys a structural exclusion when the payload is one coherent upstream change; a multi-merge port
+would have to re-derive the guarantee some other way.
+
 ## 2026-07-24: Codex V2 Owns Live Execution And Verified Workflows Becomes A Minimal Kernel
 
 Codex 0.145.0 MultiAgent V2 becomes the only active workflow execution path after a current-auth proof and current-Mac cutover. The proof reuses the existing Codex login and project configuration; it does not create or copy authentication homes. The main Codex session remains the sole orchestrator and owns workflow preview, approval binding, dependency release, integration, Git, gates, merge, installation, rollback, and completion. Codex V2 owns live agent identity, hierarchy, bounded context, messages, waiting, interruption, and restoration; Saga owns lifecycle state and points to one concise workflow run record under the owner-controlled `~/.codex/verified-workflows/state/<repo>/workflow-runs/` root.

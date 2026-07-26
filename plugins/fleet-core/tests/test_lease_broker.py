@@ -2315,3 +2315,38 @@ def test_settlement_close_still_rejects_a_lost_head_cas(broker: Any) -> None:
             token=lease.token,
             write=lambda _lease: ["evidence"],
         )
+
+
+# ---------------------------------------------------------------------------
+# U5 — the isolation non-port, pinned as a named guard (#54 KTD5)
+# ---------------------------------------------------------------------------
+
+
+def test_isolation_is_not_ported_ktd5() -> None:
+    """R9: codex must not learn claude-specific lease semantics.
+
+    Forward-compatibility is the contract; ``isolation`` (claude#616) is merely the first field to
+    exercise it. A reader that special-cased it would defer the identical failure to the next field
+    claude adds, so the exclusion is pinned by name rather than left to prose. Following the
+    precedent in DECISIONS `2026-07-19: Cross-Runtime Parity Port` KTD6
+    (`test_dispatcher_lease_seam_stays_dormant_ktd6`): teaching codex the field then requires
+    deleting a named test with a written rationale, not silent drift.
+    """
+
+    authority = BROKER_PATH.read_text(encoding="utf-8")
+    adapter = ROOT / "plugins" / "saga" / "scripts" / "lease_broker.py"
+
+    assert "isolation" not in authority
+    assert "isolation" not in adapter.read_text(encoding="utf-8")
+
+
+def test_tolerance_names_no_runtime_specific_field() -> None:
+    """The genericity claim, stated as an absence rather than inferred from a passing test.
+
+    ``_tolerant_mapping`` partitions on set membership alone, so no field name can be privileged.
+    """
+
+    authority = BROKER_PATH.read_text(encoding="utf-8")
+
+    for literal in ('"claude"', "'claude'", '"codex"', "'codex'", "RUNTIME_LABEL"):
+        assert literal not in authority

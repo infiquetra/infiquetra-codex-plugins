@@ -1,6 +1,6 @@
 {
   "name": "fleet-core",
-  "version": "0.12.0+codex.20260726031557",
+  "version": "0.13.0+codex.20260726234500",
   "description": "Scripts-only shared Codex library for native model metadata, profile resolution, effort policy, retry behavior, audit primitives, and compatibility readers.",
   "author": {
     "name": "Infiquetra",

@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.81.0 - 2026-07-26
+
+### Added
+
+- `lease_broker.py doctor` and `lease_broker.py repair --strip-unknown` on the adapter CLI, exposing
+  the fleet-core operator surface for preserved unknown registry fields (Claude `#617` port).
+  `doctor` uses a distinct exit-code seam for automation — 0 valid, 3 tolerated-unknowns, 4 corrupt
+  — and an unmapped future status fails closed to the corrupt code, so a caller is never told
+  "clean" for a state the mapping does not recognize. `repair` requires the explicit
+  `--strip-unknown` flag and performs no default action.
+
+### Notes
+
+- Ships as one release unit with `fleet-core` 0.13.0: the adapter's verbs are inert without the
+  authority's methods.
+- The adapter does no parsing of its own (`authority = fleet_commons_shim.load("lease_broker")`),
+  so it cannot drift on registry schema; the CLI surface was its only `#54`-relevant gap.
+- Claude `#616`'s `_declared_isolation` helper and `isolation=` kwargs, and
+  `record_parent_completed`'s `spawn_failed` kwarg, are deliberately not carried. Codex must not
+  learn Claude-specific lease semantics.
+
 ## 0.80.0 - 2026-07-26
 
 ### Changed

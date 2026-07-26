@@ -1,0 +1,15 @@
+{
+  "command": "PYTHONPATH=. uv run pytest -q plugins/fleet-core/tests/test_lease_broker.py -k \"tolerant_mapping or extras_serialized_size or archived_fence_bound_is_a_strict_multiple\"",
+  "covers": "Tolerance primitives: _tolerant_mapping splits known from extras disjointly, keeps the strict missing-field error verbatim, rejects a non-object; _extras_serialized_size is 0 for empty and measures the canonical (ensure_ascii) form so key order and non-ASCII cannot change the count; the archived-fence bound is a strict multiple of the document bound.",
+  "recorded_at": "2026-07-26T23:45:00Z",
+  "repo_head": "1ada782b904107d6737317ff65ec7061f1e32172",
+  "result": {
+    "exit_code": 0,
+    "failed": 0,
+    "passed": 10,
+    "skipped": 0
+  },
+  "schema_version": 1,
+  "target": "plugins/fleet-core/scripts/fleet_commons/lease_broker.py",
+  "unit": "U1"
+}

@@ -1,5 +1,76 @@
 # Learnings
 
+## 2026-07-26: A Per-Port Contract That Pins The Live Version Breaks Every Later Port
+
+**Evidence:** the codex#54 version bump (fleet-core 0.12.0 → 0.13.0, saga 0.80.0 → 0.81.0) turned
+two *previously green* prior-port contracts red, in a clean worktree, with the production change
+otherwise fully passing:
+
+- `tests/test_codex_627_seam_refreeze_port_contract.py:388` —
+  `assert policy["target_codex_version"] == installed.split("+codex.")[0]`
+- `tests/test_outcome_cross_runtime_parity_port_contract.py:303` —
+  `assert manifest_version.split("+codex.")[0] == "0.80.0"`
+
+**Mechanism:** both bind a *prior* port's **target** version to the repo's **live** version. That
+equality is true exactly while the repo remains frozen at that port's release, so the Nth port to
+bump a version breaks all N-1 prior contracts. Nothing is wrong with the new port; the older gates
+simply encoded "nothing has happened since" as if it were an invariant. The codex#45 docstring even
+anticipated the *direction* of change ("once U6 lands the release surfaces, the live plugin.json
+carries the bumped `target_codex_version` instead") — it just did not anticipate anything moving
+past it.
+
+The fix is to assert what a completed port can honestly still claim: its release landed and has not
+been reverted. `live >= target`, not `live == target`. Both contracts keep every other assertion —
+the policy's own `current_codex_version` before-story, the inventory/CHANGELOG agreement — because
+those are genuinely frozen facts about that port.
+
+Worth noting how this surfaced: only the **full-suite** run in a clean worktree caught it. The
+targeted per-unit runs for codex#54 were all green, and so was the narrower
+`plugins/ tests/` selection taken before the version bump. A gate scoped to "the files I touched"
+would have shipped it.
+
+**Generalizable rule:** in a per-port or per-release contract, distinguish *frozen facts about this
+port* (its base, its target, its own row digests — assert with equality) from *facts about the
+repository's current state* (installed versions — assert monotonically). Equality against live
+state turns every future change into a false failure in an unrelated gate.
+
+## 2026-07-26: Adding Schema Tolerance Turns An Existing Rebuild Into Silent Data Loss
+
+**Evidence:** `plugins/fleet-core/scripts/fleet_commons/lease_broker.py`, the settlement-close CAS.
+Before this port the site read:
+
+```python
+registry.resource_fences[digest] = ResourceFence(
+    resource_ref=settlement.resource_ref, broker_epoch=settlement.token.broker_epoch,
+    fencing_sequence=settlement.token.fencing_sequence, lease_id=settlement.lease_id,
+    close_receipt=close,
+)
+```
+
+That was correct for years, because a `ResourceFence` was fully described by those four fields plus
+the receipt. The moment the record gained an `extras` mapping, the same line became a data-loss bug:
+the CAS *verifies* a live head, then discards it and constructs a new object from the settlement,
+dropping any field a newer writer had preserved — at exactly the commit that archives the fence, so
+the loss is permanent and invisible.
+
+**Mechanism:** the rebuild reads its inputs from `settlement`, not from `head`. Nothing in the type
+system or the test suite noticed, because the fields the rebuild does copy are the ones every
+existing test asserts on. `dataclasses.replace(head, close_receipt=close)` fixes it by making the
+verified head the base of the new value rather than a discarded precondition.
+
+Verified by neuter probe: restoring the rebuild form turns
+`test_fence_extras_survive_the_settlement_close_into_the_archive` red with
+`KeyError: 'carried_forward'`, and nothing else in the module fails.
+
+The same review found this in Claude `#617` as a P1. Codex was still shipping the pre-fix shape, so
+the port had to carry the repair in the same unit as the tolerance — shipping tolerance alone would
+have introduced the bug rather than inherited it.
+
+**Generalizable rule:** when you add a field to a record type, grep for every site that *constructs*
+that type from something other than an existing instance. A constructor call that was total over the
+old field set is silently partial over the new one, and the compiler cannot tell you — only a test
+that reads the persisted value back can.
+
 ## 2026-07-26: Memoizing A Test-Script Loader Fixes Collection Order By Deleting Test Isolation
 
 **Evidence:** `plugins/saga/tests/test_outcome_worktrees.py` + `test_outcome_board_sync.py` in that

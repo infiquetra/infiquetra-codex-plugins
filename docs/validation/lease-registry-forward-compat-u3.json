@@ -1,0 +1,19 @@
+{
+  "command": "PYTHONPATH=. uv run pytest -q plugins/fleet-core/tests/test_lease_broker.py -k \"survive_the_settlement_close or archived_fence_over_the_per_record or archived_fence_payload_read or settlement_close_still_rejects\"",
+  "covers": "Fence extras survive the settlement close and are read back out of the sidecar archive off disk rather than from the in-memory object (R7); the per-record archived bound fails closed; the sidecar read runs to EOF under a hard bound rather than a single 65536-byte read; the CAS lost-head invariant is unregressed by the replace() change.",
+  "neuter_probe": {
+    "mutation": "restore the pre-#617 ResourceFence(...) rebuild at the settlement-close CAS",
+    "observed": "1 failed with KeyError: 'carried_forward' \u2014 the preserved field is dropped at exactly the commit that archives the fence"
+  },
+  "recorded_at": "2026-07-26T23:45:00Z",
+  "repo_head": "1ada782b904107d6737317ff65ec7061f1e32172",
+  "result": {
+    "exit_code": 0,
+    "failed": 0,
+    "passed": 6,
+    "skipped": 0
+  },
+  "schema_version": 1,
+  "target": "plugins/fleet-core/scripts/fleet_commons/lease_broker.py",
+  "unit": "U3"
+}

@@ -296,11 +296,18 @@ def test_u5_release_rows_are_verified_with_current_evidence() -> None:
 
 
 def test_release_version_pins_are_coherent() -> None:
-    """Every surface pinning the saga release tells the same 0.80.0 story."""
+    """Every surface pinning the saga release still tells one coherent story.
+
+    The saga version was pinned to the literal `0.80.0` here until codex#54 bumped it to 0.81.0.
+    A prior port's contract cannot assert the repo is still frozen at that port's release, so the
+    check is monotone: this release landed (>= 0.80.0) and every live surface agrees with the
+    installed manifest.
+    """
     manifest_version = json.loads(
         (ROOT / "plugins/saga/.codex-plugin/plugin.json").read_text(encoding="utf-8")
     )["version"]
-    assert manifest_version.split("+codex.")[0] == "0.80.0"
+    live = tuple(int(part) for part in manifest_version.split("+codex.")[0].split("."))
+    assert live >= (0, 80, 0)
     inventory = json.loads(
         (ROOT / "docs/validation/saga-family-target-inventory.json").read_text(encoding="utf-8")
     )
