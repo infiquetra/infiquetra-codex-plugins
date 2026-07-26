@@ -43,7 +43,8 @@ def _pin_script_modules(monkeypatch: pytest.MonkeyPatch) -> None:
     module's captured globals keep pointing at the first.  A lazy sibling import inside a
     script would then resolve to the other generation, ``monkeypatch.setattr(MOD, ...)``
     would patch an orphan, and pytest's COLLECTION ORDER would silently decide the result.
-    ``setitem`` restores the previous binding on teardown, so modules stay per-file isolated.
+    ``setitem`` restores the previous binding on teardown, so the per-file isolation that
+    these modules already rely on is preserved -- this pins identity, it does not share it.
     """
     for _name, _module in _LOADED.items():
         monkeypatch.setitem(sys.modules, _name, _module)

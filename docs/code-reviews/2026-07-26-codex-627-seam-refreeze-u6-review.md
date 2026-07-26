@@ -21,9 +21,20 @@ port-contract cutover work.
 > Re-measured at the reviewed commit in a clean detached worktree: the suite collects **2731** and
 > runs **2727 passed, 4 skipped, 0 failed**.
 >
-> What *is* reproducible: `plugins/mission-control/tests` collects exactly **211** tests and is
-> listed in `testpaths`, and 2731 − 211 = **2520**. So the passed-count almost certainly came from
-> a run with that one path excluded.
+> An arithmetic coincidence that is **not** an explanation: `plugins/mission-control/tests`
+> collects exactly **211** tests, and 2731 − 211 = **2520**. A round-4 draft of this correction
+> read that fit as evidence the figure came from a run excluding that path. Measurement rejects it
+> on two independent grounds:
+>
+> - **The exclusion is not producible that way.** `plugins/*/tests` is an explicit `testpaths`
+>   entry in `pyproject.toml:17`, and `--ignore` does not override an explicit testpath — measured
+>   at this commit, `pytest --collect-only --ignore=plugins/mission-control/tests` collects
+>   **2732**, byte-identical to the unfiltered run.
+> - **It conflates collected with passed.** 2520 would be a *collected* total. The passed count
+>   under that hypothetical exclusion is 2727 − 211 = **2516**, and "2520 passed" would
+>   additionally require the 4 non-passing tests to sit outside the 2520.
+>
+> The fit is a coincidence. It is recorded here as a rejected hypothesis, not as a mechanism.
 >
 > What is **not** reproducible, and is not being reconciled by guesswork:
 > - **"4 deselected" never happened.** Deselection requires `-k` / `-m` / `--deselect`, and no

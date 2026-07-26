@@ -171,7 +171,7 @@
         "adversarial"
       ],
       "artifact_path": "docs/code-reviews/2026-07-26-codex-627-seam-refreeze-u6-review.md",
-      "artifact_sha256": "21028a98177289eba6afe7280c3aef8961091da538dddbbd854afd9bbee4c6d1",
+      "artifact_sha256": "001eef6cf448e4d236c0e16478e0fd05da11af5070e3ceae38ccb078888d78fe",
       "cwd": ".",
       "evidence_id": "u8-review-20260726",
       "exit_code": 0,
