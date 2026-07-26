@@ -1479,6 +1479,80 @@ class Registry:
         return sequence
 
 
+def _extras_inventory(registry: Registry) -> list[dict[str, Any]]:
+    """Enumerate every preserved unknown ("extras") field by its JSON path (#617 R7/KTD4).
+
+    Derived from the tolerant-parse result, so it lists exactly the additive keys the reader
+    preserved — never a digest-covered nested key (unknown keys there fail closed in ``from_dict``
+    and never reach here). Each entry is ``{"path", "keys"}`` with ``keys`` sorted for a stable,
+    diffable report.
+    """
+
+    entries: list[dict[str, Any]] = []
+
+    def add(path: str, extras: Mapping[str, Any]) -> None:
+        if extras:
+            entries.append({"path": path, "keys": sorted(extras)})
+
+    add("$", registry.extras)
+    for digest, fence in sorted(registry.resource_fences.items()):
+        add(f"$.resource_fences.{digest}", fence.extras)
+    for lease_id, lease in sorted(registry.leases.items()):
+        add(f"$.leases.{lease_id}", lease.extras)
+    for session, admission in sorted(registry.session_admissions.items()):
+        add(f"$.session_admissions.{session}", admission.extras)
+    for digest, settlement in sorted(registry.settlements.items()):
+        add(f"$.settlements.{digest}", settlement.extras)
+    for owner, close in sorted(registry.closed_owner_admissions.items()):
+        add(f"$.closed_owner_admissions.{owner}", close.extras)
+    return entries
+
+
+def _document_extras_bytes(registry: Registry) -> int:
+    """Total serialized size of every preserved extras mapping across the whole document."""
+
+    total = _extras_serialized_size(registry.extras)
+    total += sum(_extras_serialized_size(f.extras) for f in registry.resource_fences.values())
+    total += sum(_extras_serialized_size(item.extras) for item in registry.leases.values())
+    total += sum(_extras_serialized_size(a.extras) for a in registry.session_admissions.values())
+    total += sum(_extras_serialized_size(s.extras) for s in registry.settlements.values())
+    total += sum(
+        _extras_serialized_size(c.extras) for c in registry.closed_owner_admissions.values()
+    )
+    return total
+
+
+def _strip_extras(registry: Registry) -> Registry:
+    """Rebuild the authority with every preserved-unknown ``extras`` mapping cleared (#617 R8/KTD4).
+
+    Only the additive passthrough is removed; every known field (and its already-validated value)
+    is carried through unchanged, so the result serializes to the exact pre-#617 closed shape.
+    """
+
+    return Registry(
+        broker_epoch=registry.broker_epoch,
+        recovery_capability_sha256=registry.recovery_capability_sha256,
+        next_fencing_sequence=registry.next_fencing_sequence,
+        resource_fences={
+            digest: replace(fence, extras={}) for digest, fence in registry.resource_fences.items()
+        },
+        leases={lease_id: replace(lease, extras={}) for lease_id, lease in registry.leases.items()},
+        session_admissions={
+            session: replace(admission, extras={})
+            for session, admission in registry.session_admissions.items()
+        },
+        settlements={
+            digest: replace(settlement, extras={})
+            for digest, settlement in registry.settlements.items()
+        },
+        closed_owner_admissions={
+            owner: replace(close, extras={})
+            for owner, close in registry.closed_owner_admissions.items()
+        },
+        extras={},
+    )
+
+
 @dataclass(frozen=True)
 class SweepResult:
     released_agent_leases: tuple[str, ...]
@@ -4125,6 +4199,132 @@ class LeaseBroker:
             reaped_worktree_leases=tuple(sorted(reaped)),
             retained=dict(sorted(retained.items())),
         )
+
+    def doctor(self) -> dict[str, Any]:
+        """Read-only forward-compatibility report over the persisted registry (#617 R7/KTD4).
+
+        Returns a structured verdict — ``valid`` | ``tolerated-unknowns`` | ``corrupt`` — with an
+        inventory of preserved unknown ("extras") fields keyed by JSON path plus the invariant
+        status. It never creates, locks for write, or mutates the authority (byte-faithful on a
+        clean file), and ``corrupt`` is reported as data — the tolerant parse's
+        ``RegistryCorruptError`` is caught, not raised — so an operator diagnostic never itself
+        aborts.
+        """
+
+        result: dict[str, Any] = {
+            "root_sha256": self.root_sha256,
+            "extras": [],
+            "extras_key_count": 0,
+            "extras_bytes": 0,
+        }
+        try:
+            registry = self._read_registry(create=False)
+        except RegistryCorruptError as exc:
+            result.update(status="corrupt", exists=True, invariants="failed", error=str(exc))
+            return result
+        if registry is None:
+            result.update(status="valid", exists=False, invariants="ok")
+            return result
+        inventory = _extras_inventory(registry)
+        result.update(
+            status="tolerated-unknowns" if inventory else "valid",
+            exists=True,
+            invariants="ok",
+            schema=SCHEMA,
+            broker_epoch=registry.broker_epoch,
+            extras=inventory,
+            extras_key_count=sum(len(entry["keys"]) for entry in inventory),
+            extras_bytes=_document_extras_bytes(registry),
+        )
+        return result
+
+    def _backup_registry(self) -> str:
+        """Copy the current registry to a timestamped 0600 sibling before repair rewrites it.
+
+        Called only under ``_locked()``; reads the exact on-disk bytes and writes them to a
+        ``registry.json.backup-<utc>.<mono>`` sibling with the same temp + rename + fsync + 0600
+        discipline every other write path uses (#617 R8).
+        """
+
+        authority_fd = cast(int, self._open_authority(create=False))
+        fd = self._open_existing_at(
+            authority_fd, REGISTRY_NAME, os.O_RDONLY, mode=0o600, kind="registry"
+        )
+        try:
+            chunks: list[bytes] = []
+            while chunk := os.read(fd, 65536):
+                chunks.append(chunk)
+        finally:
+            os.close(fd)
+        original = b"".join(chunks)
+        stamp = self.providers.wall_now().astimezone(UTC).strftime("%Y%m%dT%H%M%SZ")
+        backup_name = f"{REGISTRY_NAME}.backup-{stamp}.{self.providers.monotonic_ns()}"
+        temp = (
+            f".{backup_name}.{os.getpid()}.{threading.get_ident()}."
+            f"{self.providers.monotonic_ns()}.tmp"
+        )
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | _NOFOLLOW
+        try:
+            wfd = os.open(temp, flags, 0o600, dir_fd=authority_fd)
+            try:
+                os.fchmod(wfd, 0o600)
+                remaining = memoryview(original)
+                while remaining:
+                    remaining = remaining[os.write(wfd, remaining) :]
+                os.fsync(wfd)
+            finally:
+                os.close(wfd)
+            os.replace(temp, backup_name, src_dir_fd=authority_fd, dst_dir_fd=authority_fd)
+            os.fsync(authority_fd)
+        finally:
+            with contextlib.suppress(FileNotFoundError):
+                os.unlink(temp, dir_fd=authority_fd)
+        return str(self.root / backup_name)
+
+    def repair(self) -> dict[str, Any]:
+        """Explicit operator down-migration: strip preserved unknown fields under backup.
+
+        Never runs implicitly (#617 R8/KTD4). Under the single authority ``_locked()`` write:
+        parse tolerantly; refuse (no mutation) if the document is corrupt beyond unknown-field
+        stripping; no-op with an explicit report when there is nothing to strip; otherwise back the
+        original document up beside the registry, rebuild the authority with every ``extras``
+        mapping cleared, strict-revalidate, and write atomically (temp + rename, 0600). Refuses —
+        leaving the registry untouched — if strict revalidation after stripping still fails.
+        """
+
+        result: dict[str, Any] = {"root_sha256": self.root_sha256}
+        with self._locked():
+            try:
+                registry = self._read_registry(create=False)
+            except RegistryCorruptError as exc:
+                result.update(status="refused", repaired=False, reason=str(exc))
+                return result
+            if registry is None:
+                result.update(status="absent", repaired=False, message="no registry to repair")
+                return result
+            inventory = _extras_inventory(registry)
+            if not inventory:
+                result.update(
+                    status="clean", repaired=False, message="nothing to strip", stripped=[]
+                )
+                return result
+            stripped = _strip_extras(registry)
+            try:
+                revalidated = Registry.from_dict(stripped.to_dict())
+            except RegistryCorruptError as exc:
+                result.update(status="refused", repaired=False, reason=str(exc))
+                return result
+            if _extras_inventory(revalidated):
+                result.update(
+                    status="refused",
+                    repaired=False,
+                    reason="unknown fields survived stripping",
+                )
+                return result
+            backup_path = self._backup_registry()
+            self._write_registry(stripped)
+            result.update(status="repaired", repaired=True, backup=backup_path, stripped=inventory)
+            return result
 
 
 _RECOVERY_COORDINATOR_CAPABILITY = object()
