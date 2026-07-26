@@ -1,5 +1,70 @@
 # Learnings
 
+## 2026-07-26: Memoizing A Test-Script Loader Fixes Collection Order By Deleting Test Isolation
+
+**Evidence:** `plugins/saga/tests/test_outcome_worktrees.py` + `test_outcome_board_sync.py` in that
+argument order produced **3 failed**; reversed, **62 passed**; either file alone passed. Eighteen
+live test modules load `plugins/saga/scripts/*.py` by file path through a byte-identical `_load`
+that ends `sys.modules[name] = module; spec.loader.exec_module(module)`. The second module to be
+collected re-execs the same files, rebinding `sys.modules` to a fresh generation while the first
+module's captured globals (`WT`, `ENG`, `DISPATCH`) still reference the previous one. A lazy sibling
+`import outcome_worktrees` inside the running code then resolves to the *live* generation, so
+`monkeypatch.setattr(WT, "reconcile_worktree_leases", ...)` patched an orphan and the spy recorded
+nothing (`assert [] == [<LeaseBroker ...>]`). The suite was green only because `board_sync` sorts
+before `worktrees`.
+
+**Mechanism — and the fix that looked right and was not.** The obvious repair is to make `_load`
+idempotent: return the cached module when `sys.modules` already holds one loaded from the same file.
+That removed the ordering dependence and **introduced a regression** — measured against a clean
+worktree baseline of `2025 passed, 0 failed`, it produced `test_transient_dispatcher_error_
+continues_the_tick` failing, because memoizing makes all eighteen modules *share* one module object,
+so module-global state leaks across files that previously each got a private generation. Ordering
+dependence and cross-file isolation were being provided by the same accident. The correct fix keeps
+per-file generations and re-pins identity only for the duration of each test:
+
+```python
+@pytest.fixture(autouse=True)
+def _pin_script_modules(monkeypatch: pytest.MonkeyPatch) -> None:
+    for _name, _module in _LOADED.items():
+        monkeypatch.setitem(sys.modules, _name, _module)
+```
+
+`setitem` restores the previous binding on teardown, so whichever module loaded last, every test
+runs against its own module's objects. Re-measured: `2025 passed`, identical to baseline, and all
+four order permutations agree (62 / 62 / 23 / 39).
+
+**Generalizable rule:** A fix for a shared-mutable-state bug must be measured against a full-suite
+baseline taken *before* the fix, not against the symptom it targets — the reproducer going green
+proves only that the symptom moved. And when scripts are loaded by path rather than imported as a
+package, prefer re-pinning `sys.modules` per consumer over collapsing consumers onto one instance:
+identity and isolation are separate properties, and sharing buys the first by spending the second.
+
+## 2026-07-26: A Classification Gate Validates The Rows A Contract Has, Not The Ones It Should Have
+
+**Evidence:** `plugins/saga/scripts/outcome_decompose.py` shipped a behavior change on the #45
+branch (+34/−3: a fail-closed `prevalidate_reap_authority` ahead of the graph mutation, plus a
+`lease_authority` parameter on `prune()`) while appearing in **zero** port-contract rows — none in
+`docs/portability/ports/2026-07-25-codex-627-seam-refreeze.json`, none in the predecessor manifest.
+`port_contract.py validate --stage classification` exited **0** throughout. KTD8 exists precisely to
+stop unclassified production surface from landing, and it did not fire.
+
+**Mechanism:** `expected_count` is derived from the base→target diff **over the pathspecs the
+contract was initialized with** (`port_contract.py:437-450`). U1 passed five `--source-pathspec`
+values and omitted `outcome_decompose.py`, so no row was ever generated for it — and a gate that
+checks "is every row classified?" is trivially satisfied by a contract with a missing row. The gate
+is sound; its input was under-specified, and nothing in the tool compares the pathspec set against
+the diff the branch actually produced. Claude's copy moved +4/−2 inside the same frozen range, so
+the row *would* have existed had the pathspec been passed. Re-running `init` over the same range
+with the sixth pathspec added re-derived `expected_count` 6 and left all five existing `row_id`s
+byte-identical, which is what made the retrofit safe to splice rather than regenerate.
+
+**Generalizable rule:** A completeness gate keyed on a hand-supplied input set can only audit what
+it was told about. Reconcile the gate's input against an independent signal — here, the set of
+production files the branch's own diff touches — or the gate reports green on exactly the surface
+nobody declared. When retrofitting a missing row, re-derive it with the tool over the unchanged
+frozen range and confirm pre-existing row ids are stable; identical ids are the evidence that the
+derivation is deterministic and the splice is not inventing history.
+
 ## 2026-07-26: A Partial Authority Port Turns A Refusal Into A Half-Applied Mutation
 
 **Evidence:** `plugins/saga/scripts/outcome_decompose.py` — codex `prune` called

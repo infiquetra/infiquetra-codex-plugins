@@ -1429,7 +1429,7 @@
         "plugins/saga/tests/test_outcome_worktrees.py"
       ],
       "artifact_path": "docs/validation/lease-safe-substrate-u6.json",
-      "artifact_sha256": "315d42368efff0588c392c059a05d00d886bf50bbad15a4c3e6d41c132d4ed04",
+      "artifact_sha256": "bea4e13ad8e789ccebefcc86c6ce33437ba893df565321e30e7957b0f760172c",
       "cwd": ".",
       "evidence_id": "u6-cor3-worktree-authority-check-20260726",
       "exit_code": 0,

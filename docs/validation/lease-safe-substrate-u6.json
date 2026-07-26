@@ -59,9 +59,11 @@
     },
     "summary": "23 passed"
   },
+  "note_on_provenance": "`repo_head` is the committed HEAD the run executed against, NOT a tree containing the module under test. `plugins/saga/tests/test_outcome_worktrees.py` does not exist in d00b81da (`git cat-file -e` reports \"exists on disk, but not in 'd00b81da'\"); it was added by 30a37c21 at 2026-07-25T23:11:38-04:00. This record's `recorded_at` (2026-07-25T23:02:50-04:00) falls between d00b81da (22:39:18-04:00) and 30a37c21, so the U5 port and its tests were present in the WORKING TREE and uncommitted when the run was taken. The 23-passed result reproduces at the committed head 30a37c21 and later; only the provenance field was under-specified. Read `repo_head` here as 'the head the working tree was based on', and 30a37c21 as the first committed tree that can replay this run.",
   "port_id": "lease-safe-substrate-2026-07-19",
   "recorded_at": "2026-07-26T03:02:50Z",
   "repo_head": "d00b81da5c6c32f5797927637dbf57c274f35313",
+  "replayable_from": "30a37c21750bf52111a3278dd6483f8b1c8bfd26",
   "schema_version": 1,
   "unit": "U6"
 }

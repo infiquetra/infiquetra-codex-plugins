@@ -43,6 +43,10 @@ ROOT = Path(__file__).parents[1]
 SCRIPTS = ROOT / "scripts"
 
 
+# Every script this module loads, kept so ``_pin_script_modules`` can re-pin them per test.
+_LOADED: dict[str, ModuleType] = {}
+
+
 def _load(name: str) -> ModuleType:
     if str(SCRIPTS) not in sys.path:
         sys.path.insert(0, str(SCRIPTS))
@@ -51,7 +55,23 @@ def _load(name: str) -> ModuleType:
     module = importlib.util.module_from_spec(spec)
     sys.modules[name] = module
     spec.loader.exec_module(module)
+    _LOADED[name] = module
     return module
+
+
+@pytest.fixture(autouse=True)
+def _pin_script_modules(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Re-pin ``sys.modules`` to THIS module's script instances for each of its tests.
+
+    These scripts are executed by file path under bare module names, so another test module
+    loading the same scripts rebinds ``sys.modules`` to a second generation while this
+    module's captured globals keep pointing at the first.  A lazy sibling import inside a
+    script would then resolve to the other generation, ``monkeypatch.setattr(MOD, ...)``
+    would patch an orphan, and pytest's COLLECTION ORDER would silently decide the result.
+    ``setitem`` restores the previous binding on teardown, so modules stay per-file isolated.
+    """
+    for _name, _module in _LOADED.items():
+        monkeypatch.setitem(sys.modules, _name, _module)
 
 
 # Load in dependency order so every lazy ``import outcome`` / sibling import reuses these instances.

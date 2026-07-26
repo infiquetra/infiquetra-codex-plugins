@@ -94,16 +94,54 @@
     },
     {
       "argv": [
-        "u8-review-panel",
-        "correctness",
-        "adversarial"
+        "uv",
+        "run",
+        "python",
+        "-m",
+        "pytest",
+        "-q",
+        "plugins/saga/tests/test_outcome_worktrees.py",
+        "-k",
+        "prune"
       ],
-      "artifact_path": "docs/code-reviews/2026-07-26-codex-627-seam-refreeze-u6-review.md",
-      "artifact_sha256": "106f1cc723d04cf012bf8b887fb8c9033505a5d2cfeb9305b4468e0e342a4c30",
+      "artifact_path": "docs/validation/codex-627-seam-refreeze-u5-decompose.json",
+      "artifact_sha256": "6becb40086ad780baf218e4d41b23f2d6db51d3f8f08605d83c9f6522a2ca866",
       "cwd": ".",
-      "evidence_id": "u8-review-20260726",
+      "evidence_id": "u5-codex-627-seam-refreeze-decompose-check-20260726",
       "exit_code": 0,
-      "kind": "review",
+      "kind": "check",
+      "recorded_at": "2026-07-26T13:20:00Z",
+      "repo_head": "d9e345d4e21019f8bc7dccb7e1ce02ba3c26f084",
+      "unit": "U5"
+    },
+    {
+      "argv": [
+        "python3",
+        "tools/run_cross_runtime_outcome_acceptance.py"
+      ],
+      "artifact_path": "docs/validation/codex-627-seam-refreeze-u8-cutover.json",
+      "artifact_sha256": "7babd2a5ae79e5c9699c3f243f89a3d06159aa2aa726444d3609179bd58f3a6e",
+      "cwd": ".",
+      "evidence_id": "u8-cutover-20260726",
+      "exit_code": 0,
+      "kind": "cutover",
+      "recorded_at": "2026-07-26T03:40:51Z",
+      "repo_head": "4f325247566efe972fbcb2c6b605b34542e49b7b",
+      "unit": "U8"
+    },
+    {
+      "argv": [
+        "python3",
+        "-I",
+        "-",
+        "installed-cache-path"
+      ],
+      "artifact_path": "docs/validation/codex-627-seam-refreeze-u8-fresh-session.json",
+      "artifact_sha256": "3427a7f6d50860283d587c5537bb4027b222c9e64017cc6e5b0f8fbc66f3ed5b",
+      "cwd": ".",
+      "evidence_id": "u8-fresh-session-20260726",
+      "exit_code": 0,
+      "kind": "fresh-session",
       "recorded_at": "2026-07-26T03:33:01Z",
       "repo_head": "30a37c21750bf52111a3278dd6483f8b1c8bfd26",
       "unit": "U8"
@@ -128,17 +166,16 @@
     },
     {
       "argv": [
-        "python3",
-        "-I",
-        "-",
-        "installed-cache-path"
+        "u8-review-panel",
+        "correctness",
+        "adversarial"
       ],
-      "artifact_path": "docs/validation/codex-627-seam-refreeze-u8-fresh-session.json",
-      "artifact_sha256": "3427a7f6d50860283d587c5537bb4027b222c9e64017cc6e5b0f8fbc66f3ed5b",
+      "artifact_path": "docs/code-reviews/2026-07-26-codex-627-seam-refreeze-u6-review.md",
+      "artifact_sha256": "21028a98177289eba6afe7280c3aef8961091da538dddbbd854afd9bbee4c6d1",
       "cwd": ".",
-      "evidence_id": "u8-fresh-session-20260726",
+      "evidence_id": "u8-review-20260726",
       "exit_code": 0,
-      "kind": "fresh-session",
+      "kind": "review",
       "recorded_at": "2026-07-26T03:33:01Z",
       "repo_head": "30a37c21750bf52111a3278dd6483f8b1c8bfd26",
       "unit": "U8"
@@ -160,21 +197,6 @@
       "recorded_at": "2026-07-26T03:33:01Z",
       "repo_head": "30a37c21750bf52111a3278dd6483f8b1c8bfd26",
       "unit": "U8"
-    },
-    {
-      "argv": [
-        "python3",
-        "tools/run_cross_runtime_outcome_acceptance.py"
-      ],
-      "artifact_path": "docs/validation/codex-627-seam-refreeze-u8-cutover.json",
-      "artifact_sha256": "9666f20175cfc91dbc8da54ca3703df392ad85efd88818e6d32265865b0cf276",
-      "cwd": ".",
-      "evidence_id": "u8-cutover-20260726",
-      "exit_code": 0,
-      "kind": "cutover",
-      "recorded_at": "2026-07-26T03:40:51Z",
-      "repo_head": "4f325247566efe972fbcb2c6b605b34542e49b7b",
-      "unit": "U8"
     }
   ],
   "port_id": "codex-627-seam-refreeze-2026-07-25",
@@ -189,8 +211,8 @@
   "schema_version": 1,
   "source": {
     "base_ref": "cf15a09f8ffe9bf7c6f1218b2c72a8143d60ab49",
-    "expected_count": 5,
-    "inventory_sha256": "3ac8d653144702b4c6f42bfe7bced09ea6be82158e69c5f619d974cc7b1564cc",
+    "expected_count": 6,
+    "inventory_sha256": "1ef863a005f826b9ee7822ab23109c079bd9933a3c5f2a0e5d97c595449f672f",
     "observed_refs": {
       "head": "77e11ac10e05ce693130aaca99d30a3095071a36",
       "local_main": "474fd3cc78df1642b85cc6c3c3f98c56357a6af0",
@@ -201,7 +223,8 @@
       "plugins/fleet-core/scripts/fleet_commons/audit_store.py",
       "plugins/fleet-core/scripts/fleet_commons/lease_broker.py",
       "plugins/saga/scripts/outcome.py",
-      "plugins/saga/scripts/outcome_dispatcher.py"
+      "plugins/saga/scripts/outcome_dispatcher.py",
+      "plugins/saga/scripts/outcome_decompose.py"
     ],
     "repository_id": "infiquetra/infiquetra-claude-plugins",
     "rows": [
@@ -287,7 +310,7 @@
         "planned_tests": [
           "plugins/saga/tests/test_outcome_reconcile.py"
         ],
-        "rationale": "R7/R7a/R7b: mirror the reconcile hot-path ordering into the Codex _reconcile_once (codex :1148, Claude :1097 -- both define it in outcome.py, not outcome_reconcile.py). A non-transient DispatcherError re-raises at the head of the except arm before any lease release or further ledger write; the transient arm releases the per-subplot lock, appends a reducer-visible (dispatch, halt) record paired to the intent key with the receipt own kind under receipt_kind, and settles the attempt. Codex-adapt under KTD3 because the pre-dispatch outcome.dispatch.v2 intent at :1270-1281 is required Codex state the port must preserve.",
+        "rationale": "R7/R7a/R7b: mirror the reconcile hot-path ordering into the Codex _reconcile_once (codex :1148, Claude :1097 -- both define it in outcome.py, not outcome_reconcile.py). A non-transient DispatcherError re-raises at the head of the except arm before any lease release or further ledger write; the transient arm releases the per-subplot lock and appends a reducer-visible (dispatch, halt) record paired to the intent key with the receipt own kind under receipt_kind. R7b(c) 'settle the attempt' is NOT ported: Codex outcome.py carries no dispatch_settlement binding (3 settlement-family references, all inside an unrelated _settled_lookup, against 67 in Claude b464d090 including the settle_attempt(... SILENT_NOOP) call at :1708). Recorded as an explicit named deferral, not an omission -- see the R7b boundary note in plugins/saga/CHANGELOG.md. Codex-adapt under KTD3 because the pre-dispatch outcome.dispatch.v2 intent at :1270-1281 is required Codex state the port must preserve.",
         "row_id": "src-3b34fc68149a7c76",
         "similarity": null,
         "state": "verified",
@@ -326,6 +349,32 @@
         "treatment": "direct-port",
         "units": [
           "U2"
+        ]
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [],
+        "evidence_refs": [
+          "u5-codex-627-seam-refreeze-decompose-check-20260726"
+        ],
+        "host_primitives": [],
+        "new_path": "plugins/saga/scripts/outcome_decompose.py",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/saga/scripts/outcome_decompose.py"
+        ],
+        "planned_tests": [
+          "plugins/saga/tests/test_outcome_worktrees.py"
+        ],
+        "rationale": "R8/COR3 scope adaptation (KTD4): prune() gained a lease_authority parameter and a fail-closed prevalidate_reap_authority arm ahead of the graph mutation, mirroring Claude's own arm at outcome_decompose.py:282-309 (b464d090). Without it, arming leases in the worktree registry would let an authority-free prune raise WorktreeAuthorityError AFTER _commit had already mutated the spec, leaving a pruned graph pointing at an unreapable worktree. Claude moved +4/-2 across the frozen range; the Codex port is +34/-3 because Codex carries the arm plus its own prune wiring -- codex-adapt, not direct-port. CLASSIFIED RETROACTIVELY: U1 pinned five pathspecs and omitted this one, so the port landed under U5's execution with no contract row at all, and --stage classification still exited 0 because it validates the rows a contract HAS, not the ones it should have. That is the KTD8 hole this row closes. Behavior evidence is docs/validation/lease-safe-substrate-u6.json (oracles 'prune prevalidates before the graph mutation: a refused prune leaves nodes, spec_revision, registry, and lease intact' and 'prune of a lease-bound worktree without authority refuses instead of stranding the lease'), recorded against the PREDECESSOR manifest under ITS unit id U6, which maps to this plan's U5 -- the unit-id collision R4b already had to navigate.",
+        "row_id": "src-a723b33e54606f82",
+        "similarity": null,
+        "state": "verified",
+        "surface_kind": "script",
+        "treatment": "codex-adapt",
+        "units": [
+          "U5"
         ]
       },
       {

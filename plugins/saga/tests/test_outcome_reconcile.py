@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import subprocess  # nosec B404 — git init for the coordinator-lock test, fixed argv, no shell
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -20,6 +21,10 @@ ROOT = Path(__file__).parents[1]
 SCRIPTS = ROOT / "scripts"
 
 
+# Every script this module loads, kept so ``_pin_script_modules`` can re-pin them per test.
+_LOADED: dict[str, ModuleType] = {}
+
+
 def _load(name: str) -> ModuleType:
     if str(SCRIPTS) not in sys.path:
         sys.path.insert(0, str(SCRIPTS))
@@ -28,7 +33,23 @@ def _load(name: str) -> ModuleType:
     module = importlib.util.module_from_spec(spec)
     sys.modules[name] = module
     spec.loader.exec_module(module)
+    _LOADED[name] = module
     return module
+
+
+@pytest.fixture(autouse=True)
+def _pin_script_modules(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Re-pin ``sys.modules`` to THIS module's script instances for each of its tests.
+
+    These scripts are executed by file path under bare module names, so another test module
+    loading the same scripts rebinds ``sys.modules`` to a second generation while this
+    module's captured globals keep pointing at the first.  A lazy sibling import inside a
+    script would then resolve to the other generation, ``monkeypatch.setattr(MOD, ...)``
+    would patch an orphan, and pytest's COLLECTION ORDER would silently decide the result.
+    ``setitem`` restores the previous binding on teardown, so modules stay per-file isolated.
+    """
+    for _name, _module in _LOADED.items():
+        monkeypatch.setitem(sys.modules, _name, _module)
 
 
 SPEC_MOD = _load("outcome_spec")
@@ -537,3 +558,56 @@ def test_backend_halt_error_arm_is_unchanged(tmp_path: Path) -> None:
     assert appended[0]["key"] == "dispatch:a"
     assert appended[0]["kind"] == "halt"  # the documented drift, pinned not fixed
     assert _dispatch_records(store) == []
+
+
+def _git_repo(tmp_path: Path) -> Path:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    for argv in (
+        ["git", "init", "-q"],
+        ["git", "config", "user.email", "t@t"],
+        ["git", "config", "user.name", "t"],
+        ["git", "commit", "-q", "--allow-empty", "-m", "init"],
+    ):
+        subprocess.run(argv, cwd=repo, check=True)  # noqa: S603,S607
+    return repo
+
+
+def test_non_transient_abort_releases_the_coordinator_lock(tmp_path: Path) -> None:
+    """R7a's THIRD claim: a permanent fault must abort loudly without WEDGING the coordinator.
+
+    The other two R7a claims (re-raise before lease release, before ledger writes) are pinned by
+    the tests above — but all of them call ``_reconcile_once`` directly, which never enters
+    ``advance()`` and therefore cannot observe the coordinator lease at all. The outer
+    ``try``/``finally`` that releases it (``outcome.py`` :1128-1129) was consequently unpinned.
+    That is the expensive one to regress: the coordinator lease is what serializes ticks
+    cross-process, so a permanent fault that escaped without releasing it would strand the whole
+    outcome until the lease TTL expired, with every intervening tick silently no-opping.
+
+    Asserting the lease record is gone is necessary but not sufficient — it would still pass if
+    the lease were left in a state a *different* holder could not acquire. So the second half
+    re-enters ``advance()`` under a different holder and asserts the tick actually RAN
+    (``skipped_busy`` false, ``ticks`` >= 1); a still-held coordinator returns ``skipped_busy=True``
+    with ``ticks=0`` before any work happens.
+
+    Note what the second tick deliberately does NOT assert: that the dispatcher raises again. It
+    does not run at all. The first tick already appended the pre-dispatch ``outcome.dispatch.v2``
+    intent for ``a``, and the intent-dedup arm short-circuits every later tick before the dispatch
+    call — so a re-raise assertion here would fail for a reason that has nothing to do with the
+    coordinator lease.
+    """
+    repo = _git_repo(tmp_path)
+    OUTCOME.start(repo, "o", "obj", nodes=[{"subplot_id": "a", "title": "A", "kind": "non-code"}])
+
+    def _permanent(_request: Any) -> Any:
+        raise DISPATCH.DispatcherError("fleet-core lease broker protocol skew")
+
+    with pytest.raises(DISPATCH.DispatcherError):
+        OUTCOME.advance(repo, "o", dispatcher=_permanent, holder="holder-loud-abort")
+
+    store = OUTCOME._store(repo, "o")
+    assert STORE_MOD.read_lease(store, STORE_MOD.COORDINATOR_LOCK) is None
+
+    second = OUTCOME.advance(repo, "o", dispatcher=_permanent, holder="holder-second-tick")
+    assert second.skipped_busy is False
+    assert second.ticks >= 1

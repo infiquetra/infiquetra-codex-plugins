@@ -13,8 +13,31 @@ port-contract cutover work.
 - Confirmed byte-identity of `outcome_compat.py` against Claude `b464d090` — a plain `diff`
   shows exactly one differing line, `RUNTIME_LABEL`.
 - Re-ran every unit's test module plus the wider repo suite after the U6 release-surface and
-  version-drift-guard edits (2520 passed, 4 deselected — see the cutover artifact for the
-  deselected set and why each is pre-existing and out of this unit's scope).
+  version-drift-guard edits (**recorded at the time as "2520 passed, 4 deselected" — see the
+  correction below; that figure is only partly reproducible and its pointer is dead**).
+
+> **Correction (2026-07-26, round-4 code review).** The suite figure above does not describe the
+> tree this review covers, and the reader it sends to the cutover artifact finds nothing.
+> Re-measured at the reviewed commit in a clean detached worktree: the suite collects **2731** and
+> runs **2727 passed, 4 skipped, 0 failed**.
+>
+> What *is* reproducible: `plugins/mission-control/tests` collects exactly **211** tests and is
+> listed in `testpaths`, and 2731 − 211 = **2520**. So the passed-count almost certainly came from
+> a run with that one path excluded.
+>
+> What is **not** reproducible, and is not being reconciled by guesswork:
+> - **"4 deselected" never happened.** Deselection requires `-k` / `-m` / `--deselect`, and no
+>   recorded `argv` in `docs/portability/ports/2026-07-25-codex-627-seam-refreeze.json` carries
+>   one. The suite's own 4 non-passing tests are **skipped**, not deselected — the frozen-source
+>   oracles in `tests/test_codex_627_seam_refreeze_port_contract.py`, which skip only when the
+>   sibling Claude clone is unresolvable. Different word, different mechanism.
+> - **The pointer is dead.** `docs/validation/codex-627-seam-refreeze-u8-cutover.json` records
+>   "2727 passed, 4 failed" — a different number *and* a different outcome word — and contains no
+>   "deselected set" to consult. A reader following this sentence learns nothing.
+>
+> Treat the original figure as an unverified recollection of a partial run, not as evidence that
+> the full suite was green at this commit. The clean-worktree measurement above is the figure that
+> reproduces.
 - Confirmed U5's already-committed evidence in the predecessor manifest
   (`docs/portability/ports/2026-07-19-lease-safe-substrate.json`, rows `src-b63c5ebf1ea04461` /
   `src-cfa1aa6b86772f6b`) independently: both rows are `state: verified` with a red-first

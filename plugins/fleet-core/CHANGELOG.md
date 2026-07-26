@@ -20,8 +20,10 @@ All notable changes to the Codex `fleet-core` plugin are documented here.
   retained-settlement and canonically-closed precedence checks.
 - Test coverage for the ancestor-guard re-freeze (`test_audit_store.py`) and the refuse-mode
   conjunction, its precedence gates, and closed-value rejection of malformed `on_conflict` input
-  (`test_lease_broker.py`), red-first against the pre-port tree
-  (infiquetra-codex-plugins#45, U2/U3).
+  (`test_lease_broker.py`) — infiquetra-codex-plugins#45, U2/U3. These artifacts
+  (`docs/validation/codex-627-seam-refreeze-u2.json`, `-u3.json`) record post-port results only
+  (34 passed, 68 passed); neither carries a `red_first` replay block, so no red-first claim is
+  made for U2 or U3.
 
 ## 0.11.0 — 2026-07-24
 

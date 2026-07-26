@@ -381,13 +381,27 @@ rationale, not in a shared id space across manifests. Both manifests moved their
 (plugin.json, CHANGELOG, marketplace) together in the single U6 PR, per KTD2 (one PR-ready
 boundary per execution contract).
 
-`port_contract.py`'s `_validate_cutover_release_proof` hard-codes `unit == "U8"` for every
-`release_evidence.*` entry regardless of how many units the port itself has (this plan has six,
-U1–U6). `U8` is a fixed evidence-label convention baked into the shared tool, not a claim that an
-actual "U8" unit exists in this plan — every reviewed precedent manifest (`2026-07-10-saga-07517`,
-`2026-07-19-lease-safe-substrate`, `2026-07-19-outcome-cross-runtime-parity`) tags its five
-release-evidence rows (`review`, `isolated-install`, `fresh-session`, `rollback`, `cutover`) with
-`"unit": "U8"` even though none of those plans has six or more real units either.
+`port_contract.py` hard-codes `unit == "U8"` for every `release_evidence.*` entry regardless of how
+many units the port itself has (this plan has six, U1–U6). `U8` is a fixed evidence-label
+convention baked into the shared tool, not a claim that an actual "U8" unit exists in this plan;
+`init` seeds `"release_unit": "U8"` as a scaffolding default at `:398`/`:408`/`:418`.
+
+*Corrected 2026-07-26 (round-4 code review). Two claims in the paragraph above were wrong as
+originally written, though the decision they support survives both corrections:*
+
+1. *Where the check lives.* It is **not** in `_validate_cutover_release_proof` (`:1405-1458`),
+   which contains no `U8` literal at all. The enforcing line is
+   `if evidence_by_id[reference].get("unit") != "U8"` at `:1379-1380`, inside `validate_manifest`
+   (`:961`) — which runs at **every** stage, not just `cutover`. That is a stronger constraint than
+   the original text described, and it is why the "Revisit when" below now names the right symbol.
+   The three `:398`/`:408`/`:418` hits seed `release_unit`, a *different* field.
+2. *The precedent count.* Measured across the three cited manifests by resolving each
+   `release_evidence.*` reference into `evidence[]`: only `2026-07-10-saga-07517` tags `U8`.
+   `2026-07-19-lease-safe-substrate` and `2026-07-19-outcome-cross-runtime-parity` both tag
+   **`U5`** — which is exactly why each currently reports five `release_evidence.* must reference
+   U8` errors under `validate --stage classification`. The convention has **one** precedent, not
+   three. That argues *more* strongly for following the tool literally, not less: two of three
+   prior ports diverged from it and are non-compliant today.
 
 **Rejected alternatives.** Splitting into three PRs to land `port-digest` green early (KTD2 in the
 plan; rejected because the acceptance harness appears in none of the four workflow files, so an
@@ -396,9 +410,12 @@ unit id instead of `U8` (would pass validation for THIS manifest alone but break
 `_validate_cutover_release_proof`'s hard-coded check runs against it — the check is literal, not
 "last unit").
 
-**Revisit when.** `port_contract.py` stops hard-coding `U8` for release evidence (grep the
-literal before assuming a plan-relative unit id is safe there), or a plan needs release evidence
-before its cutover unit for some staged-release reason.
+**Revisit when.** `port_contract.py` stops hard-coding `U8` for release evidence, or a plan needs
+release evidence before its cutover unit for some staged-release reason. To check: grep `"U8"` in
+`scripts/port_contract.py` and read the hit inside `validate_manifest` (`:1379-1380` as of
+2026-07-26) — **not** `_validate_cutover_release_proof`, which has never contained the literal.
+Grepping that function returns empty and would read as "the constraint was removed" when it is
+still enforced at every stage.
 
 ## 2026-07-26: `port_contract.py --stage cutover`'s Release-Proof Check Only Fits External-Action Ports; No Manifest Has Ever Cleared It
 

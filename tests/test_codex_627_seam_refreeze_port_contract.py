@@ -36,6 +36,12 @@ SOURCE_PATHSPECS = [
     "plugins/fleet-core/scripts/fleet_commons/lease_broker.py",
     "plugins/saga/scripts/outcome.py",
     "plugins/saga/scripts/outcome_dispatcher.py",
+    # Added in the round-4 code-review repair (P1 #5). U1 pinned only the five above, so
+    # outcome_decompose.py's port -- which Claude also changed inside this frozen range -- landed
+    # under U5 with NO contract row, and `validate --stage classification` still exited 0 because
+    # it validates the rows a contract HAS. Re-deriving with this sixth pathspec left all five
+    # pre-existing row_ids byte-identical.
+    "plugins/saga/scripts/outcome_decompose.py",
 ]
 
 # Unit map from the plan: U2 byte re-freeze, U3 broker refuse-mode, U4 dispatcher + reconcile.
@@ -45,6 +51,7 @@ EXPECTED_ROWS = {
     "plugins/fleet-core/scripts/fleet_commons/lease_broker.py": ("codex-adapt", ["U3"]),
     "plugins/saga/scripts/outcome_dispatcher.py": ("codex-adapt", ["U4"]),
     "plugins/saga/scripts/outcome.py": ("codex-adapt", ["U4"]),
+    "plugins/saga/scripts/outcome_decompose.py": ("codex-adapt", ["U5"]),
 }
 
 # R4b: promoted in the predecessor contract, claiming a unit id free in *that* manifest.
@@ -103,10 +110,15 @@ def test_frozen_range_chains_off_the_predecessor_target() -> None:
 def test_expected_count_is_derived_from_rows_not_from_pathspecs() -> None:
     """`port_contract.build_manifest` sets expected_count = len(source_rows) from the
     base->target diff. The invariant is row-derived: the pathspec count is not an input to it,
-    and five rows over five pathspecs here is a coincidence, not the rule."""
+    and six rows over six pathspecs here is a coincidence, not the rule.
+
+    The count moved 5 -> 6 in the round-4 code-review repair. That is the whole lesson of P1 #5:
+    the count is derived from the diff over *the pathspecs the contract was told about*, so an
+    omitted pathspec produces no row and no error -- the gate cannot miss what it was never
+    given."""
     source = _manifest()["source"]
 
-    assert source["expected_count"] == len(source["rows"]) == 5
+    assert source["expected_count"] == len(source["rows"]) == 6
 
     # Deletion-mutation guard: a manifest whose row list moves must move expected_count with it,
     # and adding a pathspec that produced no row must not change it.
@@ -120,7 +132,7 @@ def test_expected_count_is_derived_from_rows_not_from_pathspecs() -> None:
         *SOURCE_PATHSPECS,
         "plugins/saga/scripts/outcome_worktrees.py",
     ]
-    assert widened["source"]["expected_count"] == len(widened["source"]["rows"]) == 5
+    assert widened["source"]["expected_count"] == len(widened["source"]["rows"]) == 6
 
 
 def test_inventory_digest_recomputes_to_the_recorded_value() -> None:
@@ -132,8 +144,13 @@ def test_inventory_digest_recomputes_to_the_recorded_value() -> None:
 def test_every_source_row_is_classified_with_its_planned_unit() -> None:
     """U1 leaves every row `classified`; U2/U3/U4 land the behavior and U6 (cutover) advances
     each claimed row to `verified` with unit-tagged evidence per the plan's
-    classified -> implemented -> verified lifecycle. All five rows have landed and been
-    verified at cutover, so `verified` is the current expectation, not `classified`."""
+    classified -> implemented -> verified lifecycle. All six rows have landed and been
+    verified, so `verified` is the current expectation, not `classified`.
+
+    The sixth row (outcome_decompose.py, U5) was classified retroactively in the round-4
+    code-review repair and carries its own freshly measured evidence
+    (docs/validation/codex-627-seam-refreeze-u5-decompose.json), not a reference borrowed from the
+    predecessor manifest."""
     rows = {row["new_path"]: row for row in _manifest()["source"]["rows"]}
 
     assert set(rows) == set(EXPECTED_ROWS)
@@ -270,7 +287,7 @@ def test_verify_source_passes_against_the_pinned_claude_clone() -> None:
     assert result["verified"] is True
     assert result["base_ref"] == SOURCE_BASE
     assert result["target_ref"] == SOURCE_TARGET
-    assert result["row_count"] == 5
+    assert result["row_count"] == 6
     assert result["inventory_sha256"] == _manifest()["source"]["inventory_sha256"]
 
 
