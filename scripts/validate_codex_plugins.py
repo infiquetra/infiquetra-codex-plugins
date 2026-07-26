@@ -152,11 +152,11 @@ TARGET_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
 }
 TARGET_EXPECTED_PLUGINS["fleet-core"] = {
     **TARGET_EXPECTED_PLUGINS["fleet-core"],
-    "version": "0.11.0+codex.20260724175626",
+    "version": "0.12.0+codex.20260726031557",
 }
 TARGET_EXPECTED_PLUGINS["saga"] = {
     **TARGET_EXPECTED_PLUGINS["saga"],
-    "version": "0.79.0+codex.20260724175626",
+    "version": "0.80.0+codex.20260726031557",
 }
 TARGET_EXPECTED_PLUGINS["verified-workflows"] = {
     "version": "2.0.0+codex.20260724175626",

@@ -372,11 +372,14 @@ def test_halt_does_not_starve_other_runnable_leaves(repo: Path) -> None:
 
 
 def test_advance_records_lease_refusal_as_halt_and_continues(repo: Path) -> None:
-    # A DispatcherError mid-tick (lease admission refusal / renew failure — the cross-runtime
-    # conflict signal the activated seam raises) must take the backend-HALT recovery posture: the
-    # other runnable leaf still dispatches, the refusal lands durably as a (dispatch, halt) ledger
-    # record the reducer derives as halted — never an acknowledgement, which would settle the leaf
-    # as permanently done — and the per-subplot lock releases rather than leaking until TTL.
+    # A DispatcherLeaseTransientError mid-tick (lease admission refusal / renew failure — the
+    # cross-runtime conflict signal the activated seam raises) must take the backend-HALT recovery
+    # posture: the other runnable leaf still dispatches, the refusal lands durably as a
+    # (dispatch, halt) ledger record the reducer derives as halted — never an acknowledgement,
+    # which would settle the leaf as permanently done — and the per-subplot lock releases rather
+    # than leaking until TTL. Since codex#45 U4, only the typed transient subclass takes this
+    # posture: a bare (non-transient) DispatcherError instead aborts the tick loudly per R7, so
+    # this fixture raises the typed error to keep exercising the halt-and-continue path.
     _write_team_ref(repo)
     OUTCOME.start(
         repo,
@@ -396,7 +399,7 @@ def test_advance_records_lease_refusal_as_halt_and_continues(repo: Path) -> None
     def refusing(req: Any) -> dict[str, str]:
         if req.subplot_id == "a":
             return _launch_ack(req)
-        raise D.DispatcherError("lease admission refused: leaf held by another runtime")
+        raise D.DispatcherLeaseTransientError("lease admission refused: leaf held by another runtime")
 
     result = OUTCOME.advance(repo, "ship-x", dispatcher=refusing)
     assert result.dispatched == ["a"]

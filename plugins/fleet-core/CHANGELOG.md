@@ -2,6 +2,27 @@
 
 All notable changes to the Codex `fleet-core` plugin are documented here.
 
+## 0.12.0 — 2026-07-26
+
+### Changed
+
+- Re-port the `audit_store.py` universal fail-closed ancestor walk from Claude `b464d090`: drop the
+  home-scope early return, walk every path component from the filesystem anchor down via `lstat`
+  (never `resolve` inside the walk), and refuse world-writable components unless also sticky
+  (`S_ISVTX`).
+
+### Added
+
+- `on_conflict` admission mode (`"supersede"` default, `"refuse"` new) on
+  `_drop_superseded_resource_lease` in `fleet_commons/lease_broker.py`, faithful to Claude
+  `b464d090`: refusal is a three-part conjunction (prior lease present, not expired, owner state
+  not dead) raising `LeaseConflictError` with `holder_owner_id`, gated below the existing
+  retained-settlement and canonically-closed precedence checks.
+- Test coverage for the ancestor-guard re-freeze (`test_audit_store.py`) and the refuse-mode
+  conjunction, its precedence gates, and closed-value rejection of malformed `on_conflict` input
+  (`test_lease_broker.py`), red-first against the pre-port tree
+  (infiquetra-codex-plugins#45, U2/U3).
+
 ## 0.11.0 — 2026-07-24
 
 ### Changed

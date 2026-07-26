@@ -368,3 +368,34 @@ in prose (silently reversible).
 **Revisit when.** The cross-runtime-acceptance leaf activates the seam (the KTD6 guard test moves
 to assert the wired form), or a future port needs a non-empty preservation inventory again (the
 zero-drift shape is a special case, not the new default).
+
+## 2026-07-26: codex#45 — One Release Unit for a Five-Row, Two-Manifest Port; U8 is a Fixed Evidence Label, Not a Real Unit ID
+
+**Decision.** The #45 re-freeze (#627/#637 seam + COR3 worktree lease-authority) claims rows out
+of TWO port-contract manifests under ONE release: the five surfaces changed in
+`cf15a09f..b464d090` live in the new `2026-07-25-codex-627-seam-refreeze.json` contract (rows
+claim U2/U3/U4 there); COR3's three orphaned defers were promoted in the PREDECESSOR contract
+(`2026-07-19-lease-safe-substrate.json`) under that manifest's own free unit id, which happens to
+also be spelled `U6` there but names this plan's U5 — the mapping lives in each promoted row's
+rationale, not in a shared id space across manifests. Both manifests moved their release surfaces
+(plugin.json, CHANGELOG, marketplace) together in the single U6 PR, per KTD2 (one PR-ready
+boundary per execution contract).
+
+`port_contract.py`'s `_validate_cutover_release_proof` hard-codes `unit == "U8"` for every
+`release_evidence.*` entry regardless of how many units the port itself has (this plan has six,
+U1–U6). `U8` is a fixed evidence-label convention baked into the shared tool, not a claim that an
+actual "U8" unit exists in this plan — every reviewed precedent manifest (`2026-07-10-saga-07517`,
+`2026-07-19-lease-safe-substrate`, `2026-07-19-outcome-cross-runtime-parity`) tags its five
+release-evidence rows (`review`, `isolated-install`, `fresh-session`, `rollback`, `cutover`) with
+`"unit": "U8"` even though none of those plans has six or more real units either.
+
+**Rejected alternatives.** Splitting into three PRs to land `port-digest` green early (KTD2 in the
+plan; rejected because the acceptance harness appears in none of the four workflow files, so an
+early green unblocks nothing automated); tagging release evidence with the plan's real terminal
+unit id instead of `U8` (would pass validation for THIS manifest alone but breaks the moment
+`_validate_cutover_release_proof`'s hard-coded check runs against it — the check is literal, not
+"last unit").
+
+**Revisit when.** `port_contract.py` stops hard-coding `U8` for release evidence (grep the
+literal before assuming a plan-relative unit id is safe there), or a plan needs release evidence
+before its cutover unit for some staged-release reason.

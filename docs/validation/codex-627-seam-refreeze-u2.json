@@ -1,0 +1,34 @@
+{
+  "port_id": "codex-627-seam-refreeze-2026-07-25",
+  "unit": "U2",
+  "recorded_at": "2026-07-26T03:15:57Z",
+  "repo_head": "30a37c21750bf52111a3278dd6483f8b1c8bfd26",
+  "schema_version": 1,
+  "check": {
+    "argv": [
+      "uv",
+      "run",
+      "pytest",
+      "-q",
+      "plugins/fleet-core/tests/test_audit_store.py",
+      "plugins/saga/tests/test_outcome_compat.py"
+    ],
+    "exit_code": 0,
+    "summary": "34 passed"
+  },
+  "byte_identity": {
+    "file": "plugins/saga/scripts/outcome_compat.py",
+    "compared_against": "infiquetra-claude-plugins@b464d090fccb59d0ff862f273902f1653f1d8835",
+    "diff_line_count": 4,
+    "only_differing_line": "RUNTIME_LABEL = \"claude\" (Claude) vs RUNTIME_LABEL = \"codex\" (Codex), line 83"
+  },
+  "oracles": [
+    "RUNTIME_LABEL == \"codex\" after re-freeze (guard against copying Claude's label)",
+    "symlinked component above home is refused (fails pre-port)",
+    "world-writable non-sticky component above home is refused (fails pre-port)",
+    "world-writable AND sticky (/tmp 1777 shape) is accepted",
+    "group-writable component is accepted (#624 boundary, unchanged)",
+    "PermissionError on a component raises the typed halt, not a bare exception",
+    "FileNotFoundError short-circuits and returns cleanly"
+  ]
+}

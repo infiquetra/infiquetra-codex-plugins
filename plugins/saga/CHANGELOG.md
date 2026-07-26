@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.80.0 - 2026-07-26
+
+### Changed
+
+- Re-freeze `outcome_compat.py` to Claude `b464d090` bytes (`RUNTIME_LABEL = "codex"` is the sole
+  permitted divergence), restoring the `contract_digests` / `port-digest` cross-runtime acceptance
+  leg that has halted by design since `infiquetra-claude-plugins#627` merged.
+- Mirror the reconcile hot-path ordering into `_reconcile_once` (`outcome.py`): a non-transient
+  `DispatcherError` now re-raises at the head of the arm before any further lease release or
+  ledger write, and the transient path releases the per-subplot lock, appends a reducer-visible
+  `(dispatch, halt)` record, and settles the attempt.
+
+### Added
+
+- `DispatcherLeaseTransientError(DispatcherError)` in `outcome_dispatcher.py`, classified through a
+  shim-safe `_lease_conflict_error_type()` that declines to transient when the shim fails to load.
+- Port the worktree lease-authority subsystem into `outcome_worktrees.py` (COR3): the authority
+  error type, the reap preflight, the lease binding, and the authority-carrying `reap_worktree` /
+  `harvest_worktrees` signatures, wired at the `production_worktree_processor` seam and consumed
+  end to end by `main()`'s `advance` and `prune` wiring.
+- New test modules `plugins/saga/tests/test_outcome_compat.py`,
+  `plugins/saga/tests/test_outcome_dispatcher.py`, and `plugins/saga/tests/test_outcome_worktrees.py`,
+  and additions to `test_outcome_reconcile.py`, covering the re-frozen and ported surfaces
+  red-first against the pre-port tree (infiquetra-codex-plugins#45, U2/U4/U5).
+
 ## 0.79.0 - 2026-07-24
 
 ### Added

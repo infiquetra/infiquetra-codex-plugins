@@ -1609,17 +1609,34 @@ class TestHandoffStorePrivacy:
         OC._ensure_private_dir(target)
         assert stat.S_IMODE(target.lstat().st_mode) == 0o700
 
-    def test_walk_exempts_home_itself(
+    def test_walk_refuses_world_writable_home_itself(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
-        """The candidate == home early return: home's own mode is never a refusal reason — the
-        walk covers components strictly below it."""
+        """#627 universal fail-closed guard (codex#45 U2): there is no home-scope early return
+        any more — home's own mode is walked like any other component. A world-writable,
+        non-sticky home is refused, not exempted."""
         home = tmp_path / "fake-home"
         home.mkdir()
         monkeypatch.setenv("HOME", str(home))
         os.chmod(home, 0o777)
         try:
-            OC._refuse_unsafe_handoff_ancestors(home)  # no raise: exempted before the walk
+            with pytest.raises(OC.CompatibilityHaltError) as exc:
+                OC._refuse_unsafe_handoff_ancestors(home)
+            assert exc.value.receipt()["code"] == "handoff-store-unsafe"
+        finally:
+            os.chmod(home, 0o700)
+
+    def test_walk_accepts_world_writable_sticky_home_itself(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """The sole mode exemption is world-writable AND sticky (the /tmp 1777 shape) — a home
+        directory sitting on such a mount is accepted, mirroring the twin audit-store boundary."""
+        home = tmp_path / "fake-home"
+        home.mkdir()
+        monkeypatch.setenv("HOME", str(home))
+        os.chmod(home, 0o1777)
+        try:
+            OC._refuse_unsafe_handoff_ancestors(home)  # no raise: world-writable but sticky
         finally:
             os.chmod(home, 0o700)
 

@@ -296,18 +296,18 @@ def test_u5_release_rows_are_verified_with_current_evidence() -> None:
 
 
 def test_release_version_pins_are_coherent() -> None:
-    """Every surface pinning the saga release tells the same 0.79.0 story."""
+    """Every surface pinning the saga release tells the same 0.80.0 story."""
     manifest_version = json.loads(
         (ROOT / "plugins/saga/.codex-plugin/plugin.json").read_text(encoding="utf-8")
     )["version"]
-    assert manifest_version.split("+codex.")[0] == "0.79.0"
+    assert manifest_version.split("+codex.")[0] == "0.80.0"
     inventory = json.loads(
         (ROOT / "docs/validation/saga-family-target-inventory.json").read_text(encoding="utf-8")
     )
     saga_rows = [entry["version"] for entry in inventory["plugins"] if entry.get("name") == "saga"]
     assert saga_rows == [manifest_version]
     changelog = (ROOT / "plugins/saga/CHANGELOG.md").read_text(encoding="utf-8")
-    assert "## 0.79.0 - 2026-07-24" in changelog
+    assert "## 0.80.0 - 2026-07-26" in changelog
 
 
 def test_dispatcher_lease_seam_is_active_ktd8() -> None:

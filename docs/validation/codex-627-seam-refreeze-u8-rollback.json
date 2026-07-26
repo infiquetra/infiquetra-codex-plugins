@@ -1,0 +1,14 @@
+{
+ "default_profile_mutated": false,
+ "exit_code": 0,
+ "kind": "rollback",
+ "recorded_at": "2026-07-26T03:33:01Z",
+ "repo_head": "30a37c21750bf52111a3278dd6483f8b1c8bfd26",
+ "steps": [
+  "codex plugin list --json (isolated) -> saga present alongside 9 sibling family plugins, before removal",
+  "codex plugin remove saga@infiquetra-saga-family-proof --json (isolated CODEX_HOME) -> removed",
+  "codex plugin list --json (isolated) -> saga absent; the other nine family plugins untouched (targeted removal)",
+  "codex plugin list --json (default profile) -> unaffected; saga and the family plugins remain installed there"
+ ],
+ "unit": "U8"
+}

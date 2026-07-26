@@ -1,0 +1,19 @@
+{
+ "exit_code": 0,
+ "kind": "fresh-session",
+ "probe": "python -I (isolated interpreter: no site-packages, no user paths) reading ONLY the installed cache payload",
+ "recorded_at": "2026-07-26T03:33:01Z",
+ "repo_head": "30a37c21750bf52111a3278dd6483f8b1c8bfd26",
+ "results": {
+  "divergence_vs_frozen_claude_b464d090": [
+   "-RUNTIME_LABEL = \"claude\"",
+   "+RUNTIME_LABEL = \"codex\""
+  ],
+  "installed_outcome_compat_sha256": "a3c91bbe21c726e8f30dbb9b934d8e1a8ef3f9213793048a3915a5a0e3930ec4",
+  "matches_repo_copy": true,
+  "single_line_divergence": true
+ },
+ "run_id": "20260726T032219Z",
+ "schema_version": 1,
+ "unit": "U8"
+}

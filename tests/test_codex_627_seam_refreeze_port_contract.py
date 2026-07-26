@@ -130,17 +130,22 @@ def test_inventory_digest_recomputes_to_the_recorded_value() -> None:
 
 
 def test_every_source_row_is_classified_with_its_planned_unit() -> None:
+    """U1 leaves every row `classified`; U2/U3/U4 land the behavior and U6 (cutover) advances
+    each claimed row to `verified` with unit-tagged evidence per the plan's
+    classified -> implemented -> verified lifecycle. All five rows have landed and been
+    verified at cutover, so `verified` is the current expectation, not `classified`."""
     rows = {row["new_path"]: row for row in _manifest()["source"]["rows"]}
 
     assert set(rows) == set(EXPECTED_ROWS)
     for path, (treatment, units) in EXPECTED_ROWS.items():
         row = rows[path]
-        assert row["state"] == "classified", path
+        assert row["state"] == "verified", path
         assert row["treatment"] == treatment, path
         assert row["units"] == units, path
         assert row["rationale"].strip(), path
         assert row["planned_targets"], path
         assert row["planned_tests"], path
+        assert row["evidence_refs"], path
 
 
 def test_no_row_is_left_unclassified() -> None:
@@ -344,13 +349,23 @@ def test_defer_row_claiming_a_unit_fails_validation() -> None:
 
 
 def test_version_policy_records_both_moving_plugins_for_the_release_unit() -> None:
+    """`current_codex_version` records the pre-U6 baseline the policy was authored against;
+    once U6 lands the release surfaces, the live plugin.json carries the bumped
+    `target_codex_version` instead. Assert against `target_codex_version` post-cutover, and
+    keep `current_codex_version` pinned to the recorded pre-bump baseline so the policy still
+    tells its own before/after story."""
     policies = {row["target_codex_identity"]: row for row in _manifest()["version_policy"]}
 
     assert set(policies) == {"saga", "fleet-core"}
+    expected_baseline = {
+        "saga": "0.79.0+codex.20260724175626",
+        "fleet-core": "0.11.0+codex.20260724175626",
+    }
     for plugin, policy in policies.items():
         assert policy["release_unit"] == "U6", plugin
         assert policy["policy"] == "lineage-with-codex-adaptation", plugin
+        assert policy["current_codex_version"] == expected_baseline[plugin], plugin
         installed = json.loads(
             (ROOT / f"plugins/{plugin}/.codex-plugin/plugin.json").read_text(encoding="utf-8")
         )["version"]
-        assert policy["current_codex_version"] == installed, plugin
+        assert policy["target_codex_version"] == installed.split("+codex.")[0], plugin

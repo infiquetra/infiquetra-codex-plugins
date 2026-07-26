@@ -1,7 +1,7 @@
 # Saga Family Codex Proof
 
-Generated: 2026-07-20T04:04:11.394241+00:00
-Run id: `20260720T040411Z`
+Generated: 2026-07-26T03:22:19.138327+00:00
+Run id: `20260726T032219Z`
 
 ## Scope
 
@@ -35,8 +35,8 @@ Required Saga namespace skills resolved to the Saga plugin:
   `true`, mutation plan present
   `true`, confirmation refused
   `true`
-- Verified Workflows static degradation probe: outcome
-  `inline-only`, runtime proof
+- Verified Workflows static V2 capability probe: outcome
+  `diagnostic`, runtime proof
   `false`; root acceptance remains required.
 
 ## State And Redaction

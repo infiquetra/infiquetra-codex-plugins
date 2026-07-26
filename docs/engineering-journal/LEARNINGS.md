@@ -281,3 +281,38 @@ as canonical retained them. Whole-repo `context_census.py` exits 0; 158 mission-
 Generalizable rule: when mirroring a fix into a vendored/ported copy, mirror the **routing semantics**
 (constants, dispatch targets, defaults), not the file diff — and do not regress intentional
 divergences that carry their own guard tests.
+
+## 2026-07-26: Version-Drift Guards Live in More Places Than the Plugin Manifest, and a Green Suite Can Still Hide a Stale Assertion Against Removed Behavior
+
+**Evidence:** codex#45 U6 (PR pending, this session). Bumping `saga` 0.79.0→0.80.0 and
+`fleet-core` 0.11.0→0.12.0 required edits in seven live-tree files beyond the two
+`.codex-plugin/plugin.json` manifests: `scripts/validate_codex_plugins.py`'s
+`TARGET_EXPECTED_PLUGINS` dict (a hand-maintained version fixture, not derived from the
+manifests), `docs/validation/saga-family-target-inventory.json` (also hand-maintained — no
+generator script owns it), `README.md`'s plugin table, `docs/saga/generated/lifecycle-facts.json`
+(this one DOES have a generator, `scripts/build_saga_docs_facts.py` — run it instead of
+hand-editing), `docs/validation/verified-workflows-legacy-token-inventory.json` (a sha256-per-file
+content-digest inventory that drifts whenever ANY file containing a tracked legacy token changes
+byte-for-byte, including a CHANGELOG entry or a version string), and two hardcoded version-string
+assertions inside `tests/test_codex_627_seam_refreeze_port_contract.py` and
+`tests/test_outcome_cross_runtime_parity_port_contract.py` that were written against the
+pre-cutover baseline and needed updating to the new version, not just left to fail.
+
+**Mechanism:** none of these six drift points get updated by bumping the two plugin.json files.
+`scripts/validate_codex_plugins.py::validate_repository` walks the **filesystem**
+(`root.rglob("*")`), not just git-tracked paths, for the legacy-token inventory — so an untracked
+stray file anywhere outside the excluded top-level set (`.claude/` is NOT excluded; only `.codex/`
+is) shows up as a permanent, pre-existing "unclassified legacy workflow token path" error that no
+amount of correct release-surface work can clear without touching repo hygiene explicitly ruled
+out of scope. Confirmed via `git stash` that this exact error pre-dates the U6 diff.
+
+**Generalizable rule:** before calling a version bump complete, `grep -rn "<old version string>"`
+the whole tree (not just the plugin manifests) and re-run every generator script that owns a
+derived doc (`build_saga_docs_facts.py`, `build_legacy_workflow_inventory.py --write` when the
+untracked-file gap doesn't block it) rather than hand-patching generated JSON. Also: `--stage
+unit` and `--stage classification` gates on a port-contract test file can go stale exactly the way
+production code does — a test asserting `state == "classified"` was correct when U1 wrote it and
+became a false assertion the moment U2–U5 landed, but nothing forced it to update because no gate
+re-runs those assertions against the current manifest until the SAME test file is executed at
+cutover. A green suite between units is not proof the fixed assertions in that suite still match
+the state the units are supposed to reach.
