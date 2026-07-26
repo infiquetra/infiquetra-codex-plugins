@@ -172,9 +172,10 @@ def test_every_planned_target_exists_in_the_codex_tree() -> None:
 
 
 def test_planned_artifacts_not_yet_written_resolve_to_a_real_codex_directory() -> None:
-    """The modules U2, U4, and U5 create do not exist yet, so `is_file` cannot guard them. Their
-    parent directory still must be a real Codex test root -- naming `tests/` where this repo uses
-    `plugins/saga/tests/` (or vice versa) is the same wrong-tree mistake KTD6 warns about."""
+    """U2 has landed (`plugins/saga/tests/test_outcome_compat.py` now exists); the modules U4 and
+    U5 still create do not exist yet, so `is_file` cannot guard them. Their parent directory still
+    must be a real Codex test root -- naming `tests/` where this repo uses `plugins/saga/tests/`
+    (or vice versa) is the same wrong-tree mistake KTD6 warns about."""
     planned = {
         artifact
         for manifest in (_manifest(), _predecessor())
@@ -184,7 +185,6 @@ def test_planned_artifacts_not_yet_written_resolve_to_a_real_codex_directory() -
     pending = sorted(artifact for artifact in planned if not (ROOT / artifact).is_file())
 
     assert pending == [
-        "plugins/saga/tests/test_outcome_compat.py",
         "plugins/saga/tests/test_outcome_dispatcher.py",
         "plugins/saga/tests/test_outcome_worktrees.py",
     ]
