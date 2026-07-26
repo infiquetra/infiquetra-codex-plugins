@@ -22,6 +22,10 @@ SCRIPTS = ROOT / "plugins" / "saga" / "scripts"
 TEAM_REF = "docs/plans/x.md#workflow-structure"
 
 
+# Every script this module loads, kept so ``_pin_script_modules`` can re-pin them per test.
+_LOADED: dict[str, ModuleType] = {}
+
+
 def _load(name: str) -> ModuleType:
     if str(SCRIPTS) not in sys.path:
         sys.path.insert(0, str(SCRIPTS))
@@ -30,7 +34,24 @@ def _load(name: str) -> ModuleType:
     module = importlib.util.module_from_spec(spec)
     sys.modules[name] = module
     spec.loader.exec_module(module)
+    _LOADED[name] = module
     return module
+
+
+@pytest.fixture(autouse=True)
+def _pin_script_modules(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Re-pin ``sys.modules`` to THIS module's script instances for each of its tests.
+
+    These scripts are executed by file path under bare module names, so another test module
+    loading the same scripts rebinds ``sys.modules`` to a second generation while this
+    module's captured globals keep pointing at the first.  A lazy sibling import inside a
+    script would then resolve to the other generation, ``monkeypatch.setattr(MOD, ...)``
+    would patch an orphan, and pytest's COLLECTION ORDER would silently decide the result.
+    ``setitem`` restores the previous binding on teardown, so the per-file isolation that
+    these modules already rely on is preserved -- this pins identity, it does not share it.
+    """
+    for _name, _module in _LOADED.items():
+        monkeypatch.setitem(sys.modules, _name, _module)
 
 
 D = _load("outcome_dispatcher")
@@ -372,11 +393,14 @@ def test_halt_does_not_starve_other_runnable_leaves(repo: Path) -> None:
 
 
 def test_advance_records_lease_refusal_as_halt_and_continues(repo: Path) -> None:
-    # A DispatcherError mid-tick (lease admission refusal / renew failure — the cross-runtime
-    # conflict signal the activated seam raises) must take the backend-HALT recovery posture: the
-    # other runnable leaf still dispatches, the refusal lands durably as a (dispatch, halt) ledger
-    # record the reducer derives as halted — never an acknowledgement, which would settle the leaf
-    # as permanently done — and the per-subplot lock releases rather than leaking until TTL.
+    # A DispatcherLeaseTransientError mid-tick (lease admission refusal / renew failure — the
+    # cross-runtime conflict signal the activated seam raises) must take the backend-HALT recovery
+    # posture: the other runnable leaf still dispatches, the refusal lands durably as a
+    # (dispatch, halt) ledger record the reducer derives as halted — never an acknowledgement,
+    # which would settle the leaf as permanently done — and the per-subplot lock releases rather
+    # than leaking until TTL. Since codex#45 U4, only the typed transient subclass takes this
+    # posture: a bare (non-transient) DispatcherError instead aborts the tick loudly per R7, so
+    # this fixture raises the typed error to keep exercising the halt-and-continue path.
     _write_team_ref(repo)
     OUTCOME.start(
         repo,
@@ -396,7 +420,7 @@ def test_advance_records_lease_refusal_as_halt_and_continues(repo: Path) -> None
     def refusing(req: Any) -> dict[str, str]:
         if req.subplot_id == "a":
             return _launch_ack(req)
-        raise D.DispatcherError("lease admission refused: leaf held by another runtime")
+        raise D.DispatcherLeaseTransientError("lease admission refused: leaf held by another runtime")
 
     result = OUTCOME.advance(repo, "ship-x", dispatcher=refusing)
     assert result.dispatched == ["a"]

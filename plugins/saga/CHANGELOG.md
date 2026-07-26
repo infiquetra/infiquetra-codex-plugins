@@ -1,5 +1,54 @@
 # Changelog
 
+## 0.80.0 - 2026-07-26
+
+### Changed
+
+- Re-freeze `outcome_compat.py` to Claude `b464d090` bytes (`RUNTIME_LABEL = "codex"` is the sole
+  permitted divergence), restoring the `contract_digests` / `port-digest` cross-runtime acceptance
+  leg that has halted by design since `infiquetra-claude-plugins#627` merged.
+- Mirror the reconcile hot-path ordering into `_reconcile_once` (`outcome.py`): a non-transient
+  `DispatcherError` now re-raises at the head of the arm before any further lease release or
+  ledger write, and the transient path releases the per-subplot lock and appends a
+  reducer-visible `(dispatch, halt)` record.
+
+### Added
+
+- `DispatcherLeaseTransientError(DispatcherError)` in `outcome_dispatcher.py`, classified through a
+  shim-safe `_lease_conflict_error_type()` that declines to transient when the shim fails to load.
+- Port the worktree lease-authority subsystem into `outcome_worktrees.py` (COR3): the authority
+  error type, the reap preflight, the lease binding, and the authority-carrying `reap_worktree` /
+  `harvest_worktrees` signatures, wired at the `production_worktree_processor` seam and consumed
+  end to end by `main()`'s `advance` and `prune` wiring.
+- New test modules `plugins/saga/tests/test_outcome_compat.py`,
+  `plugins/saga/tests/test_outcome_dispatcher.py`, and `plugins/saga/tests/test_outcome_worktrees.py`,
+  and additions to `test_outcome_reconcile.py`, covering the re-frozen and ported surfaces
+  (infiquetra-codex-plugins#45, U2/U4/U5). Only the COR3 worktree-authority port carries a
+  recorded red-first replay (`docs/validation/lease-safe-substrate-u6.json`: 20 failed / 3 passed
+  pre-port → 23 passed post-port, `replayed_with_final_test_file: true`); the U2 and U4 artifacts
+  record post-port results only, so red-first is claimed for that unit alone.
+- `_pin_script_modules`, an autouse fixture in every outcome-family test module, re-pins
+  `sys.modules` to that module's own script instances for the duration of each of its tests.
+  These scripts are executed by file path under bare module names, so a second test module
+  loading the same scripts used to rebind `sys.modules` while the first module's captured globals
+  kept pointing at the previous generation — `monkeypatch.setattr` then patched an orphan and
+  pytest's collection ORDER silently decided whether a test passed.
+- `test_non_transient_abort_releases_the_coordinator_lock` pins R7a's third claim: a permanent
+  `DispatcherError` aborts the tick loudly *without* wedging the coordinator lease, so the next
+  tick under a different holder still runs. The other R7a tests call `_reconcile_once` directly
+  and never enter `advance()`, so the outer `finally` that releases the lease was unpinned.
+
+### Deferred
+
+- **R7b(c) "settle the attempt" is NOT implemented in this release.** The transient path releases
+  the lock and makes the halt reducer-visible, but it does not settle the dispatch attempt:
+  `outcome.py` carries no `dispatch_settlement` binding (three settlement-family references, all
+  inside an unrelated `_settled_lookup`, against 67 in Claude `b464d090` — including the
+  `settle_attempt(... SILENT_NOOP)` call at `:1708` this port omits). Recorded as an explicit
+  named deferral so a later re-freeze chaining off
+  `docs/portability/ports/2026-07-25-codex-627-seam-refreeze.json` does not treat
+  settle-on-transient as already landed.
+
 ## 0.79.0 - 2026-07-24
 
 ### Added

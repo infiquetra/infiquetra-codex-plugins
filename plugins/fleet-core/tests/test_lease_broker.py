@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import inspect
 import json
 import multiprocessing
 import os
@@ -1430,3 +1431,325 @@ def test_batch_reservation_contention_is_all_or_nothing_across_processes(tmp_pat
         assert process.exitcode == 0
     assert sorted(results) == [("granted", 2), ("refused", 0)]
     assert len(B.LeaseBroker(authority).inspect()["leases"]) == 2
+
+
+# --- refuse-mode admission (#627 R5 / #637 liveness probe), ported from Claude b464d090 ---
+
+
+def _refuse_acquire(
+    broker: Any,
+    *,
+    owner: str,
+    resource: str,
+    limits: Any | None = None,
+    ttl: int = 300,
+    owner_pid: int | None = None,
+    owner_process_start: str | None = None,
+) -> Any:
+    effective = _limits() if limits is None else limits
+    return broker.acquire_agent(
+        owner_id=owner,
+        session_id="session",
+        policy_sha256=effective.policy_sha256(),
+        session_limit=effective.max_concurrent,
+        aggregate_limit=effective.aggregate_max_concurrent,
+        mutation="none",
+        ttl_seconds=ttl,
+        resource_ref={"logical_unit_id": resource},
+        agent_type="worker",
+        owner_pid=owner_pid,
+        owner_process_start=owner_process_start,
+        on_conflict="refuse",
+    )
+
+
+def test_refuse_mode_rejects_live_prior_and_leaves_registry_untouched(
+    tmp_path: Path, runtime: FakeRuntime
+) -> None:
+    # Two brokers over one state dir model the cross-runtime dispatch seam (#627 R1/R2). A holds a
+    # live lease on the shared digest; B's refuse-mode acquire must fail closed without mutating
+    # A's authority -- no supersede, no registry byte change.
+    root = tmp_path / "authority"
+    broker_a = B.LeaseBroker(root, providers=runtime.providers())
+    broker_b = B.LeaseBroker(root, providers=runtime.providers())
+    runtime.processes[4242] = (True, "start-4242")
+    held = _refuse_acquire(broker_a, owner="runtime-a", resource="shared-leaf", owner_pid=4242)
+    before = broker_a.registry_path.read_bytes()
+
+    with pytest.raises(B.LeaseConflictError, match="runtime-a") as exc:
+        _refuse_acquire(broker_b, owner="runtime-b", resource="shared-leaf")
+
+    assert isinstance(exc.value, B.LeaseOwnershipError)  # broad handlers still catch it
+    assert exc.value.holder_owner_id == "runtime-a"
+    assert broker_a.registry_path.read_bytes() == before  # zero-mutation on refusal
+    assert broker_a.verify(held.resource_ref, held.token).lease_id == held.lease_id
+
+
+def test_refuse_mode_refuses_unknown_owner_pid_none(tmp_path: Path, runtime: FakeRuntime) -> None:
+    # No owner_pid recorded -> _owner_state is "unknown" -> fail-closed refuse (R2). Only proof of
+    # death admits; the absence of liveness evidence is never treated as death.
+    root = tmp_path / "authority"
+    broker_a = B.LeaseBroker(root, providers=runtime.providers())
+    broker_b = B.LeaseBroker(root, providers=runtime.providers())
+    _refuse_acquire(broker_a, owner="runtime-a", resource="shared-leaf")  # owner_pid=None default
+    before = broker_a.registry_path.read_bytes()
+
+    with pytest.raises(B.LeaseConflictError, match="runtime-a") as exc:
+        _refuse_acquire(broker_b, owner="runtime-b", resource="shared-leaf")
+
+    assert exc.value.holder_owner_id == "runtime-a"
+    assert broker_a.registry_path.read_bytes() == before
+
+
+def test_refuse_mode_refuses_unreadable_owner_identity(
+    tmp_path: Path, runtime: FakeRuntime
+) -> None:
+    # pid still alive but its process-start identity is now unreadable -> "unknown" -> refuse (R2).
+    root = tmp_path / "authority"
+    broker_a = B.LeaseBroker(root, providers=runtime.providers())
+    broker_b = B.LeaseBroker(root, providers=runtime.providers())
+    runtime.processes[4242] = (True, "start-4242")
+    _refuse_acquire(broker_a, owner="runtime-a", resource="shared-leaf", owner_pid=4242)
+    runtime.processes[4242] = (True, None)  # alive, but identity unreadable
+    before = broker_a.registry_path.read_bytes()
+
+    with pytest.raises(B.LeaseConflictError, match="runtime-a"):
+        _refuse_acquire(broker_b, owner="runtime-b", resource="shared-leaf")
+
+    assert broker_a.registry_path.read_bytes() == before
+
+
+def test_refuse_mode_refuses_same_owner_when_live(tmp_path: Path, runtime: FakeRuntime) -> None:
+    # R3 / #627 KTD1: cross-runtime exclusion is the point -- a live holder refuses even when the
+    # requester's owner_id matches (owner_id is deterministic per leaf, so this is the common case).
+    root = tmp_path / "authority"
+    broker_a = B.LeaseBroker(root, providers=runtime.providers())
+    broker_b = B.LeaseBroker(root, providers=runtime.providers())
+    runtime.processes[4242] = (True, "start-4242")
+    _refuse_acquire(broker_a, owner="runtime-a", resource="shared-leaf", owner_pid=4242)
+
+    with pytest.raises(B.LeaseConflictError, match="runtime-a"):
+        _refuse_acquire(broker_b, owner="runtime-a", resource="shared-leaf")
+
+
+def test_refuse_mode_admits_crash_orphan_without_ttl_wait(
+    tmp_path: Path, runtime: FakeRuntime
+) -> None:
+    # A SIGKILL skips the finally-release, so the orphaned lease is still unexpired (no TTL elapsed).
+    # #637: refuse mode probes owner liveness -- a provably dead pid admits re-dispatch of the same
+    # leaf immediately, matching supersede-mode behavior, instead of self-refusing for the full TTL.
+    root = tmp_path / "authority"
+    broker_a = B.LeaseBroker(root, providers=runtime.providers())
+    broker_b = B.LeaseBroker(root, providers=runtime.providers())
+    runtime.processes[4242] = (True, "start-4242")
+    held = _refuse_acquire(broker_a, owner="runtime-a", resource="shared-leaf", owner_pid=4242)
+    runtime.processes[4242] = (False, None)  # holder crashed; pid gone, no time advanced
+
+    reclaimed = _refuse_acquire(broker_b, owner="runtime-b", resource="shared-leaf")
+
+    assert broker_b.verify(reclaimed.resource_ref, reclaimed.token).lease_id == reclaimed.lease_id
+    assert len(broker_b.inspect()["leases"]) == 1  # dead prior superseded, not accumulated
+    assert broker_b.classify_token(held.resource_ref, held.token) == "superseded"
+
+
+@pytest.mark.parametrize("death_shape", ["crash-orphan", "stale-boot-id", "reused-pid"])
+def test_refuse_mode_admits_every_death_shape_without_ttl_wait(
+    tmp_path: Path, runtime: FakeRuntime, death_shape: str
+) -> None:
+    # All three shapes _owner_state calls dead must supersede with zero TTL elapsed: the pid is
+    # gone, the machine rebooted, or the pid was recycled onto a different process start.
+    root = tmp_path / "authority"
+    broker_a = B.LeaseBroker(root, providers=runtime.providers())
+    broker_b = B.LeaseBroker(root, providers=runtime.providers())
+    runtime.processes[4242] = (True, "start-4242")
+    _refuse_acquire(broker_a, owner="runtime-a", resource="shared-leaf", owner_pid=4242)
+    if death_shape == "crash-orphan":
+        runtime.processes[4242] = (False, None)
+    elif death_shape == "stale-boot-id":
+        runtime.boot = "boot-b"
+    else:
+        runtime.processes[4242] = (True, "start-9999")  # pid recycled onto another process
+
+    reclaimed = _refuse_acquire(broker_b, owner="runtime-b", resource="shared-leaf")
+
+    assert broker_b.verify(reclaimed.resource_ref, reclaimed.token).lease_id == reclaimed.lease_id
+    assert len(broker_b.inspect()["leases"]) == 1
+
+
+def test_refuse_mode_reclaims_expired_prior(tmp_path: Path, runtime: FakeRuntime) -> None:
+    # An expired prior is not a live conflict -- the TTL + boot-id check precedes the liveness probe,
+    # so refuse mode reclaims exactly as supersede does (R1). This is the arm a one-part reading of
+    # the guard (only _owner_state) silently drops: the owner pid here is provably LIVE.
+    root = tmp_path / "authority"
+    broker_a = B.LeaseBroker(root, providers=runtime.providers())
+    broker_b = B.LeaseBroker(root, providers=runtime.providers())
+    runtime.processes[4242] = (True, "start-4242")
+    _refuse_acquire(broker_a, owner="runtime-a", resource="shared-leaf", ttl=60, owner_pid=4242)
+    runtime.advance(120)  # past the prior lease TTL -> _expired is True while the owner still lives
+
+    reclaimed = _refuse_acquire(broker_b, owner="runtime-b", resource="shared-leaf")
+
+    assert broker_b.verify(reclaimed.resource_ref, reclaimed.token).lease_id == reclaimed.lease_id
+    assert len(broker_b.inspect()["leases"]) == 1
+
+
+def test_refuse_mode_supersedes_when_fence_survives_but_lease_is_absent(
+    tmp_path: Path, runtime: FakeRuntime
+) -> None:
+    # prior_lease is None: the released lease left its fence behind with no close receipt. There is
+    # no holder to protect, so refuse mode falls through to supersede rather than refusing.
+    root = tmp_path / "authority"
+    broker_a = B.LeaseBroker(root, providers=runtime.providers())
+    broker_b = B.LeaseBroker(root, providers=runtime.providers())
+    held = _refuse_acquire(broker_a, owner="runtime-a", resource="shared-leaf")
+    assert broker_a.release(held.lease_id, token=held.token) is True
+    digest = B.resource_sha256(held.resource_ref)
+    fences = broker_a.inspect()["resource_fences"]
+    assert digest in fences and fences[digest]["close_receipt"] is None
+    assert not broker_a.inspect()["leases"]
+
+    reclaimed = _refuse_acquire(broker_b, owner="runtime-b", resource="shared-leaf")
+
+    assert broker_b.verify(reclaimed.resource_ref, reclaimed.token).lease_id == reclaimed.lease_id
+
+
+def test_refuse_mode_stays_below_the_retained_settlement_precedence(
+    tmp_path: Path, runtime: FakeRuntime
+) -> None:
+    # R5b precedence: a retained settlement raises LeaseOwnershipError -- NOT LeaseConflictError --
+    # even under refuse mode against a live holder. The settlement gate must keep firing first.
+    root = tmp_path / "authority"
+    broker_a = B.LeaseBroker(root, providers=runtime.providers())
+    broker_b = B.LeaseBroker(root, providers=runtime.providers())
+    runtime.processes[4242] = (True, "start-4242")
+    held = _refuse_acquire(broker_a, owner="runtime-a", resource="shared-leaf", owner_pid=4242)
+    broker_a.prepare_agent_settlement(
+        held.lease_id,
+        owner_id=held.owner_id,
+        token=held.token,
+        producer="saga",
+        run_id="refuse-precedence",
+        expected_output_sha256="b" * 64,
+        protected_write_intent_sha256="c" * 64,
+    )
+
+    with pytest.raises(B.LeaseOwnershipError, match="retained settlement authority") as exc:
+        _refuse_acquire(broker_b, owner="runtime-b", resource="shared-leaf")
+
+    assert not isinstance(exc.value, B.LeaseConflictError)
+
+
+def test_refuse_mode_stays_below_the_canonically_closed_precedence(
+    tmp_path: Path, runtime: FakeRuntime
+) -> None:
+    # R5b precedence: a canonically closed resource whose lease is gone from the registry demands
+    # acquire_successor with the predecessor receipt, ahead of any refuse-branch evaluation.
+    root = tmp_path / "authority"
+    broker_a = B.LeaseBroker(root, providers=runtime.providers())
+    broker_b = B.LeaseBroker(root, providers=runtime.providers())
+    held = _refuse_acquire(broker_a, owner="runtime-a", resource="shared-leaf")
+    settlement = broker_a.prepare_agent_settlement(
+        held.lease_id,
+        owner_id=held.owner_id,
+        token=held.token,
+        producer="saga",
+        run_id="closed-precedence",
+        expected_output_sha256="b" * 64,
+        protected_write_intent_sha256="c" * 64,
+    )
+    broker_a.commit_agent_settlement(
+        settlement.settlement_id,
+        owner_id=held.owner_id,
+        token=held.token,
+        write=lambda _lease: ["evidence"],
+    )
+
+    with pytest.raises(B.LeaseOwnershipError, match="acquire_successor") as exc:
+        _refuse_acquire(broker_b, owner="runtime-b", resource="shared-leaf")
+
+    assert not isinstance(exc.value, B.LeaseConflictError)
+
+
+def test_default_mode_still_supersedes_a_live_prior(tmp_path: Path, runtime: FakeRuntime) -> None:
+    # Characterization: untouched callers pass no on_conflict and keep the #356 retry-supersede
+    # design, including against a provably live holder. Must pass before AND after the port.
+    root = tmp_path / "authority"
+    broker_a = B.LeaseBroker(root, providers=runtime.providers())
+    broker_b = B.LeaseBroker(root, providers=runtime.providers())
+    runtime.processes[4242] = (True, "start-4242")
+    held = broker_a.acquire_agent(
+        owner_id="runtime-a",
+        session_id="session",
+        policy_sha256=_limits().policy_sha256(),
+        session_limit=_limits().max_concurrent,
+        aggregate_limit=_limits().aggregate_max_concurrent,
+        mutation="none",
+        resource_ref={"logical_unit_id": "shared-leaf"},
+        agent_type="worker",
+        owner_pid=4242,
+    )
+
+    superseding = broker_b.acquire_agent(
+        owner_id="runtime-b",
+        session_id="session",
+        policy_sha256=_limits().policy_sha256(),
+        session_limit=_limits().max_concurrent,
+        aggregate_limit=_limits().aggregate_max_concurrent,
+        mutation="none",
+        resource_ref={"logical_unit_id": "shared-leaf"},
+        agent_type="worker",
+    )
+
+    assert broker_b.classify_token(held.resource_ref, held.token) == "superseded"
+    assert broker_b.verify(superseding.resource_ref, superseding.token).lease_id
+    assert len(broker_b.inspect()["leases"]) == 1
+
+
+def test_explicit_supersede_matches_the_default_and_is_the_declared_default(
+    tmp_path: Path, runtime: FakeRuntime
+) -> None:
+    # The parameter's default is "supersede", so every existing call site needs no edit, and passing
+    # it explicitly reproduces the default path byte-for-byte in behavior.
+    assert (
+        inspect.signature(B.LeaseBroker.acquire_agent).parameters["on_conflict"].default
+        == "supersede"
+    )
+    root = tmp_path / "authority"
+    broker_a = B.LeaseBroker(root, providers=runtime.providers())
+    broker_b = B.LeaseBroker(root, providers=runtime.providers())
+    runtime.processes[4242] = (True, "start-4242")
+    held = _refuse_acquire(broker_a, owner="runtime-a", resource="shared-leaf", owner_pid=4242)
+
+    superseding = broker_b.acquire_agent(
+        owner_id="runtime-b",
+        session_id="session",
+        policy_sha256=_limits().policy_sha256(),
+        session_limit=_limits().max_concurrent,
+        aggregate_limit=_limits().aggregate_max_concurrent,
+        mutation="none",
+        resource_ref={"logical_unit_id": "shared-leaf"},
+        agent_type="worker",
+        on_conflict="supersede",
+    )
+
+    assert broker_b.classify_token(held.resource_ref, held.token) == "superseded"
+    assert broker_b.verify(superseding.resource_ref, superseding.token).lease_id
+    assert len(broker_b.inspect()["leases"]) == 1
+
+
+@pytest.mark.parametrize("value", ["explode", "", None, "Refuse", "SUPERSEDE"])
+def test_acquire_agent_rejects_unknown_on_conflict(broker: Any, value: Any) -> None:
+    # Closed-value check at the public boundary. None and "" must be rejected too: admitting either
+    # would fail OPEN into supersede, the worst direction on a fail-closed admission path.
+    with pytest.raises(B.LeaseBrokerError, match="on_conflict"):
+        broker.acquire_agent(
+            owner_id="owner",
+            session_id="session",
+            policy_sha256=_limits().policy_sha256(),
+            session_limit=_limits().max_concurrent,
+            aggregate_limit=_limits().aggregate_max_concurrent,
+            mutation="none",
+            resource_ref={"logical_unit_id": "x"},
+            agent_type="worker",
+            on_conflict=value,  # type: ignore[arg-type]
+        )

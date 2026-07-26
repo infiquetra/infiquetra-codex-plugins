@@ -88,9 +88,10 @@ def test_default_root_is_runtime_neutral_local_state(
 ) -> None:
     store = audit_store.Store.for_root(None)
 
-    assert store.root == (
-        Path.home() / ".local" / "state" / "infiquetra" / "delegation-audit"
-    ).resolve()
+    assert (
+        store.root
+        == (Path.home() / ".local" / "state" / "infiquetra" / "delegation-audit").resolve()
+    )
     assert ".claude" not in str(store.root)
     assert ".codex" not in str(store.root)
 
@@ -205,17 +206,81 @@ def test_ensure_private_dir_refuses_world_writable_ancestor_below_home(
     assert not (loose / "audit").exists()
 
 
-def test_ensure_private_dir_exempts_paths_outside_home(
+def test_ensure_private_dir_refuses_world_writable_non_sticky_ancestor_outside_home(
     audit_store: ModuleType, tmp_path: Path
 ) -> None:
-    """Scope guard, not a change detector: pins that the refusal did NOT over-reach — out-of-home
-    roots (system temp style) keep working under loose ancestors."""
+    """R3/KTD2: the pre-port guard exempted everything outside home outright (the
+    `is_relative_to(home)` early return), so a loose world-writable ancestor out there was
+    silently accepted. Post-port there is no scope exemption left -- only the sticky bit
+    (S_ISVTX) exempts a world-writable component, wherever it sits."""
     outside = tmp_path / "outside-home"  # tmp_path is not under the monkeypatched home
     outside.mkdir()
     os.chmod(outside, 0o777)
     target = outside / "audit"
+    with pytest.raises(audit_store.AuditStoreError, match="world-writable"):
+        audit_store._ensure_private_dir(target)
+    assert not target.exists()
+
+
+def test_ensure_private_dir_refuses_symlinked_ancestor_outside_home(
+    audit_store: ModuleType, tmp_path: Path
+) -> None:
+    """R3: the walk has no home-scope exemption -- a symlinked component outside home, which the
+    pre-port guard never even inspected, is refused exactly like one below home."""
+    outside = tmp_path / "outside-home"
+    real = outside / "real-target"
+    real.mkdir(parents=True, mode=0o700)
+    link = outside / "link"
+    link.symlink_to(real)
+    with pytest.raises(audit_store.AuditStoreError, match="symlink"):
+        audit_store._ensure_private_dir(link / "audit")
+    assert list(real.iterdir()) == []  # nothing was created through the link
+
+
+def test_ensure_private_dir_accepts_world_writable_sticky_ancestor_outside_home(
+    audit_store: ModuleType, tmp_path: Path
+) -> None:
+    """Characterization, must pass before and after: the `/tmp` 1777 shape (world-writable AND
+    sticky) outside home is the intended exemption, not a regression. Pre-port it passed because
+    the walk never ran outside home at all; post-port it passes because S_ISVTX is explicitly
+    exempted."""
+    outside = tmp_path / "outside-home"
+    sticky = outside / "tmp-shape"
+    sticky.mkdir(parents=True)
+    os.chmod(sticky, 0o777)
+    os.chmod(sticky, stat.S_IMODE(sticky.stat().st_mode) | stat.S_ISVTX)
+    target = sticky / "audit"
     audit_store._ensure_private_dir(target)
     assert stat.S_IMODE(target.lstat().st_mode) == 0o700
+
+
+def test_ensure_private_dir_accepts_group_writable_ancestor_outside_home(
+    audit_store: ModuleType, tmp_path: Path
+) -> None:
+    """The guard's scope is world-writable, not group-writable (#624) -- unaffected by R3 and
+    unaffected by home scope. Extends the below-home pin to the newly-universal outside-home
+    case."""
+    outside = tmp_path / "outside-home"
+    shared = outside / "shared"
+    shared.mkdir(parents=True)
+    os.chmod(shared, 0o770)
+    target = shared / "audit"
+    audit_store._ensure_private_dir(target)
+    assert stat.S_IMODE(target.lstat().st_mode) == 0o700
+
+
+def test_ensure_private_dir_creates_fresh_outside_home_path(
+    audit_store: ModuleType, tmp_path: Path
+) -> None:
+    """FileNotFoundError short-circuits cleanly outside home too: pre-port this path never
+    reached the walk (home-scope exemption); post-port it reaches the walk and the first missing
+    component's FileNotFoundError still short-circuits to a clean 0o700 create."""
+    outside = tmp_path / "outside-home"
+    outside.mkdir()
+    target = outside / "fresh" / "audit"
+    audit_store._ensure_private_dir(target)
+    for directory in (target, target.parent):
+        assert stat.S_IMODE(directory.lstat().st_mode) == 0o700
 
 
 def test_ensure_private_dir_creates_fresh_below_home_path(

@@ -12,7 +12,7 @@
     {
       "classification": "migration-documentation",
       "path": "README.md",
-      "sha256": "c0897d36e4fa930964daec2f986f7e2edc100fe89bf6b1d3e878792fc19892d1",
+      "sha256": "5a62029908c3b0bf7e5baf8344554107aeeae2057793c81a1ceac1d095ed4325",
       "tokens": [
         "Team Execution"
       ]
@@ -82,7 +82,7 @@
     {
       "classification": "historical-evidence",
       "path": "docs/engineering-journal/DECISIONS.md",
-      "sha256": "787adb2665e5834761880cdc0aabb93c0213a203c802e356149c74047ed00975",
+      "sha256": "7013c66cc4774bcda84d541f6678ed974cab40a0125a65aef4d5826ca11de70b",
       "tokens": [
         "## Team Structure",
         "Team Execution",
@@ -575,7 +575,7 @@
     {
       "classification": "migration-documentation",
       "path": "docs/validation/saga-family-codex-proof.md",
-      "sha256": "ed597979ea7f795e70c2e7d80626d3da9c0fac798deb7f92b3b7040b13581d7c",
+      "sha256": "0a999ce63d36192011613e318f37373d0f9ea2d9a6ade136a0b63fb806af3c2d",
       "tokens": [
         ".codex/team-execution/",
         "team-execution"
@@ -584,7 +584,7 @@
     {
       "classification": "legacy-read-metadata",
       "path": "docs/validation/saga-family-target-inventory.json",
-      "sha256": "9f88a06bfe9a3dc1dfc66e48fdc3bd316c7a249e1a1b07f22c65d61a9f275512",
+      "sha256": "307abbde07746c9e48a946c1ef51db2fe9a013e6d9b23578d9df95d1751f2f31",
       "tokens": [
         ".codex/team-execution/",
         "team-execution"
@@ -685,7 +685,7 @@
     {
       "classification": "lineage-documentation",
       "path": "plugins/fleet-core/CHANGELOG.md",
-      "sha256": "c9d717a9ade9426dba23570c34ca341de8c8c9e35415760500d2325972a5c966",
+      "sha256": "cd2d60e6f47d86e8b35733548c7249ef16a8c9e0bfdcbff7ee724dce9d525571",
       "tokens": [
         "Team Execution"
       ]
@@ -718,7 +718,7 @@
     {
       "classification": "frozen-source-contract",
       "path": "plugins/fleet-core/scripts/fleet_commons/audit_store.py",
-      "sha256": "7d40eb93c8e4853fcbce81fa86c85db27ef5e72dc7f5d426b5d4c6dd19b737d1",
+      "sha256": "b0957a33044eee0257cf42c56a5fdf6a53140afdb8f25189d89548524ccb53dd",
       "tokens": [
         "team-execution"
       ]
@@ -726,7 +726,7 @@
     {
       "classification": "frozen-source-contract",
       "path": "plugins/fleet-core/scripts/fleet_commons/lease_broker.py",
-      "sha256": "55112f23c1d122805392ae611be19e010ace582f3295f001de8532072c93e3ec",
+      "sha256": "6e4a7c45a503b440ffeadcd0efe3294eac1e7a44ce5dbd3a8bd1cdf7d8e5372b",
       "tokens": [
         "team-execution"
       ]
@@ -801,7 +801,7 @@
     {
       "classification": "lineage-documentation",
       "path": "plugins/saga/CHANGELOG.md",
-      "sha256": "3d9ff03f1b0c2ed0ad0d17e3086defa3084343ea3b61bd9a85c3a3ccec5071ef",
+      "sha256": "69e6201d61a4af97f9a47270137348cd42b93134c2d28744fa1c46d34b33b476",
       "tokens": [
         "Team Execution",
         "team-execution"
@@ -868,7 +868,7 @@
     {
       "classification": "legacy-parser",
       "path": "plugins/saga/scripts/outcome.py",
-      "sha256": "d05e7b7f733fa9012ff18756dfe85d74fbde7b28e6e1bd1dfde9a762d1d90de8",
+      "sha256": "eab7a156b2c82a433a0d49c0cb43bedd6b602aeeb1c18a3b1d219af380c7cf76",
       "tokens": [
         "team-execution"
       ]
@@ -876,7 +876,7 @@
     {
       "classification": "legacy-parser",
       "path": "plugins/saga/scripts/outcome_dispatcher.py",
-      "sha256": "4025929fa4c18f87eb6eeac59aefa414187fe9351838e001690cba542aa47ced",
+      "sha256": "461cae70986aab502abf78bc43b7567c1d172822f8201ba415bd362bab8d5058",
       "tokens": [
         "team-execution"
       ]
@@ -1063,7 +1063,7 @@
     {
       "classification": "migration-fixture",
       "path": "tests/test_outcome_dispatcher.py",
-      "sha256": "f7d8eba6388f9146805c92a47543358f5f4390e899fb76edf568136689fbfcee",
+      "sha256": "667406f86b6789c896c0f1b320e34471e4df1ed2151ee86a517a68d13324714c",
       "tokens": [
         "#team-structure",
         "team_execution_ref"
@@ -1072,7 +1072,7 @@
     {
       "classification": "migration-fixture",
       "path": "tests/test_outcome_economics.py",
-      "sha256": "522f0204ff2e4419814817406fef726dc15a029366456244d1bb8ee3caa0ab1e",
+      "sha256": "5b4aafbec4b80e288e9805a56504acf9b4b05bc0cff8159780aa53b986fcdd31",
       "tokens": [
         "team-execution"
       ]
@@ -1080,7 +1080,7 @@
     {
       "classification": "migration-fixture",
       "path": "tests/test_outcome_integration.py",
-      "sha256": "e2c3b57d3bb20e6d6ae28f4897732c2a2ebc10d02ee2e2733afa23110c49e3b1",
+      "sha256": "7e909f8aff171e7d6be609b21a13f28085b654049861da6e4acde2352c64c8f9",
       "tokens": [
         "team-execution"
       ]
@@ -1204,7 +1204,7 @@
     }
   ],
   "generated_by": "scripts/build_legacy_workflow_inventory.py",
-  "historical_inventory_sha256": "ae44b6596d35489965715ff1aa39b35c8faecc0a5d56edcefed8f5092a9caf14",
+  "historical_inventory_sha256": "63f2997619c71701b46ef59065c2d4a2e05cd25c974402d03f0458bb4f0aacfc",
   "history_sentinels": {
     "docs/investigations/2026-06-30-team-execution-saga-orchestration-debug-report.md": {
       "sha256": "ecc08eceda3a67dc81d15b1930753fe236ca7c1ae9b3ad9dd506cdecfb0ac4fa",

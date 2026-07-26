@@ -152,11 +152,11 @@ TARGET_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
 }
 TARGET_EXPECTED_PLUGINS["fleet-core"] = {
     **TARGET_EXPECTED_PLUGINS["fleet-core"],
-    "version": "0.11.0+codex.20260724175626",
+    "version": "0.12.0+codex.20260726031557",
 }
 TARGET_EXPECTED_PLUGINS["saga"] = {
     **TARGET_EXPECTED_PLUGINS["saga"],
-    "version": "0.79.0+codex.20260724175626",
+    "version": "0.80.0+codex.20260726031557",
 }
 TARGET_EXPECTED_PLUGINS["verified-workflows"] = {
     "version": "2.0.0+codex.20260724175626",
@@ -284,7 +284,7 @@ STAGED_MARKETPLACE_SHA256 = (
     "42803919b39b720599b9692bfdcd95bcfe8c31b06ebb2c976aacaa890fdfea8a"
 )
 LEGACY_WORKFLOW_HISTORICAL_INVENTORY_SHA256 = (
-    "ae44b6596d35489965715ff1aa39b35c8faecc0a5d56edcefed8f5092a9caf14"
+    "63f2997619c71701b46ef59065c2d4a2e05cd25c974402d03f0458bb4f0aacfc"
 )
 LEGACY_WORKFLOW_INVENTORY = Path(
     "docs/validation/verified-workflows-legacy-token-inventory.json"

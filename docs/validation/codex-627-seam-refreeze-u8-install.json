@@ -1,0 +1,18 @@
+{
+ "all_commands_succeeded": true,
+ "auth": "codex CLI existing login; plugin subcommands are local operations — no API key used, no credential copied into the isolated profile",
+ "default_profile_mutated": false,
+ "installed_versions": {
+  "fleet-core": "0.12.0+codex.20260726031557",
+  "saga": "0.80.0+codex.20260726031557"
+ },
+ "kind": "isolated-install",
+ "marketplace": "infiquetra-saga-family-proof (repo-built, proof-local, 10 plugins)",
+ "profile": "isolated repo-local CODEX_HOME under git-ignored .codex/proofs/saga-family/20260726T032219Z/codex-home",
+ "recorded_at": "2026-07-26T03:22:19Z",
+ "repo_head": "30a37c21750bf52111a3278dd6483f8b1c8bfd26",
+ "run_id": "20260726T032219Z",
+ "schema_version": 1,
+ "tool": "scripts/prove_codex_plugin_profile.py --install-mode codex-cli --write-docs",
+ "unit": "U8"
+}

@@ -1,0 +1,30 @@
+{
+ "check": {
+  "argv": [
+   "uv",
+   "run",
+   "python",
+   "-m",
+   "pytest",
+   "-q",
+   "plugins/saga/tests/test_outcome_worktrees.py",
+   "-k",
+   "prune"
+  ],
+  "exit_code": 0,
+  "oracles": [
+   "prune prevalidates before the graph mutation: a refused prune leaves nodes, spec_revision, registry, and lease intact",
+   "prune of a lease-bound worktree without authority refuses instead of stranding the lease",
+   "main() prune passes outcome_dispatcher.default_lease_authority() into the decompose prune seam"
+  ],
+  "summary": "3 passed, 20 deselected"
+ },
+ "kind": "check",
+ "note_on_provenance": "Recorded during the round-4 code-review repair pass. `repo_head` is the committed HEAD the run executed against; the working tree ALSO carried the uncommitted round-4 repairs at record time (the sys.modules re-pin fixture in the outcome-family test modules and this manifest edit), none of which touch outcome_decompose.py or the three tests above. Stated explicitly rather than recording a bare head, because recording a head whose tree did not contain the file under test is exactly the defect this round repairs in docs/validation/lease-safe-substrate-u6.json.",
+ "note_on_scope": "This row was classified retroactively. U1 pinned five source pathspecs and omitted plugins/saga/scripts/outcome_decompose.py, so the port landed under U5's execution with no contract row, and `validate --stage classification` still exited 0 because it validates the rows a contract HAS, not the ones it should have. Adding the sixth pathspec re-derived expected_count (6) and inventory_sha256 from the same frozen range cf15a09f..b464d090 -- the range did not move, so the runbook's prohibition on extending a frozen source range is not engaged. The five pre-existing rows kept byte-identical row_ids, confirming the derivation is stable.",
+ "port_id": "codex-627-seam-refreeze-2026-07-25",
+ "recorded_at": "2026-07-26T13:20:00Z",
+ "repo_head": "d9e345d4e21019f8bc7dccb7e1ce02ba3c26f084",
+ "schema_version": 1,
+ "unit": "U5"
+}

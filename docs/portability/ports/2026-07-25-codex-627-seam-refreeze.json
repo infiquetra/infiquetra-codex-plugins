@@ -1,0 +1,437 @@
+{
+  "authority": {
+    "capability_snapshot": {
+      "path": "docs/validation/codex-627-seam-refreeze-runtime-capability-snapshot.json",
+      "schema_path": "docs/validation/codex-runtime-capability-snapshot.schema-r3.json",
+      "schema_sha256": "a9c1baddcfbb3eba80b108fb838a430764236cd73ca803604cd47afb338e8ce7",
+      "schema_version": 2,
+      "sha256": "97364b4fcbf1b94f56878ff52e8cbbe2ed410ec6e9742f0a6d3f38c5fe18f43c"
+    },
+    "classification_path": "docs/portability/classifications/2026-07-25-codex-627-seam-refreeze.md",
+    "plan": {
+      "path": "docs/plans/2026-07-25-codex-refreeze-627-seam-and-cor3-worktree-authority-plan.md",
+      "sha256": "278a46d00ce6bd04b3935be53112c74b9275b375156f4dbe0046823534524915"
+    },
+    "reviews": [
+      {
+        "path": "docs/reviews/doc-review-issue-45-2026-07-25.md",
+        "sha256": "b714d5c10a9b14cc0c4ccfbb17d3ba7e47584481e089772d59afdde8ee0769c8"
+      }
+    ],
+    "runbook": {
+      "path": "docs/portability/claude-to-codex-plugin-port-runbook.md",
+      "sha256": "8dc16667009b745a1d0f8e8f45e0542a5a5744dc40cc16e16930648509d24678",
+      "version": 3
+    }
+  },
+  "codex": {
+    "evidence_ref": "refs/tags/evidence/codex-627-seam-refreeze-20260725",
+    "execution_base": "66c13146d660574493f0fb4670e97833bcddfa46",
+    "expected_count": 0,
+    "historical_plan_base": "66c13146d660574493f0fb4670e97833bcddfa46",
+    "inventory_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "observed_origin_main": "f79f141b391589b413b25dc6775a32ff5e7e2e26",
+    "repository_id": "infiquetra/infiquetra-codex-plugins",
+    "rows": []
+  },
+  "evidence": [
+    {
+      "argv": [
+        "uv",
+        "run",
+        "pytest",
+        "-q",
+        "plugins/fleet-core/tests/test_audit_store.py",
+        "plugins/saga/tests/test_outcome_compat.py"
+      ],
+      "artifact_path": "docs/validation/codex-627-seam-refreeze-u2.json",
+      "artifact_sha256": "8460a1bb2f41df1f81f6c4e8df040385b6af8b40e896d2c51585f93fd22575f6",
+      "cwd": ".",
+      "evidence_id": "u2-codex-627-seam-refreeze-check-20260726",
+      "exit_code": 0,
+      "kind": "check",
+      "recorded_at": "2026-07-26T03:15:57Z",
+      "repo_head": "30a37c21750bf52111a3278dd6483f8b1c8bfd26",
+      "unit": "U2"
+    },
+    {
+      "argv": [
+        "uv",
+        "run",
+        "pytest",
+        "-q",
+        "plugins/fleet-core/tests/test_lease_broker.py"
+      ],
+      "artifact_path": "docs/validation/codex-627-seam-refreeze-u3.json",
+      "artifact_sha256": "41e78456fb79e4fe372e09020c4892b9257c33940ab92bbfe3a4fa4fa678aa56",
+      "cwd": ".",
+      "evidence_id": "u3-codex-627-seam-refreeze-check-20260726",
+      "exit_code": 0,
+      "kind": "check",
+      "recorded_at": "2026-07-26T03:15:57Z",
+      "repo_head": "30a37c21750bf52111a3278dd6483f8b1c8bfd26",
+      "unit": "U3"
+    },
+    {
+      "argv": [
+        "uv",
+        "run",
+        "pytest",
+        "-q",
+        "plugins/saga/tests/test_outcome_dispatcher.py",
+        "plugins/saga/tests/test_outcome_reconcile.py",
+        "plugins/saga/tests/test_outcome_board_sync.py"
+      ],
+      "artifact_path": "docs/validation/codex-627-seam-refreeze-u4.json",
+      "artifact_sha256": "3be7377c6c9e5182784eeac1c157826cc03e6383fa3a0683cd74274ce65100a0",
+      "cwd": ".",
+      "evidence_id": "u4-codex-627-seam-refreeze-check-20260726",
+      "exit_code": 0,
+      "kind": "check",
+      "recorded_at": "2026-07-26T03:15:57Z",
+      "repo_head": "30a37c21750bf52111a3278dd6483f8b1c8bfd26",
+      "unit": "U4"
+    },
+    {
+      "argv": [
+        "uv",
+        "run",
+        "python",
+        "-m",
+        "pytest",
+        "-q",
+        "plugins/saga/tests/test_outcome_worktrees.py",
+        "-k",
+        "prune"
+      ],
+      "artifact_path": "docs/validation/codex-627-seam-refreeze-u5-decompose.json",
+      "artifact_sha256": "6becb40086ad780baf218e4d41b23f2d6db51d3f8f08605d83c9f6522a2ca866",
+      "cwd": ".",
+      "evidence_id": "u5-codex-627-seam-refreeze-decompose-check-20260726",
+      "exit_code": 0,
+      "kind": "check",
+      "recorded_at": "2026-07-26T13:20:00Z",
+      "repo_head": "d9e345d4e21019f8bc7dccb7e1ce02ba3c26f084",
+      "unit": "U5"
+    },
+    {
+      "argv": [
+        "python3",
+        "tools/run_cross_runtime_outcome_acceptance.py"
+      ],
+      "artifact_path": "docs/validation/codex-627-seam-refreeze-u8-cutover.json",
+      "artifact_sha256": "7babd2a5ae79e5c9699c3f243f89a3d06159aa2aa726444d3609179bd58f3a6e",
+      "cwd": ".",
+      "evidence_id": "u8-cutover-20260726",
+      "exit_code": 0,
+      "kind": "cutover",
+      "recorded_at": "2026-07-26T03:40:51Z",
+      "repo_head": "4f325247566efe972fbcb2c6b605b34542e49b7b",
+      "unit": "U8"
+    },
+    {
+      "argv": [
+        "python3",
+        "-I",
+        "-",
+        "installed-cache-path"
+      ],
+      "artifact_path": "docs/validation/codex-627-seam-refreeze-u8-fresh-session.json",
+      "artifact_sha256": "3427a7f6d50860283d587c5537bb4027b222c9e64017cc6e5b0f8fbc66f3ed5b",
+      "cwd": ".",
+      "evidence_id": "u8-fresh-session-20260726",
+      "exit_code": 0,
+      "kind": "fresh-session",
+      "recorded_at": "2026-07-26T03:33:01Z",
+      "repo_head": "30a37c21750bf52111a3278dd6483f8b1c8bfd26",
+      "unit": "U8"
+    },
+    {
+      "argv": [
+        "python3",
+        "scripts/prove_codex_plugin_profile.py",
+        "--install-mode",
+        "codex-cli",
+        "--write-docs"
+      ],
+      "artifact_path": "docs/validation/codex-627-seam-refreeze-u8-install.json",
+      "artifact_sha256": "8c9825a1b3e7eaafef320ca8baa9863efae0a468961185457149dd0738d0a8e7",
+      "cwd": ".",
+      "evidence_id": "u8-isolated-install-20260726",
+      "exit_code": 0,
+      "kind": "isolated-install",
+      "recorded_at": "2026-07-26T03:22:19Z",
+      "repo_head": "30a37c21750bf52111a3278dd6483f8b1c8bfd26",
+      "unit": "U8"
+    },
+    {
+      "argv": [
+        "u8-review-panel",
+        "correctness",
+        "adversarial"
+      ],
+      "artifact_path": "docs/code-reviews/2026-07-26-codex-627-seam-refreeze-u6-review.md",
+      "artifact_sha256": "001eef6cf448e4d236c0e16478e0fd05da11af5070e3ceae38ccb078888d78fe",
+      "cwd": ".",
+      "evidence_id": "u8-review-20260726",
+      "exit_code": 0,
+      "kind": "review",
+      "recorded_at": "2026-07-26T03:33:01Z",
+      "repo_head": "30a37c21750bf52111a3278dd6483f8b1c8bfd26",
+      "unit": "U8"
+    },
+    {
+      "argv": [
+        "codex",
+        "plugin",
+        "remove",
+        "saga@infiquetra-saga-family-proof",
+        "--json"
+      ],
+      "artifact_path": "docs/validation/codex-627-seam-refreeze-u8-rollback.json",
+      "artifact_sha256": "d0ad3d7212f1aa03cbec51925cccc36b1f15a79a64fda76051bb11fdead0e9c5",
+      "cwd": ".",
+      "evidence_id": "u8-rollback-20260726",
+      "exit_code": 0,
+      "kind": "rollback",
+      "recorded_at": "2026-07-26T03:33:01Z",
+      "repo_head": "30a37c21750bf52111a3278dd6483f8b1c8bfd26",
+      "unit": "U8"
+    }
+  ],
+  "port_id": "codex-627-seam-refreeze-2026-07-25",
+  "refresh_changes": [],
+  "release_evidence": {
+    "cutover": "u8-cutover-20260726",
+    "fresh_session": "u8-fresh-session-20260726",
+    "isolated_install": "u8-isolated-install-20260726",
+    "review": "u8-review-20260726",
+    "rollback": "u8-rollback-20260726"
+  },
+  "schema_version": 1,
+  "source": {
+    "base_ref": "cf15a09f8ffe9bf7c6f1218b2c72a8143d60ab49",
+    "expected_count": 6,
+    "inventory_sha256": "1ef863a005f826b9ee7822ab23109c079bd9933a3c5f2a0e5d97c595449f672f",
+    "observed_refs": {
+      "head": "77e11ac10e05ce693130aaca99d30a3095071a36",
+      "local_main": "474fd3cc78df1642b85cc6c3c3f98c56357a6af0",
+      "origin_main": "b464d090fccb59d0ff862f273902f1653f1d8835"
+    },
+    "pathspecs": [
+      "plugins/saga/scripts/outcome_compat.py",
+      "plugins/fleet-core/scripts/fleet_commons/audit_store.py",
+      "plugins/fleet-core/scripts/fleet_commons/lease_broker.py",
+      "plugins/saga/scripts/outcome.py",
+      "plugins/saga/scripts/outcome_dispatcher.py",
+      "plugins/saga/scripts/outcome_decompose.py"
+    ],
+    "repository_id": "infiquetra/infiquetra-claude-plugins",
+    "rows": [
+      {
+        "capability_refs": [
+          "capability:guarded-audit-store"
+        ],
+        "change": "M",
+        "codex_invariant_refs": [
+          "universal-fail-closed-ancestor-guard"
+        ],
+        "evidence_refs": [
+          "u2-codex-627-seam-refreeze-check-20260726"
+        ],
+        "host_primitives": [],
+        "new_path": "plugins/fleet-core/scripts/fleet_commons/audit_store.py",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/fleet-core/scripts/fleet_commons/audit_store.py"
+        ],
+        "planned_tests": [
+          "plugins/fleet-core/tests/test_audit_store.py"
+        ],
+        "rationale": "R3: re-port #627 universal fail-closed ancestor walk (drop the home-scope early return, build the component list from the filesystem anchor down, lstat every component and never resolve inside the walk, refuse world-writable unless also sticky/S_ISVTX). Codex-adapt rather than direct-port because the Codex module is 355 lines against Claude 366 and is not a byte twin; contract_digests does not compare it, so the ported guard own oracles are the evidence. R1 equivalence recorded: byte-identical at Claude 8882bdc2 == 53cd65f5 == b464d090.",
+        "row_id": "src-bde2437c81c72efd",
+        "similarity": null,
+        "state": "verified",
+        "surface_kind": "script",
+        "treatment": "codex-adapt",
+        "units": [
+          "U2"
+        ]
+      },
+      {
+        "capability_refs": [
+          "capability:lease-admission-control"
+        ],
+        "change": "M",
+        "codex_invariant_refs": [
+          "refuse-mode-admission-fails-closed",
+          "settlement-and-closure-precedence-first"
+        ],
+        "evidence_refs": [
+          "u3-codex-627-seam-refreeze-check-20260726"
+        ],
+        "host_primitives": [],
+        "new_path": "plugins/fleet-core/scripts/fleet_commons/lease_broker.py",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/fleet-core/scripts/fleet_commons/lease_broker.py"
+        ],
+        "planned_tests": [
+          "plugins/fleet-core/tests/test_lease_broker.py"
+        ],
+        "rationale": "R5/R5a/R5b: add on_conflict admission with the refuse branch to _drop_superseded_resource_lease as a three-part conjunction (prior_lease present, not expired, owner state not dead), raising LeaseConflictError with holder_owner_id, gated below the retained-settlement and canonically-closed precedence checks. Codex-adapt, not direct-port: this Codex copy has zero on_conflict and zero refuse-mode occurrences today, so the mode is added rather than adjusted, and the surrounding module diverges. KTD6 pins the target: the fleet-core copy (4183 lines) carries _drop_superseded_resource_lease and _owner_state; the same-named plugins/saga/scripts/lease_broker.py (542 lines) carries neither and is not this row target.",
+        "row_id": "src-51a01051060d2e92",
+        "similarity": null,
+        "state": "verified",
+        "surface_kind": "script",
+        "treatment": "codex-adapt",
+        "units": [
+          "U3"
+        ]
+      },
+      {
+        "capability_refs": [
+          "capability:reconcile-loud-abort"
+        ],
+        "change": "M",
+        "codex_invariant_refs": [
+          "non-transient-dispatch-fault-aborts-before-further-writes",
+          "transient-halt-record-stays-reducer-visible"
+        ],
+        "evidence_refs": [
+          "u4-codex-627-seam-refreeze-check-20260726"
+        ],
+        "host_primitives": [],
+        "new_path": "plugins/saga/scripts/outcome.py",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/saga/scripts/outcome.py"
+        ],
+        "planned_tests": [
+          "plugins/saga/tests/test_outcome_reconcile.py"
+        ],
+        "rationale": "R7/R7a/R7b: mirror the reconcile hot-path ordering into the Codex _reconcile_once (codex :1148, Claude :1097 -- both define it in outcome.py, not outcome_reconcile.py). A non-transient DispatcherError re-raises at the head of the except arm before any lease release or further ledger write; the transient arm releases the per-subplot lock and appends a reducer-visible (dispatch, halt) record paired to the intent key with the receipt own kind under receipt_kind. R7b(c) 'settle the attempt' is NOT ported: Codex outcome.py carries no dispatch_settlement binding (3 settlement-family references, all inside an unrelated _settled_lookup, against 67 in Claude b464d090 including the settle_attempt(... SILENT_NOOP) call at :1708). Recorded as an explicit named deferral, not an omission -- see the R7b boundary note in plugins/saga/CHANGELOG.md. Codex-adapt under KTD3 because the pre-dispatch outcome.dispatch.v2 intent at :1270-1281 is required Codex state the port must preserve.",
+        "row_id": "src-3b34fc68149a7c76",
+        "similarity": null,
+        "state": "verified",
+        "surface_kind": "script",
+        "treatment": "codex-adapt",
+        "units": [
+          "U4"
+        ]
+      },
+      {
+        "capability_refs": [
+          "capability:cross-runtime-outcome-seam"
+        ],
+        "change": "M",
+        "codex_invariant_refs": [
+          "runtime-label-stays-codex",
+          "universal-fail-closed-ancestor-guard"
+        ],
+        "evidence_refs": [
+          "u2-codex-627-seam-refreeze-check-20260726"
+        ],
+        "host_primitives": [],
+        "new_path": "plugins/saga/scripts/outcome_compat.py",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/saga/scripts/outcome_compat.py"
+        ],
+        "planned_tests": [
+          "plugins/saga/tests/test_outcome_compat.py"
+        ],
+        "rationale": "R2/KTD3 byte-frozen twin: re-freeze the Codex copy to Claude b464d090 bytes with RUNTIME_LABEL = \"codex\" (line 83) as the sole permitted divergence. R1 equivalence recorded: this file is byte-identical at Claude 8882bdc2 == 53cd65f5 == b464d090, so pinning head under KTD1 ships the same content #627/#637 merged. The acceptance harness contract_digests / port-digest leg compares only this file, after normalising RUNTIME_LABEL.",
+        "row_id": "src-516abc3d8736e58f",
+        "similarity": null,
+        "state": "verified",
+        "surface_kind": "script",
+        "treatment": "direct-port",
+        "units": [
+          "U2"
+        ]
+      },
+      {
+        "capability_refs": [],
+        "change": "M",
+        "codex_invariant_refs": [],
+        "evidence_refs": [
+          "u5-codex-627-seam-refreeze-decompose-check-20260726"
+        ],
+        "host_primitives": [],
+        "new_path": "plugins/saga/scripts/outcome_decompose.py",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/saga/scripts/outcome_decompose.py"
+        ],
+        "planned_tests": [
+          "plugins/saga/tests/test_outcome_worktrees.py"
+        ],
+        "rationale": "R8/COR3 scope adaptation (KTD4): prune() gained a lease_authority parameter and a fail-closed prevalidate_reap_authority arm ahead of the graph mutation, mirroring Claude's own arm at outcome_decompose.py:282-309 (b464d090). Without it, arming leases in the worktree registry would let an authority-free prune raise WorktreeAuthorityError AFTER _commit had already mutated the spec, leaving a pruned graph pointing at an unreapable worktree. Claude moved +4/-2 across the frozen range; the Codex port is +34/-3 because Codex carries the arm plus its own prune wiring -- codex-adapt, not direct-port. CLASSIFIED RETROACTIVELY: U1 pinned five pathspecs and omitted this one, so the port landed under U5's execution with no contract row at all, and --stage classification still exited 0 because it validates the rows a contract HAS, not the ones it should have. That is the KTD8 hole this row closes. Behavior evidence is docs/validation/lease-safe-substrate-u6.json (oracles 'prune prevalidates before the graph mutation: a refused prune leaves nodes, spec_revision, registry, and lease intact' and 'prune of a lease-bound worktree without authority refuses instead of stranding the lease'), recorded against the PREDECESSOR manifest under ITS unit id U6, which maps to this plan's U5 -- the unit-id collision R4b already had to navigate.",
+        "row_id": "src-a723b33e54606f82",
+        "similarity": null,
+        "state": "verified",
+        "surface_kind": "script",
+        "treatment": "codex-adapt",
+        "units": [
+          "U5"
+        ]
+      },
+      {
+        "capability_refs": [
+          "capability:dispatch-fault-classification"
+        ],
+        "change": "M",
+        "codex_invariant_refs": [
+          "shim-load-failure-declines-to-transient",
+          "outcome-dispatch-v2-contract-unchanged"
+        ],
+        "evidence_refs": [
+          "u4-codex-627-seam-refreeze-check-20260726"
+        ],
+        "host_primitives": [],
+        "new_path": "plugins/saga/scripts/outcome_dispatcher.py",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/saga/scripts/outcome_dispatcher.py"
+        ],
+        "planned_tests": [
+          "plugins/saga/tests/test_outcome_dispatcher.py"
+        ],
+        "rationale": "R6: add the typed DispatcherLeaseTransientError(DispatcherError) raised at lease-conflict admission sites and the shim-safe _lease_conflict_error_type() that declines to transient when the shim fails to load. Codex-adapt under KTD3: the Codex dispatcher is a codex-native 542-line implementation against Claude 879 with DispatcherError x11 but neither symbol, and the Codex outcome.dispatch.v2 intent/acknowledgement contract must survive the port unchanged. U4 is the sole owner of this file; U5 consumes the existing default_lease_authority() at :192 read-only.",
+        "row_id": "src-8881971894e7734c",
+        "similarity": null,
+        "state": "verified",
+        "surface_kind": "script",
+        "treatment": "codex-adapt",
+        "units": [
+          "U4"
+        ]
+      }
+    ],
+    "target_reachable": false,
+    "target_ref": "b464d090fccb59d0ff862f273902f1653f1d8835"
+  },
+  "version_policy": [
+    {
+      "current_codex_identity": "fleet-core",
+      "current_codex_version": "0.11.0+codex.20260724175626",
+      "policy": "lineage-with-codex-adaptation",
+      "release_unit": "U6",
+      "source_plugin": "fleet-core",
+      "source_version": "0.23.0",
+      "target_codex_identity": "fleet-core",
+      "target_codex_version": "0.12.0"
+    },
+    {
+      "current_codex_identity": "saga",
+      "current_codex_version": "0.79.0+codex.20260724175626",
+      "policy": "lineage-with-codex-adaptation",
+      "release_unit": "U6",
+      "source_plugin": "saga",
+      "source_version": "0.115.0",
+      "target_codex_identity": "saga",
+      "target_codex_version": "0.80.0"
+    }
+  ]
+}

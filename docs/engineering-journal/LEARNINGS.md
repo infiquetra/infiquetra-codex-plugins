@@ -1,5 +1,118 @@
 # Learnings
 
+## 2026-07-26: Memoizing A Test-Script Loader Fixes Collection Order By Deleting Test Isolation
+
+**Evidence:** `plugins/saga/tests/test_outcome_worktrees.py` + `test_outcome_board_sync.py` in that
+argument order produced **3 failed**; reversed, **62 passed**; either file alone passed. Eighteen
+live test modules load `plugins/saga/scripts/*.py` by file path through a byte-identical `_load`
+that ends `sys.modules[name] = module; spec.loader.exec_module(module)`. The second module to be
+collected re-execs the same files, rebinding `sys.modules` to a fresh generation while the first
+module's captured globals (`WT`, `ENG`, `DISPATCH`) still reference the previous one. A lazy sibling
+`import outcome_worktrees` inside the running code then resolves to the *live* generation, so
+`monkeypatch.setattr(WT, "reconcile_worktree_leases", ...)` patched an orphan and the spy recorded
+nothing (`assert [] == [<LeaseBroker ...>]`). The suite was green only because `board_sync` sorts
+before `worktrees`.
+
+**Mechanism — and the fix that looked right and was not.** The obvious repair is to make `_load`
+idempotent: return the cached module when `sys.modules` already holds one loaded from the same file.
+That removed the ordering dependence and **introduced a regression** — measured against a clean
+worktree baseline of `2025 passed, 0 failed`, it produced `test_transient_dispatcher_error_
+continues_the_tick` failing, because memoizing makes all eighteen modules *share* one module object,
+so module-global state leaks across files that previously each got a private generation. Ordering
+dependence and cross-file isolation were being provided by the same accident. The correct fix keeps
+per-file generations and re-pins identity only for the duration of each test:
+
+```python
+@pytest.fixture(autouse=True)
+def _pin_script_modules(monkeypatch: pytest.MonkeyPatch) -> None:
+    for _name, _module in _LOADED.items():
+        monkeypatch.setitem(sys.modules, _name, _module)
+```
+
+`setitem` restores the previous binding on teardown, so whichever module loaded last, every test
+runs against its own module's objects. Re-measured: `2025 passed`, identical to baseline, and all
+four order permutations agree (62 / 62 / 23 / 39).
+
+**Generalizable rule:** A fix for a shared-mutable-state bug must be measured against a full-suite
+baseline taken *before* the fix, not against the symptom it targets — the reproducer going green
+proves only that the symptom moved. And when scripts are loaded by path rather than imported as a
+package, prefer re-pinning `sys.modules` per consumer over collapsing consumers onto one instance:
+identity and isolation are separate properties, and sharing buys the first by spending the second.
+
+## 2026-07-26: A Classification Gate Validates The Rows A Contract Has, Not The Ones It Should Have
+
+**Evidence:** `plugins/saga/scripts/outcome_decompose.py` shipped a behavior change on the #45
+branch (+34/−3: a fail-closed `prevalidate_reap_authority` ahead of the graph mutation, plus a
+`lease_authority` parameter on `prune()`) while appearing in **zero** port-contract rows — none in
+`docs/portability/ports/2026-07-25-codex-627-seam-refreeze.json`, none in the predecessor manifest.
+`port_contract.py validate --stage classification` exited **0** throughout. KTD8 exists precisely to
+stop unclassified production surface from landing, and it did not fire.
+
+**Mechanism:** `expected_count` is derived from the base→target diff **over the pathspecs the
+contract was initialized with** (`port_contract.py:437-450`). U1 passed five `--source-pathspec`
+values and omitted `outcome_decompose.py`, so no row was ever generated for it — and a gate that
+checks "is every row classified?" is trivially satisfied by a contract with a missing row. The gate
+is sound; its input was under-specified, and nothing in the tool compares the pathspec set against
+the diff the branch actually produced. Claude's copy moved +4/−2 inside the same frozen range, so
+the row *would* have existed had the pathspec been passed. Re-running `init` over the same range
+with the sixth pathspec added re-derived `expected_count` 6 and left all five existing `row_id`s
+byte-identical, which is what made the retrofit safe to splice rather than regenerate.
+
+**Generalizable rule:** A completeness gate keyed on a hand-supplied input set can only audit what
+it was told about. Reconcile the gate's input against an independent signal — here, the set of
+production files the branch's own diff touches — or the gate reports green on exactly the surface
+nobody declared. When retrofitting a missing row, re-derive it with the tool over the unchanged
+frozen range and confirm pre-existing row ids are stable; identical ids are the evidence that the
+derivation is deterministic and the splice is not inventing history.
+
+## 2026-07-26: A Partial Authority Port Turns A Refusal Into A Half-Applied Mutation
+
+**Evidence:** `plugins/saga/scripts/outcome_decompose.py` — codex `prune` called
+`outcome_worktrees.reap_worktree(store, subplot_id, worktree_ops, at=at)` AFTER `_commit(spec, ...)`
+had already removed the node, dropped its edges, and bumped `spec_revision`. The #45 U5 port arms
+worktree registry entries with a broker lease, and the ported `reap_worktree` refuses a lease-bound
+entry it cannot prove authority for. Porting only the two files the plan scoped
+(`outcome_worktrees.py`, `outcome.py`) would therefore have made a lease-bound prune raise
+`WorktreeAuthorityError` against an already-mutated spec. Upstream Claude at `b464d090` carries the
+matching preflight at `outcome_decompose.py:282-309`, which runs `prevalidate_reap_authority` BEFORE
+`_live_state` and before any spec edit. `plugins/saga/tests/test_outcome_worktrees.py::
+test_prune_prevalidates_before_the_graph_mutation` pins it.
+
+**Mechanism:** the new refusal was introduced upstream of an existing mutation, not downstream of it.
+A subsystem port that adds a fail-closed check changes the failure *timing* of every caller that
+already invoked the ported function — and a caller that mutates first and cleans up second flips from
+"best-effort cleanup failed, reported in the summary" to "canonical state advanced, then raised".
+Counting the port's line surface (55 `lease_authority` lines across three modules) found the seam; it
+did not find the caller whose ordering the new refusal invalidates.
+
+**Generalizable rule:** When a port adds a refusal to a shared function, enumerate its existing call
+sites and check what each one has already mutated by the time the call happens. Any caller that
+mutates before calling needs the refusal hoisted above its mutation in the same change — a scope
+boundary drawn by file count will silently ship a half-applied write.
+
+## 2026-07-25: Dict Literal Ordering Decides Whether A Halt Record Exists At All
+
+**Evidence:** `plugins/saga/scripts/outcome.py` — the `DispatcherError` reconcile arm builds its halt
+record spread-first / literal-last (`{**receipt, "receipt_kind": ..., "kind": "dispatch"}`), while the
+three sibling halt appends in the same function (the degrade halt, the orchestration-ref halt, and the
+`BackendHaltError` arm) build theirs literal-first / spread-last. A probe against a real store shows the
+sibling arms persist `{"phase": "halt", "kind": "halt", ...}`: the receipt's own `kind` overwrites the
+literal, `outcome_store.reduce_dispatch_ledger` matches no branch for it, and
+`outcome_report._halted_subplots` returns an empty set for a leaf that just halted. Upstream Claude at
+`b464d090` writes the same record spread-first / literal-last and IS reducer-visible.
+
+**Mechanism:** `reduce_dispatch_ledger` dispatches on the `(kind, phase)` pair. Every halt receipt
+carries `kind: "halt"` of its own, so any append that spreads the receipt LAST silently rewrites the
+routing key the reducer reads. The record is still durably on disk and still returned in the in-memory
+`halted` list, so the tick looks correct in every signal except the derived one — the operator page.
+This is the #628 invisibility shape: an orphaned intent, a store lock leaking to its TTL, and a silent
+re-dispatch.
+
+**Generalizable rule:** When a dict literal both spreads a payload and sets the field a reducer routes
+on, put the routing literal LAST and preserve the payload's own value under a distinct key
+(`receipt_kind`). Test the reducer's output, never the append — asserting "a record was written" passes
+against a record no consumer can see.
+
 ## 2026-07-18: Read-Only Validation Can Still Leave Lock Files
 
 **Evidence:** Repository validation and the code-review action-bundle read each created six zero-byte
@@ -233,3 +346,67 @@ as canonical retained them. Whole-repo `context_census.py` exits 0; 158 mission-
 Generalizable rule: when mirroring a fix into a vendored/ported copy, mirror the **routing semantics**
 (constants, dispatch targets, defaults), not the file diff — and do not regress intentional
 divergences that carry their own guard tests.
+
+## 2026-07-26: Version-Drift Guards Live in More Places Than the Plugin Manifest, and a Green Suite Can Still Hide a Stale Assertion Against Removed Behavior
+
+**Evidence:** codex#45 U6 (PR pending, this session). Bumping `saga` 0.79.0→0.80.0 and
+`fleet-core` 0.11.0→0.12.0 required edits in seven live-tree files beyond the two
+`.codex-plugin/plugin.json` manifests: `scripts/validate_codex_plugins.py`'s
+`TARGET_EXPECTED_PLUGINS` dict (a hand-maintained version fixture, not derived from the
+manifests), `docs/validation/saga-family-target-inventory.json` (also hand-maintained — no
+generator script owns it), `README.md`'s plugin table, `docs/saga/generated/lifecycle-facts.json`
+(this one DOES have a generator, `scripts/build_saga_docs_facts.py` — run it instead of
+hand-editing), `docs/validation/verified-workflows-legacy-token-inventory.json` (a sha256-per-file
+content-digest inventory that drifts whenever ANY file containing a tracked legacy token changes
+byte-for-byte, including a CHANGELOG entry or a version string), and two hardcoded version-string
+assertions inside `tests/test_codex_627_seam_refreeze_port_contract.py` and
+`tests/test_outcome_cross_runtime_parity_port_contract.py` that were written against the
+pre-cutover baseline and needed updating to the new version, not just left to fail.
+
+**Mechanism:** none of these six drift points get updated by bumping the two plugin.json files.
+`scripts/validate_codex_plugins.py::validate_repository` walks the **filesystem**
+(`root.rglob("*")`), not just git-tracked paths, for the legacy-token inventory — so an untracked
+stray file anywhere outside the excluded top-level set (`.claude/` is NOT excluded; only `.codex/`
+is) shows up as a permanent, pre-existing "unclassified legacy workflow token path" error that no
+amount of correct release-surface work can clear without touching repo hygiene explicitly ruled
+out of scope. `git stash` confirms this error is not caused by the diff's **tracked** changes —
+note that plain `git stash` does not touch untracked files, so it cannot establish that the
+untracked file predates the session, and an earlier draft of this entry overstated it that way.
+
+**Generalizable rule:** before calling a version bump complete, `grep -rn "<old version string>"`
+the whole tree (not just the plugin manifests) and re-run every generator script that owns a
+derived doc (`build_saga_docs_facts.py`, `build_legacy_workflow_inventory.py --write` when the
+untracked-file gap doesn't block it) rather than hand-patching generated JSON. Also: `--stage
+unit` and `--stage classification` gates on a port-contract test file can go stale exactly the way
+production code does — a test asserting `state == "classified"` was correct when U1 wrote it and
+became a false assertion the moment U2–U5 landed, but nothing forced it to update because no gate
+re-runs those assertions against the current manifest until the SAME test file is executed at
+cutover. A green suite between units is not proof the fixed assertions in that suite still match
+the state the units are supposed to reach.
+
+**Recurrence (round 5, same issue).** This rule was already written down and the branch still went
+red a second time. The round-5 review repairs unified a **docstring** across eight test modules;
+one of them, `tests/test_outcome_dispatcher.py`, is one of the inventory's 135 entries, so its
+sha256 drifted and four tests failed (2724 passed / 4 failed at `a6e00a7`). Two things make this
+easy to miss and are worth stating explicitly:
+
+- **A comment-only edit is enough.** The inventory is a byte-digest per file. Nothing about
+  "docstrings don't execute" protects you — the digest does not care that the change was inert.
+- **The blast radius is not where you look for it.** The failures surface in
+  `test_validate_codex_plugins.py` and `test_verified_workflows_migration.py`, files the diff never
+  touched, so the failing test names point nowhere near the edit that caused them.
+- **Targeted gates cannot catch it.** The affected modules ran 654 passed immediately after the
+  edit; only the full suite sees it. A merge gated on the targeted run would have shipped red.
+
+Also worth knowing before you go hunting: the **historical** binding is separate from the current
+digests. Here `historical_inventory_sha256` and the pinned
+`LEGACY_WORKFLOW_HISTORICAL_INVENTORY_SHA256` constant did **not** move and needed no edit — only
+one per-entry `sha256` did. And `docs/engineering-journal/DECISIONS.md` is inventory-covered while
+`LEARNINGS.md` is not, so adding a decision entry forces a rebuild and adding a learning entry does
+not.
+
+**Sharpened rule:** any edit to a file in the 135-entry inventory — including whitespace, comments,
+and docstrings — requires `build_legacy_workflow_inventory.py --write` in the same commit, run
+with `--repo-root` against a clean worktree because the builder refuses the primary tree while
+untracked `.claude/` paths exist. Check membership with a path lookup against the inventory's
+`entries`, not by guessing from the directory.

@@ -1,0 +1,69 @@
+{
+  "adaptations": [
+    {
+      "change": "codex-native dispatch fixture: the settled-dispatch ledger row is written under codex's own `outcome.dispatch.v2` typed acknowledgement contract (`_dispatch_records`), not Claude's v1 `kind: dispatch` row; the mechanism is mirrored, the record shape is codex's (KTD3)",
+      "path": "plugins/saga/tests/test_outcome_worktrees.py"
+    },
+    {
+      "change": "`_registry_path` now wraps `store.root` in `Path(...)`; the reconcile sweep's `store_resolver` may return a store whose root is a plain string, and `read_registry_strict` needs a real Path",
+      "path": "plugins/saga/scripts/outcome_worktrees.py"
+    },
+    {
+      "change": "scope adaptation beyond the row's original planned targets: `prune` gained the `lease_authority` parameter and the pre-graph-mutation `prevalidate_reap_authority` arm. Without it, arming leases in the worktree registry would make an authority-free `prune` raise `WorktreeAuthorityError` AFTER `_commit` had already mutated the spec, leaving a pruned graph pointing at an unreapable worktree. Claude carries this arm at `outcome_decompose.py:282-309` (b464d090); the port is a regression fix, not new behavior",
+      "path": "plugins/saga/scripts/outcome_decompose.py"
+    },
+    {
+      "change": "`test_planned_artifacts_not_yet_written_resolve_to_a_real_codex_directory` pinned an exact pending list naming `plugins/saga/tests/test_outcome_worktrees.py`; U5 creating that module made the pinned fact permanently stale. Retired to `test_planned_artifacts_resolve_to_a_real_codex_directory`, which keeps the KTD6 wrong-tree directory guard and adds the stronger `is_file` check",
+      "path": "tests/test_codex_627_seam_refreeze_port_contract.py"
+    }
+  ],
+  "check": {
+    "argv": [
+      "uv",
+      "run",
+      "pytest",
+      "-q",
+      "plugins/saga/tests/test_outcome_worktrees.py"
+    ],
+    "exit_code": 0,
+    "oracles": [
+      "compatibility floor: authority-free reap_worktree removes+deregisters, second call is a False no-op, failed ops.remove retains the entry (passes BOTH pre-port and post-port)",
+      "an authority whose token no longer classifies current/expired refuses and never calls ops.remove",
+      "preflight ordering: instrumented preflight and mutation phases prove the refusal precedes _reap_prevalidated and ops.remove, with registry bytes unchanged",
+      "prune prevalidates before the graph mutation: a refused prune leaves nodes, spec_revision, registry, and lease intact",
+      "prune of a lease-bound worktree without authority refuses instead of stranding the lease",
+      "production_worktree_processor threads a real broker through provision -> terminal reap, releasing the exact lease",
+      "production_worktree_processor with no explicit authority resolves lease_broker.broker() and injects THAT",
+      "main() advance hands advance a worktree_processor that reaches reconcile_worktree_leases with the resolved authority",
+      "main() prune passes outcome_dispatcher.default_lease_authority() into the decompose prune seam",
+      "release_authority=False retains the broker lease across a successful reap",
+      "a legacy entry with no lease binding degrades to an empty-lease_id preflight and reaps with no release",
+      "second reap under authority is idempotent: no raise, no second removal, no double release",
+      "malformed receipt (null / missing fields / foreign authority root) refuses at preflight before removal",
+      "a corrupt registry surfaces via read_registry_strict without quarantining or rewriting it",
+      "TOCTOU: a registry mutated between prevalidation and mutation refuses the stale proof",
+      "removal failure retains BOTH the registry entry and the unreleased lease, and surfaces as reap_failed",
+      "authority-release failure (raise and False-return) does not mark the reap successful and surfaces as reap_failed",
+      "stale_worktree_debits projects registered-but-absent worktrees read-only",
+      "reconcile_worktree_leases adopts a legacy live entry under a broker lease"
+    ],
+    "red_first": {
+      "post_port": "23 passed",
+      "pre_port": "20 failed, 3 passed",
+      "pre_port_passing": [
+        "test_authority_free_reap_preserves_legacy_behavior",
+        "test_authority_free_harvest_still_reaps_terminals",
+        "test_cli_describes_policy"
+      ],
+      "replayed_with_final_test_file": true
+    },
+    "summary": "23 passed"
+  },
+  "note_on_provenance": "`repo_head` is the committed HEAD the run executed against, NOT a tree containing the module under test. `plugins/saga/tests/test_outcome_worktrees.py` does not exist in d00b81da (`git cat-file -e` reports \"exists on disk, but not in 'd00b81da'\"); it was added by 30a37c21 at 2026-07-25T23:11:38-04:00. This record's `recorded_at` (2026-07-25T23:02:50-04:00) falls between d00b81da (22:39:18-04:00) and 30a37c21, so the U5 port and its tests were present in the WORKING TREE and uncommitted when the run was taken. The 23-passed result reproduces at the committed head 30a37c21 and later; only the provenance field was under-specified. Read `repo_head` here as 'the head the working tree was based on', and 30a37c21 as the first committed tree that can replay this run.",
+  "port_id": "lease-safe-substrate-2026-07-19",
+  "recorded_at": "2026-07-26T03:02:50Z",
+  "repo_head": "d00b81da5c6c32f5797927637dbf57c274f35313",
+  "replayable_from": "30a37c21750bf52111a3278dd6483f8b1c8bfd26",
+  "schema_version": 1,
+  "unit": "U6"
+}

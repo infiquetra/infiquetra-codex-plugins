@@ -39,6 +39,11 @@ DEFAULT_CLAIM_TTL_SECONDS = 30
 
 Pool = Literal["agent", "worktree"]
 MutationMode = Literal["read-write", "none"]
+# Admission response when a prior resource lease already fences the same digest. ``supersede`` is the
+# broker default and preserves the #356 retry-supersede design for every existing consumer; ``refuse``
+# is the opt-in mode the outcome dispatcher selects so a *live, unexpired* cross-runtime prior refuses
+# a second acquire at admission instead of being silently displaced (#627 KTD1).
+OnConflict = Literal["supersede", "refuse"]
 TokenState = Literal["current", "expired", "closed", "superseded"]
 SettlementPhase = Literal["prepared", "committing", "ambiguous"]
 ResourceRef = dict[str, str]
@@ -219,6 +224,20 @@ class LeaseNotFoundError(LeaseBrokerError):
 
 class LeaseOwnershipError(LeaseBrokerError):
     """The caller does not own the selected lease."""
+
+
+class LeaseConflictError(LeaseOwnershipError):
+    """A refuse-mode acquire found a live, unexpired prior lease on the same resource digest.
+
+    Subclasses :class:`LeaseOwnershipError` so existing broad ownership handlers keep working; the
+    message and :attr:`holder_owner_id` name the current holder so the refusal is diagnosable (#627
+    R1/KTD1). Raised only when the caller selected ``on_conflict="refuse"``; supersede-mode acquires
+    never see it.
+    """
+
+    def __init__(self, message: str, *, holder_owner_id: str) -> None:
+        super().__init__(message)
+        self.holder_owner_id = holder_owner_id
 
 
 class LeaseExpiredError(LeaseBrokerError):
@@ -2114,9 +2133,27 @@ class LeaseBroker:
         )
 
     def _drop_superseded_resource_lease(
-        self, registry: Registry, resource_ref: Mapping[str, Any]
+        self,
+        registry: Registry,
+        resource_ref: Mapping[str, Any],
+        *,
+        on_conflict: OnConflict = "supersede",
+        monotonic: int,
+        boot_id: str,
     ) -> None:
-        """Remove prior authority before applying capacity to an atomic retry grant."""
+        """Remove prior authority before applying capacity to an atomic retry grant.
+
+        ``on_conflict="refuse"`` (the outcome-dispatch opt-in, #627 KTD1) gates admission *below*
+        the settlement-retained and canonically-closed precedence with two checks against the prior
+        fence's lease. First :meth:`_expired` (TTL + boot-id): an expired prior is reclaimed in both
+        modes. A still-unexpired prior is then probed for owner liveness with :meth:`_owner_state`
+        (#637): a ``"live"`` or ``"unknown"`` owner refuses with :class:`LeaseConflictError` --
+        fail-closed, only proof of death admits, so an identity-blind or cross-host peer is never
+        superseded while possibly alive -- while a provably ``"dead"`` owner (crash orphan, stale
+        boot-id, or reused pid) falls through to supersede with no TTL wait, closing the crash-orphan
+        self-refusal window. ``"supersede"`` (the default for every other consumer) is byte-for-byte
+        the prior behavior -- the #356 retry-supersede design and its pins stay intact.
+        """
 
         digest = resource_sha256(resource_ref)
         if digest in registry.settlements:
@@ -2133,6 +2170,18 @@ class LeaseBroker:
                 "canonically closed resource requires acquire_successor with predecessor receipt"
             )
         if prior is not None:
+            if on_conflict == "refuse":
+                prior_lease = registry.leases.get(prior.lease_id)
+                if (
+                    prior_lease is not None
+                    and not self._expired(prior_lease, monotonic=monotonic, boot_id=boot_id)
+                    and self._owner_state(prior_lease) != "dead"
+                ):
+                    raise LeaseConflictError(
+                        "resource is held by a live lease owned by "
+                        f"{prior_lease.owner_id!r}; refuse-mode admission will not supersede it",
+                        holder_owner_id=prior_lease.owner_id,
+                    )
             registry.leases.pop(prior.lease_id, None)
 
     @staticmethod
@@ -2212,8 +2261,19 @@ class LeaseBroker:
         agent_type: str | None = None,
         batch_id: str | None = None,
         parent_agent_id: str | None = None,
+        on_conflict: OnConflict = "supersede",
     ) -> Lease:
-        """Atomically reserve one agent slot, provisional when ``resource_ref`` is absent."""
+        """Atomically reserve one agent slot, provisional when ``resource_ref`` is absent.
+
+        ``on_conflict`` (#627 KTD1) selects the admission response to a live prior lease on the same
+        resource digest: ``"supersede"`` (default) keeps the #356 retry-supersede semantics for every
+        existing caller; ``"refuse"`` -- the outcome dispatcher's opt-in -- raises
+        :class:`LeaseConflictError` for a live, unexpired prior. Expired or canonically-settled priors
+        behave identically in both modes.
+        """
+
+        if on_conflict not in ("supersede", "refuse"):
+            raise LeaseBrokerError("on_conflict must be supersede or refuse")
 
         owner = _bounded(owner_id, "owner_id")
         session = _bounded(session_id, "session_id")
@@ -2271,7 +2331,13 @@ class LeaseBroker:
                         )
                     return lease
             if resource is not None:
-                self._drop_superseded_resource_lease(registry, resource)
+                self._drop_superseded_resource_lease(
+                    registry,
+                    resource,
+                    on_conflict=on_conflict,
+                    monotonic=monotonic,
+                    boot_id=boot_id,
+                )
             self._admit_agent(
                 registry,
                 session_id=session,

@@ -1316,23 +1316,49 @@ def _reconcile_once(
             _append_ledger_once(store, {"phase": "halt", "kind": "dispatch", "key": key, **receipt})
             halted.append(receipt)
             continue
-        except outcome_dispatcher.DispatcherError as refusal:
-            # A lease-authority refusal (admission conflict with another runtime, renew failure) — the
-            # cross-runtime conflict signal the activated seam exists to raise. Same recovery posture as
-            # a backend HALT: release the lock so a later tick re-attempts, record the refusal durably,
-            # never abort the tick. This must NOT be recorded as an acknowledgement — the ledger reducer
-            # marks any ack settled, which would strand the leaf as permanently done. The explicit
-            # "kind" sits AFTER the receipt spread: the reducer's halt arm matches (dispatch, halt), and
-            # a receipt-spread "kind" of "halt" would hide this record from the derived report.
+        except outcome_dispatcher.DispatcherError as dispatch_error:
+            # #45 U4 / R6/R7 (upstream #637 R4/R6/KTD2/KTD3): branch on the dispatcher's TYPED
+            # transient/permanent contract. A PERMANENT DispatcherError (fleet-core shim load / lease
+            # protocol skew, a fail-closed settlement release refusal, a malformed dispatch request)
+            # is environmental — it would hit every leaf this tick — so continuing buys nothing.
+            # Re-raise it BEFORE any lease-release or ledger write to ABORT the tick loudly
+            # (restoring the pre-#627 page-the-operator posture) with zero new state.
+            #   Named consequence (R7a): the per-subplot `dispatch-{sid}` STORE lock stays HELD on an
+            #   aborted tick and self-heals via acquire_lease's stale-reclaim after the 900 s
+            #   store-lock TTL. The distinct 300 s broker dispatch lease is ALREADY released by
+            #   make_dispatcher's own finally before this arm runs. The coordinator lock is released
+            #   by advance()'s outer finally, so a loud abort never wedges the coordinator.
+            if not isinstance(dispatch_error, outcome_dispatcher.DispatcherLeaseTransientError):
+                raise
+            # TRANSIENT path (unchanged behavior): a cross-runtime lease REFUSAL — refuse-mode
+            # admission on a live unexpired prior (guarding the 300 s broker dispatch lease), a
+            # mid-flight renew loss, or a lease that vanished before settlement — is
+            # TRANSIENT-retriable, not a wedge. Release the lock so a later tick re-attempts, record
+            # the refusal durably, never abort the tick. This must NOT be recorded as an
+            # acknowledgement — the ledger reducer marks any ack settled, which would strand the leaf
+            # as permanently done. The explicit "kind" sits AFTER the receipt spread (KTD4:
+            # spread-first, literal-last): the reducer's halt arm matches (dispatch, halt), and a
+            # receipt-spread "kind" of "halt" would hide this record from reduce_dispatch_ledger and
+            # outcome_report._halted_subplots — the #628 invisibility shape. The receipt's own kind
+            # is preserved under "receipt_kind" so no receipt data is lost.
             outcome_store.release_lease(store, f"dispatch-{sid}", holder)
             receipt = {
                 "kind": "halt",
                 "outcome_id": spec.outcome_id,
                 "subplot_id": sid,
                 "backend": resolved_backend,
-                "reason": str(refusal),
+                "reason": str(dispatch_error),
             }
-            _append_ledger_once(store, {"phase": "halt", "key": key, **receipt, "kind": "dispatch"})
+            _append_ledger_once(
+                store,
+                {
+                    **receipt,
+                    "receipt_kind": receipt["kind"],
+                    "phase": "halt",
+                    "key": key,
+                    "kind": "dispatch",
+                },
+            )
             halted.append(receipt)
             continue
         if degrade_receipt is not None:
@@ -1779,22 +1805,43 @@ def production_worktree_processor(
     runner: Callable[..., Any] | None = None,
     owner: str = "",
     cap: int | None = None,
+    lease_authority: Any | None = None,
 ) -> Callable[[Any, Any], Any]:
     """Build the worktree processor ``advance`` runs each tick under the held coordinator lease (U7):
     it reaps terminal sub-outcomes' worktrees, records the worktree-removed terminal (R32) + cascade,
-    and provisions a durable worktree for each dispatched sub-outcome (cap-bounded, R15)."""
+    and provisions a durable worktree for each dispatched sub-outcome (cap-bounded, R15).
+
+    This factory — not the ``advance``/``prune`` subparsers — is the seam where the worktree lease
+    authority is CONSTRUCTED and injected (#45 R8). ``lease_authority=None`` resolves the one
+    canonical broker, so every tick reconciles, reaps, and provisions under a proven lease."""
+    import lease_broker as fleet_leases
     import outcome_worktrees
 
     ops = outcome_worktrees.git_worktree_ops(repo_root, runner=runner)
     owner = owner or _default_holder()
     wt_cap = cap if cap is not None else outcome_worktrees.WORKTREE_CAP
+    selected = fleet_leases.broker() if lease_authority is None else lease_authority
 
     def processor(spec: Any, store: Any) -> Any:
-        harvested = outcome_worktrees.harvest_worktrees(spec, store, ops)
-        provisioned = outcome_worktrees.provision_pending(
-            repo_root, spec, store, ops, owner=owner, cap=wt_cap
+        leases = outcome_worktrees.reconcile_worktree_leases(
+            repo_root,
+            spec,
+            store,
+            ops,
+            selected,
+            owner=owner,
         )
-        return {**harvested, **provisioned}
+        harvested = outcome_worktrees.harvest_worktrees(spec, store, ops, lease_authority=selected)
+        provisioned = outcome_worktrees.provision_pending(
+            repo_root,
+            spec,
+            store,
+            ops,
+            owner=owner,
+            cap=wt_cap,
+            lease_authority=selected,
+        )
+        return {**leases, **harvested, **provisioned}
 
     return processor
 
@@ -2087,6 +2134,7 @@ def main(argv: list[str] | None = None) -> int:
                 store,
                 args.subplot_id,
                 worktree_ops=outcome_worktrees.git_worktree_ops(root),
+                lease_authority=outcome_dispatcher.default_lease_authority(),
             )
             save_spec(root, spec)
             print(json.dumps(summary))

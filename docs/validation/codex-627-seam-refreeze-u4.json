@@ -1,0 +1,29 @@
+{
+  "port_id": "codex-627-seam-refreeze-2026-07-25",
+  "unit": "U4",
+  "recorded_at": "2026-07-26T03:15:57Z",
+  "repo_head": "30a37c21750bf52111a3278dd6483f8b1c8bfd26",
+  "schema_version": 1,
+  "check": {
+    "argv": [
+      "uv",
+      "run",
+      "pytest",
+      "-q",
+      "plugins/saga/tests/test_outcome_dispatcher.py",
+      "plugins/saga/tests/test_outcome_reconcile.py",
+      "plugins/saga/tests/test_outcome_board_sync.py"
+    ],
+    "exit_code": 0,
+    "summary": "75 passed"
+  },
+  "oracles": [
+    "a lease conflict raises DispatcherLeaseTransientError and the tick continues",
+    "a non-transient DispatcherError re-raises at the head of the except arm before any further ledger write; the per-subplot dispatch-{sid} store lock is still held at the moment of the raise, and no record exists beyond the pre-dispatch snapshot (no halt, no acknowledgement, no settlement)",
+    "the transient path releases the per-subplot lock, appends a reducer-visible (dispatch, halt) record paired to the intent key with receipt_kind preserving the receipt's own kind, and reduce_dispatch_ledger's halt arm matches it",
+    "a failed shim load classifies as non-transient rather than assuming transient",
+    "the outcome.dispatch.v2 intent/acknowledgement contract is unchanged (test_outcome_board_sync.py passes unmodified)",
+    "repeated transient failures for the same intent key append exactly one halt record per attempt and never duplicate a settlement",
+    "settling an attempt twice is a no-op rather than a second record or a raise"
+  ]
+}

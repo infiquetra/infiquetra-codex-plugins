@@ -1,0 +1,31 @@
+{
+  "port_id": "codex-627-seam-refreeze-2026-07-25",
+  "unit": "U3",
+  "recorded_at": "2026-07-26T03:15:57Z",
+  "repo_head": "30a37c21750bf52111a3278dd6483f8b1c8bfd26",
+  "schema_version": 1,
+  "check": {
+    "argv": [
+      "uv",
+      "run",
+      "pytest",
+      "-q",
+      "plugins/fleet-core/tests/test_lease_broker.py"
+    ],
+    "exit_code": 0,
+    "summary": "68 passed"
+  },
+  "oracles": [
+    "on_conflict=refuse against a live unexpired prior refuses with LeaseConflictError carrying holder_owner_id",
+    "unknown owner state on an unexpired prior refuses, matching the live case",
+    "a provably dead prior (crash orphan) supersedes immediately with no TTL wait",
+    "crash orphan, stale boot id, and reused pid each classify as dead",
+    "an EXPIRED prior is reclaimed in refuse mode because _expired precedes the liveness probe",
+    "prior_lease is None falls through to supersede rather than refusing",
+    "retained-settlement precedence gate fires ahead of the refuse branch",
+    "canonically-closed-with-absent-lease precedence gate fires ahead of the refuse branch",
+    "default on_conflict=supersede is byte-identical to pre-port behavior for untouched callers",
+    "an unknown on_conflict string, None, and empty string are all rejected at the public boundary"
+  ],
+  "ktd6_finding": "plugins/saga/scripts/lease_broker.py (542 lines) is a thin delegating adapter that binds fleet_commons_shim.load(\"lease_broker\") and holds zero admission logic of its own (\"All state transitions remain in fleet-core\"); it carries neither _drop_superseded_resource_lease nor _owner_state. It is not a vendored shim needing its own refuse-mode copy. The refuse-mode port targets only plugins/fleet-core/scripts/fleet_commons/lease_broker.py per KTD6; there is no scope change."
+}
