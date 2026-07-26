@@ -160,12 +160,27 @@
       "recorded_at": "2026-07-26T03:33:01Z",
       "repo_head": "30a37c21750bf52111a3278dd6483f8b1c8bfd26",
       "unit": "U8"
+    },
+    {
+      "argv": [
+        "python3",
+        "tools/run_cross_runtime_outcome_acceptance.py"
+      ],
+      "artifact_path": "docs/validation/codex-627-seam-refreeze-u8-cutover.json",
+      "artifact_sha256": "9666f20175cfc91dbc8da54ca3703df392ad85efd88818e6d32265865b0cf276",
+      "cwd": ".",
+      "evidence_id": "u8-cutover-20260726",
+      "exit_code": 0,
+      "kind": "cutover",
+      "recorded_at": "2026-07-26T03:40:51Z",
+      "repo_head": "4f325247566efe972fbcb2c6b605b34542e49b7b",
+      "unit": "U8"
     }
   ],
   "port_id": "codex-627-seam-refreeze-2026-07-25",
   "refresh_changes": [],
   "release_evidence": {
-    "cutover": null,
+    "cutover": "u8-cutover-20260726",
     "fresh_session": "u8-fresh-session-20260726",
     "isolated_install": "u8-isolated-install-20260726",
     "review": "u8-review-20260726",
