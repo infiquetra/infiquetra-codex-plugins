@@ -25,6 +25,14 @@ CODEX_INVENTORY_SHA256 = "656bf596f67e4e65baa97648e8fea2fc39dcd306c5d5b059cbdc4b
 # Frozen treatment per source row (KTD3: Claude host primitives are reject/defer, never
 # direct-port). Adapted rows must carry planned targets and tests; defer/reject rows must not
 # claim implementation units.
+#
+# 2026-07-25 (codex#45 U1, R4b): `plugins/saga/scripts/outcome_worktrees.py` and
+# `tests/test_outcome_worktrees.py` moved `defer` -> `codex-adapt`. Both were deferred here to
+# codex#34, which closed on 2026-07-20 without treating them, leaving orphaned defers against a
+# discharged issue. They cannot be re-derived in the successor contract
+# (`2026-07-25-codex-627-seam-refreeze.json`) because `outcome_worktrees.py` has zero changed
+# lines across `cf15a09f..b464d090`, so codex#45 discharges them in place, claiming free unit
+# id `U6` in this manifest (that `U6` is the codex#45 plan's U5).
 SOURCE_TREATMENTS = {
     ".claude-plugin/marketplace.json": "reject",
     "plugins/fleet-core/.claude-plugin/plugin.json": "codex-adapt",
@@ -49,7 +57,7 @@ SOURCE_TREATMENTS = {
     "plugins/saga/scripts/outcome.py": "defer",
     "plugins/saga/scripts/outcome_dispatcher.py": "codex-adapt",
     "plugins/saga/scripts/outcome_store.py": "codex-adapt",
-    "plugins/saga/scripts/outcome_worktrees.py": "defer",
+    "plugins/saga/scripts/outcome_worktrees.py": "codex-adapt",
     "plugins/saga/scripts/reap_orphans.py": "defer",
     "plugins/saga/scripts/run_ledger.py": "codex-adapt",
     "plugins/saga/scripts/second_opinion.py": "defer",
@@ -61,7 +69,7 @@ SOURCE_TREATMENTS = {
     "tests/test_manifest_store.py": "defer",
     "tests/test_orphan_fencing.py": "codex-adapt",
     "tests/test_outcome_dispatcher.py": "codex-adapt",
-    "tests/test_outcome_worktrees.py": "defer",
+    "tests/test_outcome_worktrees.py": "codex-adapt",
     "tests/test_pulse_telemetry.py": "defer",
     "tests/test_reap_orphans.py": "defer",
     "tests/test_review_second_opinion.py": "defer",
