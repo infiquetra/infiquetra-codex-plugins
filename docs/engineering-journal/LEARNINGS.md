@@ -369,7 +369,9 @@ pre-cutover baseline and needed updating to the new version, not just left to fa
 stray file anywhere outside the excluded top-level set (`.claude/` is NOT excluded; only `.codex/`
 is) shows up as a permanent, pre-existing "unclassified legacy workflow token path" error that no
 amount of correct release-surface work can clear without touching repo hygiene explicitly ruled
-out of scope. Confirmed via `git stash` that this exact error pre-dates the U6 diff.
+out of scope. `git stash` confirms this error is not caused by the diff's **tracked** changes —
+note that plain `git stash` does not touch untracked files, so it cannot establish that the
+untracked file predates the session, and an earlier draft of this entry overstated it that way.
 
 **Generalizable rule:** before calling a version bump complete, `grep -rn "<old version string>"`
 the whole tree (not just the plugin manifests) and re-run every generator script that owns a
@@ -381,3 +383,30 @@ became a false assertion the moment U2–U5 landed, but nothing forced it to upd
 re-runs those assertions against the current manifest until the SAME test file is executed at
 cutover. A green suite between units is not proof the fixed assertions in that suite still match
 the state the units are supposed to reach.
+
+**Recurrence (round 5, same issue).** This rule was already written down and the branch still went
+red a second time. The round-5 review repairs unified a **docstring** across eight test modules;
+one of them, `tests/test_outcome_dispatcher.py`, is one of the inventory's 135 entries, so its
+sha256 drifted and four tests failed (2724 passed / 4 failed at `a6e00a7`). Two things make this
+easy to miss and are worth stating explicitly:
+
+- **A comment-only edit is enough.** The inventory is a byte-digest per file. Nothing about
+  "docstrings don't execute" protects you — the digest does not care that the change was inert.
+- **The blast radius is not where you look for it.** The failures surface in
+  `test_validate_codex_plugins.py` and `test_verified_workflows_migration.py`, files the diff never
+  touched, so the failing test names point nowhere near the edit that caused them.
+- **Targeted gates cannot catch it.** The affected modules ran 654 passed immediately after the
+  edit; only the full suite sees it. A merge gated on the targeted run would have shipped red.
+
+Also worth knowing before you go hunting: the **historical** binding is separate from the current
+digests. Here `historical_inventory_sha256` and the pinned
+`LEGACY_WORKFLOW_HISTORICAL_INVENTORY_SHA256` constant did **not** move and needed no edit — only
+one per-entry `sha256` did. And `docs/engineering-journal/DECISIONS.md` is inventory-covered while
+`LEARNINGS.md` is not, so adding a decision entry forces a rebuild and adding a learning entry does
+not.
+
+**Sharpened rule:** any edit to a file in the 135-entry inventory — including whitespace, comments,
+and docstrings — requires `build_legacy_workflow_inventory.py --write` in the same commit, run
+with `--repo-root` against a clean worktree because the builder refuses the primary tree while
+untracked `.claude/` paths exist. Check membership with a path lookup against the inventory's
+`entries`, not by guessing from the directory.
