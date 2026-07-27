@@ -35,11 +35,11 @@ def _write_registry(tmp_path: Path, payload: dict) -> Path:
     return path
 
 
-def test_registry_preserves_exact_25_role_contracts() -> None:
+def test_registry_preserves_exact_role_contracts() -> None:
     registry = R.load_role_registry()
 
     assert {role.role_id for role in registry.roles} == R.EXPECTED_ROLE_IDS
-    assert len(registry.roles) == 25
+    assert len(registry.roles) == 28
     assert {role.kind for role in registry.roles} == {"agent-lens"}
     assert sum(role.category == "reviewer" for role in registry.roles) == 10
     assert sum(role.category == "tester" for role in registry.roles) == 8

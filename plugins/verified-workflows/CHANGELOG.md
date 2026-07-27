@@ -2,6 +2,23 @@
 
 All notable changes to this plugin are documented here.
 
+## [2.1.0] - 2026-07-26
+
+### Changed
+
+- Make all Verified Workflow skills explicit-only and reduce root to dispatch, runtime-receipt
+  verification, dependency release, approval boundaries, and reporting.
+- Replace executable root rows with a nine-column assignment contract and require blocking checks
+  to name an executable assignment owner.
+- Add `work_medium` on Terra/medium plus `implementation-worker`, `remediation-worker`, and
+  `git-integration-operator`.
+- Enforce disjoint concurrent write sets, assignment-bounded changed paths, Git ownership by the Git
+  operator, one remediation assignment, and one targeted recheck.
+
+### Removed
+
+- Remove the before-and-after workspace audit subsystem and its serialized-writer guidance.
+
 ## [2.0.0] - 2026-07-24
 
 ### Changed

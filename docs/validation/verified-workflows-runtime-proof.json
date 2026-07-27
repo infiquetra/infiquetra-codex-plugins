@@ -22,59 +22,68 @@
     {
       "profile_id": "review_max",
       "runtime_agent_name": "review_max",
-      "sha256": "02326611dccfcc6e4666a4e825c1a94044ff651a7e1be5c47842533ce9d8cce8"
+      "sha256": "e8594bedca2dc55c515d8cb26180c7c1c3deaa2a75c0b2947584f3e6350bf1a4"
     },
     {
       "profile_id": "review_high",
       "runtime_agent_name": "review_high",
-      "sha256": "3c0b9d8070e300cb84c456fd2ca09ef5999408d84d5a6ee8964303c8b38683d0"
+      "sha256": "cb52462ff05bb292c55711c6d51a71fddfa52ba1ca159fa6d91d2479e82ffd4f"
+    },
+    {
+      "profile_id": "work_medium",
+      "runtime_agent_name": "work_medium",
+      "sha256": "657767e357de096bd342c7bad7df7d32bd790846f88718a40a188abf791fc75b"
     },
     {
       "profile_id": "work_high",
       "runtime_agent_name": "work_high",
-      "sha256": "520fcdd1f404adb2e6ac911a50054e5cb230ae557eec693d20ccc54cba322d98"
+      "sha256": "2130ec45570e45c32175b2de87b1e666c43c83dcb520b65d3e2ce89668a029a3"
     },
     {
       "profile_id": "test_medium",
       "runtime_agent_name": "test_medium",
-      "sha256": "45105c90ed7e2c51b8b0ecffafed16a1dfb2a0ab24c8cdf47a2f5790a672da60"
+      "sha256": "1c05e5cfce139fec97fed352b55dca03fa3d7e71b9c57759763fb7de8fe983bb"
     },
     {
       "profile_id": "scan_low",
       "runtime_agent_name": "scan_low",
-      "sha256": "caca93d44de56bf12839f50fc30e013bb210bd19d13b0c6098a6dfb256d80ac7"
+      "sha256": "7590bfcc09c116aedd147e2054279105e017847b889570353a21ea09c4d85b65"
     },
     {
       "profile_id": "monitor_low",
       "runtime_agent_name": "monitor_low",
-      "sha256": "633a29e67fb570814ba079015ce7d6a372ea67fd44d1dc9c156276247375ef36"
+      "sha256": "f606d01ae1e270a3076f3baca59f95b77a79af19ca5ade41a04f0132b4407a38"
     }
   ],
   "project_discovery": {
     "files": [
       {
         "filename": "monitor_low.toml",
-        "sha256": "633a29e67fb570814ba079015ce7d6a372ea67fd44d1dc9c156276247375ef36"
+        "sha256": "f606d01ae1e270a3076f3baca59f95b77a79af19ca5ade41a04f0132b4407a38"
       },
       {
         "filename": "review_high.toml",
-        "sha256": "3c0b9d8070e300cb84c456fd2ca09ef5999408d84d5a6ee8964303c8b38683d0"
+        "sha256": "cb52462ff05bb292c55711c6d51a71fddfa52ba1ca159fa6d91d2479e82ffd4f"
       },
       {
         "filename": "review_max.toml",
-        "sha256": "02326611dccfcc6e4666a4e825c1a94044ff651a7e1be5c47842533ce9d8cce8"
+        "sha256": "e8594bedca2dc55c515d8cb26180c7c1c3deaa2a75c0b2947584f3e6350bf1a4"
       },
       {
         "filename": "scan_low.toml",
-        "sha256": "caca93d44de56bf12839f50fc30e013bb210bd19d13b0c6098a6dfb256d80ac7"
+        "sha256": "7590bfcc09c116aedd147e2054279105e017847b889570353a21ea09c4d85b65"
       },
       {
         "filename": "test_medium.toml",
-        "sha256": "45105c90ed7e2c51b8b0ecffafed16a1dfb2a0ab24c8cdf47a2f5790a672da60"
+        "sha256": "1c05e5cfce139fec97fed352b55dca03fa3d7e71b9c57759763fb7de8fe983bb"
       },
       {
         "filename": "work_high.toml",
-        "sha256": "520fcdd1f404adb2e6ac911a50054e5cb230ae557eec693d20ccc54cba322d98"
+        "sha256": "2130ec45570e45c32175b2de87b1e666c43c83dcb520b65d3e2ce89668a029a3"
+      },
+      {
+        "filename": "work_medium.toml",
+        "sha256": "657767e357de096bd342c7bad7df7d32bd790846f88718a40a188abf791fc75b"
       }
     ],
     "location": ".codex/agents",

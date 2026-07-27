@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.82.0 - 2026-07-26
+
+### Changed
+
+- Mark every Saga skill explicit-only through Codex skill metadata so ordinary questions and narrow
+  changes remain in the main session.
+- Remove bare ad-hoc requests from `saga:loop` routing; lifecycle routing now requires an explicit
+  invocation or an issue or plan reference.
+
 ## 0.81.0 - 2026-07-26
 
 ### Added

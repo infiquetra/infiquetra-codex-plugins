@@ -16,7 +16,7 @@ import workflow_dispatch as dispatch
 
 
 MAX_INPUT_BYTES = 4 * 1024 * 1024
-MAX_REMEDIATION_ROUNDS = 3
+MAX_REMEDIATION_ROUNDS = 1
 CHECK_STATUSES = {"pass", "warn", "failed", "blocked"}
 HEX64_RE = re.compile(r"^[0-9a-f]{64}$")
 AGENT_PATH_RE = re.compile(r"^/root(?:/[a-zA-Z0-9][a-zA-Z0-9_-]{0,127})+$")
@@ -177,12 +177,12 @@ def evaluate_gate(
     remediation_round: int = 0,
     revalidated_finding_ids: Sequence[str] = (),
 ) -> dict[str, Any]:
-    """Return pass, block, or escalate from closed root-owned gate inputs."""
+    """Return pass, block, or escalate from closed root-orchestrated gate inputs."""
 
     if isinstance(remediation_round, bool) or not isinstance(remediation_round, int):
         raise GateEvaluationError("remediation_round must be an integer")
     if not 0 <= remediation_round <= MAX_REMEDIATION_ROUNDS:
-        raise GateEvaluationError("a fourth automatic remediation round is forbidden")
+        raise GateEvaluationError("more than one remediation round is forbidden")
     if not implementation_root_identity.strip():
         raise GateEvaluationError("implementation root identity is required")
     expected_children = {
@@ -224,17 +224,9 @@ def evaluate_gate(
                     f"reviewer {assignment_id} fresh root reuses the implementation root"
                 )
         else:
-            parent_assignment = assignments[parent]
-            if parent_assignment.is_root:
-                expected_parent = implementation_root_identity
-                expected_root = implementation_root_identity
-                parent_path = "/root"
-            else:
-                parent_authority = authorities[parent]
-                expected_parent = parent_authority["session_id"]
-                expected_root = parent_authority["execution_root_id"]
-                parent_path = parent_authority["agent_path"]
-            expected_path = f"{parent_path}/{assignment_id}"
+            raise GateEvaluationError(
+                f"assignment {assignment_id} has an unsupported execution parent {parent!r}"
+            )
         if authority["parent_thread_id"] != expected_parent:
             raise GateEvaluationError(
                 f"attempt authority {assignment_id} parent thread does not match the approved graph"
@@ -336,7 +328,14 @@ def evaluate_gate(
             hard_stops.append("fresh focused revalidation is required after remediation")
 
     blockers = sorted(set(hard_stops + issues))
-    if blockers and remediation_round >= MAX_REMEDIATION_ROUNDS:
+    actionable_finding_remains = any(
+        finding.get("resolved") is not True for finding in all_findings
+    )
+    if (
+        blockers
+        and remediation_round >= MAX_REMEDIATION_ROUNDS
+        and actionable_finding_remains
+    ):
         verdict = "escalate"
         next_round = None
     elif blockers:

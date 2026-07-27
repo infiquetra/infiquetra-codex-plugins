@@ -32,7 +32,19 @@ def contract():
 
 
 def valid_results() -> dict[str, dict[str, object]]:
+    implementation = result()
+    implementation.update(
+        {
+            "assignment_id": "implement",
+            "attempt_id": "implement-attempt-1",
+            "agent_path": "/root/implement",
+            "role_id": "implementation-worker",
+            "profile_id": "work_medium",
+            "changed_paths": ["src/feature.py"],
+        }
+    )
     values = {
+        "implement": implementation,
         "test": result(),
         "review": result(assignment_id="review", reviewer=True),
     }
@@ -215,15 +227,15 @@ def test_missing_or_failed_blocking_check_blocks() -> None:
     )["blocking_reasons"]
 
 
-def test_fourth_automatic_remediation_round_is_forbidden() -> None:
-    with pytest.raises(G.GateEvaluationError, match="fourth automatic"):
-        evaluate(remediation_round=4)
+def test_second_automatic_remediation_round_is_forbidden() -> None:
+    with pytest.raises(G.GateEvaluationError, match="more than one remediation"):
+        evaluate(remediation_round=2)
 
 
-def test_third_unresolved_round_escalates() -> None:
+def test_unresolved_finding_after_one_remediation_escalates() -> None:
     results = valid_results()
     results["review"]["findings"] = [finding()]
-    decision = evaluate(results=results, remediation_round=3)
+    decision = evaluate(results=results, remediation_round=1)
     assert decision["verdict"] == "escalate"
     assert decision["next_remediation_round"] is None
 

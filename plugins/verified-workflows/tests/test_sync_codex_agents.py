@@ -95,8 +95,8 @@ def test_dry_run_is_read_only_and_reports_sanitized_plan(tmp_path: Path) -> None
     assert not target_path.exists()
     assert not S._lock_path(plan.target).exists()
     assert not S._transaction_dir(plan.target).exists()
-    assert len(receipt["profiles"]) == 6
-    assert len(receipt["roles"]) == 25
+    assert len(receipt["profiles"]) == 7
+    assert len(receipt["roles"]) == 28
     assert {
         "sha256",
         "canonical_sha256",
@@ -117,7 +117,7 @@ def test_dry_run_is_read_only_and_reports_sanitized_plan(tmp_path: Path) -> None
     assert str(tmp_path) not in json.dumps(receipt)
 
 
-def test_isolated_apply_installs_six_profiles_and_is_idempotent(tmp_path: Path) -> None:
+def test_isolated_apply_installs_managed_profiles_and_is_idempotent(tmp_path: Path) -> None:
     target_path = tmp_path / "agents"
     first_plan = _plan(target_path)
     first = S.apply_sync(first_plan)

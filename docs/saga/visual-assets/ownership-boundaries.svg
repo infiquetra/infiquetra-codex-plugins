@@ -33,7 +33,7 @@
 <rect x="630" y="211" width="250" height="18" fill="#7c3aed"/>
 <text x="650" y="206" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="850" fill="#ffffff">verified-workflows</text>
 <text x="650" y="266" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="850" fill="#5b6472">OWNS</text>
-<text x="650" y="298" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="400" fill="#172033"><tspan x="650" dy="0">root-owned workflow DAGs,</tspan><tspan x="650" dy="20">logical role execution,</tspan><tspan x="650" dy="20">selected validators,</tspan><tspan x="650" dy="20">barriers, and receipt-backed</tspan><tspan x="650" dy="20">gate evidence</tspan></text>
+<text x="650" y="298" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="400" fill="#172033"><tspan x="650" dy="0">root-orchestrated workflow</tspan><tspan x="650" dy="20">DAGs, logical role</tspan><tspan x="650" dy="20">execution, selected</tspan><tspan x="650" dy="20">validators, barriers, and</tspan><tspan x="650" dy="20">receipt-backed gate evidence</tspan></text>
 <line x1="650" y1="432" x2="860" y2="432" stroke="#e2e8f0"/>
 <text x="650" y="470" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="850" fill="#5b6472">DOES NOT OWN</text>
 <text x="650" y="502" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="400" fill="#172033"><tspan x="650" dy="0">final mutation approval,</tspan><tspan x="650" dy="20">lifecycle authority, scope</tspan><tspan x="650" dy="20">expansion, or deployment</tspan><tspan x="650" dy="20">ownership</tspan></text>

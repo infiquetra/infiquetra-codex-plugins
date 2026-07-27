@@ -46,11 +46,12 @@ def _raw_model(
     }
 
 
-def test_full_catalog_renders_exact_six_model_pinned_profiles() -> None:
+def test_full_catalog_renders_exact_model_pinned_profiles() -> None:
     bundle = _bundle()
     expected = {
         "review_max": ("gpt-5.6-sol", "max", "read-only"),
         "review_high": ("gpt-5.6-sol", "high", "read-only"),
+        "work_medium": ("gpt-5.6-terra", "medium", "workspace-write"),
         "work_high": ("gpt-5.6-sol", "high", "workspace-write"),
         "test_medium": ("gpt-5.6-terra", "medium", "workspace-write"),
         "scan_low": ("gpt-5.6-terra", "low", "read-only"),

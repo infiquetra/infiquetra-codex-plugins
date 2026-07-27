@@ -85,10 +85,7 @@ def review_workflow(
 
     rows: list[dict[str, Any]] = []
     for spec in contract.launch_specs:
-        if spec.agent_type is None:
-            disposition = "root-owned"
-            limitation = "root execution has no child receipt"
-        elif spec.parent.startswith("fresh-root:"):
+        if spec.parent.startswith("fresh-root:"):
             disposition = "fresh-review-root-required"
             limitation = "the separately started review-root identity must be validated at runtime"
         else:

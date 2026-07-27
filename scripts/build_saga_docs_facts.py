@@ -111,7 +111,7 @@ OWNER_BOUNDARIES = {
         "does_not_own": "Saga lifecycle phase authority or deployment tags",
     },
     "verified-workflows": {
-        "owns": "root-owned workflow DAGs, logical role execution, selected validators, barriers, and receipt-backed gate evidence",
+        "owns": "root-orchestrated workflow DAGs, logical role execution, selected validators, barriers, and receipt-backed gate evidence",
         "does_not_own": "final mutation approval, lifecycle authority, scope expansion, or deployment ownership",
     },
     "deploy": {

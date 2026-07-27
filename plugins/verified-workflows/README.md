@@ -7,7 +7,7 @@ hierarchy, liveness, messaging, waiting, interruption, and restoration. This plu
 operator-approved contract, validates runtime identity and typed results, audits writable attempts,
 evaluates gates, and writes one concise run record.
 
-Release candidate: `2.0.0+codex.20260724175626` is the V2-only package. Historical Team
+Release candidate: `2.1.0+codex.20260727035515` is the explicit, root-orchestrated V2-only package. Historical Team
 Execution names and earlier V1 or hook-based proof artifacts are lineage only; they are not active
 execution paths.
 
@@ -25,19 +25,16 @@ execution paths.
 approved Workflow Contract
           |
           v
-main Codex session (orchestrator and Git owner)
+main Codex session (orchestrator only)
           |
-          +--> root-inline assignments
           +--> named Codex V2 assignments
           +--> fresh V2 independent-review roots
-          +--> deterministic root checks
-          +--> Saga-governed external actions
           |
           v
-typed results + runtime readback + workspace audits
+typed results + runtime readback + changed-path validation
           |
           v
-root gate decision + one bounded run record
+dependency release or operator blocker
 ```
 
 The operator sees and can edit the intended execution before launch. The canonical `## Workflow
@@ -45,7 +42,7 @@ Contract` contains three compact tables:
 
 ```text
 Assignments:
-id | depends | parent | role | profile | model | effort | context | writes | completion | fallback
+id | depends | role | profile | model | effort | writes | completion | fallback
 
 Blocking checks:
 id | owner | after | command-or-proof | blocking | failure
@@ -62,15 +59,16 @@ and approval.
 
 ## Managed V2 Profiles
 
-Logical roles are separate from compute profiles. The role registry preserves 25 role lenses; the
-workflow selects one of six generated profiles:
+Logical roles are separate from compute profiles. The role registry preserves 28 role lenses; the
+workflow selects one of seven generated profiles:
 
 | Profile | Model | Effort | Workspace intent | Purpose |
 |---|---|---|---|---|
 | `review_max` | `gpt-5.6-sol` | `max` | read-only | Exceptional-risk independent review |
 | `review_high` | `gpt-5.6-sol` | `high` | read-only | Normal independent review |
+| `work_medium` | `gpt-5.6-terra` | `medium` | declared write | Ordinary implementation, remediation, and Git integration |
 | `work_high` | `gpt-5.6-sol` | `high` | declared write | Complex bounded implementation |
-| `test_medium` | `gpt-5.6-terra` | `medium` | declared write | Ordinary implementation and testing |
+| `test_medium` | `gpt-5.6-terra` | `medium` | declared write | Ordinary testing and validation |
 | `scan_low` | `gpt-5.6-terra` | `low` | read-only | Low-cost repository scanning |
 | `monitor_low` | `gpt-5.6-terra` | `low` | read-only | Allowlisted external observation |
 
@@ -103,9 +101,9 @@ validates it with `result_contract.py`; prose, mailbox messages, and terminal no
 dependencies. Same-attempt continuation uses `followup_task` on the same path. Retry, remediation,
 and revalidation use a fresh attempt ID and fresh canonical path.
 
-Writable attempts are sequential unless Codex supplies per-agent mutation attribution. The root
-captures before-and-after state with `workspace_audit.py`, rejects undeclared paths and Git-control
-changes, and resumes Git activity only after the audit closes.
+Concurrent writable assignments must have disjoint write sets. Dependency-ordered assignments may
+share paths. Returned changed paths must remain inside the assignment's approved write paths, and
+only `git-integration-operator` may run Git commands.
 
 At least one authority-bearing reviewer runs beneath a separately launched fresh V2 review root with
 no implementation turns. The implementer and its descendants cannot review their own work.
@@ -113,9 +111,9 @@ Additional reviewers are selected only for concrete architecture, security, priv
 infrastructure, or testing risk.
 
 `gate_evaluator.py` reduces only validated typed results, deterministic checks, root-adopted
-findings, and reviewer assurance. Missing required evidence, failed blocking checks, unresolved P0
-or P1 findings, security hard stops, or missing independence block. The third unresolved remediation
-cycle escalates.
+findings, and reviewer assurance. Missing required evidence, failed blocking checks, unresolved
+actionable findings, or missing independence block. One remediation and one targeted recheck are
+the maximum automatic convergence cycle.
 
 ## External Actions
 

@@ -1,6 +1,6 @@
 ---
 name: loop
-description: The Infiquetra lifecycle router and resume substrate. Three modes — Route (dispatch the one next command), Drive (walk phases across the lifecycle, pausing at every gate and handoff), and Resume (scan the saga, restore the work-thread, re-enter where it left off). Reads the saga at entry, ticks it on every routing decision, and routes to the destination command — which owns its own phase work, gates, AND its own execution backend. Triggers on "loop", "where does this go", "route this", "drive it through the lifecycle", "resume", "what's in flight", an issue/plan path, or a bare ad-hoc ask.
+description: The explicit Infiquetra lifecycle router and resume substrate. Three modes — Route (dispatch the one next command), Drive (walk phases across the lifecycle, pausing at every gate and handoff), and Resume (scan the saga, restore the work-thread, re-enter where it left off). Reads the saga at entry, ticks it on every routing decision, and routes to the destination command — which owns its own phase work, gates, AND its own execution backend. Invoke explicitly with "loop", "where does this go", "route this", "drive it through the lifecycle", "resume", "what's in flight", or an issue/plan path.
 ---
 
 # Loop
@@ -91,9 +91,9 @@ Capture the input and decide the shape of the run before routing anything.
 
 ### 0.1 Capture input
 
-The input is a GitHub issue reference, a plan / requirements doc path, a bare ad-hoc ask, the word
-`resume`, or `drive it`. Take it from command arguments or the active artifact. If empty, ask: "Where
-should this go? Point me at the issue, a plan/doc path, describe the work, or say 'resume'."
+The input is a GitHub issue reference, a plan / requirements doc path, the word `resume`, or
+`drive it`. Take it from command arguments or the active artifact. If empty, ask: "Where should this
+go? Point me at the issue, a plan/doc path, or say 'resume'."
 
 ### 0.2 Issue handoff routing
 

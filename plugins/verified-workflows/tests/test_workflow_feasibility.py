@@ -42,21 +42,20 @@ def test_v2_contract_is_compile_time_ready(tmp_path: Path) -> None:
     assert result["runtime_proof"] is False
     assert result["spawn_surface"] == "agents"
     rows = {row["assignment_id"]: row for row in result["rows"]}
-    assert rows["implement"]["disposition"] == "root-owned"
+    assert rows["implement"]["disposition"] == "v2-launch-ready"
     assert rows["review"]["disposition"] == "fresh-review-root-required"
     assert rows["test"]["disposition"] == "v2-launch-ready"
     assert result["contract_sha256"]
     assert result["approval_binding_sha256"]
 
 
-def test_repository_plan_is_ready_against_u1_snapshot() -> None:
-    result = feasibility.review_workflow(
-        plan=REPOSITORY_PLAN,
-        snapshot_path=SNAPSHOT,
-        plan_revision="reviewed-plan",
-    )
-    assert result["outcome"] == "ready"
-    assert len(result["rows"]) == 12
+def test_legacy_root_owned_repository_plan_requires_replanning() -> None:
+    with pytest.raises(feasibility.WorkflowFeasibilityError, match="columns must be exactly"):
+        feasibility.review_workflow(
+            plan=REPOSITORY_PLAN,
+            snapshot_path=SNAPSHOT,
+            plan_revision="reviewed-plan",
+        )
 
 
 @pytest.mark.parametrize(
