@@ -21,15 +21,8 @@ attempt; it cannot revise the intent or create gate evidence.
 
 Subagents inherit parent permission choices, and live overrides can supersede profile defaults.
 Therefore the V2 `turn_context` permission profile and the profile's configured `sandbox_mode`
-remain separate facts. A read-only label or profile is requested policy until runtime readback and
-the root workspace audit agree. Broad permission modes remain outside gate-authoritative work.
-Requested read-only output needs a root-recorded pre/post mutation-audit digest with no observed
-writes before it can enter the gate; otherwise it remains advisory. The audit covers repository
-dirty, untracked, and ignored files with content, mode, and symlink readback, plus hashed Git HEAD,
-index, config, hooks, all refs, logs, and operation state. Empty directories are outside the audit
-claim because they do not affect repository content. Quiesce every other root/test/Git writer for
-the audit interval so a concurrent legitimate write cannot invalidate or be mistaken for child
-behavior.
+remain separate facts. A read-only label or profile is requested policy until runtime readback
+confirms it. Broad permission modes remain outside gate-authoritative work.
 
 Use a fresh attempt ID and canonical agent path for remediation or revalidation. Peer communication
 is optional and never required for correctness. Backpressure, missing named-profile selection, or
@@ -42,8 +35,8 @@ enforceable filesystem boundary exists. The action's status may be recorded in t
 run record, but its authority remains `non-gating`.
 
 Codex V2 `session_meta` plus `turn_context` provide runtime identity and effective-permission
-readback. The root validates those events against the approved launch and combines them with the
-typed terminal result and workspace audit; plugin hooks are not part of the active authority path.
+readback. Root validates those events against the approved launch and then validates the typed
+terminal result and changed paths; plugin hooks are not part of the active authority path.
 
 Official current behavior: [Codex subagents](https://learn.chatgpt.com/docs/agent-configuration/subagents)
 and [Codex hooks](https://learn.chatgpt.com/docs/hooks).

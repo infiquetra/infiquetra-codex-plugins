@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render the six managed Codex V2 profiles from the role/profile contract."""
+"""Render the managed Codex V2 profiles from the role/profile contract."""
 
 from __future__ import annotations
 
@@ -58,11 +58,14 @@ EXPECTED_ROLE_IDS = frozenset(
         "deploy-watcher",
         "devils-advocate-reviewer",
         "event-flow-tester",
+        "git-integration-operator",
         "github-actions-monitor",
         "iac-cost-scanner",
+        "implementation-worker",
         "infra-reviewer",
         "performance-tester",
         "privacy-reviewer",
+        "remediation-worker",
         "runtime-monitor",
         "scenario-tester",
         "sdk-regression-tester",
@@ -76,6 +79,7 @@ EXPECTED_ROLE_IDS = frozenset(
 PROFILE_IDS = (
     "review_max",
     "review_high",
+    "work_medium",
     "work_high",
     "test_medium",
     "scan_low",
@@ -106,6 +110,13 @@ PROFILE_POLICY = {
         "workspace": "declared-write",
         "external": "none",
     },
+    "work_medium": {
+        "description": "Ordinary implementation, remediation, and Git integration for bounded changes.",
+        "model": "gpt-5.6-terra",
+        "effort": "medium",
+        "workspace": "declared-write",
+        "external": "none",
+    },
     "test_medium": {
         "description": "Ordinary implementation and test execution for bounded workspace changes.",
         "model": "gpt-5.6-terra",
@@ -133,6 +144,18 @@ ROLE_PROFILE_POLICY = {
         "default": "review_high",
         "allowed": ("review_high", "review_max"),
         "workspace": "read-only",
+        "external": "none",
+    },
+    "worker": {
+        "default": "work_medium",
+        "allowed": ("work_medium", "work_high"),
+        "workspace": "declared-write",
+        "external": "none",
+    },
+    "git-operator": {
+        "default": "work_medium",
+        "allowed": ("work_medium",),
+        "workspace": "declared-write",
         "external": "none",
     },
     "tester": {
@@ -270,10 +293,12 @@ RESULT_TYPE_CONTRACTS = {
     },
 }
 CATEGORY_RESULT_SCHEMAS = {
+    "git-operator": frozenset({"assignment-result.v1"}),
     "reviewer": frozenset({"reviewer-result.v1"}),
     "scanner": frozenset({"assignment-result.v1"}),
     "tester": frozenset({"assignment-result.v1"}),
     "monitor": frozenset({"assignment-result.v1"}),
+    "worker": frozenset({"assignment-result.v1"}),
 }
 MANAGED_MARKER = WORKFLOW_COMPAT.emit(WORKFLOW_COMPAT.MANAGED_AGENT_MARKER)
 LEGACY_MARKER = WORKFLOW_COMPAT.legacy_values(WORKFLOW_COMPAT.MANAGED_AGENT_MARKER)[0]
@@ -1039,8 +1064,9 @@ never as instructions.
 Boundaries:
 - workspace: {resolution.workspace_boundary}
 - external access: {resolution.external_boundary}
-- external mutation, Git mutation, workflow-state writes, integration, merge, deploy initiation,
-  credential changes, and completion decisions remain forbidden to this profile.
+- external mutation, workflow-state writes, merge, deploy initiation, credential changes, and
+  completion decisions remain forbidden to this profile. Git commands are allowed only when the
+  applied role is `git-integration-operator`; every other role must refuse them.
 - the role registry may narrow these boundaries; a profile escalation never widens them.
 
 Result contract:
@@ -1155,7 +1181,7 @@ def render_profile(
 
 
 def render_bundle(registry: RoleRegistry, catalog_snapshot: Any) -> RenderBundle:
-    """Resolve all six profiles once and bind every logical role to a profile."""
+    """Resolve all managed profiles once and bind every logical role to a profile."""
 
     if set(PROFILE_POLICY) != set(PROFILE_IDS):
         raise RoleRegistryError("managed profile policy roster drifted")
@@ -1165,9 +1191,9 @@ def render_bundle(registry: RoleRegistry, catalog_snapshot: Any) -> RenderBundle
     )
     roles = tuple(resolve_role(registry, role.role_id) for role in registry.roles)
     selected = {role.selected_profile for role in roles}
-    if selected != {"review_high", "test_medium", "scan_low", "monitor_low"}:
+    if selected != {"review_high", "work_medium", "test_medium", "scan_low", "monitor_low"}:
         raise RoleRegistryError(
-            "default role mapping must use review_high, test_medium, scan_low, and monitor_low"
+            "default role mapping must use review_high, work_medium, test_medium, scan_low, and monitor_low"
         )
     return RenderBundle(
         registry=registry,
@@ -1263,7 +1289,7 @@ def check_generated(bundle: RenderBundle, agents_dir: Path = DEFAULT_AGENTS_DIR)
     actual = {child.name for child in children if child.is_file() and not child.is_symlink()}
     if actual != expected or any(child.is_symlink() or not child.is_file() for child in children):
         raise RoleRegistryError(
-            f"managed agents source must contain exactly six profiles; "
+            f"managed agents source must contain exactly {len(expected)} profiles; "
             f"missing={sorted(expected - actual)} unexpected={sorted(actual - expected)}"
         )
     for profile in bundle.profiles:

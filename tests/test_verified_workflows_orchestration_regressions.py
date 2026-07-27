@@ -17,11 +17,11 @@ def test_run_skill_links_every_runtime_contract() -> None:
     ):
         assert f"references/{name}" in skill
         assert (PLUGIN / "skills" / "run" / "references" / name).is_file()
-    assert "Codex V2 owns the live hierarchy" in skill
+    assert "Root does not edit files" in skill
     assert "session_meta" in skill
     assert "turn_context" in skill
-    assert "fresh V2 review root" in skill
-    assert "one bounded run record" in skill
+    assert "independent reviewer" in skill
+    assert "one targeted recheck" in skill
 
 
 def test_retired_v1_and_evidence_chain_surfaces_are_absent() -> None:
@@ -85,7 +85,6 @@ def test_runtime_scripts_do_not_import_sibling_workflow_plugins() -> None:
         PLUGIN / "scripts" / "protocol_probe.py",
         PLUGIN / "scripts" / "result_contract.py",
         PLUGIN / "scripts" / "run_record.py",
-        PLUGIN / "scripts" / "workspace_audit.py",
     ):
         text = path.read_text()
         assert "plugins.saga" not in text

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import copy
 import sys
 from pathlib import Path
 
@@ -18,25 +17,21 @@ def assignment(
     assignment_id: str,
     *,
     depends: str = "-",
-    parent: str = "root",
-    role: str = "root implementer",
-    profile: str = "root",
-    model: str = "gpt-5.6-sol",
-    effort: str = "max",
-    context: str = "root",
-    writes: str = "unit:U1",
+    role: str = "implementation-worker",
+    profile: str = "work_medium",
+    model: str = "gpt-5.6-terra",
+    effort: str = "medium",
+    writes: str = "src/feature.py",
     completion: str = "work completes",
     fallback: str = "none",
 ) -> list[str]:
     return [
         assignment_id,
         depends,
-        parent,
         role,
         profile,
         model,
         effort,
-        context,
         writes,
         completion,
         fallback,
@@ -47,11 +42,10 @@ def reviewer(*, depends: str = "implement", fallback: str = "review_max@terminal
     return assignment(
         "review",
         depends=depends,
-        parent="fresh-root:review",
         role="devils-advocate-reviewer",
         profile="review_high",
+        model="gpt-5.6-sol",
         effort="high",
-        context="none",
         writes="none",
         completion="review score passes",
         fallback=fallback,
@@ -62,9 +56,7 @@ def worker(
     worker_id: str = "test",
     *,
     depends: str = "implement",
-    parent: str = "root",
     writes: str = "tests/test_feature.py",
-    context: str = "turns:4",
     profile: str = "test_medium",
     model: str = "gpt-5.6-terra",
     effort: str = "medium",
@@ -74,22 +66,30 @@ def worker(
     return assignment(
         worker_id,
         depends=depends,
-        parent=parent,
         role="scenario-tester",
         profile=profile,
         model=model,
         effort=effort,
-        context=context,
         writes=writes,
         completion=completion,
         fallback=fallback,
     )
 
 
+def git_operator(*, depends: str = "implement,test") -> list[str]:
+    return assignment(
+        "integrate",
+        depends=depends,
+        role="git-integration-operator",
+        writes="none",
+        completion="run git diff --name-only against the approved write-path union",
+    )
+
+
 def check(
     check_id: str = "reviewer-assurance",
     *,
-    owner: str = "root",
+    owner: str = "review",
     after: str = "review",
     command: str = "reviewer result satisfies policy",
     blocking: str = "yes",
@@ -165,17 +165,18 @@ def compile_fixture(
     )
 
 
-def test_valid_mixed_contract_compiles_to_root_owned_launch_specs() -> None:
+def test_valid_mixed_contract_compiles_to_managed_launch_specs() -> None:
     contract = compile_fixture(external_actions=[external()])
 
     assert contract.schema_version == 2
     assert len(contract.assignments) == 3
     assert len(contract.external_actions) == 1
     specs = {spec.assignment_id: spec for spec in contract.launch_specs}
-    assert specs["implement"].agent_type is None
+    assert specs["implement"].agent_type == "work_medium"
+    assert specs["implement"].reasoning_effort == "medium"
     assert specs["review"].agent_type == "review_high"
     assert specs["review"].fork_turns == "none"
-    assert specs["test"].fork_turns == 4
+    assert specs["test"].fork_turns == "none"
     assert specs["test"].result_schema == "assignment-result.v1"
     assert specs["review"].reviewer_mandate_ids == (
         "assumption-validity",
@@ -287,12 +288,6 @@ def test_ordered_overlapping_writes_are_allowed() -> None:
     assert compile_fixture(rows).contract_sha256
 
 
-@pytest.mark.parametrize("context", ["root", "all", "turns:0", "turns:-1"])
-def test_delegated_context_must_be_bounded_or_absent(context: str) -> None:
-    with pytest.raises(W.WorkflowDispatchError, match="must be 'none' or turns"):
-        compile_fixture([assignment("implement"), reviewer(), worker(context=context)])
-
-
 def test_profile_model_effort_mismatch_is_rejected() -> None:
     rows = [assignment("implement"), reviewer(), worker(model="gpt-5.6-sol")]
     with pytest.raises(W.WorkflowDispatchError, match="requires model=gpt-5.6-terra"):
@@ -315,30 +310,83 @@ def test_widened_fallback_is_rejected() -> None:
         compile_fixture(rows)
 
 
+def test_executable_root_assignment_is_rejected() -> None:
+    root = assignment(
+        "implement",
+        role="root implementer",
+        profile="root",
+        model="gpt-5.6-sol",
+        effort="medium",
+    )
+    with pytest.raises(W.WorkflowDispatchError, match="executable root assignment"):
+        compile_fixture([root, reviewer(), worker()])
+
+
 def test_missing_independent_review_is_rejected() -> None:
-    dependent_review = copy.deepcopy(reviewer())
-    dependent_review[W.ASSIGNMENT_HEADERS.index("parent")] = "root"
-    rows = [assignment("implement"), dependent_review, worker()]
+    rows = [assignment("implement"), worker()]
     with pytest.raises(W.WorkflowDispatchError, match="fresh-root independent reviewer"):
-        compile_fixture(rows)
+        compile_fixture(rows, checks=[check(owner="implement", after="implement")])
 
 
-def test_fresh_root_must_be_same_id_read_only_reviewer() -> None:
-    bad_review = copy.deepcopy(reviewer())
-    bad_review[W.ASSIGNMENT_HEADERS.index("parent")] = "fresh-root:someone-else"
-    with pytest.raises(W.WorkflowDispatchError, match="same-id, read-only"):
-        compile_fixture([assignment("implement"), bad_review, worker()])
+def test_root_cannot_own_a_blocking_check() -> None:
+    with pytest.raises(W.WorkflowDispatchError, match="owner must be an executable assignment"):
+        compile_fixture(checks=[check(owner="root")])
 
 
-def test_assignment_parent_must_be_declared_dependency() -> None:
-    rows = [assignment("implement"), reviewer(), worker(parent="implement", depends="-")]
-    with pytest.raises(W.WorkflowDispatchError, match="depend on its declared parent"):
-        compile_fixture(rows)
+def test_dynamic_work_profiles_preserve_explicit_model_and_effort() -> None:
+    rows = [
+        assignment("ordinary"),
+        assignment(
+            "complex",
+            depends="ordinary",
+            profile="work_high",
+            model="gpt-5.6-sol",
+            effort="high",
+            writes="src/complex.py",
+        ),
+        reviewer(depends="complex"),
+    ]
+    contract = compile_fixture(rows)
+    specs = {item.assignment_id: item for item in contract.launch_specs}
+    assert (specs["ordinary"].model, specs["ordinary"].reasoning_effort) == (
+        "gpt-5.6-terra",
+        "medium",
+    )
+    assert (specs["complex"].model, specs["complex"].reasoning_effort) == (
+        "gpt-5.6-sol",
+        "high",
+    )
 
 
 def test_worker_git_mutation_is_rejected() -> None:
     rows = [assignment("implement"), reviewer(), worker(completion="git commit the change")]
-    with pytest.raises(W.WorkflowDispatchError, match="may not own a Git mutation"):
+    with pytest.raises(W.WorkflowDispatchError, match="non-Git role"):
+        compile_fixture(rows)
+
+
+def test_git_integration_operator_may_own_git_commands() -> None:
+    contract = compile_fixture(
+        [assignment("implement"), worker(), reviewer(), git_operator()],
+        checks=[check(owner="integrate", after="integrate")],
+    )
+    assert next(
+        item for item in contract.launch_specs if item.assignment_id == "integrate"
+    ).role == "git-integration-operator"
+
+
+def test_git_integration_operator_requires_final_path_check() -> None:
+    rows = [
+        assignment("implement"),
+        reviewer(),
+        assignment(
+            "integrate",
+            depends="implement",
+            role="git-integration-operator",
+            writes="none",
+            completion="run git status",
+        ),
+    ]
+    with pytest.raises(W.WorkflowDispatchError, match="git diff --name-only"):
         compile_fixture(rows)
 
 
@@ -370,15 +418,13 @@ def test_table_columns_are_exact() -> None:
         W.compile_workflow_contract(text, plan_revision="revision")
 
 
-def test_repository_plan_compiles() -> None:
+def test_legacy_root_owned_repository_plan_is_rejected() -> None:
     repo_root = Path(__file__).parents[3]
-    contract = W.compile_plan(
-        repo_root / "docs/plans/2026-07-24-codex-v2-orchestrated-execution-system-plan.md",
-        plan_revision="reviewed-plan",
-    )
-    assert len(contract.assignments) == 12
-    assert len(contract.checks) == 10
-    assert contract.external_actions == ()
+    with pytest.raises(W.WorkflowDispatchError, match="columns must be exactly"):
+        W.compile_plan(
+            repo_root / "docs/plans/2026-07-24-codex-v2-orchestrated-execution-system-plan.md",
+            plan_revision="reviewed-plan",
+        )
 
 
 def test_cli_emits_compiled_contract(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:

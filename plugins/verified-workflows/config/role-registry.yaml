@@ -97,6 +97,77 @@ result_types:
     reasons:
     - static-non-applicable
 roles:
+- id: implementation-worker
+  kind: agent-lens
+  category: worker
+  spec_version: 1
+  spec: roles/implementation-worker.md
+  description: General implementation worker for one approved bounded write assignment.
+  selection:
+    mode: conditional
+    signals:
+    - implementation
+    - source change
+    - bounded write
+  minimum_independence: preferred
+  default_profile: work_medium
+  allowed_profiles:
+  - work_medium
+  - work_high
+  boundaries:
+    workspace_cap: declared-write
+    external_cap: none
+    external_mutation: forbidden
+    profile_may_not_widen_role: true
+  result_schema: assignment-result.v1
+  source_behavior_sha256: 6e950e87c8e79826eaf7279466f64cd1745cb19ead8945f675ad070afd39cc41
+- id: remediation-worker
+  kind: agent-lens
+  category: worker
+  spec_version: 1
+  spec: roles/remediation-worker.md
+  description: General remediation worker for one approved set of verified findings.
+  selection:
+    mode: conditional
+    signals:
+    - remediation
+    - reviewer finding
+    - targeted fix
+  minimum_independence: preferred
+  default_profile: work_medium
+  allowed_profiles:
+  - work_medium
+  - work_high
+  boundaries:
+    workspace_cap: declared-write
+    external_cap: none
+    external_mutation: forbidden
+    profile_may_not_widen_role: true
+  result_schema: assignment-result.v1
+  source_behavior_sha256: e1dfe90302ac914f4dc4543ce653f6bd4e075bca5006b7e4860cbe05d896768d
+- id: git-integration-operator
+  kind: agent-lens
+  category: git-operator
+  spec_version: 1
+  spec: roles/git-integration-operator.md
+  description: Git integration operator for approved repository mechanics and final path-union validation.
+  selection:
+    mode: conditional
+    signals:
+    - Git integration
+    - commit
+    - push
+  minimum_independence: preferred
+  default_profile: work_medium
+  allowed_profiles:
+  - work_medium
+  boundaries:
+    workspace_cap: declared-write
+    external_cap: none
+    external_mutation: forbidden
+    profile_may_not_widen_role: true
+  result_schema: assignment-result.v1
+  source_behavior_sha256: 050812df2b54432699c83290acabac851d27c57fa9b3fcfc5639f88e9fe6f231
 - id: ai-usefulness-reviewer
   kind: agent-lens
   category: reviewer

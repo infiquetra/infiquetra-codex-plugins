@@ -1,73 +1,64 @@
 ---
 name: run
-description: Run an approved Infiquetra Workflow Contract as a root-owned Codex V2 DAG with exact named profiles, bounded context, typed results, independent review, deterministic checks, and one concise run record.
+description: Explicitly run an operator-approved Infiquetra Workflow Contract as a root-orchestrated Codex V2 DAG with exact profiles, runtime receipts, bounded writes, one independent review, one remediation, and one targeted recheck.
 ---
 
 # Run Verified Workflow
 
-Use this skill only after the operator approves the complete `## Workflow Contract` defined in [workflow-protocol.md](references/workflow-protocol.md). The main Codex session is the sole orchestrator and Git owner. Codex V2 owns the live hierarchy, liveness, messaging, waiting, interruption, and restoration.
+Use this skill only after the operator approves the complete `## Workflow Contract` defined in
+[workflow-protocol.md](references/workflow-protocol.md). The approved contract is the execution
+boundary; root does not redesign or further decompose it.
 
-Apply the canonical [gate policy](references/gate-policy.md), [validator evidence
+Apply the [gate policy](references/gate-policy.md), [validator evidence
 state](references/validator-evidence-state.md), [worker manifest](references/worker-manifest.md), and
-[delegation safety](references/delegation-safety.md) contracts throughout the run.
+[delegation safety](references/delegation-safety.md) contracts.
 
 ## Approval Gate
 
-Render all three contract tables, the explicit plan revision, canonical contract digest, and approval binding. Do not launch work before explicit approval. Any material assignment, check, fallback, write, context, external-action, or authority edit requires a complete new preview and approval.
+Compile the exact approved contract with `workflow_dispatch.py`. Do not launch work until the
+operator has reviewed the assignment graph, role, profile, model, effort, writes, completion
+condition, fallback, checks, and approval binding.
 
-Run the read-only feasibility gate:
+A new assignment, changed write set, different role or profile, additional reviewer, or material
+scope change returns to planning and operator approval. Use only an approved fallback as written.
 
-```bash
-python3 plugins/verified-workflows/scripts/workflow_feasibility.py \
-  --plan <plan> \
-  --plan-revision <approved-revision> \
-  --snapshot docs/validation/codex-runtime-capability-snapshot.json
-```
+## Root Loop
 
-Compile the exact approved launch envelope with `workflow_dispatch.py` and validate its three approved binding values. The compiler emits launch specifications only; it does not schedule or persist live state.
+Root means the main Codex session. Root only:
 
-## Root Execution Loop
+1. Dispatches dependency-ready assignments with the approved profile and no inherited turns.
+2. Verifies the first `session_meta` plus `turn_context` runtime receipt matches the approved agent
+   type, model, effort, provider, permission profile, sandbox, and canonical path.
+3. Waits for a terminal typed result and validates it with `result_contract.py`.
+4. Compares returned changed paths with the assignment's approved write paths.
+5. Releases dependencies from validated results and blocking check outcomes.
+6. Presents approval boundaries and reports completion or blockers.
 
-For each dependency-ready assignment:
+Root does not edit files, implement, remediate, test, review, or run Git, PR, merge, deployment,
+installation, or release commands. Every executable action must be an approved assignment.
 
-1. Resolve its exact launch specification. Root rows run inline. Delegated rows launch through Codex V2 `spawn_agent` with `agent_type=<profile>` and `fork_turns="none"` or the approved positive turn count. Do not substitute another profile, model, effort, or history mode.
-2. Before a writable attempt, capture `workspace_audit.py` state. Keep the root and all other writers quiescent. Writable attempts are sequential unless V2 supplies per-agent mutation attribution.
-3. Give the agent only its bounded context, declared parent/descendant paths, write ownership, completion rule, role lens, and typed result schema. Never send secrets or unrelated workspace content.
-4. Before strict work counts, validate `session_meta` plus `turn_context` through `protocol_probe.py`: canonical agent path, profile or agent type, model, effort, provider, effective permission, sandbox, and V2 mode must match. Requested launch fields, TOML bytes, prompt claims, and hooks are not runtime proof.
-5. Treat `send_message` as coordination only. Use `followup_task` on the same canonical path only to resume the same nonterminal attempt. A retry, remediation, or revalidation gets a fresh attempt ID and fresh canonical path; classify partial edits as cleanup or carry-forward first.
-6. Wait for a terminal typed object and validate it with `result_contract.py`. A final chat message, mailbox notice, or terminal event without the typed result is not completion.
-7. Capture the post-attempt workspace audit. Reject out-of-scope paths, pre-existing dirty overlap, worker Git commands, or any HEAD, branch, index, ref, config, or hook divergence. Root Git starts only after the attempt audit closes.
-8. Atomically replace the one bounded run record under `~/.codex/verified-workflows/state/<repo>/workflow-runs/<run-id>.json`. Store the approved binding, validated runtime identity, typed outcome, checks, findings, remediation count, and root decision. Do not copy V2 events, messages, or raw model output. Use the git-ignored project fallback only after its focused write probe passes.
-9. Release dependencies only from validated typed results, deterministic check outcomes, adopted root findings, and the assurance reducer. Messages and external output never release a gate.
+## Write Ownership
 
-## Independent Review
+Every writable assignment declares repository-relative paths. Concurrent writers must have disjoint
+write sets; writers that share a file or directory must be dependency-ordered or combined. Workers
+return their actual changed paths.
 
-At least one authority-bearing reviewer starts under a separately launched fresh V2 review root with no implementation turns and then launches the exact approved review profile. The implementer and its descendants cannot review their own work. Additional reviewers are selected only for concrete architecture, security, privacy, API, infrastructure, or testing risk.
+Only `git-integration-operator` may run Git commands. Its assignment performs the final
+`git diff --name-only` comparison against the union of approved write paths before any approved Git
+integration.
 
-## External Actions
+## Review Convergence
 
-Saga owns external preview, approval fingerprint, provider execution, egress sanitization, status,
-and root adjudication. For each compiled external row:
+Run the one independent reviewer named by the contract. Add another reviewer only when the approved
+plan names a concrete risk that requires it.
 
-1. Convert the compiler row to Saga's work-stage action bundle and resolve the exact approved
-   provider, model, cost, and egress allowlist.
-2. Show the Saga route preview and approval fingerprint before dispatch. Provider, model, context,
-   writes, cost, egress, or authority drift returns to the complete workflow preview.
-3. Dispatch through Saga's canonical registry and shipped adapter. CLI routes receive only declared
-   context, a minimal environment, and read-only provider tools. Non-empty external write sets fail
-   closed until an enforceable filesystem boundary exists.
-4. Let the root verify the advisory artifact. The provider never writes the shared workspace.
-5. Project provider/model, status, approval fingerprint, artifact digest, and root disposition
-   through `run_record.record_external_action` in the same run record.
+All verified actionable in-scope findings go to one `remediation-worker` assignment or are
+reclassified with a concrete reason. Run one targeted recheck. If an actionable finding remains,
+stop and return it to the operator. Do not start a third review, another remediation cycle, or an
+automatic reviewer expansion.
 
-External results remain `non-gating`. Verified Workflows consumes only the validated advisory result
-described by the approved external-action row. An external finding
-enters gate evaluation only after independent root verification and explicit root adoption.
+## Results
 
-## Boundaries
-
-- Root owns dependency release, integration, Git, remediation, PR, merge, installation, and completion.
-- Ultra is root-only.
-- Child permissions inherit the parent turn in Codex 0.145.0; named profiles cannot independently widen or narrow that effective permission.
-- There is no active V1 catalog, hook-attestation, protected-evidence, snapshot-chain, intent-chain, or inline downgrade in normal V2 execution.
-- Missing required V2 readback blocks the run and cutover.
+Report completed assignments, actual profile/model/effort receipts, changed paths, checks, finding
+dispositions, and blockers concisely. Messages and raw model output never release a dependency or
+satisfy a gate.

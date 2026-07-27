@@ -2,3 +2,5 @@ interface:
   display_name: "Application Security Audit"
   short_description: "Audit application trust boundaries"
   default_prompt: "Use $appsec-audit to audit this change for application security risks."
+policy:
+  allow_implicit_invocation: false

@@ -62,7 +62,7 @@ def test_current_marketplace_and_target_fixture_expose_exactly_one_workflow_iden
         "verified-workflows"
     }
     target = targets["verified-workflows"]
-    assert target["version"] == "2.0.0+codex.20260724175626"
+    assert target["version"] == "2.1.0+codex.20260727035515"
     assert target["publication_status"] == "released"
     assert set(target["skills"]) == {"run", "review-workflow", "appsec-audit", "select-agent"}
     assert fixture["unpublished_plugins"] == []
@@ -115,7 +115,7 @@ def test_target_manifest_skills_and_native_v2_runtime_surfaces_are_complete() ->
     )
 
     assert manifest["name"] == "verified-workflows"
-    assert manifest["version"] == "2.0.0+codex.20260724175626"
+    assert manifest["version"] == "2.1.0+codex.20260727035515"
     assert manifest["author"]["name"] == "Infiquetra"
     assert manifest["skills"] == "./skills/"
     assert set(path.name for path in (TARGET_ROOT / "skills").iterdir() if path.is_dir()) == {
@@ -174,7 +174,6 @@ def test_target_manifest_skills_and_native_v2_runtime_surfaces_are_complete() ->
         "run_record.py",
         "workflow_dispatch.py",
         "workflow_feasibility.py",
-        "workspace_audit.py",
     } <= {path.name for path in (TARGET_ROOT / "scripts").glob("*.py")}
     hooks = TARGET_ROOT / "hooks"
     assert not hooks.exists() or not any(
@@ -183,13 +182,14 @@ def test_target_manifest_skills_and_native_v2_runtime_surfaces_are_complete() ->
     assert {path.name for path in (TARGET_ROOT / "agents").glob("*.toml")} == {
         "review_max.toml",
         "review_high.toml",
+        "work_medium.toml",
         "work_high.toml",
         "test_medium.toml",
         "scan_low.toml",
         "monitor_low.toml",
     }
     assert (TARGET_ROOT / "config" / "role-registry.yaml").is_file()
-    assert len(list((TARGET_ROOT / "roles").glob("*.md"))) == 25
+    assert len(list((TARGET_ROOT / "roles").glob("*.md"))) == 28
 
 
 def test_frozen_team_execution_rows_have_explicit_verified_workflows_targets() -> None:

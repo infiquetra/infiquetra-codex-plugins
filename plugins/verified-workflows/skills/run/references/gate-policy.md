@@ -1,24 +1,23 @@
 # Gate Policy
 
-The root reduces the approved contract, validated typed results, deterministic check outcomes, fresh-root reviewer identities, independently verified root findings, and one shared remediation counter to `pass`, `block`, or `escalate`.
+Validated assignment results and blocking checks reduce to `pass`, `block`, or `escalate`.
 
 ```text
 missing or failed blocking check -----------------> block
-missing fresh-root independent reviewer ----------> block
+missing independent reviewer ---------------------> block
 review average below 9.0 -------------------------> block
 any applicable dimension below 7.0 ---------------> block
 invalid exclusion or arithmetic ------------------> invalid gate input
-unresolved P0/P1, security, or role hard stop ----> block
-unresolved P2/P3 ----------------------------------> block
-resolved finding without focused revalidation ----> block
-unresolved issue after remediation round 3 -------> escalate
+any unresolved actionable finding ----------------> block
+resolved finding without targeted recheck --------> block
+unresolved finding after remediation and recheck -> escalate
 none of the above ---------------------------------> pass
 ```
 
-Every selected reviewer returns at least one applicable dimension. Exclusions are dimension-specific and use only `static-non-applicable`. Overall is the arithmetic mean of applicable dimensions. A high average never overrides a typed finding or hard stop.
+The approved workflow names one independent reviewer. Additional reviewers are allowed only when the
+approved plan identifies a concrete risk requiring them. Scores are feedback; they do not create
+another cycle.
 
-The implementer and its descendants cannot supply authority-bearing review. Every delegated result is checked against a root-issued attempt authority containing the runtime receipt digest, canonical path, session and parent linkage, execution-root identity, and approved registry/lens/profile digests. Every required reviewer therefore has a separately validated fresh execution root, no implementation turns, a read-only profile, the exact role-lens mandate roster, and its typed reviewer result. Additional reviewers are risk-triggered, not mandatory ceremony.
-
-Only the root adopts independently verified findings and releases dependencies. Messages, raw model output, external advisory output, and claimed success flags have no gate authority.
-
-Remediation uses one workflow-wide counter from zero through three. Each affected role reruns with a fresh canonical agent path. Partial edits are classified before retry. A finding marked resolved counts only after the focused blocking check passes on the changed state and the finding ID appears in the fresh revalidation set. A fourth automatic round is forbidden.
+All verified actionable in-scope findings are fixed in one remediation assignment or reclassified
+with a concrete reason. One targeted recheck validates those dispositions. If an actionable finding
+remains, root stops and returns it to the operator. A second remediation or third review is forbidden.

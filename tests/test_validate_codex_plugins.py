@@ -235,7 +235,7 @@ def test_target_plugin_set_describes_saga_family_cutover():
         "discord-identity-assets",
     )
     assert TARGET_EXPECTED_PLUGINS["verified-workflows"] == {
-        "version": "2.0.0+codex.20260724175626",
+        "version": "2.1.0+codex.20260727035515",
         "skills": ("run", "review-workflow", "appsec-audit", "select-agent"),
     }
     assert "team-execution" not in TARGET_EXPECTED_PLUGINS
@@ -321,14 +321,14 @@ def test_target_fixture_rejects_duplicate_plugin_entries():
         "plugins": [
             {
                 "name": "verified-workflows",
-                "version": "2.0.0+codex.20260724175626",
+                "version": "2.1.0+codex.20260727035515",
                 "publication_status": "released",
                 "skills": ["run", "review-workflow", "appsec-audit", "select-agent"],
                 "forbidden_active_dirs": [".claude-plugin", "commands"],
             },
             {
                 "name": "verified-workflows",
-                "version": "2.0.0+codex.20260724175626",
+                "version": "2.1.0+codex.20260727035515",
                 "publication_status": "released",
                 "skills": ["run", "review-workflow", "appsec-audit", "select-agent"],
                 "forbidden_active_dirs": [".claude-plugin", "commands"],
@@ -414,9 +414,10 @@ def test_verified_workflows_project_agents_bind_generated_runtime_names() -> Non
     profiles = [
         {"profile_id": profile_id, "runtime_agent_name": profile_id}
         for profile_id in (
-            "review_max",
-            "review_high",
-            "work_high",
+                "review_max",
+                "review_high",
+                "work_medium",
+                "work_high",
             "test_medium",
             "scan_low",
             "monitor_low",

@@ -186,8 +186,9 @@ def test_u7_docs_bind_external_evidence_outside_workflow_gates() -> None:
     ideate = (ROOT / "plugins" / "saga" / "skills" / "ideate" / "SKILL.md").read_text()
     retro = (ROOT / "plugins" / "saga" / "skills" / "retro" / "SKILL.md").read_text()
 
-    for text in (protocol, workers, external):
+    for text in (protocol, external):
         assert "authority" in text
         assert "non-gating" in text
+    assert "evidence, not authority" in workers
     assert "engine-generated" in ideate
     assert "derive_recipe_update_proposal" in retro

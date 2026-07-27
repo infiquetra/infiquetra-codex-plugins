@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Safely synchronize the six managed execution profiles into a Codex home."""
+"""Safely synchronize the managed execution profiles into a Codex home."""
 
 from __future__ import annotations
 

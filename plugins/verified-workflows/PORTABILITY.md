@@ -5,7 +5,7 @@
 - Frozen Claude lineage: `team-execution` at `38742ece89880a6b140be237edad6d3f13c97b54`
 - Prior Codex adapter: `team-execution` `2.3.0`
 - Canonical Codex package: `verified-workflows`
-- Active architecture: root-owned Codex V2 workflow execution with 25 role lenses and six managed
+- Active architecture: root-orchestrated Codex V2 workflow execution with 28 role lenses and seven managed
   profiles
 
 This is a behavior adaptation, not an upstream byte-parity claim. The frozen path classifications
@@ -20,9 +20,10 @@ destinations, extra paths, and byte or mode drift. It is not an installer or pro
 
 ## Codex-Native V2 Shape
 
-The main Codex session owns the approved DAG, dependency release, integration, Git, gates, and final
-adjudication. Codex V2 owns the live hierarchy, agent paths, liveness, messages, waits, interruption,
-and restoration. The plugin does not maintain a parallel scheduler or task-state tree.
+The main Codex session owns only the approved DAG, dependency release, approval boundaries, and final
+reporting. Every executable action, including implementation, checks, remediation, review, Git, and
+integration, belongs to an approved assignment. Codex V2 owns the live hierarchy, agent paths,
+liveness, messages, waits, interruption, and restoration.
 
 The operator-approved Workflow Contract contains only assignments, blocking checks, and external
 actions. Its compiler emits deterministic launch specifications and one digest bound to the plan
@@ -30,16 +31,16 @@ revision. Native launches select an exact underscore-form profile and bounded `f
 Requested values remain provisional until `session_meta` and `turn_context` agree on the canonical
 path, profile, model, effort, provider, effective permission, sandbox, and V2 mode.
 
-The six profiles are `review_max`, `review_high`, `work_high`, `test_medium`, `scan_low`, and
-`monitor_low`. They are generated from the role registry and the Fleet Core projection of the native
+The seven profiles are `review_max`, `review_high`, `work_medium`, `work_high`, `test_medium`,
+`scan_low`, and `monitor_low`. They are generated from the role registry and the Fleet Core projection of the native
 Codex model catalog. Fleet Core preserves each model's `multi_agent_version`; it does not rewrite V2
 models into another mode. Profile sandbox configuration expresses intent because Codex 0.145.0
 children inherit the parent turn's effective permission.
 
-Each attempt returns one closed typed result. Writable attempts are bounded by declared paths and a
-before-and-after workspace audit. At least one reviewer runs beneath an independent fresh V2 review
-root with no implementation history. The root reduces typed results, deterministic checks, adopted
-findings, and reviewer assurance into one gate decision and one concise run record.
+Each attempt returns one closed typed result. Writable attempts declare their paths, concurrent
+writers must be disjoint, and returned changed paths must remain within the assignment. At least one
+reviewer runs beneath an independent fresh V2 review root with no implementation history. One
+remediation assignment and one targeted recheck are the maximum automatic convergence cycle.
 
 Saga remains the authority for external provider approval, egress, execution, status, and
 adjudication. External CLI routes are advisory and read-only; non-empty external write sets fail

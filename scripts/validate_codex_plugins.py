@@ -156,10 +156,10 @@ TARGET_EXPECTED_PLUGINS["fleet-core"] = {
 }
 TARGET_EXPECTED_PLUGINS["saga"] = {
     **TARGET_EXPECTED_PLUGINS["saga"],
-    "version": "0.81.0+codex.20260726234500",
+    "version": "0.82.0+codex.20260727035515",
 }
 TARGET_EXPECTED_PLUGINS["verified-workflows"] = {
-    "version": "2.0.0+codex.20260724175626",
+    "version": "2.1.0+codex.20260727035515",
     "skills": ("run", "review-workflow", "appsec-audit", "select-agent"),
 }
 CURRENT_ONLY_LEGACY_PLUGINS = {
@@ -299,6 +299,7 @@ LEGACY_WORKFLOW_EXCLUDED_TOP_LEVEL = {
     ".pytest_cache",
     ".ruff_cache",
     ".codex",
+    ".claude",
     ".serena",
 }
 
@@ -1114,10 +1115,10 @@ def validate_verified_workflows_agents(root: Path, errors: list[str]) -> None:
         receipt = json.loads(result.stdout)
         if receipt.get("claim") != "expected-profile-configuration-only":
             raise RuntimeError("renderer made an unsupported runtime claim")
-        if receipt.get("registry", {}).get("role_count") != 25:
-            raise RuntimeError("renderer did not preserve exactly 25 logical roles")
-        if len(receipt.get("profiles", [])) != 6:
-            raise RuntimeError("renderer did not produce exactly six profiles")
+        if receipt.get("registry", {}).get("role_count") != 28:
+            raise RuntimeError("renderer did not preserve the 28 logical roles")
+        if len(receipt.get("profiles", [])) != 7:
+            raise RuntimeError("renderer did not produce the managed profile roster")
         validate_verified_workflows_project_agents(root, receipt, errors)
     except (OSError, RuntimeError, json.JSONDecodeError, subprocess.TimeoutExpired) as exc:
         errors.append(f"verified-workflows: U3 role/profile validation failed: {exc}")
@@ -1184,7 +1185,7 @@ def validate_verified_workflows_project_agents(
 
 
 def validate_verified_workflows_runtime(root: Path, errors: list[str]) -> None:
-    """Validate the closed native V2 workflow, result, audit, gate, and proof surfaces."""
+    """Validate the closed native V2 workflow, result, gate, and proof surfaces."""
 
     plugin_root = root / "plugins" / "verified-workflows"
     required = (
@@ -1194,7 +1195,6 @@ def validate_verified_workflows_runtime(root: Path, errors: list[str]) -> None:
         plugin_root / "scripts" / "protocol_probe.py",
         plugin_root / "scripts" / "result_contract.py",
         plugin_root / "scripts" / "run_record.py",
-        plugin_root / "scripts" / "workspace_audit.py",
         root / "scripts" / "prove_verified_workflows_runtime.py",
         root / "scripts" / "build_codex_v2_orchestration_matrix.py",
         root / "docs" / "validation" / "verified-workflows-runtime-proof.json",

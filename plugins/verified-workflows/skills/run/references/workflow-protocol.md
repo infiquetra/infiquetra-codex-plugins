@@ -1,24 +1,29 @@
 # Workflow Protocol
 
-`## Workflow Contract` is the one operator-editable execution surface. It contains three compact tables and no plugin-owned runtime task tree.
+`## Workflow Contract` is the operator-approved execution surface. It contains assignments, blocking
+checks, and optional non-gating external actions.
 
 ## Assignments
 
 The exact columns are:
 
 ```text
-id | depends | parent | role | profile | model | effort | context | writes | completion | fallback
+id | depends | role | profile | model | effort | writes | completion | fallback
 ```
 
 - `id` and `depends` form one acyclic graph.
-- `parent` is `root`, a dependency ancestor, or bootstrap-only `fresh-root:<same-id>` for an independent read-only reviewer.
-- Root rows use a reserved `root ...` role, `profile=root`, and `context=root`.
-- Delegated rows use one maintained role ID and one of `review_max`, `review_high`, `work_high`, `test_medium`, `scan_low`, or `monitor_low`.
-- `model` and `effort` must exactly match the selected profile. Ultra is root-only.
-- Delegated `context` is `none` or `turns:<positive-int>` and compiles to V2 `fork_turns`.
-- `writes` is `none` or a comma-delimited repository-relative allowlist. Read-only profiles cannot write; delegated rows cannot target Git metadata or own Git commands.
-- Concurrent assignments cannot own equal, ancestor, or descendant write paths.
-- `fallback` is `none` or an ordered `profile@condition` list. A fallback must remain inside the role's allowed profiles and preserve workspace and external boundaries.
+- Every row is executable by a managed role; root rows are forbidden.
+- `profile`, `model`, and `effort` must be explicit and match a maintained profile.
+- `writes` is `none` or a repository-relative allowlist. Read-only profiles cannot write.
+- Concurrent writers must have disjoint write sets. Shared paths require dependency ordering or one
+  combined assignment.
+- Only `git-integration-operator` may own Git commands, and its completion condition must include the
+  final `git diff --name-only` validation.
+- `fallback` is `none` or an ordered `profile@condition` list within the role's allowed profiles and
+  permission boundary.
+
+Reviewers launch under a fresh root with no inherited turns. All other assignments launch from the
+main session with no inherited turns.
 
 ## Blocking Checks
 
@@ -28,7 +33,8 @@ The exact columns are:
 id | owner | after | command-or-proof | blocking | failure
 ```
 
-Every `after` value names an assignment. At least one check is blocking, and one blocking reviewer-assurance check must cover at least one `fresh-root` independent reviewer. Checks are root decisions; model messages cannot release them.
+Every owner and `after` value names an executable assignment. Root cannot own a check. At least one
+check is blocking, including one reviewer-assurance check covering the independent reviewer.
 
 ## External Actions
 
@@ -39,12 +45,15 @@ id | purpose | provider | model | egress | context | sensitivity | cost |
 writes-or-artifact | requiredness | authority
 ```
 
-Use the literal `External actions: []` when no external action is approved. Otherwise every field is required, context is `none` or a comma-delimited repository-relative allowlist, requiredness is `best-effort` or `required`, and authority is exactly `non-gating`. External actions remain under Saga's approval, egress, provider, and root-adjudication lifecycle.
+Use `External actions: []` when none are approved. Authority is always `non-gating`; a material route,
+cost, egress, context, or write change returns to operator approval.
 
 ## Compilation And Approval
 
-The compiler validates the three tables, sorts non-semantic sets and rows, and produces one canonical contract digest. A separate authority digest binds the role registry, selected role-lens bytes, generated profile bytes, and exact reviewer mandate roster. The approval binding covers both digests plus the explicit approved plan revision. Whitespace, row order, and unordered-list order do not alter the contract digest; authority, ownership, graph, profile, model, effort, context, fallback order, check, external-action, registry, lens, profile-byte, or mandate changes invalidate approval.
+The compiler validates the tables and binds the canonical contract, role registry, role lenses,
+profiles, reviewer mandates, and approved plan revision. A new assignment, write set, role, profile,
+reviewer, fallback, or material scope change invalidates approval.
 
-The compiler emits root-owned launch specifications only. It does not create intents, subjects, snapshots, receipts, barriers, retries, runtime status, or a second executable DAG. Codex V2 remains authoritative for hierarchy, liveness, messages, waits, interruption, and restoration.
-
-Requested launch fields are not proof. Before accepting strict work, the root validates the exact agent path, profile or agent type, model, effort, provider, effective permission, and V2 mode from `session_meta` plus `turn_context`. Mismatch fails visibly. The root alone integrates changes, runs Git, releases checks, records remediation, and decides completion.
+Requested launch fields are not runtime proof. Root accepts an assignment only after
+`session_meta` and `turn_context` confirm the approved path, profile, model, effort, provider,
+permission profile, sandbox, and V2 mode.

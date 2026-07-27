@@ -216,7 +216,7 @@ def validate_runtime_receipt(
             )
     if AGENT_PATH_RE.fullmatch(receipt.agent_path) is None:
         raise ProtocolProbeError("runtime agent_path is not canonical")
-    if receipt.git_invocation_observed:
+    if receipt.git_invocation_observed and launch.role != "git-integration-operator":
         raise ProtocolProbeError("worker runtime observed a prohibited Git invocation")
     undeclared = [
         path for path in receipt.child_paths if not _path_is_declared(path, declared_descendant_paths)

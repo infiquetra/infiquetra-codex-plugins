@@ -14,7 +14,14 @@ for path in (SCRIPTS, TESTS):
 
 import protocol_probe as P  # noqa: E402
 import workflow_dispatch as W  # noqa: E402
-from test_workflow_dispatch import compile_fixture  # noqa: E402
+from test_workflow_dispatch import (  # noqa: E402
+    assignment,
+    check,
+    compile_fixture,
+    git_operator,
+    reviewer,
+    worker,
+)
 
 
 def launch() -> W.LaunchSpec:
@@ -91,8 +98,9 @@ def validate(receipt: P.RuntimeReceipt, **overrides: object) -> None:
         "expected_sandbox_mode": "workspace-write",
         "declared_descendant_paths": (),
     }
+    launch_spec = overrides.pop("launch_spec", launch())
     values.update(overrides)
-    P.validate_runtime_receipt(receipt, launch(), **values)  # type: ignore[arg-type]
+    P.validate_runtime_receipt(receipt, launch_spec, **values)  # type: ignore[arg-type]
 
 
 def test_exact_v2_runtime_readback_passes() -> None:
@@ -141,6 +149,20 @@ def test_worker_git_invocation_fails(command: str) -> None:
     receipt = P.parse_runtime_receipt(rollout(command=command))
     with pytest.raises(P.ProtocolProbeError, match="prohibited Git invocation"):
         validate(receipt)
+
+
+def test_git_operator_runtime_may_invoke_git() -> None:
+    contract = compile_fixture(
+        [assignment("implement"), worker(), reviewer(), git_operator()],
+        checks=[check(owner="integrate", after="integrate")],
+    )
+    git_launch = next(
+        item for item in contract.launch_specs if item.assignment_id == "integrate"
+    )
+    receipt = P.parse_runtime_receipt(
+        rollout(path="/root/integrate", role="work_medium", command="git diff --name-only")
+    )
+    validate(receipt, launch_spec=git_launch, expected_agent_path="/root/integrate")
 
 
 def test_undeclared_descendant_fails() -> None:

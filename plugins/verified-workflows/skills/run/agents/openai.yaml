@@ -1,4 +1,6 @@
 interface:
   display_name: "Run Verified Workflow"
-  short_description: "Execute a verified root-owned workflow DAG"
+  short_description: "Execute an approved root-orchestrated workflow DAG"
   default_prompt: "Use $run to execute this approved workflow with truthful runtime receipts and severity-first gates."
+policy:
+  allow_implicit_invocation: false

@@ -106,7 +106,7 @@ def test_dry_run_is_v2_diagnostic_and_sanitized() -> None:
     assert proof["tool_namespace"] == "agents"
     assert proof["spawn_response_fields"] == ["nickname", "task_name"]
     assert proof["live_invocation_performed"] is False
-    assert len(proof["profiles"]) == 6
+    assert len(proof["profiles"]) == 7
     assert proof["project_discovery"]["location"] == ".codex/agents"
     assert proof["project_discovery"]["source_bytes_match"] is True
     P.validate_sanitized_proof(proof)

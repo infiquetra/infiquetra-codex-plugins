@@ -93,7 +93,7 @@ def _adapt_source_behavior(source: str) -> str:
     return body
 
 
-def test_all_25_current_role_behaviors_are_digest_bound_and_preserved() -> None:
+def test_legacy_role_behaviors_are_preserved_with_three_general_roles() -> None:
     registry = R.load_role_registry()
     by_id = {role.role_id: role for role in registry.roles}
     listing = subprocess.run(
@@ -106,7 +106,13 @@ def test_all_25_current_role_behaviors_are_digest_bound_and_preserved() -> None:
     source_paths = sorted(path for path in listing if path.endswith(".toml"))
 
     assert len(source_paths) == 25
-    assert {Path(path).stem for path in source_paths} == set(by_id)
+    legacy_ids = {Path(path).stem for path in source_paths}
+    assert legacy_ids < set(by_id)
+    assert set(by_id) - legacy_ids == {
+        "implementation-worker",
+        "remediation-worker",
+        "git-integration-operator",
+    }
     for source_path in source_paths:
         source_text = subprocess.run(
             ["git", "show", f"{LEGACY_TREE}:{source_path}"],
@@ -123,7 +129,7 @@ def test_all_25_current_role_behaviors_are_digest_bound_and_preserved() -> None:
         assert target_body.startswith(_adapt_source_behavior(source).rstrip("\n"))
 
 
-def test_renderer_cli_checks_the_committed_six_profile_bundle() -> None:
+def test_renderer_cli_checks_the_committed_profile_bundle() -> None:
     result = subprocess.run(
         ["python3", str(RENDERER_PATH), "--check"],
         cwd=ROOT,
@@ -134,9 +140,9 @@ def test_renderer_cli_checks_the_committed_six_profile_bundle() -> None:
     payload = json.loads(result.stdout)
 
     assert payload["claim"] == "expected-profile-configuration-only"
-    assert payload["registry"]["role_count"] == 25
-    assert payload["registry"]["role_kind_counts"] == {"agent-lens": 25}
-    assert len(payload["profiles"]) == 6
+    assert payload["registry"]["role_count"] == 28
+    assert payload["registry"]["role_kind_counts"] == {"agent-lens": 28}
+    assert len(payload["profiles"]) == 7
     assert {profile["profile_id"] for profile in payload["profiles"]} == set(
         R.PROFILE_IDS
     )
@@ -199,7 +205,7 @@ def test_sync_cli_uses_isolated_codex_home_and_emits_relative_receipt(tmp_path: 
         "real_profile_mutated": False,
     }
     assert receipt["readback"]["verified"] is True
-    assert len(list((codex_home / "agents").glob("*.toml"))) == 6
+    assert len(list((codex_home / "agents").glob("*.toml"))) == 7
     assert str(tmp_path) not in json.dumps(receipt)
 
 

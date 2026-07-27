@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compile an approved Workflow Contract into root-owned Codex V2 launch specs."""
+"""Compile an approved Workflow Contract into root-orchestrated Codex V2 launch specs."""
 
 from __future__ import annotations
 
@@ -17,24 +17,19 @@ import render_codex_agents as renderer
 
 MAX_PLAN_BYTES = 2 * 1024 * 1024
 ID_RE = re.compile(r"^[a-z][a-z0-9-]{0,63}$")
-CONTEXT_RE = re.compile(r"^turns:([1-9][0-9]*)$")
 FRESH_ROOT_RE = re.compile(r"^fresh-root:([a-z][a-z0-9-]{0,63})$")
 FALLBACK_RE = re.compile(
-    r"^(review_max|review_high|work_high|test_medium|scan_low|monitor_low)@([a-z0-9][a-z0-9-]{0,63})$"
+    r"^(review_max|review_high|work_medium|work_high|test_medium|scan_low|monitor_low)@([a-z0-9][a-z0-9-]{0,63})$"
 )
-ROOT_ROLE_RE = re.compile(r"^root(?: [a-z][a-z -]*)?$")
-ROOT_EFFORTS = frozenset({"low", "medium", "high", "xhigh", "max", "ultra"})
-GIT_WORD_RE = re.compile(r"(?:^|\s)(?:git|gh)\s+(?:add|commit|merge|push|tag|checkout|switch|reset|rebase)(?:\s|$)", re.I)
+GIT_WORD_RE = re.compile(r"(?:^|\s)(?:git|gh)(?:\s|$)", re.I)
 
 ASSIGNMENT_HEADERS = (
     "id",
     "depends",
-    "parent",
     "role",
     "profile",
     "model",
     "effort",
-    "context",
     "writes",
     "completion",
     "fallback",
@@ -87,10 +82,6 @@ class Assignment:
     fallback: tuple[Fallback, ...]
     category: str
     result_schema: str
-
-    @property
-    def is_root(self) -> bool:
-        return self.profile == "root"
 
     @property
     def is_independent_review(self) -> bool:
@@ -281,16 +272,6 @@ def _parse_fallbacks(value: str, where: str) -> tuple[Fallback, ...]:
     return tuple(parsed)
 
 
-def _parse_context(value: str, where: str, *, root: bool) -> str:
-    if root:
-        if value != "root":
-            raise WorkflowDispatchError(f"{where} must be 'root' for a root assignment")
-        return value
-    if value == "none" or CONTEXT_RE.fullmatch(value):
-        return value
-    raise WorkflowDispatchError(f"{where} must be 'none' or turns:<positive-int>")
-
-
 def _parse_assignment(
     row: Mapping[str, str],
     *,
@@ -302,7 +283,6 @@ def _parse_assignment(
         _identifier(item, f"assignment {assignment_id}.depends")
         for item in _list_cell(row["depends"], f"assignment {assignment_id}.depends")
     )
-    parent = row["parent"]
     role = row["role"]
     profile = row["profile"]
     model = row["model"]
@@ -313,34 +293,8 @@ def _parse_assignment(
 
     is_root = profile == "root"
     if is_root:
-        if parent != "root" or ROOT_ROLE_RE.fullmatch(role) is None:
-            raise WorkflowDispatchError(
-                f"root assignment {assignment_id} must use parent=root and a reserved root role"
-            )
-        if not model or effort not in ROOT_EFFORTS:
-            raise WorkflowDispatchError(f"root assignment {assignment_id} has invalid model or effort")
-        context = _parse_context(row["context"], f"assignment {assignment_id}.context", root=True)
-        writes = _list_cell(row["writes"], f"assignment {assignment_id}.writes")
-        for item in writes:
-            if not item.startswith("unit:") and item != "none":
-                _repo_path(item, f"assignment {assignment_id}.writes")
-        fallback = _parse_fallbacks(row["fallback"], f"assignment {assignment_id}.fallback")
-        if fallback:
-            raise WorkflowDispatchError(f"root assignment {assignment_id} cannot declare a child fallback")
-        return Assignment(
-            assignment_id,
-            depends,
-            parent,
-            role,
-            profile,
-            model,
-            effort,
-            context,
-            writes,
-            completion,
-            (),
-            "root",
-            "root-result.v1",
+        raise WorkflowDispatchError(
+            f"executable root assignment {assignment_id} is forbidden; root only orchestrates"
         )
 
     if profile not in renderer.PROFILE_IDS:
@@ -357,15 +311,27 @@ def _parse_assignment(
             f"assignment {assignment_id} profile {profile} requires "
             f"model={profile_resolution.model} effort={profile_resolution.effort}"
         )
-    context = _parse_context(row["context"], f"assignment {assignment_id}.context", root=False)
+    parent = (
+        f"fresh-root:{assignment_id}"
+        if role_resolution.role.category == "reviewer"
+        else "root"
+    )
+    context = "none"
     writes = tuple(
         _repo_path(item, f"assignment {assignment_id}.writes")
         for item in _list_cell(row["writes"], f"assignment {assignment_id}.writes")
     )
     if profile_resolution.workspace_boundary == "read-only" and writes:
         raise WorkflowDispatchError(f"read-only assignment {assignment_id} cannot declare writes")
-    if GIT_WORD_RE.search(completion):
-        raise WorkflowDispatchError(f"assignment {assignment_id} may not own a Git mutation")
+    owns_git = role == "git-integration-operator"
+    if GIT_WORD_RE.search(completion) and not owns_git:
+        raise WorkflowDispatchError(
+            f"assignment {assignment_id} assigns a Git command to non-Git role {role!r}"
+        )
+    if owns_git and "git diff --name-only" not in completion.casefold():
+        raise WorkflowDispatchError(
+            f"Git integration assignment {assignment_id} must include final git diff --name-only validation"
+        )
     fallback = _parse_fallbacks(row["fallback"], f"assignment {assignment_id}.fallback")
     for candidate in fallback:
         if candidate.profile not in role_resolution.role.allowed_profiles:
@@ -399,7 +365,7 @@ def _parse_assignment(
 
 def _parse_check(row: Mapping[str, str]) -> BlockingCheck:
     check_id = _identifier(row["id"], "check id")
-    owner = row["owner"].strip()
+    owner = _identifier(row["owner"].strip(), f"check {check_id}.owner")
     command = row["command-or-proof"].strip()
     failure = row["failure"].strip()
     if not owner or not command or not failure:
@@ -521,13 +487,9 @@ def _validate_graph(assignments: Sequence[Assignment], checks: Sequence[Blocking
 
     for assignment in assignments:
         fresh = FRESH_ROOT_RE.fullmatch(assignment.parent)
-        if assignment.parent != "root" and assignment.parent not in assignment_ids and fresh is None:
+        if assignment.parent != "root" and fresh is None:
             raise WorkflowDispatchError(
-                f"assignment {assignment.assignment_id}.parent is not root, an assignment, or fresh-root:<id>"
-            )
-        if assignment.parent in assignment_ids and assignment.parent not in closure[assignment.assignment_id]:
-            raise WorkflowDispatchError(
-                f"assignment {assignment.assignment_id} must depend on its declared parent {assignment.parent}"
+                f"assignment {assignment.assignment_id}.parent is not root or fresh-root:<id>"
             )
         if fresh is not None and (
             fresh.group(1) != assignment.assignment_id
@@ -560,6 +522,10 @@ def _validate_graph(assignments: Sequence[Assignment], checks: Sequence[Blocking
                 )
 
     for check in checks:
+        if check.owner not in assignment_ids:
+            raise WorkflowDispatchError(
+                f"check {check.check_id} owner must be an executable assignment"
+            )
         unknown = set(check.after) - assignment_ids
         if unknown:
             raise WorkflowDispatchError(f"check {check.check_id} has unknown after assignments {sorted(unknown)}")
@@ -630,33 +596,6 @@ def _launch_spec(
     profile_sha256: Mapping[str, str],
     roles_dir: Path,
 ) -> LaunchSpec:
-    if assignment.is_root:
-        return LaunchSpec(
-            assignment_id=assignment.assignment_id,
-            depends=assignment.depends,
-            parent=assignment.parent,
-            role=assignment.role,
-            agent_type=None,
-            model=assignment.model,
-            reasoning_effort=assignment.effort,
-            fork_turns=None,
-            writes=assignment.writes,
-            completion=assignment.completion,
-            fallback=assignment.fallback,
-            result_schema=assignment.result_schema,
-            registry_sha256=registry.sha256,
-            role_lens_sha256=None,
-            profile_sha256=None,
-            reviewer_mandate_ids=(),
-        )
-    fork_turns: str | int
-    if assignment.context == "none":
-        fork_turns = "none"
-    else:
-        match = CONTEXT_RE.fullmatch(assignment.context)
-        if match is None:
-            raise WorkflowDispatchError(f"assignment {assignment.assignment_id} context is invalid")
-        fork_turns = int(match.group(1))
     role = registry.role(assignment.role)
     return LaunchSpec(
         assignment_id=assignment.assignment_id,
@@ -666,7 +605,7 @@ def _launch_spec(
         agent_type=assignment.profile,
         model=assignment.model,
         reasoning_effort=assignment.effort,
-        fork_turns=fork_turns,
+        fork_turns="none",
         writes=assignment.writes,
         completion=assignment.completion,
         fallback=assignment.fallback,
