@@ -13,8 +13,12 @@ All notable changes to the Codex `fleet-core` plugin are documented here.
   top-level `registry` document. This restores cross-runtime handoff from Claude, which had been
   failing on every record because Claude writes an `isolation` field the Codex reader rejected.
 - `LeaseBroker.doctor()` — a read-only report naming every preserved unknown field by JSON path,
-  with the document's total extras byte count. It reports a corrupt document as *data* rather than
-  raising, so an operator diagnostic never aborts on the state it exists to diagnose.
+  with the document's total extras byte count. It reports a corrupt *document* as data rather than
+  raising, so the diagnostic survives exactly the corruption it exists to describe. Note the bound:
+  only `RegistryCorruptError` is caught. An unsafe authority — a registry whose mode is not 0600 —
+  still raises `UnsafeAuthorityError`, which the adapter surfaces as exit 2 rather than the
+  documented 0/3/4 seam. That is deliberate and matches upstream: refusing to read a world-readable
+  secret is not a diagnosis.
 - `LeaseBroker.repair()` — an explicit operator down-migration that strips preserved unknown fields.
   It performs no default action, takes a 0600 backup under the same temp + rename + fsync
   discipline as every other write, strict-revalidates after stripping, and refuses without mutating

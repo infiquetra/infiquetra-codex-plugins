@@ -1982,11 +1982,22 @@ def test_extras_free_document_is_byte_identical_across_a_read_write_cycle(broker
     assert all(f.extras == {} for f in parsed.resource_fences.values())
     assert all(a.extras == {} for a in parsed.session_admissions.values())
 
-    # Re-serializing the parsed document reproduces the on-disk bytes exactly.
-    assert json.dumps(parsed.to_dict(), sort_keys=True) == json.dumps(
-        json.loads(before.decode("utf-8")), sort_keys=True
-    )
+    # Byte identity against the ACTUAL on-disk bytes, using the write path's own serialization
+    # (`_write_registry`, lease_broker.py: json.dumps(payload, indent=2, sort_keys=True) + "\n").
+    # Comparing two `json.dumps(..., sort_keys=True)` strings instead would re-serialize both sides
+    # through the same canonicalizer and prove only semantic equality — which is a weaker claim than
+    # this test's name makes.
+    assert (json.dumps(parsed.to_dict(), indent=2, sort_keys=True) + "\n").encode("utf-8") == before
+
+    # And the property survives a real mutating write, not just a parse/re-serialize round trip.
     assert broker.renew(lease.lease_id, token=lease.token)
+    after = broker.registry_path.read_bytes()
+    reparsed = B.Registry.from_dict(json.loads(after.decode("utf-8")))
+    assert reparsed.extras == {}
+    assert all(item.extras == {} for item in reparsed.leases.values())
+    assert (json.dumps(reparsed.to_dict(), indent=2, sort_keys=True) + "\n").encode(
+        "utf-8"
+    ) == after
 
 
 @pytest.mark.parametrize(

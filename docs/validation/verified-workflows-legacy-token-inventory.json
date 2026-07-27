@@ -685,7 +685,7 @@
     {
       "classification": "lineage-documentation",
       "path": "plugins/fleet-core/CHANGELOG.md",
-      "sha256": "11bb96592dfe31d9e5b7ccec3ba70eaeb41b57aead58f4b4b1b47b8a3b58d650",
+      "sha256": "3634309b8a88b295efe62b263229d81ad4851aa783882b8d057dad6e72beb9c7",
       "tokens": [
         "Team Execution"
       ]
