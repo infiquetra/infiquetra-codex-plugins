@@ -1,0 +1,19 @@
+{
+  "command": "PYTHONPATH=. uv run pytest -q plugins/fleet-core/tests/test_lease_broker.py -k \"extras_round_trip or strict_ or missing_required_key or missing_required_top_level or extras_free_document or document_extras\"",
+  "covers": "Extras on all six container record types with one test per type, so a missed type cannot hide behind the lease case passing; round-trip for `isolation` AND for a synthetic key present in neither runtime (R3 genericity); byte-identity golden pin for an extras-free document (R8); missing required keys still fail closed at every converted site (R5); all five strict boundaries individually still reject unknown keys (R6); document-total capacity fails closed and is summed ACROSS records, not per record (R4).",
+  "neuter_probe": {
+    "mutation": "revert the Lease container from _tolerant_mapping to _closed_mapping",
+    "observed": "4 failed, 3 passed; both the isolation and synthetic-key parameters went red while the other five container tests stayed green, confirming the per-type tests are independent"
+  },
+  "recorded_at": "2026-07-26T23:45:00Z",
+  "repo_head": "1ada782b904107d6737317ff65ec7061f1e32172",
+  "result": {
+    "exit_code": 0,
+    "failed": 0,
+    "passed": 22,
+    "skipped": 0
+  },
+  "schema_version": 1,
+  "target": "plugins/fleet-core/scripts/fleet_commons/lease_broker.py",
+  "unit": "U2"
+}

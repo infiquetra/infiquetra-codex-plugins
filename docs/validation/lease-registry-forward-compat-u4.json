@@ -1,0 +1,21 @@
+{
+  "baseline": {
+    "note": "9 tests at d0982fe, none of which invoked the CLI: the module had zero references to main/argv/SystemExit/capsys. The CLI-invocation harness is part of this unit.",
+    "passed": 9
+  },
+  "command": "PYTHONPATH=. uv run pytest -q tests/test_saga_lease_broker.py",
+  "covers": {
+    "U4": "doctor exit-code seam (0 valid / 3 tolerated-unknowns / 4 corrupt, unmapped status fails closed to corrupt), doctor reports corrupt as data without raising, doctor never mutates, repair refuses without --strip-unknown, repair backs up to a 0600 sibling holding the exact pre-repair bytes then clears every extras mapping, repair is an explicit no-op on a clean registry, repair refuses a document corrupt beyond unknown-field stripping"
+  },
+  "recorded_at": "2026-07-26T23:45:00Z",
+  "repo_head": "1ada782b904107d6737317ff65ec7061f1e32172",
+  "result": {
+    "exit_code": 0,
+    "failed": 0,
+    "passed": 18,
+    "skipped": 0
+  },
+  "schema_version": 1,
+  "target": "plugins/saga/scripts/lease_broker.py",
+  "unit": "U4"
+}

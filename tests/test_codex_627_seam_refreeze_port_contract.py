@@ -65,6 +65,12 @@ SOURCE_REPO_ENV = "CODEX_PORT_SOURCE_REPO"
 DEFAULT_SOURCE_REPO = ROOT.parent / "infiquetra-claude-plugins"
 
 
+def _semver(version: str) -> tuple[int, ...]:
+    """Parse a bare `X.Y.Z` into a comparable tuple (no pre-release handling needed here)."""
+
+    return tuple(int(part) for part in version.split("."))
+
+
 def _manifest() -> dict:
     return json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
 
@@ -385,4 +391,10 @@ def test_version_policy_records_both_moving_plugins_for_the_release_unit() -> No
         installed = json.loads(
             (ROOT / f"plugins/{plugin}/.codex-plugin/plugin.json").read_text(encoding="utf-8")
         )["version"]
-        assert policy["target_codex_version"] == installed.split("+codex.")[0], plugin
+        # Monotone, not equal (codex#54). Equality asserted that the repo is still frozen at THIS
+        # port's target, so the next port to bump a version broke this contract and every other
+        # prior one. What a completed port can honestly claim is that its release landed and has
+        # not been reverted: live >= target.
+        assert _semver(installed.split("+codex.")[0]) >= _semver(policy["target_codex_version"]), (
+            plugin
+        )

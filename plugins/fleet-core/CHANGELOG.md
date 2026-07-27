@@ -2,6 +2,53 @@
 
 All notable changes to the Codex `fleet-core` plugin are documented here.
 
+## 0.13.0 — 2026-07-26
+
+### Added
+
+- Bounded forward-compatibility in the lease registry, ported from Claude `#617` (frozen source
+  range `4eb2fe15..1648a21b`). `_tolerant_mapping` returns `(known, extras)` and six container
+  boundaries now preserve unrecognized fields instead of raising `RegistryCorruptError`: `leases`,
+  `settlements`, `resource_fences`, `session_admission`, `closed_owner_admission`, and the
+  top-level `registry` document. This restores cross-runtime handoff from Claude, which had been
+  failing on every record because Claude writes an `isolation` field the Codex reader rejected.
+- `LeaseBroker.doctor()` — a read-only report naming every preserved unknown field by JSON path,
+  with the document's total extras byte count. It reports a corrupt *document* as data rather than
+  raising, so the diagnostic survives exactly the corruption it exists to describe. Note the bound:
+  only `RegistryCorruptError` is caught. An unsafe authority — a registry whose mode is not 0600 —
+  still raises `UnsafeAuthorityError`, which the adapter surfaces as exit 2 rather than the
+  documented 0/3/4 seam. That is deliberate and matches upstream: refusing to read a world-readable
+  secret is not a diagnosis.
+- `LeaseBroker.repair()` — an explicit operator down-migration that strips preserved unknown fields.
+  It performs no default action, takes a 0600 backup under the same temp + rename + fsync
+  discipline as every other write, strict-revalidates after stripping, and refuses without mutating
+  if anything is wrong. That backup is what makes it the rollback path for this feature rather than
+  a convenience verb.
+
+### Changed
+
+- The settlement-close CAS now closes the verified live head in place with
+  `replace(head, close_receipt=close)` instead of rebuilding a `ResourceFence`. The rebuild dropped
+  a newer writer's per-fence extras at exactly the commit that archives the fence — verified by
+  restoring the old form and observing `KeyError` on the preserved field.
+- Archived closed-fence sidecars are read to EOF under a hard size bound. The previous reader took
+  a single 65536-byte `os.read`, so any larger archived record was silently truncated into a JSON
+  parse error rather than reported as oversized.
+
+### Notes
+
+- Tolerance is **per-boundary, not file-wide**. Five boundaries stay strictly closed: the four
+  retained `_closed_mapping` sites (worktree `resource_ref`, settlement close, legacy settlement
+  close, settlement recovery intent) and `FencingToken`, which is pinned by an inline exact-shape
+  check at each *embedding* site rather than inside `from_dict`. These are digest-covered
+  commitment records and hash-bound resource references: a preserved-then-replayed field there
+  would forge a commitment.
+- Tolerance is bounded at 64 KiB per document (4x that per archived sidecar, which bypasses the
+  document total) and fails closed with a typed error rather than truncating.
+- Claude `#616`'s `isolation` surface is deliberately **not** ported —
+  `test_isolation_is_not_ported_ktd5` asserts the identifier appears nowhere in either broker.
+  Forward-compatibility is the contract; `isolation` is merely the first field to exercise it.
+
 ## 0.12.0 — 2026-07-26
 
 ### Changed

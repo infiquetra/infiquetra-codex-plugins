@@ -1278,21 +1278,28 @@ def test_symlinked_authority_nodes_are_rejected(
         _agent(broker)
 
 
-def test_unsafe_modes_and_unknown_schema_fail_closed(tmp_path: Path, runtime: FakeRuntime) -> None:
+def test_unsafe_mode_fails_closed_and_unknown_top_level_key_is_tolerated(
+    tmp_path: Path, runtime: FakeRuntime
+) -> None:
+    # A bad file mode still fails closed; an additive unknown TOP-LEVEL key is now tolerated and
+    # preserved rather than bricking the reader (#617 R1 — reverses the pre-#617 brick behavior).
     root = tmp_path / "authority"
     root.mkdir(mode=0o700)
     broker = B.LeaseBroker(root, providers=runtime.providers())
-    _agent(broker)
+    lease = _agent(broker, resource="unit-tolerated")
     os.chmod(broker.registry_path, 0o644)
     with pytest.raises(B.UnsafeAuthorityError, match="mode must be 0600"):
         broker.inspect()
     os.chmod(broker.registry_path, 0o600)
     raw = _raw_registry(broker)
-    raw["unexpected"] = True
+    raw["unexpected"] = {"future": True}
     broker.registry_path.write_text(json.dumps(raw), encoding="utf-8")
     os.chmod(broker.registry_path, 0o600)
-    with pytest.raises(B.RegistryCorruptError, match="unknown field"):
-        broker.inspect()
+
+    # Reads no longer raise, and a mutating write preserves the unknown key byte-faithfully.
+    assert broker.inspect()["leases"][0]["lease_id"] == lease.lease_id
+    assert broker.release(lease.lease_id, token=lease.token) is True
+    assert _raw_registry(broker)["unexpected"] == {"future": True}
 
 
 def _contention_worker(root: str, start: Any, output: Any, index: int) -> None:
@@ -1753,3 +1760,604 @@ def test_acquire_agent_rejects_unknown_on_conflict(broker: Any, value: Any) -> N
             agent_type="worker",
             on_conflict=value,  # type: ignore[arg-type]
         )
+
+
+# ---------------------------------------------------------------------------
+# U1 — tolerance primitives and capacity constants (#54, port of claude #617)
+# ---------------------------------------------------------------------------
+
+_U1_KEYS = frozenset({"alpha", "beta"})
+
+
+def test_tolerant_mapping_splits_known_from_extras_disjointly() -> None:
+    known, extras = B._tolerant_mapping({"alpha": 1, "beta": 2, "gamma": 3}, _U1_KEYS, "sample")
+
+    assert known == {"alpha": 1, "beta": 2}
+    assert extras == {"gamma": 3}
+    # Disjointness is what makes the merge-last ``to_dict`` safe: a key in both would let an extra
+    # silently overwrite a validated field.
+    assert not (set(known) & set(extras))
+
+
+def test_tolerant_mapping_keeps_the_strict_missing_field_error_verbatim() -> None:
+    # R5: only *additive* keys are tolerated. A missing required key must still fail closed with
+    # byte-identical wording, so existing operator runbooks and log greps keep working.
+    with pytest.raises(B.RegistryCorruptError) as tolerant:
+        B._tolerant_mapping({"alpha": 1}, _U1_KEYS, "sample")
+    with pytest.raises(B.RegistryCorruptError) as strict:
+        B._closed_mapping({"alpha": 1}, _U1_KEYS, "sample")
+
+    assert str(tolerant.value) == "sample: missing field(s): beta"
+    assert str(tolerant.value) == str(strict.value)
+
+
+@pytest.mark.parametrize("value", [None, [], "alpha", 7, ()])
+def test_tolerant_mapping_rejects_a_non_object(value: Any) -> None:
+    with pytest.raises(B.RegistryCorruptError, match="sample must be an object"):
+        B._tolerant_mapping(value, _U1_KEYS, "sample")
+
+
+def test_extras_serialized_size_is_zero_for_empty_and_canonical_utf8_otherwise() -> None:
+    assert B._extras_serialized_size({}) == 0
+
+    extras = {"isolation": "worktree", "unicode": "é"}
+    expected = len(B._canonical_json(extras).encode("utf-8"))
+
+    assert B._extras_serialized_size(extras) == expected
+    # ``_canonical_json`` sets ensure_ascii=True, so a non-ASCII value is counted as its escaped
+    # form and the measurement is encoding-independent. Pin that: if canonicalization ever switches
+    # to ensure_ascii=False, the same payload would suddenly measure smaller and the cap would
+    # admit more than it was sized for.
+    assert "\\u00e9" in B._canonical_json(extras)
+    assert expected == len(B._canonical_json(extras))
+
+
+def test_extras_serialized_size_measures_the_canonical_form_not_the_input() -> None:
+    # Key order must not change the measurement, or the cap would be non-deterministic across
+    # writers that emit the same fields in a different order.
+    assert B._extras_serialized_size({"b": 1, "a": 2}) == B._extras_serialized_size(
+        {"a": 2, "b": 1}
+    )
+
+
+def test_archived_fence_bound_is_a_strict_multiple_of_the_document_bound() -> None:
+    # KTD4: archived sidecars bypass the document-total cap, so they carry their own larger bound.
+    # A future edit that equalizes the two would silently remove the sidecar's headroom.
+    assert B._MAX_EXTRAS_BYTES == 64 * 1024
+    assert B._MAX_ARCHIVED_FENCE_BYTES == 4 * B._MAX_EXTRAS_BYTES
+    assert B._MAX_ARCHIVED_FENCE_BYTES > B._MAX_EXTRAS_BYTES
+
+
+# ---------------------------------------------------------------------------
+# U2 — extras on the six record types (#54, port of claude #617)
+# ---------------------------------------------------------------------------
+
+
+def _persist_raw(broker: Any, raw: dict[str, Any]) -> None:
+    """Write a hand-edited registry document back under the authority's 0600 requirement."""
+
+    broker.registry_path.write_text(json.dumps(raw), encoding="utf-8")
+    os.chmod(broker.registry_path, 0o600)
+
+
+def _settled_fence_digest(broker: Any, *, resource: str) -> str:
+    """Drive one lease through prepare + commit and return its resource digest."""
+
+    lease = _agent(broker, resource=resource)
+    settlement = broker.prepare_agent_settlement(
+        lease.lease_id,
+        owner_id=lease.owner_id,
+        token=lease.token,
+        producer="saga",
+        run_id=f"run-{resource}",
+        expected_output_sha256="b" * 64,
+        protected_write_intent_sha256="c" * 64,
+    )
+    broker.commit_agent_settlement(
+        settlement.settlement_id,
+        owner_id=lease.owner_id,
+        token=lease.token,
+        write=lambda _lease: ["evidence"],
+    )
+    return cast(str, B.resource_sha256(lease.resource_ref))
+
+
+@pytest.mark.parametrize("unknown_key", ["isolation", "field_no_runtime_has_yet"])
+def test_lease_extras_round_trip_byte_identically(broker: Any, unknown_key: str) -> None:
+    # R1/R2/R3. ``isolation`` is merely the first field to exercise the contract; the synthetic key
+    # present in NEITHER runtime is the genericity proof. A reader that special-cased ``isolation``
+    # would pass the first parameter and fail the second.
+    lease = _agent(broker, resource="unit-extras")
+    raw = _raw_registry(broker)
+    raw["leases"][lease.lease_id][unknown_key] = {"nested": ["value", 1, None]}
+    _persist_raw(broker, raw)
+
+    assert broker.inspect()["leases"][0]["lease_id"] == lease.lease_id
+    assert broker.renew(lease.lease_id, token=lease.token)
+    assert _raw_registry(broker)["leases"][lease.lease_id][unknown_key] == {
+        "nested": ["value", 1, None]
+    }
+
+
+def test_settlement_record_extras_round_trip(broker: Any) -> None:
+    lease = _agent(broker, resource="unit-settlement-extras")
+    settlement = broker.prepare_agent_settlement(
+        lease.lease_id,
+        owner_id=lease.owner_id,
+        token=lease.token,
+        producer="saga",
+        run_id="run-settlement-extras",
+        expected_output_sha256="b" * 64,
+        protected_write_intent_sha256="c" * 64,
+    )
+    digest = B.resource_sha256(lease.resource_ref)
+    raw = _raw_registry(broker)
+    raw["settlements"][digest]["future_field"] = "preserved"
+    _persist_raw(broker, raw)
+
+    broker.inspect()
+    broker.commit_agent_settlement(
+        settlement.settlement_id,
+        owner_id=lease.owner_id,
+        token=lease.token,
+        write=lambda _lease: ["evidence"],
+    )
+    # The settlement is consumed by the commit, so the surviving proof is that the tolerant read
+    # accepted it at all — a strict read would have raised before the commit could run.
+    assert digest not in _raw_registry(broker)["settlements"]
+
+
+def test_resource_fence_extras_round_trip(broker: Any) -> None:
+    lease = _agent(broker, resource="unit-fence-extras")
+    digest = B.resource_sha256(lease.resource_ref)
+    raw = _raw_registry(broker)
+    raw["resource_fences"][digest]["future_field"] = {"kept": True}
+    _persist_raw(broker, raw)
+
+    assert broker.inspect()["leases"][0]["lease_id"] == lease.lease_id
+    assert broker.renew(lease.lease_id, token=lease.token)
+    assert _raw_registry(broker)["resource_fences"][digest]["future_field"] == {"kept": True}
+
+
+def test_session_admission_extras_round_trip(broker: Any) -> None:
+    limits = _limits()
+    broker.configure_session_admission(
+        "session",
+        policy_sha256=limits.policy_sha256(),
+        session_limit=limits.max_concurrent,
+        aggregate_limit=limits.aggregate_max_concurrent,
+        mutation="read-write",
+    )
+    lease = _agent(broker, resource="unit-admission-extras")
+    raw = _raw_registry(broker)
+    raw["session_admissions"]["session"]["future_field"] = 7
+    _persist_raw(broker, raw)
+
+    assert broker.get_session_admission("session") is not None
+    assert broker.renew(lease.lease_id, token=lease.token)
+    assert _raw_registry(broker)["session_admissions"]["session"]["future_field"] == 7
+
+
+def test_closed_owner_admission_extras_round_trip(broker: Any) -> None:
+    lease = _agent(broker, owner="closing-owner", resource="unit-owner-extras")
+    broker.close_owner_admission(owner_id="closing-owner")
+    raw = _raw_registry(broker)
+    raw["closed_owner_admissions"]["closing-owner"]["future_field"] = "kept"
+    _persist_raw(broker, raw)
+
+    assert broker.inspect_owner_admission("closing-owner") is not None
+    assert broker.release(lease.lease_id, token=lease.token) is True
+    assert (
+        _raw_registry(broker)["closed_owner_admissions"]["closing-owner"]["future_field"] == "kept"
+    )
+
+
+def test_registry_top_level_extras_round_trip(broker: Any) -> None:
+    lease = _agent(broker, resource="unit-top-extras")
+    raw = _raw_registry(broker)
+    raw["future_top_level"] = {"schema": "someone-elses.v9"}
+    _persist_raw(broker, raw)
+
+    assert broker.inspect()["leases"][0]["lease_id"] == lease.lease_id
+    assert broker.release(lease.lease_id, token=lease.token) is True
+    assert _raw_registry(broker)["future_top_level"] == {"schema": "someone-elses.v9"}
+
+
+def test_extras_free_document_is_byte_identical_across_a_read_write_cycle(broker: Any) -> None:
+    # R8 golden pin. With no extras anywhere, ``result.update({})`` is a no-op and the serialized
+    # document must be byte-for-byte what a pre-port broker produced.
+    lease = _agent(broker, resource="unit-golden")
+    broker.configure_session_admission(
+        "session",
+        policy_sha256=_limits().policy_sha256(),
+        session_limit=_limits().max_concurrent,
+        aggregate_limit=_limits().aggregate_max_concurrent,
+        mutation="read-write",
+    )
+    before = broker.registry_path.read_bytes()
+
+    parsed = B.Registry.from_dict(json.loads(before.decode("utf-8")))
+    assert parsed.extras == {}
+    assert all(item.extras == {} for item in parsed.leases.values())
+    assert all(f.extras == {} for f in parsed.resource_fences.values())
+    assert all(a.extras == {} for a in parsed.session_admissions.values())
+
+    # Byte identity against the ACTUAL on-disk bytes, using the write path's own serialization
+    # (`_write_registry`, lease_broker.py: json.dumps(payload, indent=2, sort_keys=True) + "\n").
+    # Comparing two `json.dumps(..., sort_keys=True)` strings instead would re-serialize both sides
+    # through the same canonicalizer and prove only semantic equality — which is a weaker claim than
+    # this test's name makes.
+    assert (json.dumps(parsed.to_dict(), indent=2, sort_keys=True) + "\n").encode("utf-8") == before
+
+    # And the property survives a real mutating write, not just a parse/re-serialize round trip.
+    assert broker.renew(lease.lease_id, token=lease.token)
+    after = broker.registry_path.read_bytes()
+    reparsed = B.Registry.from_dict(json.loads(after.decode("utf-8")))
+    assert reparsed.extras == {}
+    assert all(item.extras == {} for item in reparsed.leases.values())
+    assert (json.dumps(reparsed.to_dict(), indent=2, sort_keys=True) + "\n").encode(
+        "utf-8"
+    ) == after
+
+
+@pytest.mark.parametrize(
+    ("container", "key_of"),
+    [
+        ("leases", "lease"),
+        ("resource_fences", "digest"),
+        ("session_admissions", "session"),
+        ("closed_owner_admissions", "owner"),
+    ],
+)
+def test_missing_required_key_still_fails_closed_at_every_converted_site(
+    broker: Any, container: str, key_of: str
+) -> None:
+    # R5. Tolerance is additive-only: dropping a REQUIRED key must still brick the read, or a
+    # truncated document would parse as valid with silently-defaulted fields.
+    lease = _agent(broker, owner="closing-owner", resource="unit-missing")
+    broker.configure_session_admission(
+        "session",
+        policy_sha256=_limits().policy_sha256(),
+        session_limit=_limits().max_concurrent,
+        aggregate_limit=_limits().aggregate_max_concurrent,
+        mutation="read-write",
+    )
+    broker.close_owner_admission(owner_id="closing-owner")
+    raw = _raw_registry(broker)
+    key = {
+        "lease": lease.lease_id,
+        "digest": B.resource_sha256(lease.resource_ref),
+        "session": "session",
+        "owner": "closing-owner",
+    }[key_of]
+    record = raw[container][key]
+    record.pop(sorted(record)[0])
+    _persist_raw(broker, raw)
+
+    with pytest.raises(B.RegistryCorruptError, match="missing field"):
+        broker.inspect()
+
+
+def test_registry_missing_required_top_level_key_still_fails_closed(broker: Any) -> None:
+    _agent(broker, resource="unit-missing-top")
+    raw = _raw_registry(broker)
+    del raw["next_fencing_sequence"]
+    _persist_raw(broker, raw)
+
+    with pytest.raises(B.RegistryCorruptError, match="missing field"):
+        broker.inspect()
+
+
+def test_strict_worktree_resource_ref_still_rejects_unknown_keys(tmp_path: Path) -> None:
+    # R6, boundary 1 of 5 — hash-bound: an unknown byte here changes ``resource_sha256``.
+    with pytest.raises(B.RegistryCorruptError, match="unknown field"):
+        B.canonical_resource_ref("worktree", {**_worktree_resource(tmp_path), "surprise": True})
+
+
+def test_strict_settlement_close_still_rejects_unknown_keys(broker: Any) -> None:
+    # R6, boundary 2 of 5 — digest-covered commitment record.
+    digest = _settled_fence_digest(broker, resource="unit-strict-close")
+    raw = _raw_registry(broker)
+    assert raw["resource_fences"][digest]["close_receipt"] is not None
+    raw["resource_fences"][digest]["close_receipt"]["surprise"] = True
+    _persist_raw(broker, raw)
+
+    with pytest.raises(B.RegistryCorruptError, match="unknown field"):
+        broker.inspect()
+
+
+def test_strict_legacy_settlement_close_still_rejects_unknown_keys(broker: Any) -> None:
+    # R6, boundary 3 of 5 — the legacy digest-covered close shape.
+    digest = _settled_fence_digest(broker, resource="unit-strict-legacy")
+    raw = _raw_registry(broker)
+    current = raw["resource_fences"][digest]["close_receipt"]
+    legacy = {
+        key: value
+        for key, value in current.items()
+        if key
+        not in {
+            "settlement_id",
+            "session_id",
+            "policy_sha256",
+            "protected_write_intent_sha256",
+            "settlement_sha256",
+            "receipt_sha256",
+            "sha256",
+        }
+    }
+    legacy["receipt_sha256"] = B._record_sha256(legacy)
+    legacy["sha256"] = B._record_sha256(legacy)
+    legacy["surprise"] = True
+    raw["resource_fences"][digest]["close_receipt"] = legacy
+    _persist_raw(broker, raw)
+
+    with pytest.raises(B.RegistryCorruptError, match="unknown field"):
+        broker.inspect()
+
+
+def test_strict_settlement_recovery_intent_still_rejects_unknown_keys(
+    tmp_path: Path, runtime: FakeRuntime
+) -> None:
+    # R6, boundary 4 of 5 — the recovery intent is a sha256-bound capability, not a container.
+    runtime.processes[os.getpid()] = (True, "root-process")
+    broker = B.LeaseBroker(tmp_path / "authority", providers=runtime.providers())
+    coordinator = B._open_settlement_recovery_coordinator(broker, recovery_owner_id="root-adapter")
+    lease = _agent(broker, resource="unit-strict-recovery")
+    settlement = broker.prepare_agent_settlement(
+        lease.lease_id,
+        owner_id=lease.owner_id,
+        token=lease.token,
+        producer="saga",
+        run_id="run-strict-recovery",
+        expected_output_sha256="b" * 64,
+        protected_write_intent_sha256="c" * 64,
+    )
+    intent = _recovery_intent(settlement, runtime=runtime, expected_phase="prepared")
+    intent["surprise"] = True
+
+    with pytest.raises(B.RegistryCorruptError, match="unknown field"):
+        coordinator.recover_agent_settlement(intent, action="commit")
+
+
+def test_strict_fencing_token_shape_is_pinned_at_every_embedding_site(
+    tmp_path: Path, runtime: FakeRuntime
+) -> None:
+    # R6, boundary 5 of 5. ``FencingToken.from_dict`` reads with ``.get()`` and does NOT itself
+    # reject unknown keys — the exact {broker_epoch, fencing_sequence} shape is pinned by an inline
+    # check at each EMBEDDING site instead. An audit that only swept ``_closed_mapping`` call sites
+    # would miss this boundary entirely, so assert it where it is actually enforced.
+    assert B.FencingToken.from_dict(
+        {"broker_epoch": str(uuid.UUID(int=1)), "fencing_sequence": 1, "surprise": True}
+    ) == B.FencingToken(str(uuid.UUID(int=1)), 1)
+
+    # Site 1 — the settlement record's embedded token.
+    broker = B.LeaseBroker(tmp_path / "authority", providers=runtime.providers())
+    lease = _agent(broker, resource="unit-token-shape")
+    broker.prepare_agent_settlement(
+        lease.lease_id,
+        owner_id=lease.owner_id,
+        token=lease.token,
+        producer="saga",
+        run_id="run-token-shape",
+        expected_output_sha256="b" * 64,
+        protected_write_intent_sha256="c" * 64,
+    )
+    digest = B.resource_sha256(lease.resource_ref)
+    raw = _raw_registry(broker)
+    raw["settlements"][digest]["token"]["surprise"] = True
+    _persist_raw(broker, raw)
+    with pytest.raises(B.RegistryCorruptError, match="closed token shape"):
+        broker.inspect()
+
+    # Site 2 — the recovery intent's embedded token.
+    runtime.processes[os.getpid()] = (True, "root-process")
+    clean = B.LeaseBroker(tmp_path / "authority-b", providers=runtime.providers())
+    coordinator = B._open_settlement_recovery_coordinator(clean, recovery_owner_id="root-adapter")
+    other = _agent(clean, resource="unit-token-shape-b")
+    settlement = clean.prepare_agent_settlement(
+        other.lease_id,
+        owner_id=other.owner_id,
+        token=other.token,
+        producer="saga",
+        run_id="run-token-shape-b",
+        expected_output_sha256="b" * 64,
+        protected_write_intent_sha256="c" * 64,
+    )
+    intent = _recovery_intent(settlement, runtime=runtime, expected_phase="prepared")
+    intent["token"]["surprise"] = True
+    intent["sha256"] = B._record_sha256(intent, "sha256")
+    with pytest.raises(B.LeaseBrokerError, match="token shape is invalid"):
+        coordinator.recover_agent_settlement(intent, action="commit")
+
+
+def test_document_extras_over_capacity_fails_closed_and_just_under_loads(broker: Any) -> None:
+    # R4/KTD5. Over-capacity must raise a typed error rather than truncate: a truncating reader
+    # would silently drop a newer writer's fields and then write the loss back to disk.
+    lease = _agent(broker, resource="unit-capacity")
+    raw = _raw_registry(broker)
+    raw["leases"][lease.lease_id]["bulk"] = "x" * (B._MAX_EXTRAS_BYTES - 64)
+    _persist_raw(broker, raw)
+    assert broker.inspect()["leases"][0]["lease_id"] == lease.lease_id
+
+    raw = _raw_registry(broker)
+    raw["leases"][lease.lease_id]["bulk"] = "x" * (B._MAX_EXTRAS_BYTES + 1)
+    _persist_raw(broker, raw)
+    with pytest.raises(B.RegistryCorruptError, match="bounded tolerance capacity"):
+        broker.inspect()
+
+
+def test_document_extras_capacity_is_summed_across_records_not_per_record(broker: Any) -> None:
+    # The cap is a DOCUMENT total. Two records each individually under the bound must still trip it
+    # together, or the limit would be trivially bypassed by spreading a payload across records.
+    first = _agent(broker, resource="unit-capacity-a")
+    second = _agent(broker, owner="owner-b", session="session-b", resource="unit-capacity-b")
+    half = "x" * (B._MAX_EXTRAS_BYTES // 2)
+    raw = _raw_registry(broker)
+    raw["leases"][first.lease_id]["bulk"] = half
+    raw["leases"][second.lease_id]["bulk"] = half
+    _persist_raw(broker, raw)
+
+    with pytest.raises(B.RegistryCorruptError, match="bounded tolerance capacity"):
+        broker.inspect()
+
+
+# ---------------------------------------------------------------------------
+# U3 — settlement and archive commit path (#54, port of claude #617)
+# ---------------------------------------------------------------------------
+
+
+def _archive_head(broker: Any, digest: str) -> None:
+    """Move one closed fence to its sidecar file.
+
+    ``_compact_closed_fences`` only spills past ``_MAX_CLOSED_FENCES`` (128), so driving the
+    archive writer directly is what makes these assertions unconditional instead of skipped.
+    """
+
+    registry = B.Registry.from_dict(_raw_registry(broker))
+    broker._archive_closed_fence(digest, registry.resource_fences[digest])
+
+
+def test_fence_extras_survive_the_settlement_close_into_the_archive(broker: Any) -> None:
+    # R7 — the unit's most important test. Codex shipped the pre-#617 rebuild form, which drops
+    # per-fence extras at exactly the commit that archives the fence. Assert by reading the
+    # ARCHIVED record back off disk, never by inspecting the in-memory object: the in-memory value
+    # can look right while the persisted one has already lost the field.
+    lease = _agent(broker, resource="unit-archive-extras")
+    digest = B.resource_sha256(lease.resource_ref)
+    raw = _raw_registry(broker)
+    raw["resource_fences"][digest]["carried_forward"] = {"by": "a newer writer"}
+    _persist_raw(broker, raw)
+
+    settlement = broker.prepare_agent_settlement(
+        lease.lease_id,
+        owner_id=lease.owner_id,
+        token=lease.token,
+        producer="saga",
+        run_id="run-archive-extras",
+        expected_output_sha256="b" * 64,
+        protected_write_intent_sha256="c" * 64,
+    )
+    broker.commit_agent_settlement(
+        settlement.settlement_id,
+        owner_id=lease.owner_id,
+        token=lease.token,
+        write=lambda _lease: ["evidence"],
+    )
+
+    live = _raw_registry(broker)["resource_fences"][digest]
+    assert live["close_receipt"] is not None
+    assert live["carried_forward"] == {"by": "a newer writer"}
+
+    # And once the fence moves to the sidecar archive, the field is still there — read back off
+    # disk through the real archive reader, not from memory.
+    _archive_head(broker, digest)
+    reread = broker._read_archived_fence(digest)
+    assert reread is not None
+    assert reread.close_receipt is not None
+    assert reread.extras == {"carried_forward": {"by": "a newer writer"}}
+
+
+def test_archived_fence_over_the_per_record_bound_fails_closed(broker: Any) -> None:
+    # KTD4. Sidecars bypass Registry.from_dict's document-total cap, so without the per-record
+    # bound the archive would be an uncapped extras channel.
+    digest = _settled_fence_digest(broker, resource="unit-archive-bound")
+    _archive_head(broker, digest)
+    path = broker.closed_fences_dir / f"{digest}.json"
+    assert path.exists()
+
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["bulk"] = "x" * (B._MAX_EXTRAS_BYTES + 1)
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    os.chmod(path, 0o600)
+
+    with pytest.raises(B.RegistryCorruptError, match="bounded tolerance capacity"):
+        broker._read_archived_fence(digest)
+
+
+def test_archived_fence_payload_read_is_bounded_and_not_single_read_truncated(
+    broker: Any, tmp_path: Path
+) -> None:
+    # The pre-port reader took ONE os.read(fd, 65536), so a sidecar larger than 64 KiB was
+    # silently truncated into a JSON parse error rather than read to EOF. Pin both halves:
+    # a large-but-legal payload reads whole, and an over-bound one raises the size error.
+    legal = tmp_path / "legal.json"
+    legal.write_text(json.dumps({"pad": "y" * 100_000}), encoding="utf-8")
+    fd = os.open(legal, os.O_RDONLY)
+    try:
+        payload = B.LeaseBroker._read_bounded_archived_fence_payload(fd)
+    finally:
+        os.close(fd)
+    assert len(payload["pad"]) == 100_000
+
+    oversized = tmp_path / "oversized.json"
+    oversized.write_text(json.dumps({"pad": "y" * (B._MAX_ARCHIVED_FENCE_BYTES + 1)}), "utf-8")
+    fd = os.open(oversized, os.O_RDONLY)
+    try:
+        with pytest.raises(B.RegistryCorruptError, match="bounded archive record size"):
+            B.LeaseBroker._read_bounded_archived_fence_payload(fd)
+    finally:
+        os.close(fd)
+
+
+def test_settlement_close_still_rejects_a_lost_head_cas(broker: Any) -> None:
+    # The existing invariant must be unregressed by the replace() change: the CAS guard runs
+    # BEFORE the in-place close, so a superseded head still refuses.
+    lease = _agent(broker, resource="unit-cas")
+    settlement = broker.prepare_agent_settlement(
+        lease.lease_id,
+        owner_id=lease.owner_id,
+        token=lease.token,
+        producer="saga",
+        run_id="run-cas",
+        expected_output_sha256="b" * 64,
+        protected_write_intent_sha256="c" * 64,
+    )
+    digest = B.resource_sha256(lease.resource_ref)
+    raw = _raw_registry(broker)
+    raw["resource_fences"][digest]["fencing_sequence"] = 9999
+    raw["settlements"].pop(digest, None)
+    raw["next_fencing_sequence"] = 10000
+    _persist_raw(broker, raw)
+
+    with pytest.raises(B.LeaseBrokerError):
+        broker.commit_agent_settlement(
+            settlement.settlement_id,
+            owner_id=lease.owner_id,
+            token=lease.token,
+            write=lambda _lease: ["evidence"],
+        )
+
+
+# ---------------------------------------------------------------------------
+# U5 — the isolation non-port, pinned as a named guard (#54 KTD5)
+# ---------------------------------------------------------------------------
+
+
+def test_isolation_is_not_ported_ktd5() -> None:
+    """R9: codex must not learn claude-specific lease semantics.
+
+    Forward-compatibility is the contract; ``isolation`` (claude#616) is merely the first field to
+    exercise it. A reader that special-cased it would defer the identical failure to the next field
+    claude adds, so the exclusion is pinned by name rather than left to prose. Following the
+    precedent in DECISIONS `2026-07-19: Cross-Runtime Parity Port` KTD6
+    (`test_dispatcher_lease_seam_stays_dormant_ktd6`): teaching codex the field then requires
+    deleting a named test with a written rationale, not silent drift.
+    """
+
+    authority = BROKER_PATH.read_text(encoding="utf-8")
+    adapter = ROOT / "plugins" / "saga" / "scripts" / "lease_broker.py"
+
+    assert "isolation" not in authority
+    assert "isolation" not in adapter.read_text(encoding="utf-8")
+
+
+def test_tolerance_names_no_runtime_specific_field() -> None:
+    """The genericity claim, stated as an absence rather than inferred from a passing test.
+
+    ``_tolerant_mapping`` partitions on set membership alone, so no field name can be privileged.
+    """
+
+    authority = BROKER_PATH.read_text(encoding="utf-8")
+
+    for literal in ('"claude"', "'claude'", '"codex"', "'codex'", "RUNTIME_LABEL"):
+        assert literal not in authority

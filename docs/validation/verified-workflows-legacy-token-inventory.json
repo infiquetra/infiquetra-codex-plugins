@@ -12,7 +12,7 @@
     {
       "classification": "migration-documentation",
       "path": "README.md",
-      "sha256": "5a62029908c3b0bf7e5baf8344554107aeeae2057793c81a1ceac1d095ed4325",
+      "sha256": "04ffa8a8b570d96f9e62c24a790b20f75cf6f1166644d6e5d3eb57847234e6ac",
       "tokens": [
         "Team Execution"
       ]
@@ -82,7 +82,7 @@
     {
       "classification": "historical-evidence",
       "path": "docs/engineering-journal/DECISIONS.md",
-      "sha256": "7013c66cc4774bcda84d541f6678ed974cab40a0125a65aef4d5826ca11de70b",
+      "sha256": "675f02f54f9828c27f1b473d4a084d919857a6a87e1ed74f0d1656bec11f3952",
       "tokens": [
         "## Team Structure",
         "Team Execution",
@@ -584,7 +584,7 @@
     {
       "classification": "legacy-read-metadata",
       "path": "docs/validation/saga-family-target-inventory.json",
-      "sha256": "307abbde07746c9e48a946c1ef51db2fe9a013e6d9b23578d9df95d1751f2f31",
+      "sha256": "1138d67973404f6623087fff086b07d7e15afa6d68fd3909894f0d139050b103",
       "tokens": [
         ".codex/team-execution/",
         "team-execution"
@@ -685,7 +685,7 @@
     {
       "classification": "lineage-documentation",
       "path": "plugins/fleet-core/CHANGELOG.md",
-      "sha256": "cd2d60e6f47d86e8b35733548c7249ef16a8c9e0bfdcbff7ee724dce9d525571",
+      "sha256": "3634309b8a88b295efe62b263229d81ad4851aa783882b8d057dad6e72beb9c7",
       "tokens": [
         "Team Execution"
       ]
@@ -726,7 +726,7 @@
     {
       "classification": "frozen-source-contract",
       "path": "plugins/fleet-core/scripts/fleet_commons/lease_broker.py",
-      "sha256": "6e4a7c45a503b440ffeadcd0efe3294eac1e7a44ce5dbd3a8bd1cdf7d8e5372b",
+      "sha256": "70deaefdcd0e9625ba80b43dd9202940b77f884dd07f33d57a98c19349f4fdf2",
       "tokens": [
         "team-execution"
       ]
@@ -801,7 +801,7 @@
     {
       "classification": "lineage-documentation",
       "path": "plugins/saga/CHANGELOG.md",
-      "sha256": "69e6201d61a4af97f9a47270137348cd42b93134c2d28744fa1c46d34b33b476",
+      "sha256": "d6a780b39254e82411051374ba7963d78fbb25a64aa43676a00713623838f4ac",
       "tokens": [
         "Team Execution",
         "team-execution"
@@ -852,7 +852,7 @@
     {
       "classification": "frozen-source-contract",
       "path": "plugins/saga/scripts/lease_broker.py",
-      "sha256": "9268b9b3dd9815d390acfd8b5fca8ed657ca10d2081a68b7459f553af3643e49",
+      "sha256": "d9f8b331b6afce53c8429fef0c28fb329f2613288a12c3296e87d8638645d88f",
       "tokens": [
         "team-execution"
       ]
@@ -1204,7 +1204,7 @@
     }
   ],
   "generated_by": "scripts/build_legacy_workflow_inventory.py",
-  "historical_inventory_sha256": "63f2997619c71701b46ef59065c2d4a2e05cd25c974402d03f0458bb4f0aacfc",
+  "historical_inventory_sha256": "516a54ceaa40ac4619bc03f4ebe3ca49dc6068d2ac920739048af9654e2805dc",
   "history_sentinels": {
     "docs/investigations/2026-06-30-team-execution-saga-orchestration-debug-report.md": {
       "sha256": "ecc08eceda3a67dc81d15b1930753fe236ca7c1ae9b3ad9dd506cdecfb0ac4fa",
