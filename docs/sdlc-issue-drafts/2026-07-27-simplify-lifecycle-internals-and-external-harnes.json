@@ -1,0 +1,59 @@
+{
+  "approval_state": "approved",
+  "approved_at": "2026-07-27T00:30:32.193266+00:00",
+  "created_at": "2026-07-27T00:30:52.055177+00:00",
+  "created_issue_number": 61,
+  "created_issue_url": "https://github.com/infiquetra/infiquetra-codex-plugins/issues/61",
+  "draft_path": "docs/sdlc-issue-drafts/2026-07-27-simplify-lifecycle-internals-and-external-harnes.md",
+  "handoff_maturity": "requirements-ready",
+  "issue_type": "capability",
+  "labels": [
+    "capability",
+    "hermes-task",
+    "needs-plan"
+  ],
+  "mapping_pr_url": null,
+  "mode": null,
+  "mutation_summary": [
+    {
+      "action": "issue",
+      "detail": "Create capability in infiquetra/infiquetra-codex-plugins"
+    },
+    {
+      "action": "board-add",
+      "detail": "Add issue to operations"
+    },
+    {
+      "action": "set-status",
+      "detail": "Set Status to Shaping"
+    },
+    {
+      "action": "mark-draft",
+      "detail": "Record created issue on draft and sidecar"
+    }
+  ],
+  "pending_mapping": false,
+  "project": "operations",
+  "project_fields": {
+    "Issue Type": "capability",
+    "Lifecycle Origin": "requirements-ready",
+    "Technical Risk": "high"
+  },
+  "readiness": {
+    "blocking_gaps": [],
+    "passed": true,
+    "profile": "asgard",
+    "warnings": []
+  },
+  "remaining_steps": [],
+  "repo": "infiquetra-codex-plugins",
+  "risk": "high",
+  "schema_version": "1.0",
+  "sidecar_path": "docs/sdlc-issue-drafts/2026-07-27-simplify-lifecycle-internals-and-external-harnes.json",
+  "source_artifact": null,
+  "state": "created",
+  "status": "Shaping",
+  "team": "asgard",
+  "title": "Simplify lifecycle internals and external harness execution",
+  "updated_at": "2026-07-27T00:31:03.388367+00:00"
+}

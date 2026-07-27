@@ -1,0 +1,59 @@
+{
+  "approval_state": "approved",
+  "approved_at": "2026-07-27T00:30:32.195303+00:00",
+  "created_at": "2026-07-27T00:31:30.877304+00:00",
+  "created_issue_number": 63,
+  "created_issue_url": "https://github.com/infiquetra/infiquetra-codex-plugins/issues/63",
+  "draft_path": "docs/sdlc-issue-drafts/2026-07-27-make-codex-ports-and-acceptance-capability-first.md",
+  "handoff_maturity": "requirements-ready",
+  "issue_type": "capability",
+  "labels": [
+    "capability",
+    "hermes-task",
+    "needs-plan"
+  ],
+  "mapping_pr_url": null,
+  "mode": null,
+  "mutation_summary": [
+    {
+      "action": "issue",
+      "detail": "Create capability in infiquetra/infiquetra-codex-plugins"
+    },
+    {
+      "action": "board-add",
+      "detail": "Add issue to operations"
+    },
+    {
+      "action": "set-status",
+      "detail": "Set Status to Shaping"
+    },
+    {
+      "action": "mark-draft",
+      "detail": "Record created issue on draft and sidecar"
+    }
+  ],
+  "pending_mapping": false,
+  "project": "operations",
+  "project_fields": {
+    "Issue Type": "capability",
+    "Lifecycle Origin": "requirements-ready",
+    "Technical Risk": "medium"
+  },
+  "readiness": {
+    "blocking_gaps": [],
+    "passed": true,
+    "profile": "asgard",
+    "warnings": []
+  },
+  "remaining_steps": [],
+  "repo": "infiquetra-codex-plugins",
+  "risk": "medium",
+  "schema_version": "1.0",
+  "sidecar_path": "docs/sdlc-issue-drafts/2026-07-27-make-codex-ports-and-acceptance-capability-first.json",
+  "source_artifact": null,
+  "state": "created",
+  "status": "Shaping",
+  "team": "asgard",
+  "title": "Make Codex ports and acceptance capability-first",
+  "updated_at": "2026-07-27T00:31:40.199087+00:00"
+}
