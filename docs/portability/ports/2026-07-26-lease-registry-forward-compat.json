@@ -112,6 +112,25 @@
       "recorded_at": "2026-07-26T23:45:00Z",
       "repo_head": "1ada782b904107d6737317ff65ec7061f1e32172",
       "unit": "U4"
+    },
+    {
+      "argv": [
+        "python3",
+        "tools/run_cross_runtime_outcome_acceptance.py",
+        "--claude-sha",
+        "b464d090fccb59d0ff862f273902f1653f1d8835",
+        "--codex-sha",
+        "ec523cc017e2f68716428ed6417e2194962d497b"
+      ],
+      "artifact_path": "docs/validation/2026-07-26-lease-registry-forward-compat-acceptance.md",
+      "artifact_sha256": "07a261d8133c4bc46ef91ee1e24865c38d05d992b0a212f9baa265684f2472ae",
+      "cwd": ".",
+      "evidence_id": "u6-lease-registry-forward-compat-acceptance-20260727",
+      "exit_code": 0,
+      "kind": "check",
+      "recorded_at": "2026-07-27T00:45:00Z",
+      "repo_head": "ec523cc017e2f68716428ed6417e2194962d497b",
+      "unit": "U6"
     }
   ],
   "port_id": "lease-registry-forward-compat-2026-07-26",

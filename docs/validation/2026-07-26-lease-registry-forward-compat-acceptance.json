@@ -1,0 +1,364 @@
+{
+  "broker_root_digest": "f0106589456c941bba71f7fb67c894f611e3db15d0bb9ca4803ef63005b8e533",
+  "contract_digests": {
+    "claude_outcome_compat_sha256": "8c9118178df124e438af4e5a329085a89a5db461e67b7f4f00f6d65330990057",
+    "codex_outcome_compat_sha256": "a3c91bbe21c726e8f30dbb9b934d8e1a8ef3f9213793048a3915a5a0e3930ec4",
+    "codex_target_inventory_sha256": "1138d67973404f6623087fff086b07d7e15afa6d68fd3909894f0d139050b103"
+  },
+  "environment_names_set": [
+    "FLEET_COMMONS_ROOT",
+    "GIT_AUTHOR_EMAIL",
+    "GIT_AUTHOR_NAME",
+    "GIT_COMMITTER_EMAIL",
+    "GIT_COMMITTER_NAME",
+    "GIT_CONFIG_GLOBAL",
+    "GIT_CONFIG_NOSYSTEM",
+    "HOME",
+    "INFIQUETRA_FLEET_STATE_DIR",
+    "PATH",
+    "PWD"
+  ],
+  "halt": null,
+  "overall_verdict": "pass",
+  "runtimes": {
+    "claude": {
+      "expected_versions": {
+        "fleet-core": "0.23.0",
+        "saga": "0.115.0"
+      },
+      "identity": {
+        "readback": {
+          "cli_help_ok": true,
+          "compat_protocol_version": 1,
+          "runtime_label": "claude",
+          "versions": {
+            "fleet-core": "0.23.0",
+            "saga": "0.115.0"
+          }
+        },
+        "sha": "b464d090fccb59d0ff862f273902f1653f1d8835",
+        "versions": {
+          "fleet-core": "0.23.0",
+          "saga": "0.115.0"
+        }
+      },
+      "sha": "b464d090fccb59d0ff862f273902f1653f1d8835"
+    },
+    "codex": {
+      "expected_versions": {
+        "fleet-core": "0.13.0+codex.20260726234500",
+        "saga": "0.81.0+codex.20260726234500"
+      },
+      "identity": {
+        "readback": {
+          "cli_help_ok": true,
+          "compat_protocol_version": 1,
+          "runtime_label": "codex",
+          "versions": {
+            "fleet-core": "0.13.0+codex.20260726234500",
+            "saga": "0.81.0+codex.20260726234500"
+          }
+        },
+        "sha": "ec523cc017e2f68716428ed6417e2194962d497b",
+        "versions": {
+          "fleet-core": "0.13.0+codex.20260726234500",
+          "saga": "0.81.0+codex.20260726234500"
+        }
+      },
+      "sha": "ec523cc017e2f68716428ed6417e2194962d497b"
+    }
+  },
+  "scenarios": [
+    {
+      "duration_ms": 2343,
+      "facts": {
+        "candidate_frontier": [
+          "ready-leaf"
+        ],
+        "clone_b_refusal_code": "handoff-missing",
+        "clone_b_refusal_rc": 3,
+        "completed": [
+          "done-leaf"
+        ],
+        "consumer": "codex",
+        "creator": "claude",
+        "projection_digest": "d7db765b00d192d139ff04a3f90234f3aa9d27ca05747a4b3d480f02576caedb",
+        "unknown": [
+          "untracked-leaf"
+        ]
+      },
+      "requirement": "R3",
+      "scenario_id": "discovery-claude-created",
+      "summary": "claude-created spec discovered by both runtimes; projections byte-identical across runtimes and clones; clone B state-free and mutation-denied",
+      "verdict": "pass"
+    },
+    {
+      "duration_ms": 2170,
+      "facts": {
+        "candidate_frontier": [
+          "ready-leaf"
+        ],
+        "clone_b_refusal_code": "handoff-missing",
+        "clone_b_refusal_rc": 3,
+        "completed": [
+          "done-leaf"
+        ],
+        "consumer": "claude",
+        "creator": "codex",
+        "projection_digest": "510fd8aa8b108c7b68714379f54e00dbba41da81ca7fadcccd47b308cfeb5c57",
+        "unknown": [
+          "untracked-leaf"
+        ]
+      },
+      "requirement": "R3",
+      "scenario_id": "discovery-codex-created",
+      "summary": "codex-created spec discovered by both runtimes; projections byte-identical across runtimes and clones; clone B state-free and mutation-denied",
+      "verdict": "pass"
+    },
+    {
+      "duration_ms": 1212,
+      "facts": {
+        "advance_dispatched": [],
+        "advance_outcomes": "{\"gated\": [\"done-leaf\", \"untracked-leaf\"], \"status\": {\"complete\": false, \"counts\": {\"intent-created\": 1, \"ready\": 2}, \"frontier\": [\"done-leaf\", \"untracked-leaf\"], \"nodes\": 3, \"objective\": \"Acceptance target xr-u3-claude\", \"outcome_id\": \"xr-u3-claude\", \"spec_revision\": 1, \"states\": {\"done-leaf\": \"ready\", \"ready-leaf\": \"intent-created\", \"untracked-leaf\": \"ready\"}}, \"ticks\": 1}",
+        "handoff_id": "28770cb3490c478c9d7d6d939491c8e8",
+        "issuer": "claude",
+        "ready_leaf_state": "intent-created",
+        "receiver": "codex",
+        "successor_lease_id": "fa4b9d1e-2e69-445b-bda3-35e7b6a71f05"
+      },
+      "requirement": "R4",
+      "scenario_id": "handoff-claude-issued",
+      "summary": "claude-issued handoff accepted by codex: successor lease minted, one-subplot advance ran, all three protected records present",
+      "verdict": "pass"
+    },
+    {
+      "duration_ms": 5495,
+      "facts": {
+        "cases": {
+          "broad-scope-operation": "schema-field-type",
+          "byte-tamper": "handoff-seal-invalid",
+          "copied-reference-clone-b": "handoff-missing",
+          "expired": "handoff-expired",
+          "future-skew": "handoff-clock-skew",
+          "missing-record": "handoff-missing",
+          "replay-second-receiver": "handoff-receiver-conflict",
+          "stale-issuer": "handoff-issuer-not-current",
+          "ttl-beyond-bound": "handoff-ttl-too-long",
+          "wrong-authority": "handoff-superseded",
+          "wrong-fence": "handoff-superseded",
+          "wrong-operation": "handoff-wrong-operation",
+          "wrong-repository": "handoff-wrong-repository",
+          "wrong-revision": "handoff-wrong-revision",
+          "wrong-subplot": "handoff-wrong-subplot"
+        },
+        "intent_artifact_cases": [
+          "wrong-fence"
+        ],
+        "issuer": "claude",
+        "receiver": "codex"
+      },
+      "requirement": "R4",
+      "scenario_id": "handoff-negatives-claude-issued",
+      "summary": "15 adversarial acceptances refused with the expected codes and zero mutable effect (intent artifact on wrong-fence only)",
+      "verdict": "pass"
+    },
+    {
+      "duration_ms": 1165,
+      "facts": {
+        "advance_dispatched": [
+          "ready-leaf"
+        ],
+        "advance_outcomes": "{\"dispatched\": [\"ready-leaf\"], \"gated\": [\"done-leaf\", \"untracked-leaf\"], \"status\": {\"complete\": false, \"counts\": {\"dispatched\": 1, \"ready\": 2}, \"frontier\": [\"done-leaf\", \"untracked-leaf\"], \"nodes\": 3, \"objective\": \"Acceptance target xr-u3-codex\", \"outcome_id\": \"xr-u3-codex\", \"spec_revision\": 1, \"states\": {\"done-leaf\": \"ready\", \"ready-leaf\": \"dispatched\", \"untracked-leaf\": \"ready\"}}, \"ticks\": 1}",
+        "handoff_id": "bd610e762fca444b86d9948978dbaa8c",
+        "issuer": "codex",
+        "ready_leaf_state": "dispatched",
+        "receiver": "claude",
+        "successor_lease_id": "a29df63b-1eea-479f-9832-d0e6ac0bc041"
+      },
+      "requirement": "R4",
+      "scenario_id": "handoff-codex-issued",
+      "summary": "codex-issued handoff accepted by claude: successor lease minted, one-subplot advance ran, all three protected records present",
+      "verdict": "pass"
+    },
+    {
+      "duration_ms": 5733,
+      "facts": {
+        "cases": {
+          "broad-scope-operation": "schema-field-type",
+          "byte-tamper": "handoff-seal-invalid",
+          "copied-reference-clone-b": "handoff-missing",
+          "expired": "handoff-expired",
+          "future-skew": "handoff-clock-skew",
+          "missing-record": "handoff-missing",
+          "replay-second-receiver": "handoff-receiver-conflict",
+          "stale-issuer": "handoff-issuer-not-current",
+          "ttl-beyond-bound": "handoff-ttl-too-long",
+          "wrong-authority": "handoff-superseded",
+          "wrong-fence": "handoff-superseded",
+          "wrong-operation": "handoff-wrong-operation",
+          "wrong-repository": "handoff-wrong-repository",
+          "wrong-revision": "handoff-wrong-revision",
+          "wrong-subplot": "handoff-wrong-subplot"
+        },
+        "intent_artifact_cases": [
+          "wrong-fence"
+        ],
+        "issuer": "codex",
+        "receiver": "claude"
+      },
+      "requirement": "R4",
+      "scenario_id": "handoff-negatives-codex-issued",
+      "summary": "15 adversarial acceptances refused with the expected codes and zero mutable effect (intent artifact on wrong-fence only)",
+      "verdict": "pass"
+    },
+    {
+      "duration_ms": 1579,
+      "facts": {
+        "chain": {
+          "ack_kinds": [],
+          "legacy_commits": 1,
+          "legacy_intents": 1,
+          "settled_chains": 1,
+          "v2_acks": 0,
+          "v2_intents": 0
+        }
+      },
+      "requirement": "R5",
+      "scenario_id": "race-claude-first",
+      "summary": "race-claude-first: exactly one settled dispatch chain, contract held",
+      "verdict": "pass"
+    },
+    {
+      "duration_ms": 1540,
+      "facts": {
+        "chain": {
+          "ack_kinds": [
+            "launched"
+          ],
+          "legacy_commits": 0,
+          "legacy_intents": 0,
+          "settled_chains": 1,
+          "v2_acks": 1,
+          "v2_intents": 1
+        },
+        "effect_writer": "codex-runner"
+      },
+      "requirement": "R6",
+      "scenario_id": "race-codex-first",
+      "summary": "race-codex-first: exactly one settled dispatch chain, contract held",
+      "verdict": "pass"
+    },
+    {
+      "duration_ms": 2370,
+      "facts": {
+        "chain": {
+          "ack_kinds": [
+            "launched"
+          ],
+          "legacy_commits": 0,
+          "legacy_intents": 0,
+          "settled_chains": 1,
+          "v2_acks": 1,
+          "v2_intents": 1
+        },
+        "overlap": {
+          "claude": {
+            "enter_ns": 1785112806555678000,
+            "exit_ns": 1785112806610560000,
+            "rc": 0
+          },
+          "codex": {
+            "enter_ns": 1785112806514395000,
+            "exit_ns": 1785112806819722000,
+            "rc": 0
+          }
+        }
+      },
+      "requirement": "R5",
+      "scenario_id": "race-simultaneous",
+      "summary": "race-simultaneous: exactly one settled dispatch chain, contract held",
+      "verdict": "pass"
+    },
+    {
+      "duration_ms": 1458,
+      "facts": {
+        "chain": {
+          "ack_kinds": [],
+          "legacy_commits": 1,
+          "legacy_intents": 2,
+          "settled_chains": 1,
+          "v2_acks": 0,
+          "v2_intents": 0
+        },
+        "effect_writer": "recover",
+        "intents_documented": 2
+      },
+      "requirement": "R5",
+      "scenario_id": "race-crash-before-effect",
+      "summary": "race-crash-before-effect: exactly one settled dispatch chain, contract held",
+      "verdict": "pass"
+    },
+    {
+      "duration_ms": 1468,
+      "facts": {
+        "chain": {
+          "ack_kinds": [],
+          "legacy_commits": 1,
+          "legacy_intents": 2,
+          "settled_chains": 1,
+          "v2_acks": 0,
+          "v2_intents": 0
+        },
+        "effect_writer": "crash-after",
+        "intents_documented": 2
+      },
+      "requirement": "R5",
+      "scenario_id": "race-crash-after-effect",
+      "summary": "race-crash-after-effect: exactly one settled dispatch chain, contract held",
+      "verdict": "pass"
+    },
+    {
+      "duration_ms": 1298,
+      "facts": {
+        "complete": true,
+        "reclamation_passes": 4
+      },
+      "requirement": "R9",
+      "scenario_id": "teardown-reclaim",
+      "summary": "teardown-reclaim: contract held",
+      "verdict": "pass"
+    },
+    {
+      "duration_ms": 1497,
+      "facts": {
+        "clean_findings": 0,
+        "open_rig_diseases": {
+          "evidence-error": 0,
+          "leaked-resource": 0,
+          "receiptless-delegation": 0,
+          "unledgered-spawn": 1
+        },
+        "open_rig_findings": 1
+      },
+      "requirement": "R9",
+      "scenario_id": "fleet-doctor-positions",
+      "summary": "fleet-doctor-positions: contract held",
+      "verdict": "pass"
+    },
+    {
+      "duration_ms": 196,
+      "facts": {
+        "refusals": {
+          "claude": "rc=1 retirement-receipt",
+          "codex": "rc=1 retirement-receipt"
+        }
+      },
+      "requirement": "R8",
+      "scenario_id": "legacy-import-refused",
+      "summary": "legacy-import-refused: contract held",
+      "verdict": "pass"
+    }
+  ],
+  "schema": "lease-safe-runtime-continuity/cross-runtime-acceptance.v1",
+  "started_at": "2026-07-27T00:39:43Z"
+}
