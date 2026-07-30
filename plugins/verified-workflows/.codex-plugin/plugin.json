@@ -1,7 +1,7 @@
 {
   "name": "verified-workflows",
-  "version": "2.1.0+codex.20260727035515",
-  "description": "Root-owned Codex V2 workflow orchestration with approved contracts, runtime readback, typed results, and concise gates.",
+  "version": "3.0.0+codex.20260729164721",
+  "description": "Thin root-owned Codex V2 workflow policy with approved contracts, runtime readback, typed results, and bounded gates.",
   "author": {
     "name": "Infiquetra",
     "email": "hello@infiquetra.com",
@@ -21,7 +21,7 @@
   "interface": {
     "displayName": "Verified Workflows",
     "shortDescription": "Run root-owned Codex V2 workflows with explicit gates.",
-    "longDescription": "Compiles operator-approved workflow contracts into exact Codex V2 launches, validates runtime identity and typed results, audits bounded writes, and evaluates reviewer and deterministic gates while the root retains orchestration, Git, and completion authority.",
+    "longDescription": "Compiles operator-approved workflow contracts into native Codex V2 launches, validates runtime identity and typed results, and evaluates bounded reviewer and deterministic gates while Codex owns agent lifecycle and the root retains orchestration, Git, and completion authority.",
     "developerName": "Infiquetra",
     "category": "Coding",
     "capabilities": [

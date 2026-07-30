@@ -21,6 +21,10 @@ CODEX_PLAN_BASE = "739fb34e27f2e045e28cf5d420bbc2fc004115a0"
 CODEX_EXECUTION_BASE = "19a3610e2db8d0f850fa18ecbbb8f16c74842ba4"
 SOURCE_INVENTORY_SHA256 = "60d5875752cff31e9f9e1900bff4a942f319e21b2b13e8c4f29c829fc3080afa"
 CODEX_INVENTORY_SHA256 = "656bf596f67e4e65baa97648e8fea2fc39dcd306c5d5b059cbdc4b3a628276f3"
+RETIRED_CURRENT_ARTIFACTS = {
+    "plugins/fleet-core/scripts/fleet_commons/audit_store.py",
+    "plugins/fleet-core/tests/test_audit_store.py",
+}
 
 # Frozen treatment per source row (KTD3: Claude host primitives are reject/defer, never
 # direct-port). Adapted rows must carry planned targets and tests; defer/reject rows must not
@@ -133,9 +137,12 @@ def _assert_unit_rows_verified(unit: str, row_paths: set[str]) -> None:
             assert entry["exit_code"] == 0
             assert _sha256(ROOT / entry["artifact_path"]) == entry["artifact_sha256"]
         for target in row["planned_targets"]:
-            assert (ROOT / target).is_file(), target
+            assert (ROOT / target).is_file() or target in RETIRED_CURRENT_ARTIFACTS, target
         for test_path in row["planned_tests"]:
-            assert (ROOT / test_path).is_file(), test_path
+            assert (
+                (ROOT / test_path).is_file()
+                or test_path in RETIRED_CURRENT_ARTIFACTS
+            ), test_path
 
 
 def _manifest() -> dict:
@@ -208,10 +215,14 @@ def test_classification_codex_drift_rows_are_all_classified() -> None:
 def test_classification_authority_hashes_and_render_are_current() -> None:
     manifest = _manifest()
     authority = manifest["authority"]
-    artifacts = [authority["plan"], *authority["reviews"], authority["runbook"]]
+    artifacts = [authority["plan"], *authority["reviews"]]
 
     for artifact in artifacts:
         assert _sha256(ROOT / artifact["path"]) == artifact["sha256"]
+    runbook = authority["runbook"]
+    assert port_contract._historical_file_by_sha256(
+        ROOT, runbook["path"], runbook["sha256"]
+    )
     capability = authority["capability_snapshot"]
     assert _sha256(ROOT / capability["path"]) == capability["sha256"]
     assert _sha256(ROOT / capability["schema_path"]) == capability["schema_sha256"]

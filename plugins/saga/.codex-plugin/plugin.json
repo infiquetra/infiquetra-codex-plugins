@@ -1,7 +1,7 @@
 {
   "name": "saga",
-  "version": "0.82.0+codex.20260727035515",
-  "description": "Infiquetra lifecycle spine for ideation, planning, V2 work routing, governed external actions, outcomes, reviews, QA, handoff, promotion, and resume state.",
+  "version": "0.83.0+codex.20260729205037",
+  "description": "Infiquetra lifecycle spine with thin external-provider routes over the native Codex harness.",
   "author": {
     "name": "Infiquetra",
     "email": "hello@infiquetra.com",
@@ -23,7 +23,7 @@
   "interface": {
     "displayName": "Saga",
     "shortDescription": "Infiquetra lifecycle routing, outcome state, and promotion.",
-    "longDescription": "Provides Codex skills and bundled scripts for lifecycle ideation, product review, brainstorming, specs, implementation planning, V2 work routing, approval-bound external actions, outcome orchestration, reviews, QA, retros, handoffs, resume state, promotion, and plugin-boundary recommendations.",
+    "longDescription": "Provides Codex skills and bundled scripts for lifecycle ideation, planning, native V2 work routing, approval-bound external-provider requests, outcome orchestration, reviews, QA, retros, handoffs, resume state, promotion, and plugin-boundary recommendations.",
     "developerName": "Infiquetra",
     "category": "Coding",
     "capabilities": [

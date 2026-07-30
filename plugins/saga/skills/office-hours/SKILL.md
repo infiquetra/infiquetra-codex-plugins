@@ -59,13 +59,11 @@ job of the commands it routes to.
 
 ## Interaction method
 
-Use the platform's blocking question tool: `Codex blocking question` in Codex (call `ToolSearch` with
-`blocking question` first if its schema is not loaded). When you present options, **pre-select the
-recommended one** — take a position, then let the operator override. Fall back to numbered options in
-chat only when no blocking tool exists or the call errors. In a channel session, inline the choices in
-the reply text rather than calling `Codex blocking question` — follow the redis-channel convention documented
-in `saga/skills/brainstorm/SKILL.md` (do not duplicate its wording here). Ask one
-question at a time and never silently skip a gate question.
+Follow `../../references/operator-choice.md`. When you present options, **pre-select the recommended
+one**—take a position, then let the operator override. In a channel session, inline the choices in
+the reply text following the redis-channel convention documented in
+`saga/skills/brainstorm/SKILL.md`. Ask one question at a time and never silently skip a gate
+question.
 
 The full question banks, the mode rubric, the pushback patterns, the "never say" list, the escape
 hatches, the frame-note template, and the routing rubric live in
@@ -121,9 +119,9 @@ adds nothing. Never block the diagnostic on a grounding miss.
 ## Phase 1: Diagnostic (mode-specific)
 
 Load `saga/skills/office-hours/references/frame-diagnostic.md` now. Run the
-mode-specific diagnostic from it. Ask questions **one at a time** via `Codex blocking question`, push on each
-answer until it is specific and grounded (or the escape hatch fires), and STOP after each question to
-wait for the response.
+mode-specific diagnostic from it. Ask questions **one at a time** through the native operator-choice
+contract, push on each answer until it is specific and grounded (or the escape hatch fires), and
+STOP after each question to wait for the response.
 
 ### 1A: Startup mode — the six forcing questions, stage-aware
 
@@ -208,7 +206,7 @@ frame-note template is in the reference. **Never write to `docs/ideation/`** —
 ## Phase 3: Route + HARD GATE
 
 Every session ends by naming the next command and offering **plural clean exits**. Recommend one
-(pre-selected in the `Codex blocking question`), but make the alternatives real choices:
+(pre-selected in the native operator choice), but make the alternatives real choices:
 
 - **`/ideate`** — the frame is settled but the *solution space* is open; you want many candidate ideas.
 - **`/brainstorm`** — this turned out to be "really a requirements question" about one chosen thing;

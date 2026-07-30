@@ -31,6 +31,7 @@ RECORD_FIELDS = {
     "approval_binding_sha256",
     "status",
     "remediation_round",
+    "deviation_used",
     "attempts",
     "checks",
     "external_actions",
@@ -188,6 +189,7 @@ def new_run_record(
         "approval_binding_sha256": contract.approval_binding_sha256,
         "status": "approved",
         "remediation_round": 0,
+        "deviation_used": False,
         "attempts": [],
         "checks": [],
         "external_actions": [],
@@ -203,8 +205,14 @@ def _validate_record(record: object) -> dict[str, Any]:
         raise RunRecordError("run record identity is invalid")
     if record.get("status") not in {"approved", "running", "blocked", "passed", "failed"}:
         raise RunRecordError("run record status is invalid")
-    if not isinstance(record.get("remediation_round"), int) or not 0 <= record["remediation_round"] <= 3:
-        raise RunRecordError("run record remediation_round must be from 0 to 3")
+    if (
+        isinstance(record.get("remediation_round"), bool)
+        or not isinstance(record.get("remediation_round"), int)
+        or not 0 <= record["remediation_round"] <= 1
+    ):
+        raise RunRecordError("run record remediation_round must be 0 or 1")
+    if not isinstance(record.get("deviation_used"), bool):
+        raise RunRecordError("run record deviation_used must be a boolean")
     attempts = record.get("attempts")
     if not isinstance(attempts, list) or len(attempts) > 256:
         raise RunRecordError("run record attempts must be bounded")
@@ -324,6 +332,13 @@ def finish_attempt(record: Mapping[str, Any], result: Mapping[str, Any]) -> dict
     updated["findings"] = [
         finding for item in updated["attempts"] for finding in item["findings"]
     ]
+    one_hop_count = sum(
+        finding.get("scope_disposition") == "one-hop"
+        for finding in updated["findings"]
+    )
+    if one_hop_count > 1:
+        raise RunRecordError("only one one-hop deviation is allowed per run")
+    updated["deviation_used"] = one_hop_count == 1
     return updated
 
 

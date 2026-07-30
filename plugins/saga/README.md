@@ -13,6 +13,11 @@ Saga owns lifecycle choice, local saga state, outcome orchestration, handoff env
 
 Source-parity skill names are intentionally generic and expected to be used through the plugin namespace, for example `saga:plan`, `saga:work`, `saga:outcome`, and `saga:promote`.
 
+Native Codex `/resume` continues a known saved chat. `saga:resume` reconstructs lifecycle state across
+Saga ticks, issues, PRs, and committed artifacts; it uses local multi-session forensics only when
+explicitly requested. After trust, Saga's SessionStart hook may emit a fixed `saga:loop resume <id>`
+hint. That hint is advisory context, not workflow, identity, or completion proof.
+
 For full Saga family lifecycle, command catalog, state guide, scenarios, and visual atlas, see `../../docs/saga/README.md`.
 
 ## State
@@ -37,6 +42,19 @@ Use `verified-workflow` for reviewer consensus, validators, broad fan-out, cross
 security/infra risk, deployment-sensitive gates, or adversarial confidence. Historical backend
 values remain readable but are never emitted for new work.
 
+## External Provider Harness
+
+Saga retains six exact advisory routes: Claude Opus, Agy Gemini Flash and Pro, Ollama gpt-oss and
+embeddings, and DeepSeek. Each route accepts `saga.harness.request.v1` and returns
+`saga.harness.result.v1`. The harness performs one provider invocation in a disposable,
+remote-stripped workspace, validates the Fleet receipt and output attestation, and returns
+non-gating evidence.
+
+Direct mode is read-only. Verified Workflow mode may declare writes inside the disposable clone and
+produce a patch artifact; only the Git integration operator may import that patch. Saga no longer
+maintains an external-action lifecycle, preference store, promotion state, retry state, or a second
+gatekeeper.
+
 ## Plugin Boundaries
 
 - `mission-control` owns issue artifacts, issue comments, labels, milestones, boards, and project movement.
@@ -54,6 +72,7 @@ values remain readable but are never emitted for new work.
 - `scripts/promote_scan.py` scans engineering journals for gated context-library promotion candidates.
 - `scripts/status_card.py` renders shared derived-on-read status cards.
 - `scripts/completeness_gate.py` validates structured delegated output and catches omissions.
+- `scripts/external_action_adapters.py` runs the six thin external-provider routes.
 - `scripts/handoff_envelope.py` emits structured handoff material for `mission-control`.
 - `scripts/product_review.py` supports `product-review` revival route recommendations.
 - `scripts/implementation_spec_audit.py` discovers context-library profiles and audits service implementation spec folders.

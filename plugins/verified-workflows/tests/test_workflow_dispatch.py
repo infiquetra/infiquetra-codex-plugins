@@ -19,8 +19,6 @@ def assignment(
     depends: str = "-",
     role: str = "implementation-worker",
     profile: str = "work_medium",
-    model: str = "gpt-5.6-terra",
-    effort: str = "medium",
     writes: str = "src/feature.py",
     completion: str = "work completes",
     fallback: str = "none",
@@ -30,8 +28,6 @@ def assignment(
         depends,
         role,
         profile,
-        model,
-        effort,
         writes,
         completion,
         fallback,
@@ -44,10 +40,8 @@ def reviewer(*, depends: str = "implement", fallback: str = "review_max@terminal
         depends=depends,
         role="devils-advocate-reviewer",
         profile="review_high",
-        model="gpt-5.6-sol",
-        effort="high",
         writes="none",
-        completion="review score passes",
+        completion="typed reviewer result has no blocking finding",
         fallback=fallback,
     )
 
@@ -58,8 +52,6 @@ def worker(
     depends: str = "implement",
     writes: str = "tests/test_feature.py",
     profile: str = "test_medium",
-    model: str = "gpt-5.6-terra",
-    effort: str = "medium",
     fallback: str = "work_high@terminal-failure",
     completion: str = "targeted tests pass",
 ) -> list[str]:
@@ -68,8 +60,6 @@ def worker(
         depends=depends,
         role="scenario-tester",
         profile=profile,
-        model=model,
-        effort=effort,
         writes=writes,
         completion=completion,
         fallback=fallback,
@@ -168,12 +158,12 @@ def compile_fixture(
 def test_valid_mixed_contract_compiles_to_managed_launch_specs() -> None:
     contract = compile_fixture(external_actions=[external()])
 
-    assert contract.schema_version == 2
+    assert contract.schema_version == 3
     assert len(contract.assignments) == 3
     assert len(contract.external_actions) == 1
     specs = {spec.assignment_id: spec for spec in contract.launch_specs}
     assert specs["implement"].agent_type == "work_medium"
-    assert specs["implement"].reasoning_effort == "medium"
+    assert specs["implement"].expected_reasoning_effort == "medium"
     assert specs["review"].agent_type == "review_high"
     assert specs["review"].fork_turns == "none"
     assert specs["test"].fork_turns == "none"
@@ -288,19 +278,9 @@ def test_ordered_overlapping_writes_are_allowed() -> None:
     assert compile_fixture(rows).contract_sha256
 
 
-def test_profile_model_effort_mismatch_is_rejected() -> None:
-    rows = [assignment("implement"), reviewer(), worker(model="gpt-5.6-sol")]
-    with pytest.raises(W.WorkflowDispatchError, match="requires model=gpt-5.6-terra"):
-        compile_fixture(rows)
-
-
-def test_child_ultra_is_rejected() -> None:
-    rows = [
-        assignment("implement"),
-        reviewer(),
-        worker(profile="review_high", model="gpt-5.6-sol", effort="ultra"),
-    ]
-    with pytest.raises(W.WorkflowDispatchError, match="cannot use profile|requires model"):
+def test_profile_must_be_allowed_for_role() -> None:
+    rows = [assignment("implement"), reviewer(), worker(profile="review_high")]
+    with pytest.raises(W.WorkflowDispatchError, match="cannot use profile"):
         compile_fixture(rows)
 
 
@@ -315,8 +295,6 @@ def test_executable_root_assignment_is_rejected() -> None:
         "implement",
         role="root implementer",
         profile="root",
-        model="gpt-5.6-sol",
-        effort="medium",
     )
     with pytest.raises(W.WorkflowDispatchError, match="executable root assignment"):
         compile_fixture([root, reviewer(), worker()])
@@ -324,7 +302,7 @@ def test_executable_root_assignment_is_rejected() -> None:
 
 def test_missing_independent_review_is_rejected() -> None:
     rows = [assignment("implement"), worker()]
-    with pytest.raises(W.WorkflowDispatchError, match="fresh-root independent reviewer"):
+    with pytest.raises(W.WorkflowDispatchError, match="direct-sibling independent reviewer"):
         compile_fixture(rows, checks=[check(owner="implement", after="implement")])
 
 
@@ -333,26 +311,30 @@ def test_root_cannot_own_a_blocking_check() -> None:
         compile_fixture(checks=[check(owner="root")])
 
 
-def test_dynamic_work_profiles_preserve_explicit_model_and_effort() -> None:
+def test_dynamic_work_profiles_derive_model_and_effort() -> None:
     rows = [
         assignment("ordinary"),
         assignment(
             "complex",
             depends="ordinary",
             profile="work_high",
-            model="gpt-5.6-sol",
-            effort="high",
             writes="src/complex.py",
         ),
         reviewer(depends="complex"),
     ]
     contract = compile_fixture(rows)
     specs = {item.assignment_id: item for item in contract.launch_specs}
-    assert (specs["ordinary"].model, specs["ordinary"].reasoning_effort) == (
+    assert (
+        specs["ordinary"].expected_model,
+        specs["ordinary"].expected_reasoning_effort,
+    ) == (
         "gpt-5.6-terra",
         "medium",
     )
-    assert (specs["complex"].model, specs["complex"].reasoning_effort) == (
+    assert (
+        specs["complex"].expected_model,
+        specs["complex"].expected_reasoning_effort,
+    ) == (
         "gpt-5.6-sol",
         "high",
     )

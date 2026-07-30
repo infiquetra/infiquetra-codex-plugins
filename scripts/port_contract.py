@@ -18,8 +18,9 @@ from typing import Any
 
 
 SCHEMA_VERSION = 1
-RUNBOOK_VERSION = 3
-DEFAULT_MANIFEST = Path("docs/portability/manifests/2026-07-11-external-advisory-execution.json")
+RUNBOOK_VERSION = 4
+SUPPORTED_RUNBOOK_VERSIONS = {3, RUNBOOK_VERSION}
+DEFAULT_MANIFEST = Path("docs/portability/ports/2026-07-29-codex-0146-native-harness.json")
 DEFAULT_RENDER = Path(
     "docs/portability/classifications/2026-07-11-external-advisory-execution.md"
 )
@@ -36,6 +37,10 @@ DEFAULT_SOURCE_BASE = "38742ece89880a6b140be237edad6d3f13c97b54"
 DEFAULT_SOURCE_TARGET = "675712b1d6a55ead11f3e971ed0e119354621bf2"
 DEFAULT_CODEX_PLAN_BASE = "39f0a2f466cb6f58e203ce3e586a959ff853a342"
 ACTIVE_PORT_ID = "external-advisory-execution-2026-07-11"
+CURRENT_PORT_IDS = {
+    "codex-0146-native-harness-2026-07-29",
+    "codex-0146-cross-plugin-alignment-2026-07-29",
+}
 APPROVED_CODEX_EXECUTION_BASE = "d8f5d165ad0e859af9c7d7f1ba7461b00ec1ae95"
 CODEX_EVIDENCE_REF = "refs/tags/evidence/external-advisory-execution-20260711"
 EXPECTED_SOURCE_INVENTORY_SHA256 = "f6d67d4294f8658118cb90728f151c813e87e3fc684c786277fb8a2f07168db0"
@@ -81,7 +86,7 @@ EVIDENCE_KINDS = {
     "rollback",
     "cutover",
 }
-UNIT_IDS = {f"U{number}" for number in range(1, 10)}
+UNIT_IDS = {f"U{number}" for number in range(1, 11)}
 HEX40_RE = re.compile(r"^[0-9a-f]{40}$")
 HEX64_RE = re.compile(r"^[0-9a-f]{64}$")
 CONTROL_RE = re.compile(r"[\x00-\x1f\x7f]")
@@ -817,6 +822,8 @@ def _validate_capability_snapshot(
     errors: list[str],
     *,
     snapshot_bytes: bytes | None = None,
+    schema_bytes: bytes | None = None,
+    enforce_current_contract: bool = True,
 ) -> None:
     try:
         path = contained_file(root, str(entry.get("path", "")))
@@ -829,7 +836,11 @@ def _validate_capability_snapshot(
             if snapshot_bytes is not None
             else path.read_text(encoding="utf-8")
         )
-        snapshot_schema = json.loads(schema_path.read_text(encoding="utf-8"))
+        snapshot_schema = json.loads(
+            schema_bytes.decode("utf-8")
+            if schema_bytes is not None
+            else schema_path.read_text(encoding="utf-8")
+        )
     except (UnicodeDecodeError, json.JSONDecodeError, OSError) as exc:
         errors.append(f"capability snapshot/schema is unreadable: {exc}")
         return
@@ -879,6 +890,8 @@ def _validate_capability_snapshot(
         if all(isinstance(value, int) for value in (configured, host, effective, children)):
             if effective != min(configured, host) or children != effective - 1:
                 errors.append("capability snapshot thread capacity arithmetic is inconsistent")
+    if not enforce_current_contract:
+        return
     spawn = snapshot.get("collaboration", {}).get("spawn", {})
     if isinstance(spawn, dict) and spawn.get("contract_version") == "v1":
         # MultiAgent V2 retired to v1 (operator decision, 2026-07-19): nickname/role spawn with
@@ -893,8 +906,8 @@ def _validate_capability_snapshot(
         if spawn.get("named_profile_selection") != "rollout-attested":
             errors.append("capability snapshot v1 named-profile selection must be rollout-attested")
     elif isinstance(spawn, dict) and spawn.get("contract_version") == "v2":
-        if spawn.get("tool_namespace") != "agents":
-            errors.append("capability snapshot spawn namespace must be `agents`")
+        if spawn.get("tool_namespace") != "collaboration":
+            errors.append("capability snapshot spawn namespace must be `collaboration`")
         if spawn.get("hide_spawn_agent_metadata") is not False:
             errors.append("capability snapshot must expose named-profile metadata")
         if spawn.get("request_fields") != [
@@ -903,7 +916,6 @@ def _validate_capability_snapshot(
             "message",
             "model",
             "reasoning_effort",
-            "service_tier",
             "task_name",
         ]:
             errors.append("capability snapshot spawn fields do not match the live tool contract")
@@ -916,7 +928,7 @@ def _validate_capability_snapshot(
                 errors.append(f"capability snapshot must claim configured `{field}`")
         if spawn.get("per_child_sandbox") is not False:
             errors.append("capability snapshot must not claim direct per-child sandbox override")
-        if spawn.get("response_fields") != ["nickname", "task_name"]:
+        if spawn.get("response_fields") != ["agent_id", "nickname", "task_name"]:
             errors.append("capability snapshot V2 spawn response fields drifted")
         if spawn.get("runtime_receipt_sources") != ["session_meta", "turn_context"]:
             errors.append("capability snapshot V2 runtime receipt sources drifted")
@@ -970,7 +982,7 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
     if stage not in VALID_STAGES:
         return [f"unknown port-contract stage `{stage}`"]
     if stage == "unit" and unit not in UNIT_IDS:
-        return ["unit-stage validation requires --unit U2..U9"]
+        return ["unit-stage validation requires --unit U1..U10"]
     top_keys = {
         "schema_version", "port_id", "authority", "source", "codex", "version_policy", "evidence",
         "release_evidence", "refresh_changes",
@@ -979,6 +991,7 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
     if manifest.get("schema_version") != SCHEMA_VERSION:
         errors.append(f"schema_version must be {SCHEMA_VERSION}")
     port_id = manifest.get("port_id")
+    current_contract = port_id in CURRENT_PORT_IDS
     if not isinstance(port_id, str) or not port_id or CONTROL_RE.search(port_id):
         errors.append("port_id must be a non-empty printable string")
     if active_contract and port_id != ACTIVE_PORT_ID:
@@ -1004,11 +1017,23 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
         runbook = authority.get("runbook")
         if isinstance(runbook, dict):
             _exact_keys(runbook, {"path", "version", "sha256"}, "authority.runbook", errors)
-            if runbook.get("version") != RUNBOOK_VERSION:
-                errors.append(
-                    f"authority.runbook.version must be {RUNBOOK_VERSION}"
+            if runbook.get("version") not in SUPPORTED_RUNBOOK_VERSIONS:
+                errors.append("authority.runbook.version is unsupported")
+            if current_contract:
+                _validate_artifact(
+                    root,
+                    {"path": runbook.get("path"), "sha256": runbook.get("sha256")},
+                    "authority.runbook",
+                    errors,
                 )
-            _validate_artifact(root, {"path": runbook.get("path"), "sha256": runbook.get("sha256")}, "authority.runbook", errors)
+            else:
+                try:
+                    runbook_path = validate_repo_path(str(runbook.get("path", "")))
+                    runbook_digest = str(runbook.get("sha256", ""))
+                    _check_digest(runbook_digest, "authority.runbook.sha256", errors)
+                    _historical_file_by_sha256(root, runbook_path, runbook_digest)
+                except ContractError as exc:
+                    errors.append(f"authority.runbook historical preimage: {exc}")
         else:
             errors.append("authority.runbook must be an object")
         capability = authority.get("capability_snapshot")
@@ -1022,28 +1047,47 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
             if capability.get("schema_version") not in {1, 2}:
                 errors.append("authority.capability_snapshot.schema_version must be 1 or 2")
             historical_snapshot: bytes | None = None
-            if active_contract:
+            historical_schema: bytes | None = None
+            if not current_contract:
                 try:
                     snapshot_path = validate_repo_path(str(capability.get("path", "")))
+                    schema_path = validate_repo_path(str(capability.get("schema_path", "")))
                     expected = str(capability.get("sha256", ""))
+                    schema_expected = str(capability.get("schema_sha256", ""))
                     _check_digest(
                         expected, "authority.capability_snapshot.sha256", errors
                     )
+                    _check_digest(
+                        schema_expected,
+                        "authority.capability_snapshot.schema_sha256",
+                        errors,
+                    )
                     historical_snapshot = _historical_file_by_sha256(
                         root, snapshot_path, expected
+                    )
+                    historical_schema = _historical_file_by_sha256(
+                        root, schema_path, schema_expected
                     )
                 except ContractError as exc:
                     errors.append(f"authority.capability_snapshot historical preimage: {exc}")
             else:
                 _validate_artifact(root, {"path": capability.get("path"), "sha256": capability.get("sha256")}, "authority.capability_snapshot", errors)
-            _validate_artifact(
-                root,
-                {"path": capability.get("schema_path"), "sha256": capability.get("schema_sha256")},
-                "authority.capability_snapshot.schema",
-                errors,
-            )
+                _validate_artifact(
+                    root,
+                    {
+                        "path": capability.get("schema_path"),
+                        "sha256": capability.get("schema_sha256"),
+                    },
+                    "authority.capability_snapshot.schema",
+                    errors,
+                )
             _validate_capability_snapshot(
-                root, capability, errors, snapshot_bytes=historical_snapshot
+                root,
+                capability,
+                errors,
+                snapshot_bytes=historical_snapshot,
+                schema_bytes=historical_schema,
+                enforce_current_contract=current_contract,
             )
         else:
             errors.append("authority.capability_snapshot must be an object")
@@ -1153,7 +1197,7 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
             snapshot_path_value = validate_repo_path(
                 str(capability_entry.get("path", ""))
             )
-            if active_contract:
+            if not current_contract:
                 snapshot_content = _historical_file_by_sha256(
                     root,
                     snapshot_path_value,
@@ -1300,14 +1344,15 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
             errors.append(f"{owner} references unknown evidence `{reference}`")
         elif evidence_by_id[reference].get("unit") not in owner_units:
             errors.append(f"{owner} references evidence `{reference}` from an unrelated unit")
-    for row in source_rows:
-        if row.get("state") not in {"implemented", "verified"}:
-            continue
-        for artifact_path in [*row.get("planned_targets", []), *row.get("planned_tests", [])]:
-            try:
-                contained_file(root, artifact_path)
-            except ContractError as exc:
-                errors.append(f"{row.get('row_id')} advanced without a real artifact: {exc}")
+    if current_contract:
+        for row in source_rows:
+            if row.get("state") not in {"implemented", "verified"}:
+                continue
+            for artifact_path in [*row.get("planned_targets", []), *row.get("planned_tests", [])]:
+                try:
+                    contained_file(root, artifact_path)
+                except ContractError as exc:
+                    errors.append(f"{row.get('row_id')} advanced without a real artifact: {exc}")
 
     refresh_changes = manifest.get("refresh_changes")
     if not isinstance(refresh_changes, list):
@@ -1328,11 +1373,12 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
                 continue
             if row.get("state") != "verified":
                 errors.append(f"{row.get('row_id')} is claimed by {unit} but is not verified")
-            for path in [*row.get("planned_targets", []), *row.get("planned_tests", [])]:
-                try:
-                    contained_file(root, path)
-                except ContractError:
-                    errors.append(f"{row.get('row_id')} planned artifact is missing or unsafe: {path}")
+            if current_contract:
+                for path in [*row.get("planned_targets", []), *row.get("planned_tests", [])]:
+                    try:
+                        contained_file(root, path)
+                    except ContractError:
+                        errors.append(f"{row.get('row_id')} planned artifact is missing or unsafe: {path}")
             matching_evidence = [
                 reference
                 for reference in row.get("evidence_refs", [])

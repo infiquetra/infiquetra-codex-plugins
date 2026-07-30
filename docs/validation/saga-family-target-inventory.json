@@ -5,7 +5,7 @@
   "plugins": [
     {
       "name": "saga",
-      "version": "0.82.0+codex.20260727035515",
+      "version": "0.83.0+codex.20260729205037",
       "skills": [
         "office-hours",
         "ideate",
@@ -72,13 +72,12 @@
     },
     {
       "name": "verified-workflows",
-      "version": "2.1.0+codex.20260727035515",
+      "version": "3.0.0+codex.20260729164721",
       "publication_status": "released",
       "skills": [
         "run",
         "review-workflow",
-        "appsec-audit",
-        "select-agent"
+        "appsec-audit"
       ],
       "forbidden_active_dirs": [
         ".claude-plugin",
@@ -154,7 +153,7 @@
     },
     {
       "name": "fleet-core",
-      "version": "0.13.0+codex.20260726234500",
+      "version": "0.14.0+codex.20260729164721",
       "skills": [],
       "library": true,
       "forbidden_active_dirs": [

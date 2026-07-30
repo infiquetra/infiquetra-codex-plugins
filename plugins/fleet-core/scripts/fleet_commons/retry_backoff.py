@@ -1,21 +1,13 @@
 #!/usr/bin/env python3
-"""Shared 429 retry/backoff primitive — the fleet's one rate-limit response (issue #348).
+"""Stateless shared 429 retry/backoff primitive.
 
-Lives in fleet-commons (issue #463 / DECISIONS ``{#fleet-commons-mechanism-463}``) so every plugin that
-can hit a 429 imports ONE implementation instead of re-writing a bespoke handler. Consumers load it via
-their vendored ``fleet_commons_shim``: ``fleet_commons_shim.load("retry_backoff")``.
+Consumers load this module through their vendored ``fleet_commons_shim``:
+``fleet_commons_shim.load("retry_backoff")``.
 
-Two entry points:
-
-* ``retry_with_backoff(fn, *, on_status=429, ...)`` — jittered exponential backoff, attempt cap,
-  non-retryable pass-through. A non-429 error propagates immediately; a 429 is retried (honoring a
-  ``Retry-After`` hint when supplied) up to ``max_attempts``.
-* ``bridge_call(fn, *, breaker, ...)`` — wraps ``retry_with_backoff`` and drives a ``CircuitBreaker``
-  (OPEN on a run of rate-limit failures, cooldown, HALF-OPEN probe, CLOSE on success) so a provider
-  bridge stops hammering a rate-limited endpoint.
-
-stdlib-only, pure over injected ``sleep``/``rng``/``clock`` seams (deterministic tests). Content changes
-here are additive-only within fleet-core 0.x — a consumer never breaks because fleet-core updated.
+The module deliberately owns no cross-call retry or circuit-breaker state. It only
+provides one bounded call helper for consumers such as the UniFi clients. Process
+lifecycle, retries outside this one call, and recovery policy belong to the Codex
+harness or the caller.
 """
 
 from __future__ import annotations
@@ -24,10 +16,6 @@ import random
 import time
 from collections.abc import Callable
 from typing import Any
-
-
-class CircuitOpenError(RuntimeError):
-    """Raised by ``bridge_call`` when the breaker is OPEN and a call is short-circuited."""
 
 
 def _status_of(exc: BaseException) -> Any:
@@ -100,78 +88,3 @@ def retry_with_backoff(
                 rng=_rng,
             )
             sleep(delay)
-
-
-class CircuitBreaker:
-    """A minimal CLOSED -> OPEN -> HALF_OPEN -> CLOSED breaker over an injected monotonic clock.
-
-    ``fail_threshold`` consecutive failures OPEN the breaker; after ``cooldown`` seconds it reports
-    HALF_OPEN (one probe allowed); a success CLOSES it and resets the count; a failure while HALF_OPEN
-    re-OPENs it.
-    """
-
-    def __init__(
-        self,
-        *,
-        fail_threshold: int = 5,
-        cooldown: float = 30.0,
-        clock: Callable[[], float] = time.monotonic,
-    ) -> None:
-        self.fail_threshold = fail_threshold
-        self.cooldown = cooldown
-        self._clock = clock
-        self._failures = 0
-        self._opened_at: float | None = None
-        self._state = "CLOSED"
-
-    @property
-    def state(self) -> str:
-        if (
-            self._state == "OPEN"
-            and self._opened_at is not None
-            and self._clock() - self._opened_at >= self.cooldown
-        ):
-            self._state = "HALF_OPEN"
-        return self._state
-
-    def on_success(self) -> None:
-        self._failures = 0
-        self._opened_at = None
-        self._state = "CLOSED"
-
-    def on_failure(self) -> None:
-        self._failures += 1
-        if self._failures >= self.fail_threshold:
-            self._state = "OPEN"
-            self._opened_at = self._clock()
-
-
-def bridge_call(
-    fn: Callable[[], Any],
-    *,
-    breaker: CircuitBreaker,
-    on_status: int = 429,
-    is_retryable: Callable[[BaseException], bool] | None = None,
-    **retry_kwargs: Any,
-) -> Any:
-    """Drive ``fn`` through ``retry_with_backoff`` under a circuit breaker (for provider bridges, #348).
-
-    Short-circuits with ``CircuitOpenError`` while the breaker is OPEN (during cooldown). A rate-limit
-    failure that survives retry trips the breaker; any success closes it. Non-rate-limit errors propagate
-    but do NOT trip the breaker (the breaker guards rate-limiting, not correctness bugs).
-    """
-    retryable = (
-        is_retryable if is_retryable is not None else (lambda exc: _status_of(exc) == on_status)
-    )
-
-    if breaker.state == "OPEN":
-        raise CircuitOpenError("circuit breaker is OPEN; call short-circuited during cooldown")
-
-    try:
-        result = retry_with_backoff(fn, on_status=on_status, is_retryable=retryable, **retry_kwargs)
-    except Exception as exc:  # noqa: BLE001
-        if retryable(exc):
-            breaker.on_failure()
-        raise
-    breaker.on_success()
-    return result

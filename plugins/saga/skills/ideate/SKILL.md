@@ -33,23 +33,18 @@ requirements, plans, or code.
 
 ## Interaction method
 
-Use the platform's blocking question tool: `Codex blocking question` in Codex (call `ToolSearch`
-with `blocking question` first if its schema isn't loaded). Fall back to numbered options in
-chat only when no blocking tool exists or the call errors. In a channel session, inline the
-choices in the reply text. Never silently skip a gate question. Ask one question at a time.
+Follow `../../references/operator-choice.md`: use `request_user_input` only when it is listed and
+allowed in the current mode. Otherwise ask one concise blocking question in the normal response and
+stop. In a channel session, inline the choices in the reply text. Never silently skip a gate
+question. Ask one question at a time.
 
-## External Action Runtime
+## External Harness
 
-Before any external call, run
-`python3 plugins/saga/scripts/external_action.py bundle --stage ideate --repo-root .` and show the
-resolved action bundle and let the operator remove or edit actions; persist reusable changes with
-`external_action_policy.save_policy`, never by silently changing defaults. Resolve the selected
-provider routes, call `external_action_lifecycle.prepare_bundle` without external egress, and show
-`approval_preview_payload` with provider, cost, egress, requiredness, consumption point, fingerprint,
-and status card. Only after explicit approval call `approve_bundle` and `execute_bundle`. Offload output
-is inert until Codex adjudicates it and consumes it at the named point. Second-opinion output must use
-typed findings and `adjudicate_opinion`. Best-effort failure continues with a named unavailable status;
-required failure pauses for operator retry, removal, or override. External evidence never scores or
+Use an external engine only after the operator chooses the exact registry route and context. Build
+one closed `saga.harness.request.v1` request and run
+`python3 plugins/saga/scripts/external_action_adapters.py --request <json> --repo-root .`.
+Ideate calls use `mode=direct` and an empty `write_set`. Codex independently verifies the advisory
+result; external evidence never scores or
 satisfies a gate on its own.
 
 ## Focus hint
@@ -203,14 +198,14 @@ echo "$SCRATCH_DIR"
 Use the echoed path as `<scratch-dir>`. Scratch lives under `.codex/saga/` — it
 is ignored local state, never `/tmp` and never a durable doc.
 
-Dispatch the grounding agents **in parallel, in the foreground** (results are needed before Phase
-2). Each agent below carries its **verbatim tuned prompt** — dispatch it with that prompt body, not
-a generic "scan the repo" instruction. The prompt body is the repeatability guarantee.
+When delegation is explicitly authorized, dispatch the grounding agents **in parallel, in the
+foreground** because results are needed before Phase 2. Otherwise run each grounding scan inline.
+Each agent below carries its **verbatim tuned prompt**—dispatch it with that prompt body, not a
+generic "scan the repo" instruction. The prompt body is the repeatability guarantee.
 
 ### Source 1 — Current-repo scan (always)
 
-Dispatch an `Explore` (or general-purpose) sub-agent on the cheapest capable model with this
-prompt verbatim, substituting `{focus_hint}`:
+Dispatch an `explorer` agent with this prompt verbatim, substituting `{focus_hint}`:
 
 > Read the project's `AGENTS.md` (or `AGENTS.md` as a compatibility fallback, then `README.md` if
 > neither exists). Read `STRATEGY.md` if present — it captures the repo's target problem, wedge,

@@ -1,0 +1,13 @@
+{
+  "command": "python3 -m pytest -q plugins/verified-workflows/tests tests/test_prove_verified_workflows_runtime.py",
+  "covers": "Verified Workflows dispatch, role selection, direct-sibling review independence, bounded deviation, rendered source profiles, and disposable runtime-proof behavior.",
+  "recorded_at": "2026-07-29T18:01:27Z",
+  "repo_head": "0713be75ff96cf07d7a5e90d6f1c1673a994eb58",
+  "result": {
+    "exit_code": 0,
+    "failed": 0,
+    "passed": 160
+  },
+  "schema_version": 1,
+  "unit": "U3"
+}

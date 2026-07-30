@@ -46,30 +46,25 @@ before `/work`.
 
 ## Interaction method
 
-Use `Codex blocking question` for choices from a known set (destination, execution backend, scope class,
-resume-vs-mint). Call `ToolSearch` with `blocking question` first if its schema is not loaded.
-Ask one question per turn; prefer a concise single-select when natural options exist. For open-ended
-interrogation, ask inline in chat. Never silently skip a question.
+Follow `../../references/operator-choice.md` for choices from a known set (destination, execution
+backend, scope class, resume-vs-mint). Ask one question per turn; prefer a concise single-select when
+natural options exist. For open-ended interrogation, ask inline in chat. Never silently skip a
+question.
 
-In a channel session (`redis-channel` active), `Codex blocking question` cannot be called — inline the choices
-in your reply text instead. Follow the canonical channel-inline convention in
+In a channel session (`redis-channel` active), inline the choices in your reply text instead. Follow
+the canonical channel-inline convention in
 `saga/skills/brainstorm/SKILL.md` (do not duplicate its wording here).
 
 Use repo-relative paths in every generated document. Absolute paths break portability across machines
 and worktrees.
 
-## External Action Runtime
+## External Harness
 
-Before any external call, run
-`python3 plugins/saga/scripts/external_action.py bundle --stage plan --repo-root .` and show the
-resolved action bundle and let the operator remove or edit actions; persist reusable changes with
-`external_action_policy.save_policy`, never by silently changing defaults. Resolve the selected
-provider routes, call `external_action_lifecycle.prepare_bundle` without external egress, and show
-`approval_preview_payload` with provider, cost, egress, requiredness, consumption point, fingerprint,
-and status card. Only after explicit approval call `approve_bundle` and `execute_bundle`. Offload output
-is inert until Codex adjudicates it and consumes it at plan grounding. Second-opinion output must use
-typed findings and `adjudicate_opinion` before the plan write. Best-effort failure continues with a
-named unavailable status; required failure pauses for operator retry, removal, or override. External
+Use an external engine only after the operator chooses the exact registry route and context. Build
+one closed `saga.harness.request.v1` request and run
+`python3 plugins/saga/scripts/external_action_adapters.py --request <json> --repo-root .`.
+Plan calls use `mode=direct` and an empty `write_set`. Codex independently verifies the advisory
+result before the plan write. External
 evidence never makes an architectural decision or satisfies a gate on its own.
 
 ---
@@ -147,9 +142,10 @@ generic checklist.
 3. **Read the engineering journal** (`docs/engineering-journal/`) for relevant prior LEARNINGS and
    DECISIONS so the plan follows established patterns instead of reinventing them.
 4. **Quantify.** Find exact counts (files, call sites, tables). Cite `path:line` in your prose.
-5. **Dispatch generic `Explore` agents in parallel** for grounding — repo patterns, relevant files,
-   existing test conventions, adjacent implementations. Use the generic `Explore` agent; the `ce-*`
-   research agents do **not** exist in this plugin.
+5. **Ground the plan in parallel only when delegation is explicitly authorized.** Use `explorer`
+   agents for repo patterns, relevant files, existing test conventions, and adjacent
+   implementations; otherwise inspect inline. The `ce-*` research agents do **not** exist in this
+   plugin.
 
 **Cold-start (no upstream WHAT).** If there is no brainstorm doc, no issue, and the request is bare:
 run a light Why-check (problem frame, intended behavior, obvious non-goals, success signal — keep it
@@ -216,7 +212,7 @@ with `engine_resolver.resolve({"role_kind": "worker", "capability": <value>}, mo
 registry=...)` against `references/engine-registry.yaml`, and record the previewed
 `{engine_id, variant}` as the baseline a run-time substitution is compared against (KTD4,
 Verified Workflows `references/external-engine-workers.md` §4). The engine is never a gatekeeper: its
-output is advisory evidence the host driving session verifies (see `references/engine-dispatch.md`),
+output is advisory evidence the host driving session verifies through the one-shot harness,
 and on the Codex host Claude-only autonomous delegation surfaces (Workflow/TeamCreate) are
 negative-gated — delegation runs inline/serially or through Verified Workflows' chaperone.
 
@@ -260,9 +256,9 @@ checklist, risk-weighted "is this plan thin?" scoring, and the top-N section cap
   privacy), or thin grounding (Phase 1 found fewer than ~3 local patterns for what the plan needs).
 - **Skip** for Lightweight, well-grounded plans — report "Confidence check passed" and continue.
 
-When deepening, dispatch generic `Explore` / `Task` agents (not `ce-*` agents) at the top-scoring
-sections only. Strengthen rationale, sequencing, test scenarios, and risk treatment in place. **Never
-renumber existing U-IDs** when reordering or splitting units (the most likely accidental-renumber
+When deepening with explicitly authorized delegation, dispatch `explorer` agents (not `ce-*` agents)
+at the top-scoring sections only; otherwise deepen inline. Strengthen rationale, sequencing, test
+scenarios, and risk treatment in place. **Never renumber existing U-IDs** when reordering or splitting units (the most likely accidental-renumber
 vector). Add `deepened: YYYY-MM-DD` to frontmatter when the plan was substantively improved.
 
 ---
@@ -271,8 +267,8 @@ vector). Add `deepened: YYYY-MM-DD` to frontmatter when the plan was substantive
 
 ### 5.1 Ask the destination
 
-Ask the routing intent (`Codex blocking question`, or channel-inline): **plan-only / pr / merge /
-nonprod-deploy**. This becomes the saga `--destination`.
+Ask the routing intent through the native operator-choice contract, or channel-inline:
+**plan-only / pr / merge / nonprod-deploy**. This becomes the saga `--destination`.
 
 ### 5.2 Offer the execution backend
 
@@ -288,24 +284,17 @@ next safe action is operator handoff. Never offer source-only workflow backends 
 Confirm with the operator and record what they picked via `--orchestration-operator-choice` and the
 effective backend via `--orchestration-mode`.
 
-If the operator selects `verified-workflow`, add `## Workflow Structure` or link a protected canonical
-artifact before saving the plan as ready. Run the feasibility review first:
-
-```bash
-python3 plugins/verified-workflows/scripts/workflow_feasibility.py \
-  --plan docs/plans/YYYY-MM-DD-<topic>-plan.md \
-  --snapshot docs/validation/codex-runtime-capability-snapshot.json \
-  --pretty
-```
-
-`requires-inline` requires an amended inline table and a new operator approval. `strict-unavailable`
-blocks the explicit strict-child choice rather than ordinary root-owned work. Only a `ready` result may
-then validate the canonical pointer with:
+If the operator selects `verified-workflow`, add `## Workflow Contract` or link a protected canonical
+artifact before saving the plan as ready. Review the contract with
+`verified-workflows:review-workflow`; model and effort derive from each selected profile rather than
+appearing as assignment columns. A material graph, profile, write, fallback, check, or external-action
+change requires a revised preview and operator approval. After review, validate the canonical pointer
+with:
 
 ```bash
 python3 plugins/saga/scripts/verified_workflow_readiness.py validate \
   --mode verified-workflow \
-  --ref docs/plans/YYYY-MM-DD-<topic>-plan.md#workflow-structure \
+  --ref docs/plans/YYYY-MM-DD-<topic>-plan.md#workflow-contract \
   --context plan-ready \
   --plan-path docs/plans/YYYY-MM-DD-<topic>-plan.md
 ```

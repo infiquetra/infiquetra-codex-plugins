@@ -5,19 +5,25 @@ Validated assignment results and blocking checks reduce to `pass`, `block`, or `
 ```text
 missing or failed blocking check -----------------> block
 missing independent reviewer ---------------------> block
-review average below 9.0 -------------------------> block
-any applicable dimension below 7.0 ---------------> block
 invalid exclusion or arithmetic ------------------> invalid gate input
-any unresolved actionable finding ----------------> block
+reviewer score alone ------------------------------> advisory
+unresolved planned actionable finding ------------> block
+one direct blocker within one-hop budget ----------> one repair and targeted check
+deferred adjacent nonblocking finding -------------> report; do not block
+approval-required or second unplanned issue -------> escalate
+actual P0/P1 secret/auth/destructive/disclosure ---> hard stop
 resolved finding without targeted recheck --------> block
 unresolved finding after remediation and recheck -> escalate
 none of the above ---------------------------------> pass
 ```
 
 The approved workflow names one independent reviewer. Additional reviewers are allowed only when the
-approved plan identifies a concrete risk requiring them. Scores are feedback; they do not create
-another cycle.
+approved plan identifies a concrete risk requiring them. Scores are advisory. A score or finding
+category alone does not block; concrete typed findings, blocking checks, and role hard stops do.
 
-All verified actionable in-scope findings are fixed in one remediation assignment or reclassified
-with a concrete reason. One targeted recheck validates those dispositions. If an actionable finding
-remains, root stops and returns it to the operator. A second remediation or third review is forbidden.
+The run has one global unplanned-repair budget. Root may classify one direct blocker as `one-hop`
+only when it stays inside the existing writes and adds no file, dependency, interface, schema,
+state, role, abstraction, cross-plugin/repository work, or live mutation. One repair and one
+targeted recheck consume the budget. A second issue, broader scope, failed recheck, or new authority
+requires operator approval. Adjacent nonblocking work is `defer`; automatic issue creation is out
+of scope.

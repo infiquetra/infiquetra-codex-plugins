@@ -63,13 +63,13 @@ them, it does not file them.
 
 ## Interaction method
 
-Use `Codex blocking question` for choices from a known set (scope when several threads match, which curation
-proposals to apply, the FAIL routing target, an execution backend for a big refactor). Call `ToolSearch`
-with `blocking question` first if its schema is not loaded. Free-form questions stay inline. Ask one
-question per turn; never silently skip a question.
+Follow `../../references/operator-choice.md` for choices from a known set (scope when several threads
+match, which curation proposals to apply, the FAIL routing target, an execution backend for a big
+refactor). Free-form questions stay inline. Ask one question per turn; never silently skip a
+question.
 
-In a channel session (`redis-channel` active), `Codex blocking question` **cannot** be called — inline the choices
-in your reply text instead, following the canonical channel-inline convention in
+In a channel session (`redis-channel` active), inline the choices in your reply text instead,
+following the canonical channel-inline convention in
 `saga/skills/brainstorm/SKILL.md` (do not duplicate its wording here).
 
 Use **repo-relative paths** in every generated document and proposal. The one deliberate exception is a
@@ -88,7 +88,7 @@ presentation format; the gate itself is:
 
 - **AUTO (no confirmation):** appending one **new** entry to `LEARNINGS.md`, `DECISIONS.md`, `QUEUED.md`,
   or `ARCHIVE.md`. Nothing existing changes — the file only grows by a self-contained block.
-- **PROPOSE-DIFF-AND-WAIT (show the diff + `Codex blocking question` apply / skip / modify; NEVER auto-apply):**
+- **PROPOSE-DIFF-AND-WAIT (show the diff + native apply / skip / modify choice; NEVER auto-apply):**
   - any **edit** to an existing journal entry (the curation sweeps);
   - a **QUEUED → ARCHIVE move** — it *deletes* lines from `QUEUED.md`, so it is **propose, not auto**,
     even though the ARCHIVE side is an append;
@@ -148,8 +148,8 @@ All evidence is read-only. See `references/retro-passes.md` for the exact querie
 **1.1 Time-windowed mode — run the stale-base/wrong-today BLOCK guard FIRST.** Before any window query:
 fetch `origin/<default>`, read the latest commit date, and compare it against the window. Compute **today
 from the session reminder's `## currentDate`, NEVER from the `date` command** (a containerized clock can
-be hours off). If the latest commit predates `(today − window)`, **BLOCK** with an explanation and an
-`Codex blocking question` (confirm today / re-fetch / proceed-anyway), because the window would otherwise
+be hours off). If the latest commit predates `(today − window)`, **BLOCK** with an explanation and a
+native choice (confirm today / re-fetch / proceed-anyway), because the window would otherwise
 fabricate a narrative from near-zero commits. The graceful, **disclosed** skip paths — no remote, detached
 HEAD, offline fetch failure — proceed with the reason carried into the retro narrative
 (`references/retro-passes.md`). Thread-scoped retros skip this block and run the HEAD-freshness check
@@ -177,8 +177,8 @@ Never `gh issue create`, never `gh pr merge`.
 **1.5 Session-transcript skeletons.** Reuse the `/resume` forensic substrate — **file-mediated,
 context-safe**. Identify sessions from the saga / branch for a thread-scoped retro, or via
 `discover_sessions.py` for the windowed mode; extract each with `extract_session_skeleton.py` to a scratch
-dir; an **optional generic-sub-agent fan-out (one per session)** synthesizes them — offered per
-operator-choice, **never** via an `agents/` dir (this plugin has none; use generic `Explore` / `Task`).
+dir; an **optional `default`-agent fan-out (one per session)** synthesizes them—offered per
+operator-choice and **never** via an `agents/` directory. Never auto-spawn.
 The orchestrator never reads a raw `.jsonl` or a skeleton file — paths only.
 
 **1.6 Provenance-manifest signals (read-only, advisory).** When the window covers delegated
@@ -212,16 +212,15 @@ in a separate authorized work path.
 
 ## Phase 2 — Structured interview
 
-Interview the operator, **grounded in the Phase-1 evidence** (not generic prompts). Use **free-form for
-substance** and `Codex blocking question` for routing / choices.
+Interview the operator, **grounded in the Phase-1 evidence** (not generic prompts). Use **free-form
+for substance** and the native operator-choice contract for routing and choices.
 
 The substance questions (free-form): what shipped · what surprised · what slowed the work · what evidence
 actually mattered · what should change. The full bank is in `references/retro-passes.md`. Anchor each
 question in something Phase 1 found ("the saga shows round 3 re-opened on a test gate — what was the real
 blocker?"), so the answers add signal the evidence cannot.
 
-Channel-session fallback: inline the choices in reply text per the brainstorm convention (cited above) —
-do not call `Codex blocking question`.
+In a channel session, inline the choices in reply text per the brainstorm convention cited above.
 
 ---
 
@@ -251,8 +250,8 @@ to existing content, so it is outside the propose-gate.
 Each follows the existing journal entry format (the block-quote intros at the top of each file;
 `references/retro-report.md` carries the templates). A pure append needs no confirmation.
 
-**CURATE (PROPOSE-DIFF-AND-WAIT — the gstack-`learn` sweeps over the journal).** Run, and for each finding
-show a diff + `Codex blocking question` (apply / skip / modify):
+**CURATE (PROPOSE-DIFF-AND-WAIT—the gstack-`learn` sweeps over the journal).** Run, and for
+each finding show a diff plus a native apply / skip / modify choice:
 
 - **staleness** — entries citing deleted files / merged-and-gone PRs / rewritten SHAs (Glob / `gh` check);
 - **contradiction** — conflicting entries on the same topic / key (gstack `learn`'s contradiction sweep);
@@ -308,7 +307,8 @@ meta-improvement edits, and routes — then stops. It does **NOT**:
 - **auto-launch a backend or a destructive self-edit** — backends are offered, never started;
 - **write the saga** — terminal phase, saga READ-ONLY, `saga.py save` is never called;
 - **mutate the SDLC** — issues / boards / labels belong to mission-control;
-- add an `agents/` dir — the transcript fan-out uses **generic** `Explore` / `Task` agents.
+- add an `agents/` directory—the transcript fan-out uses the native `default` agent only after
+  explicit authorization.
 
 It never blocks the router.
 

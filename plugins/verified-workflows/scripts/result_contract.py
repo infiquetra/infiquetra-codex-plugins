@@ -36,6 +36,7 @@ REVIEWER_FIELDS = {
 TERMINAL_STATUSES = {"completed", "failed", "interrupted", "blocked"}
 CHECK_STATUSES = {"pass", "warn", "failed", "blocked"}
 SEVERITIES = {"P0", "P1", "P2", "P3"}
+SCOPE_DISPOSITIONS = {"planned", "one-hop", "defer", "approval-required"}
 FINDING_CATEGORIES = {
     "security",
     "correctness",
@@ -97,6 +98,7 @@ def _finding(value: object, index: int) -> dict[str, Any]:
         "impact",
         "fix",
         "validation",
+        "scope_disposition",
         "resolved",
         "hard_stop",
     }
@@ -107,16 +109,24 @@ def _finding(value: object, index: int) -> dict[str, Any]:
     }
     severity = item["severity"]
     category = item["category"]
+    scope_disposition = item["scope_disposition"]
     if severity not in SEVERITIES:
         raise ResultContractError(f"findings[{index}].severity is invalid")
     if category not in FINDING_CATEGORIES:
         raise ResultContractError(f"findings[{index}].category is invalid")
+    if scope_disposition not in SCOPE_DISPOSITIONS:
+        raise ResultContractError(f"findings[{index}].scope_disposition is invalid")
     if not isinstance(item["resolved"], bool) or not isinstance(item["hard_stop"], bool):
         raise ResultContractError(f"findings[{index}] resolved and hard_stop must be booleans")
+    if scope_disposition == "defer" and item["hard_stop"]:
+        raise ResultContractError(
+            f"findings[{index}] cannot combine scope_disposition=defer with hard_stop=true"
+        )
     return {
         **normalized,
         "severity": severity,
         "category": category,
+        "scope_disposition": scope_disposition,
         "resolved": item["resolved"],
         "hard_stop": item["hard_stop"],
     }

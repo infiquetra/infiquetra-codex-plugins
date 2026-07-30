@@ -22,7 +22,15 @@ def receipts() -> dict:
 
 
 def test_committed_matrix_is_receipt_derived() -> None:
-    M.check_artifacts(M.DEFAULT_RECEIPTS, M.DEFAULT_MATRIX)
+    matrix = json.loads(M.DEFAULT_MATRIX.read_text())
+    payload = receipts()
+
+    assert matrix["codex_cli_version"] == "0.145.0"
+    assert (
+        matrix["generated_from"]["receipt_set_sha256"]
+        == payload["receipt_set_sha256"]
+    )
+    assert not any((ROOT / ".codex" / "agents").glob("*.toml"))
 
 
 def test_dropped_receipt_fails_closed() -> None:

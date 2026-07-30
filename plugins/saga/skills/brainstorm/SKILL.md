@@ -14,7 +14,8 @@ product behavior, scope boundaries, or success criteria. This skill does not wri
 code. It explores, clarifies, and records product decisions.
 
 The engine is **orchestrator-side dialogue**: the steps below run sequentially, in this session, one
-question at a time. The only parallel work allowed is the Phase 1 context scan (`Explore` agents).
+question at a time. The only parallel work allowed is an explicitly authorized Phase 1 context scan
+using `explorer` agents.
 Resolve product decisions here; defer schemas, endpoints, file layouts, and code-level design to
 `/plan` unless the brainstorm is itself about a technical or architectural decision.
 
@@ -27,9 +28,10 @@ These govern every turn of the dialogue.
 
 1. **One question per turn.** Even when sub-questions feel related, pick the single most useful one
    and ask it. Stacking questions dilutes the answers.
-2. **Prefer single-select multiple choice** when choosing one direction, priority, or next step. Use
-   `Codex blocking question` (call `ToolSearch` with `blocking question` first if its schema is not
-   loaded). It carries a free-text fallback, so options scaffold without confining.
+2. **Prefer single-select multiple choice** when choosing one direction, priority, or next step.
+   Follow `../../references/operator-choice.md`: use `request_user_input` only when listed and
+   allowed; otherwise ask one concise blocking question in the normal response and stop. Preserve a
+   free-text fallback so options scaffold without confining.
 3. **Use multi-select rarely** — only for compatible sets (goals, constraints, non-goals, success
    criteria that can coexist). If prioritization matters, follow up on which selected item is primary.
 4. **Ask open-ended only when the question is genuinely open** — the answer is inherently narrative,
@@ -40,21 +42,16 @@ These govern every turn of the dialogue.
    someone's already done about this — paid, built a workaround, quit a tool"). Avoid "what's your
    take?", "briefly", yes/no traps, and warmth wrappers.
 
-In a channel session (`redis-channel` active), do not call `Codex blocking question`; inline the choices in
-your reply text instead ("Which? A) ... B) ... C) ...").
+In a channel session (`redis-channel` active), inline the choices in your reply text instead
+("Which? A) ... B) ... C) ...").
 
-## External Action Runtime
+## External Harness
 
-Before any external call, run
-`python3 plugins/saga/scripts/external_action.py bundle --stage brainstorm --repo-root .` and show the
-resolved action bundle and let the operator remove or edit actions; persist reusable changes with
-`external_action_policy.save_policy`, never by silently changing defaults. Resolve the selected
-provider routes, call `external_action_lifecycle.prepare_bundle` without external egress, and show
-`approval_preview_payload` with provider, cost, egress, requiredness, consumption point, fingerprint,
-and status card. Only after explicit approval call `approve_bundle` and `execute_bundle`. Offload output
-is inert until Codex adjudicates it and consumes it at the named point. Second-opinion output must use
-typed findings and `adjudicate_opinion`. Best-effort failure continues with a named unavailable status;
-required failure pauses for operator retry, removal, or override. External evidence never decides
+Use an external engine only after the operator chooses the exact registry route and context. Build
+one closed `saga.harness.request.v1` request and run
+`python3 plugins/saga/scripts/external_action_adapters.py --request <json> --repo-root .`.
+Brainstorm calls use `mode=direct` and an empty `write_set`. Treat the one-shot result as advisory
+evidence that Codex independently verifies; it never decides
 scope or satisfies a gate on its own.
 
 ## Topic
@@ -130,8 +127,9 @@ section contract. Feature-tier uses Deep behavior unchanged.
 
 ### 1.1 Existing-context scan (verify before claiming)
 
-Scan the repo before substantive dialogue. Match depth to scope. This scan may run parallel `Explore`
-agents; the dialogue that follows is sequential.
+Scan the repo before substantive dialogue. Match depth to scope. When delegation is explicitly
+authorized, this scan may run parallel `explorer` agents; otherwise scan inline. The dialogue that
+follows is sequential.
 
 **Lightweight** — search for the topic, check whether something similar already exists, move on.
 
@@ -344,8 +342,9 @@ Options:
    concrete requirements ask. Always available.
 7. **Done for now** — the requirements doc is saved and resumable later. Always shown.
 
-Use `Codex blocking question` when 4 or fewer options are visible; render a numbered list ("Pick a number or
-describe what you want.") when 5 or more are visible. Never silently skip the question.
+Use the native operator-choice contract when 4 or fewer options are visible; render a numbered list
+("Pick a number or describe what you want.") when 5 or more are visible. Never silently skip the
+question.
 
 When the run ends or hands off, close with the requirements doc's absolute path, the key decisions, and
 the recommended next step (`/plan` when ready, or `/office-hours` if it bounced back). When paused with

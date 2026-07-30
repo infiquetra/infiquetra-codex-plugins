@@ -206,6 +206,7 @@ engines:
       write_capable: false
       base_url: "https://ollama.com/v1"
       model: "nomic-embed-text"
+      operation: embedding
       effort: default
       auth:
         mode: bearer

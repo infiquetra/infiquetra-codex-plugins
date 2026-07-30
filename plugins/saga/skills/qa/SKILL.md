@@ -66,12 +66,12 @@ lands that advance (Phase 6).
 
 ## Interaction method
 
-Use `Codex blocking question` for choices from a known set (tier, execution backend for large/parallel
-verification, FAIL routing target). Call `ToolSearch` with `blocking question` first if its schema
-is not loaded. Ask one question per turn; never silently skip a question.
+Follow `../../references/operator-choice.md` for choices from a known set (tier, execution backend
+for large/parallel verification, FAIL routing target). Ask one question per turn; never silently
+skip a question.
 
-In a channel session (`redis-channel` active), `Codex blocking question` cannot be called — inline the choices
-in your reply text instead, following the canonical channel-inline convention in
+In a channel session (`redis-channel` active), inline the choices in your reply text instead,
+following the canonical channel-inline convention in
 `saga/skills/brainstorm/SKILL.md` (do not duplicate its wording here).
 
 Use repo-relative paths in every generated document. Absolute paths break portability across machines
@@ -167,8 +167,8 @@ broad, and gather **evidence** for every result:
 
 **Operator-choice for large/parallel verification.** When several risk classes warrant independent,
 parallel verification, **OFFER** a backend per `../../references/operator-choice.md` (`inline` /
-`verified-workflow`) — never auto-spawn. Parallel verification uses **generic
-`Explore` / `Task` agents** (this plugin has no `agents/` dir — do not reference named `ce-*` agents).
+`verified-workflow`)—never auto-spawn. When authorized, parallel read-only verification uses
+`explorer` agents. This plugin has no `agents/` directory; do not reference named `ce-*` agents.
 
 ---
 

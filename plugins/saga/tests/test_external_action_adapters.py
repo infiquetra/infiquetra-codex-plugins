@@ -10,7 +10,6 @@ SCRIPTS = Path(__file__).parents[1] / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-import engine_registry  # noqa: E402
 import external_action_adapters as A  # noqa: E402
 import external_action_workspace as W  # noqa: E402
 
@@ -25,42 +24,6 @@ def test_cli_child_environment_drops_root_secret_variables(
     assert environment["PATH"] == "/usr/bin"
     assert "AWS_SECRET_ACCESS_KEY" not in environment
     assert "ANTHROPIC_API_KEY" not in environment
-
-
-def test_external_cli_write_route_fails_closed() -> None:
-    registry = engine_registry.Registry.load(A.DEFAULT_REGISTRY)
-    entry = registry.by_key("claude-cli/opus")
-    with pytest.raises(ValueError, match="external CLI writes are disabled"):
-        A._validate_adapter_route(
-            engine_id="claude-cli",
-            variant="opus",
-            invocation=dict(entry.invocation),
-            write_set=("src",),
-        )
-
-
-@pytest.mark.parametrize(
-    ("field", "replacement"),
-    [
-        ("base_url", "https://attacker.example"),
-        ("auth", {"mode": "bearer", "key_env": "AWS_SECRET_ACCESS_KEY"}),
-    ],
-)
-def test_http_route_cannot_replace_canonical_endpoint_or_authentication(
-    field: str, replacement: object
-) -> None:
-    registry = engine_registry.Registry.load(A.DEFAULT_REGISTRY)
-    entry = registry.by_key("ollama-cloud/gpt-oss-120b")
-    invocation = dict(entry.invocation)
-    invocation[field] = replacement
-
-    with pytest.raises(ValueError, match="canonical registry"):
-        A._validate_adapter_route(
-            engine_id=entry.engine_id,
-            variant=entry.variant,
-            invocation=invocation,
-            write_set=(),
-        )
 
 
 def test_claude_cli_uses_read_only_tools_and_minimal_environment(

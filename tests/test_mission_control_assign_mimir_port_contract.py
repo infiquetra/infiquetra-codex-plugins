@@ -119,10 +119,14 @@ def test_every_source_row_has_one_explicit_codex_adaptation() -> None:
 def test_authority_hashes_and_generated_classification_are_current() -> None:
     manifest = _manifest()
     authority = manifest["authority"]
-    artifacts = [authority["plan"], *authority["reviews"], authority["runbook"]]
+    artifacts = [authority["plan"], *authority["reviews"]]
 
     for artifact in artifacts:
         assert _sha256(ROOT / artifact["path"]) == artifact["sha256"]
+    runbook = authority["runbook"]
+    assert port_contract._historical_file_by_sha256(
+        ROOT, runbook["path"], runbook["sha256"]
+    )
     capability = authority["capability_snapshot"]
     assert _sha256(ROOT / capability["path"]) == capability["sha256"]
     assert _sha256(ROOT / capability["schema_path"]) == capability["schema_sha256"]

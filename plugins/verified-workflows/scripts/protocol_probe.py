@@ -201,8 +201,8 @@ def validate_runtime_receipt(
     expected = {
         "agent_path": expected_agent_path,
         "agent_type": launch.agent_type,
-        "model": launch.model,
-        "reasoning_effort": launch.reasoning_effort,
+        "model": launch.expected_model,
+        "reasoning_effort": launch.expected_reasoning_effort,
         "model_provider": expected_provider,
         "permission_profile": expected_permission_profile,
         "sandbox_mode": expected_sandbox_mode,

@@ -17,7 +17,6 @@ import render_codex_agents as renderer
 
 MAX_PLAN_BYTES = 2 * 1024 * 1024
 ID_RE = re.compile(r"^[a-z][a-z0-9-]{0,63}$")
-FRESH_ROOT_RE = re.compile(r"^fresh-root:([a-z][a-z0-9-]{0,63})$")
 FALLBACK_RE = re.compile(
     r"^(review_max|review_high|work_medium|work_high|test_medium|scan_low|monitor_low)@([a-z0-9][a-z0-9-]{0,63})$"
 )
@@ -28,8 +27,6 @@ ASSIGNMENT_HEADERS = (
     "depends",
     "role",
     "profile",
-    "model",
-    "effort",
     "writes",
     "completion",
     "fallback",
@@ -85,7 +82,7 @@ class Assignment:
 
     @property
     def is_independent_review(self) -> bool:
-        return self.category == "reviewer" and self.parent == f"fresh-root:{self.assignment_id}"
+        return self.category == "reviewer" and self.parent == "root" and not self.writes
 
 
 @dataclass(frozen=True, slots=True)
@@ -120,8 +117,8 @@ class LaunchSpec:
     parent: str
     role: str
     agent_type: str | None
-    model: str
-    reasoning_effort: str
+    expected_model: str
+    expected_reasoning_effort: str
     fork_turns: str | int | None
     writes: tuple[str, ...]
     completion: str
@@ -285,8 +282,6 @@ def _parse_assignment(
     )
     role = row["role"]
     profile = row["profile"]
-    model = row["model"]
-    effort = row["effort"]
     completion = row["completion"].strip()
     if not completion:
         raise WorkflowDispatchError(f"assignment {assignment_id}.completion must not be empty")
@@ -306,16 +301,9 @@ def _parse_assignment(
         profile_resolution = renderer.resolve_profile(profile, catalog)
     except renderer.RoleRegistryError as exc:
         raise WorkflowDispatchError(str(exc)) from exc
-    if (model, effort) != (profile_resolution.model, profile_resolution.effort):
-        raise WorkflowDispatchError(
-            f"assignment {assignment_id} profile {profile} requires "
-            f"model={profile_resolution.model} effort={profile_resolution.effort}"
-        )
-    parent = (
-        f"fresh-root:{assignment_id}"
-        if role_resolution.role.category == "reviewer"
-        else "root"
-    )
+    model = profile_resolution.model
+    effort = profile_resolution.effort
+    parent = "root"
     context = "none"
     writes = tuple(
         _repo_path(item, f"assignment {assignment_id}.writes")
@@ -485,21 +473,8 @@ def _validate_graph(assignments: Sequence[Assignment], checks: Sequence[Blocking
         raise WorkflowDispatchError("assignment and check ids share one global namespace")
     closure = _dependency_closure(assignments)
 
-    for assignment in assignments:
-        fresh = FRESH_ROOT_RE.fullmatch(assignment.parent)
-        if assignment.parent != "root" and fresh is None:
-            raise WorkflowDispatchError(
-                f"assignment {assignment.assignment_id}.parent is not root or fresh-root:<id>"
-            )
-        if fresh is not None and (
-            fresh.group(1) != assignment.assignment_id
-            or assignment.category != "reviewer"
-            or assignment.context != "none"
-            or assignment.writes
-        ):
-            raise WorkflowDispatchError(
-                f"fresh-root assignment {assignment.assignment_id} must be a same-id, read-only, no-history reviewer"
-            )
+    if any(assignment.parent != "root" for assignment in assignments):
+        raise WorkflowDispatchError("all delegated assignments must be direct children of root")
 
     writable = [assignment for assignment in assignments if assignment.writes]
     for index, left in enumerate(writable):
@@ -533,7 +508,9 @@ def _validate_graph(assignments: Sequence[Assignment], checks: Sequence[Blocking
         raise WorkflowDispatchError("workflow must declare at least one blocking check")
     reviewers = [assignment for assignment in assignments if assignment.category == "reviewer"]
     if not any(assignment.is_independent_review for assignment in reviewers):
-        raise WorkflowDispatchError("workflow requires at least one fresh-root independent reviewer")
+        raise WorkflowDispatchError(
+            "workflow requires at least one read-only direct-sibling independent reviewer"
+        )
     if not any(
         check.blocking and "review" in f"{check.check_id} {check.command_or_proof}".casefold()
         for check in checks
@@ -603,8 +580,8 @@ def _launch_spec(
         parent=assignment.parent,
         role=assignment.role,
         agent_type=assignment.profile,
-        model=assignment.model,
-        reasoning_effort=assignment.effort,
+        expected_model=assignment.model,
+        expected_reasoning_effort=assignment.effort,
         fork_turns="none",
         writes=assignment.writes,
         completion=assignment.completion,
@@ -694,7 +671,7 @@ def compile_workflow_contract(
         }
     )
     return WorkflowContract(
-        schema_version=2,
+        schema_version=3,
         plan_revision=plan_revision,
         contract_sha256=contract_sha256,
         authority_sha256=authority_sha256,

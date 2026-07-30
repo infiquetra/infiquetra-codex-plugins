@@ -16,8 +16,9 @@ state](references/validator-evidence-state.md), [worker manifest](references/wor
 ## Approval Gate
 
 Compile the exact approved contract with `workflow_dispatch.py`. Do not launch work until the
-operator has reviewed the assignment graph, role, profile, model, effort, writes, completion
-condition, fallback, checks, and approval binding.
+operator has reviewed the assignment graph, role, profile, writes, completion condition, fallback,
+checks, and approval binding. Model and reasoning effort are maintained properties of the profile,
+not duplicate workflow columns or per-spawn overrides.
 
 A new assignment, changed write set, different role or profile, additional reviewer, or material
 scope change returns to planning and operator approval. Use only an approved fallback as written.
@@ -26,7 +27,8 @@ scope change returns to planning and operator approval. Use only an approved fal
 
 Root means the main Codex session. Root only:
 
-1. Dispatches dependency-ready assignments with the approved profile and no inherited turns.
+1. Dispatches dependency-ready assignments through the native `collaboration` tools with the
+   approved `agent_type` and `fork_turns=none`.
 2. Verifies the first `session_meta` plus `turn_context` runtime receipt matches the approved agent
    type, model, effort, provider, permission profile, sandbox, and canonical path.
 3. Waits for a terminal typed result and validates it with `result_contract.py`.
@@ -49,16 +51,23 @@ integration.
 
 ## Review Convergence
 
-Run the one independent reviewer named by the contract. Add another reviewer only when the approved
-plan names a concrete risk that requires it.
+Run the independent reviewer named by the contract as a direct child of root and a sibling of every
+implementation worker, with `fork_turns=none`. Add another reviewer only when the approved plan
+names a concrete risk that requires it.
 
-All verified actionable in-scope findings go to one `remediation-worker` assignment or are
-reclassified with a concrete reason. Run one targeted recheck. If an actionable finding remains,
-stop and return it to the operator. Do not start a third review, another remediation cycle, or an
-automatic reviewer expansion.
+Every finding carries `scope_disposition`: `planned`, `one-hop`, `defer`, or `approval-required`.
+Across the whole run, root may adopt at most one `one-hop` issue: it must directly block the
+approved work, stay inside the approved writes, add no file, dependency, interface, schema, state,
+role, abstraction, cross-plugin/repository work, or live mutation, and receive one repair plus one
+targeted check. Defer adjacent nonblocking issues. A second issue, failed recheck, wider scope, or
+new authority stops for operator approval.
+
+All remaining actionable planned findings go to the single `remediation-worker` assignment. Run
+one targeted recheck. If an actionable finding remains, stop and return it to the operator. Do not
+start another remediation cycle or automatically add reviewers.
 
 ## Results
 
 Report completed assignments, actual profile/model/effort receipts, changed paths, checks, finding
-dispositions, and blockers concisely. Messages and raw model output never release a dependency or
-satisfy a gate.
+dispositions, whether the one-hop budget was used, and blockers concisely. Messages and raw model
+output never release a dependency or satisfy a gate.

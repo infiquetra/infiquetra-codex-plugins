@@ -48,8 +48,8 @@ Read the git diff or changed files. Ask for each piece:
 ### Step 3: Score Each Dimension
 
 
-**ACCEPT**: Overall >= 9.0 AND no dimension < 7.0
-**NEEDS REVISION**: Overall < 9.0 OR any dimension < 7.0
+Scores are advisory. Base the verdict on concrete typed findings and role hard stops, not a numeric
+threshold.
 
 ### Step 4: Issue Fix Requests
 

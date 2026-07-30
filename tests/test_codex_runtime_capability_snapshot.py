@@ -1,4 +1,4 @@
-"""Tests for the sanitized Codex 0.145.0 V2 capability snapshot."""
+"""Tests for the sanitized Codex 0.146.0 V2 capability snapshot."""
 
 from __future__ import annotations
 
@@ -55,8 +55,8 @@ def test_refs_are_full_commits_and_frozen_target_is_reachable() -> None:
                 continue
             assert re.fullmatch(r"[0-9a-f]{40}", value), (key, value)
     assert refs["claude"]["target_reachable"] is True
-    assert refs["claude"]["source_base"] == "9470edca65b1db06d2f7562eeb2d5a9e48c34dec"
-    assert refs["claude"]["source_target"] == "46fefb6f17f0c9d0d63858978536d3369ab57dfe"
+    assert refs["claude"]["source_base"] == "99efeef6506cd7f6512404d0ad8755a87ff5a011"
+    assert refs["claude"]["source_target"] == "e363b08c9175ac1cbe5893615dd2cb9ddf95043b"
 
 
 def test_catalog_projection_reproduces_digest() -> None:
@@ -78,32 +78,33 @@ def test_active_host_and_v2_contract_are_separate_truths() -> None:
     snapshot = load_snapshot()
     runtime = snapshot["runtime"]
 
-    assert runtime["codex_cli_version"] == "0.145.0"
+    assert runtime["codex_cli_version"] == "0.146.0"
     assert snapshot["features"]["multi_agent_v2"] == {"stage": "stable", "enabled": True}
     assert runtime["multi_agent_v2_config"]["enabled"] is True
     assert runtime["configured_max_threads"] == 6
     assert runtime["configured_max_threads_key"] == "max_threads"
     assert runtime["configured_v2_total_threads"] == 7
     assert runtime["configured_v2_total_threads_source"] == "agents-plus-root"
-    assert runtime["configured_max_depth"] == 2
-    assert runtime["host_total_slots"] is None
+    assert runtime["configured_max_depth"] == 1
+    assert runtime["host_total_slots"] == 7
+    assert runtime["effective_total_slots"] == 6
+    assert runtime["effective_max_children"] == 5
 
 
 def test_spawn_contract_separates_request_response_and_runtime_readback() -> None:
     spawn = load_snapshot()["collaboration"]["spawn"]
 
     assert spawn["contract_version"] == "v2"
-    assert spawn["tool_namespace"] == "agents"
+    assert spawn["tool_namespace"] == "collaboration"
     assert spawn["request_fields"] == [
         "agent_type",
         "fork_turns",
         "message",
         "model",
         "reasoning_effort",
-        "service_tier",
         "task_name",
     ]
-    assert spawn["response_fields"] == ["nickname", "task_name"]
+    assert spawn["response_fields"] == ["agent_id", "nickname", "task_name"]
     assert spawn["runtime_receipt_sources"] == ["session_meta", "turn_context"]
     assert spawn["selection_readback_fields"] == [
         "agent_path",

@@ -3,7 +3,7 @@
 
 The controller keeps engine output advisory: it accounts for finding identities,
 records the Codex root's adjudication, and appends bounded typed results to the existing
-hash-chained run-fact ledger. Gate authority remains in ``engine_dispatch``.
+hash-chained run-fact ledger. External evidence remains non-gating.
 """
 
 from __future__ import annotations

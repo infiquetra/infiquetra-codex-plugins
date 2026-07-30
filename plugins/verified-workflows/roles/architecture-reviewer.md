@@ -103,8 +103,8 @@ EXCLUDED per Step 3 (precondition absent) is not scored and is not counted. Over
 of the applicable dimensions — name the denominator (e.g. "avg of 4 applicable") whenever a
 dimension is excluded.
 
-**ACCEPT**: Overall >= 9.0 AND no applicable dimension < 7.0
-**NEEDS REVISION**: Overall < 9.0 OR any applicable dimension < 7.0
+Scores are advisory. Base the verdict on concrete typed findings and role hard stops, not a numeric
+threshold.
 
 A static exclusion is never itself a NEEDS REVISION signal — it does not lower the overall,
 and it does not trigger the re-review path in `consensus-protocol.md` on its own.

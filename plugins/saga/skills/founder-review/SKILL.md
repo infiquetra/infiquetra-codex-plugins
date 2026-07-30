@@ -55,8 +55,9 @@ user-facing behavior is prominent" — that is the **inbound** edge. `/founder-r
    commit, does **NOT** push, does **NOT** open PRs, and does **NOT** file SDLC issues. Its only
    writes are the `docs/founder-reviews/` artifact and (downstream, separately) the journal. ZERO
    writes to reviewed code.
-2. **User 100% in control.** Every scope change is an explicit opt-in (via `Codex blocking question`, or
-   inline in a channel). Never silently add or remove scope. Once a mode is chosen, **commit to it —
+2. **User 100% in control.** Every scope change is an explicit opt-in through the native
+   operator-choice contract, or inline in a channel. Never silently add or remove scope. Once a mode
+   is chosen, **commit to it —
    no silent drift.** Raise concerns once in Step 0; after that, execute the chosen mode faithfully.
 3. **Internalize the CEO patterns, don't enumerate them.** The 18 CEO cognitive patterns and 9 Prime
    Directives (`references/ceo-cognition.md`) are thinking instincts that shape the whole review, not
@@ -77,13 +78,12 @@ user-facing behavior is prominent" — that is the **inbound** edge. `/founder-r
 
 ## Interaction method
 
-Use `Codex blocking question` for choices from a known set (mode selection, per-expansion opt-in, the chosen
-implementation approach, execution backend). Call `ToolSearch` with `blocking question` first if
-its schema is not loaded. Ask one issue per question — never batch multiple decisions into one. Never
-silently skip a question or silently default.
+Follow `../../references/operator-choice.md` for choices from a known set (mode selection,
+per-expansion opt-in, the chosen implementation approach, execution backend). Ask one issue per
+question—never batch multiple decisions into one. Never silently skip a question or silently default.
 
-In a channel session (`redis-channel` active), `Codex blocking question` cannot be called — inline the choices
-in your reply text instead, and use the **digest** path for expansions (see Phase 2 and
+In a channel session (`redis-channel` active), inline the choices in your reply text instead, and use
+the **digest** path for expansions (see Phase 2 and
 `references/review-modes.md`). Follow the canonical channel-inline convention in
 `saga/skills/brainstorm/SKILL.md` (do not duplicate its wording here).
 
@@ -130,7 +130,8 @@ Run Step 0 (sub-steps detailed in `references/review-modes.md`):
 - **0E. Temporal interrogation — TARGET-CONDITIONAL.** target=plan -> the HOUR-by-HOUR implementation
   interrogation (present human + CC effort scales; no false precision). Else -> **recast** as "what
   must be resolved before this becomes a plan?"
-- **0F. Mode selection** — present the 4 modes via `Codex blocking question` (channel -> inline) with a
+- **0F. Mode selection** — present the four modes through the native operator-choice contract
+  (channel -> inline) with a
   context-default recommendation; state **"options differ in kind, not coverage — no completeness
   score"**; once selected, **commit, no silent drift.**
 
@@ -141,7 +142,7 @@ Run Step 0 (sub-steps detailed in `references/review-modes.md`):
 Run the branch for the committed mode (full ceremonies in `references/review-modes.md`):
 
 - **SCOPE EXPANSION** — 10x check + platonic ideal + delight opportunities, then the **opt-in
-  ceremony**: each expansion as its own `Codex blocking question`, recommended *enthusiastically*, framed
+  ceremony**: each expansion as its own native operator choice, recommended *enthusiastically*, framed
   **FLAT -> EXPANSIVE** (lead with the felt experience, close with effort + impact). Options:
   **A) add / B) defer (-> journal/QUEUED) / C) skip**.
 - **SELECTIVE EXPANSION** — run the HOLD analysis (complexity + minimum-change) as the bulletproof

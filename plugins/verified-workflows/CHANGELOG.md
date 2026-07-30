@@ -2,6 +2,26 @@
 
 All notable changes to this plugin are documented here.
 
+## [3.0.0] - 2026-07-29
+
+### Changed
+
+- Reduce the Workflow Contract assignment table to role, profile, writes, completion, and fallback;
+  model and effort now derive from the maintained profile.
+- Use the native Codex 0.146 agent lifecycle and direct-sibling reviewers. The root dispatches every
+  assignment through native `agent_type` and validates combined runtime readback.
+- Make numeric review scores advisory. Gates block on required evidence, failed blocking checks,
+  independence, and verified P0/P1 or explicit hard-stop findings.
+- Add bounded deviation disposition (`planned`, `one-hop`, `defer`, `approval-required`) with one
+  direct-cause fix and one targeted recheck before operator approval is required.
+- Keep Luna fallback on Terra because the 0.146 catalog still reports Luna as V1.
+
+### Removed
+
+- Remove `verified-workflows:select-agent`, snapshot-driven feasibility gating, repository-local
+  `.codex/agents` copies, sandbox fields from managed profiles, and automatic multi-round
+  convergence.
+
 ## [2.1.0] - 2026-07-26
 
 ### Changed

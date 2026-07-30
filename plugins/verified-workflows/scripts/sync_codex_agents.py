@@ -1684,6 +1684,7 @@ def build_plan(
     catalog_snapshot: Path | None = None,
     migrate_legacy: bool = False,
     remove_stale: bool = False,
+    luna_v2_canary_passed: bool = False,
 ) -> SyncPlan:
     """Read one catalog snapshot, prove generated source, snapshot target, and plan."""
 
@@ -1692,7 +1693,11 @@ def build_plan(
         catalog = renderer.CATALOG.read_catalog()
     else:
         catalog = renderer.load_catalog_snapshot(catalog_snapshot)
-    bundle = renderer.render_bundle(registry, catalog)
+    bundle = renderer.render_bundle(
+        registry,
+        catalog,
+        luna_v2_canary_passed=luna_v2_canary_passed,
+    )
     if catalog_snapshot is not None:
         renderer.check_generated(bundle)
     pre_state = snapshot_target(target)
@@ -1717,6 +1722,11 @@ def main() -> int:
     parser.add_argument("--migrate-legacy", action="store_true")
     parser.add_argument("--remove-stale", action="store_true")
     parser.add_argument("--allow-real-profile", action="store_true")
+    parser.add_argument(
+        "--luna-v2-canary-passed",
+        action="store_true",
+        help="promote low profiles to Luna only when the live catalog reports V2 and an isolated canary passed",
+    )
     parser.add_argument("--expected-pre-state-sha256")
     parser.add_argument("--pretty", action="store_true")
     args = parser.parse_args()
@@ -1726,7 +1736,12 @@ def main() -> int:
             isolated_target=args.isolated_target,
         )
         if args.recover:
-            if args.migrate_legacy or args.remove_stale or args.catalog_snapshot is not None:
+            if (
+                args.migrate_legacy
+                or args.remove_stale
+                or args.catalog_snapshot is not None
+                or args.luna_v2_canary_passed
+            ):
                 raise SyncError("--recover does not accept planning or catalog options")
             payload = recover_sync(
                 target,
@@ -1739,6 +1754,7 @@ def main() -> int:
                 catalog_snapshot=args.catalog_snapshot,
                 migrate_legacy=args.migrate_legacy,
                 remove_stale=args.remove_stale,
+                luna_v2_canary_passed=args.luna_v2_canary_passed,
             )
             if args.apply:
                 payload = apply_sync(

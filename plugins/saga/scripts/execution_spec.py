@@ -289,9 +289,7 @@ def _engine_registry_module() -> Any:
 
 
 def _load_runtime_registry(registry_path: Path) -> Any:
-    from engine_registry_overlay import load_runtime_registry
-
-    return load_runtime_registry(registry_path, Path.cwd())
+    return _engine_registry_module().Registry.load(registry_path)
 
 
 def _validate_external_engine_selector(

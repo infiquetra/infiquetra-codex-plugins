@@ -32,27 +32,29 @@ Requested values remain provisional until `session_meta` and `turn_context` agre
 path, profile, model, effort, provider, effective permission, sandbox, and V2 mode.
 
 The seven profiles are `review_max`, `review_high`, `work_medium`, `work_high`, `test_medium`,
-`scan_low`, and `monitor_low`. They are generated from the role registry and the Fleet Core projection of the native
-Codex model catalog. Fleet Core preserves each model's `multi_agent_version`; it does not rewrite V2
-models into another mode. Profile sandbox configuration expresses intent because Codex 0.145.0
-children inherit the parent turn's effective permission.
+`scan_low`, and `monitor_low`. They are generated from the role registry and the Fleet Core
+projection of the native Codex model catalog. Fleet Core preserves each model's
+`multi_agent_version`; it does not rewrite V2 models into another mode. Minimal profile TOMLs
+contain model, effort, description, and instructions; Codex 0.146.0 inherits effective permission
+from the parent turn.
 
 Each attempt returns one closed typed result. Writable attempts declare their paths, concurrent
 writers must be disjoint, and returned changed paths must remain within the assignment. At least one
-reviewer runs beneath an independent fresh V2 review root with no implementation history. One
+reviewer runs as an independent direct sibling with no implementation history. One
 remediation assignment and one targeted recheck are the maximum automatic convergence cycle.
 
-Saga remains the authority for external provider approval, egress, execution, status, and
-adjudication. External CLI routes are advisory and read-only; non-empty external write sets fail
-closed until an enforceable filesystem boundary exists. Output stays a non-gating artifact unless
-the root independently verifies and adopts a finding.
+Saga remains the authority for the six retained external routes, egress, execution, and result
+validation. Direct CLI routes are advisory and read-only. An approved Verified Workflow may produce
+a patch inside a disposable remote-stripped clone; only the Git operator can import it. Output stays
+non-gating unless the root independently verifies and adopts a finding.
 
 ## Removed Active Machinery
 
 The V2 cutover removes the executable V1 catalog override, plugin hooks, protected-record stores,
 intent and receipt writers, named-child attestation joins, raw-hook maintenance, old workflow-record
-chains, and full workspace-evidence chains. No active compatibility alias may recreate those writers
-or silently fall back from V2.
+chains, full workspace-evidence chains, the `select-agent` wrapper, snapshot feasibility gating, and
+repository-local agent-profile copies. No active compatibility alias may recreate those writers or
+silently fall back from V2.
 
 Historical requirements, plans, reviews, classifications, proof JSON, changelog entries, and frozen
 fixtures retain their original vocabulary as non-current evidence. They do not authorize a new run

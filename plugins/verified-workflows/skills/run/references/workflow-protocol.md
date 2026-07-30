@@ -8,12 +8,12 @@ checks, and optional non-gating external actions.
 The exact columns are:
 
 ```text
-id | depends | role | profile | model | effort | writes | completion | fallback
+id | depends | role | profile | writes | completion | fallback
 ```
 
 - `id` and `depends` form one acyclic graph.
 - Every row is executable by a managed role; root rows are forbidden.
-- `profile`, `model`, and `effort` must be explicit and match a maintained profile.
+- `profile` must be explicit. Model and effort are derived from the maintained profile.
 - `writes` is `none` or a repository-relative allowlist. Read-only profiles cannot write.
 - Concurrent writers must have disjoint write sets. Shared paths require dependency ordering or one
   combined assignment.
@@ -22,8 +22,8 @@ id | depends | role | profile | model | effort | writes | completion | fallback
 - `fallback` is `none` or an ordered `profile@condition` list within the role's allowed profiles and
   permission boundary.
 
-Reviewers launch under a fresh root with no inherited turns. All other assignments launch from the
-main session with no inherited turns.
+Every assignment launches as a direct child of root with `fork_turns=none`. The independent
+reviewer is therefore a sibling of the implementation workers rather than their descendant.
 
 ## Blocking Checks
 
@@ -54,6 +54,6 @@ The compiler validates the tables and binds the canonical contract, role registr
 profiles, reviewer mandates, and approved plan revision. A new assignment, write set, role, profile,
 reviewer, fallback, or material scope change invalidates approval.
 
-Requested launch fields are not runtime proof. Root accepts an assignment only after
+Profile resolution and requested launch fields are not runtime proof. Root accepts an assignment only after
 `session_meta` and `turn_context` confirm the approved path, profile, model, effort, provider,
 permission profile, sandbox, and V2 mode.

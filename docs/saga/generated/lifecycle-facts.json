@@ -213,7 +213,7 @@
           "skill_path": "plugins/saga/skills/retro/SKILL.md"
         },
         {
-          "description": "The Infiquetra lifecycle's HEAVY forensic reconstruction engine \u2014 the deep half beside /loop's lightweight restore. Two tiers \u2014 Tier 1 reconstructs from the saga's WHOLE tick-chain trajectory (not just the last frame) plus PR archaeology and explicit conflict reconciliation; Tier 2 (fallback only, no saga AND no resolvable issue) is a slim source-only port of CE session forensics over local JSONL logs. Read-only on the world; it writes one git-ignored re-entry tick that reuses the restored saga_id, then routes. Triggers on \"resume\", \"reconstruct what happened\", \"what was tried across these PRs\", a corrupt or missing local cache, or same-machine work that never wrote a saga.",
+          "description": "Reconstruct an Infiquetra Saga lifecycle across Saga ticks, issues, PRs, committed docs, or explicitly requested multi-session forensics. Use when the user asks to reconstruct lifecycle state, reconcile issue or PR history, recover missing Saga state, or determine the next lifecycle owner. Do not use to continue a known saved Codex chat; native /resume owns that.",
           "name": "resume",
           "namespace": "saga:resume",
           "skill_path": "plugins/saga/skills/resume/SKILL.md"
@@ -267,7 +267,7 @@
           "skill_path": "plugins/saga/skills/loop/SKILL.md"
         }
       ],
-      "version": "0.82.0+codex.20260727035515"
+      "version": "0.83.0+codex.20260729205037"
     },
     "verified-workflows": {
       "skills": [
@@ -278,7 +278,7 @@
           "skill_path": "plugins/verified-workflows/skills/run/SKILL.md"
         },
         {
-          "description": "Review an approved Workflow Contract for Codex V2 profile, graph, context, write, check, reviewer, fallback, and external-action feasibility without launching work.",
+          "description": "Compile and review an approved Workflow Contract for Codex V2 graph, profile, write, check, reviewer, fallback, and external-action consistency without launching work.",
           "name": "review-workflow",
           "namespace": "verified-workflows:review-workflow",
           "skill_path": "plugins/verified-workflows/skills/review-workflow/SKILL.md"
@@ -288,15 +288,9 @@
           "name": "appsec-audit",
           "namespace": "verified-workflows:appsec-audit",
           "skill_path": "plugins/verified-workflows/skills/appsec-audit/SKILL.md"
-        },
-        {
-          "description": "Show and launch the six maintained Infiquetra Codex V2 agent profiles. Use when the operator asks to list, choose, select, or start a review, work, test, scan, or monitor agent, or wants the pre-spawn agent-picker experience before using /agent to switch threads.",
-          "name": "select-agent",
-          "namespace": "verified-workflows:select-agent",
-          "skill_path": "plugins/verified-workflows/skills/select-agent/SKILL.md"
         }
       ],
-      "version": "2.1.0+codex.20260727035515"
+      "version": "3.0.0+codex.20260729164721"
     }
   },
   "saga_routing": {

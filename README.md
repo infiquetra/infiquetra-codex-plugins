@@ -7,11 +7,11 @@ Codex-ready plugin surface, currently:
 
 | Plugin | Version | Status |
 |---|---:|---|
-| `saga` | 0.82.0+codex.20260727035515 | active |
+| `saga` | 0.83.0+codex.20260729205037 | active |
 | `deploy` | 0.1.1 | active |
 | `mission-control` | 2.4.2 | active |
-| `verified-workflows` | 2.1.0+codex.20260727035515 | active |
-| `fleet-core` | 0.13.0+codex.20260726234500 | active (library) |
+| `verified-workflows` | 3.0.0+codex.20260729164721 | active |
+| `fleet-core` | 0.14.0+codex.20260729164721 | active (library) |
 | `discord-identity-assets` | 0.2.0 | proof port |
 | `home-lab-ops` | 1.0.0 | baseline |
 | `python-toolkit` | 1.0.0 | baseline |
@@ -29,13 +29,14 @@ The operator-facing Saga family guide lives in `docs/saga/README.md`.
 ## Codex V2 Agents
 
 Verified Workflows uses Codex V2 directly. The main session orchestrates the live DAG, and seven
-maintained profiles provide explicit model, effort, permission intent, and role-lens defaults:
+maintained profiles provide model and effort defaults:
 `review_max`, `review_high`, `work_medium`, `work_high`, `test_medium`, `scan_low`, and `monitor_low`.
 
-Use `verified-workflows:select-agent` for a direct named-agent launch. Approved workflow runs use
+Direct launches use the native `agent_type` field. Approved workflow runs use
 `verified-workflows:review-workflow` followed by `verified-workflows:run`. Runtime identity is
 accepted only from matching V2 `session_meta` and `turn_context` readback; profile files and prompts
-are configuration, not execution proof. `/agent` switches among the root and spawned threads.
+are configuration, not execution proof. Codex owns child lifecycle, messaging, waiting, and thread
+switching.
 
 ## Layout
 

@@ -12,6 +12,7 @@ import re
 import stat
 import subprocess
 import sys
+import tempfile
 import tomllib
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -23,9 +24,9 @@ if str(PLUGIN_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(PLUGIN_SCRIPTS))
 
 import render_codex_agents as renderer  # noqa: E402
+import sync_codex_agents as profile_sync  # noqa: E402
 
 DEFAULT_SNAPSHOT = REPO_ROOT / "docs" / "validation" / "codex-runtime-capability-snapshot.json"
-PROJECT_AGENTS = REPO_ROOT / ".codex" / "agents"
 MAX_BYTES = 4 * 1024 * 1024
 MAX_NEW_ROLLOUTS = 16
 TERMINAL_MARKER = "V2_PROFILE_CHILD_OK"
@@ -135,8 +136,8 @@ def _snapshot_projection(snapshot: Mapping[str, Any]) -> dict[str, Any]:
     if not isinstance(runtime, dict) or not isinstance(collaboration, dict):
         raise RuntimeProofError("capability snapshot lacks required closed sections")
     version = runtime.get("codex_cli_version")
-    if version != "0.145.0":
-        raise RuntimeProofError("capability snapshot must target Codex 0.145.0")
+    if version != "0.146.0":
+        raise RuntimeProofError("capability snapshot must target Codex 0.146.0")
     spawn = collaboration.get("spawn")
     expected_spawn_fields = {
         "available",
@@ -159,7 +160,7 @@ def _snapshot_projection(snapshot: Mapping[str, Any]) -> dict[str, Any]:
     if (
         spawn["available"] is not True
         or spawn["contract_version"] != "v2"
-        or spawn["tool_namespace"] != "agents"
+        or spawn["tool_namespace"] != "collaboration"
         or spawn["hide_spawn_agent_metadata"] is not False
     ):
         raise RuntimeProofError("capability snapshot V2 selection contract drifted")
@@ -169,7 +170,6 @@ def _snapshot_projection(snapshot: Mapping[str, Any]) -> dict[str, Any]:
         "message",
         "model",
         "reasoning_effort",
-        "service_tier",
         "task_name",
     ]
     expected_readback = [
@@ -185,7 +185,7 @@ def _snapshot_projection(snapshot: Mapping[str, Any]) -> dict[str, Any]:
     ]
     if spawn["request_fields"] != expected_requests:
         raise RuntimeProofError("capability snapshot V2 request fields drifted")
-    if spawn["response_fields"] != ["nickname", "task_name"]:
+    if spawn["response_fields"] != ["agent_id", "nickname", "task_name"]:
         raise RuntimeProofError("capability snapshot V2 response fields drifted")
     if spawn["runtime_receipt_sources"] != ["session_meta", "turn_context"]:
         raise RuntimeProofError("capability snapshot V2 receipt sources drifted")
@@ -199,7 +199,7 @@ def _snapshot_projection(snapshot: Mapping[str, Any]) -> dict[str, Any]:
         if spawn[field] is not True:
             raise RuntimeProofError(f"capability snapshot must enable {field}")
     if spawn["per_child_sandbox"] is not False:
-        raise RuntimeProofError("Codex 0.145.0 does not support per-child sandbox override")
+        raise RuntimeProofError("Codex 0.146.0 does not support per-child sandbox override")
     operations = collaboration.get("operations")
     if operations != [
         "followup_task",
@@ -341,59 +341,50 @@ def _profile_facts() -> list[dict[str, str]]:
     return facts
 
 
-def _project_agent_facts() -> dict[str, Any]:
+def _source_agent_facts() -> dict[str, Any]:
     expected = {
         f"{runtime_name}.toml" for runtime_name in renderer.RUNTIME_AGENT_NAMES.values()
     }
     try:
-        children = list(PROJECT_AGENTS.iterdir())
+        children = list((PLUGIN_ROOT / "agents").iterdir())
     except OSError as exc:
-        raise RuntimeProofError("project agent discovery directory is unreadable") from exc
+        raise RuntimeProofError("source agent directory is unreadable") from exc
     actual = {child.name for child in children}
     if actual != expected:
-        raise RuntimeProofError("project agent discovery inventory drifted")
+        raise RuntimeProofError("source agent inventory drifted")
     files: list[dict[str, str]] = []
     for filename in sorted(expected):
-        project_content = _read_regular(
-            PROJECT_AGENTS / filename, "project agent discovery profile", 1024 * 1024
-        )
         source_content = _read_regular(
             PLUGIN_ROOT / "agents" / filename, "source agent profile", 1024 * 1024
         )
-        if project_content != source_content:
-            raise RuntimeProofError("project agent discovery bytes drifted")
-        files.append({"filename": filename, "sha256": _sha256(project_content)})
+        files.append({"filename": filename, "sha256": _sha256(source_content)})
     return {
-        "location": ".codex/agents",
+        "location": "plugins/verified-workflows/agents",
         "regular_files_only": True,
-        "source_bytes_match": True,
         "files": files,
     }
 
 
-def _project_profile_expectation(profile: str) -> dict[str, str]:
+def _source_profile_expectation(profile: str) -> dict[str, str]:
     if not TASK_NAME_RE.fullmatch(profile):
         raise RuntimeProofError("profile name is invalid")
     source = PLUGIN_ROOT / "agents" / f"{profile}.toml"
-    installed = PROJECT_AGENTS / f"{profile}.toml"
     source_bytes = _read_regular(source, "source profile", 1024 * 1024)
-    installed_bytes = _read_regular(installed, "project-discovered profile", 1024 * 1024)
-    if source_bytes != installed_bytes:
-        raise RuntimeProofError("project profile bytes do not match source")
     try:
         payload = tomllib.loads(source_bytes.decode("utf-8"))
     except (UnicodeDecodeError, tomllib.TOMLDecodeError) as exc:
         raise RuntimeProofError("source profile is invalid TOML") from exc
     model = payload.get("model")
     effort = payload.get("model_reasoning_effort")
-    sandbox = payload.get("sandbox_mode")
-    if not all(isinstance(value, str) for value in (model, effort, sandbox)):
-        raise RuntimeProofError("source profile lacks model, effort, or sandbox")
+    if not all(isinstance(value, str) for value in (model, effort)):
+        raise RuntimeProofError("source profile lacks model or effort")
+    if "sandbox_mode" in payload:
+        raise RuntimeProofError("source profile duplicates inherited sandbox policy")
     return {
         "agent_role": profile,
         "model": model,
         "reasoning_effort": effort,
-        "sandbox_mode": sandbox,
+        "sandbox_mode": "read-only",
         "sha256": _sha256(source_bytes),
     }
 
@@ -423,7 +414,7 @@ def run_live_probe(
 ) -> dict[str, Any]:
     if not TASK_NAME_RE.fullmatch(task_name):
         raise RuntimeProofError("task name is invalid")
-    expected_profile = _project_profile_expectation(profile)
+    expected_profile = _source_profile_expectation(profile)
     if expected_profile["sandbox_mode"] != "read-only":
         raise RuntimeProofError("the minimal V2 live probe requires a read-only profile")
     codex_home = Path(os.environ.get("CODEX_HOME", Path.home() / ".codex")).expanduser()
@@ -436,43 +427,61 @@ def run_live_probe(
     prompt = (
         f"Retain this root-only marker and never include it in the child message: "
         f"{PARENT_ONLY_MARKER}. Use spawn_agent exactly once with task_name {task_name}, "
-        f"agent_type {profile}, "
-        f"fork_turns none, model {expected_profile['model']}, and reasoning_effort "
-        f"{expected_profile['reasoning_effort']}. Ask the child to return exactly "
-        f"{TERMINAL_MARKER} and do nothing else. Use list_agents and wait_agent until it "
-        f"completes. Return exactly {ROOT_MARKER}."
+        f"agent_type {profile}, fork_turns none, model {expected_profile['model']}, and "
+        f"reasoning_effort {expected_profile['reasoning_effort']}. Ask the child to return "
+        f"exactly {TERMINAL_MARKER} and do nothing else. Use list_agents and wait_agent until "
+        f"it completes. Return exactly {ROOT_MARKER}."
     )
     env = os.environ.copy()
     env["CODEX_HOME"] = str(codex_home)
-    argv = [
-        "codex",
-        "exec",
-        "--json",
-        "--ignore-rules",
-        "--strict-config",
-        "-C",
-        str(REPO_ROOT),
-        "--sandbox",
-        "read-only",
-        "-m",
-        "gpt-5.6-sol",
-        "-c",
-        'model_reasoning_effort="max"',
-        "-c",
-        f"model_catalog_json={json.dumps(str(native_catalog_path))}",
-        prompt,
-    ]
-    try:
-        result = subprocess.run(
-            argv,
-            check=False,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            timeout=240,
-            env=env,
+    with tempfile.TemporaryDirectory(prefix="verified-workflows-canary-") as raw_workspace:
+        # macOS exposes its temporary root through /var, a symlink to /private/var.
+        # Normalize it before applying the isolated-target symlink guard.
+        workspace = Path(raw_workspace).resolve()
+        agents_dir = workspace / ".codex" / "agents"
+        agents_dir.parent.mkdir(mode=0o700)
+        target = profile_sync.resolve_target(agents_dir, isolated_target=True)
+        plan = profile_sync.build_plan(
+            target,
+            catalog_snapshot=DEFAULT_SNAPSHOT,
         )
-    except subprocess.TimeoutExpired as exc:
-        raise RuntimeProofError("Codex V2 live probe timed out") from exc
+        profile_sync.apply_sync(plan)
+        argv = [
+            "codex",
+            "exec",
+            "--json",
+            "--ignore-rules",
+            "--strict-config",
+            "--skip-git-repo-check",
+            "-C",
+            str(workspace),
+            "--sandbox",
+            "read-only",
+            "-m",
+            "gpt-5.6-sol",
+            "-c",
+            'model_reasoning_effort="max"',
+            "-c",
+            "features.multi_agent=true",
+            "-c",
+            "features.multi_agent_v2=true",
+            "-c",
+            "agents.max_depth=2",
+            "-c",
+            f"model_catalog_json={json.dumps(str(native_catalog_path))}",
+            prompt,
+        ]
+        try:
+            result = subprocess.run(
+                argv,
+                check=False,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                timeout=240,
+                env=env,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise RuntimeProofError("Codex V2 live probe timed out") from exc
     if len(result.stdout) > MAX_BYTES or len(result.stderr) > MAX_BYTES:
         raise RuntimeProofError("Codex V2 live probe exceeded the output ceiling")
     if result.returncode:
@@ -577,7 +586,7 @@ def build_proof(
         raise RuntimeProofError("authenticated live proof requires a runtime receipt")
     elif live:
         outcome = "supported"
-        reason = "current-session Codex V2 rollout attests project profile and effective runtime fields"
+        reason = "current-session Codex V2 rollout attests isolated source profile and effective runtime fields"
     elif runtime_receipt is not None:
         raise RuntimeProofError("a runtime receipt requires --live")
     else:
@@ -598,12 +607,12 @@ def build_proof(
         "runtime_readback_fields": projection["spawn"]["selection_readback_fields"],
         "operations": projection["operations"],
         "profiles": _profile_facts(),
-        "project_discovery": _project_agent_facts(),
+        "source_profiles": _source_agent_facts(),
         "live_invocation_performed": runtime_receipt is not None,
         "runtime_receipt": runtime_receipt,
         "limitations": [
-            "Codex 0.145.0 child permissions inherit the parent turn after profile loading",
-            "this minimal probe covers one read-only child; the receipt-derived matrix covers the full operation set",
+            "Codex 0.146.0 child permissions inherit the parent turn after profile loading",
+            "this candidate canary covers one disposable read-only child",
             "requested spawn fields are never accepted as runtime identity without session_meta and turn_context",
         ],
     }

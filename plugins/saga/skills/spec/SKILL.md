@@ -66,14 +66,13 @@ routing table here).
 
 ## Interaction method
 
-Use `Codex blocking question` for **routing** decisions only — where to route next, which open question to
-resolve first (call `ToolSearch` with `blocking question` first if its schema is not loaded). Use
-**free-form** for the substantive interrogation (the five-Why, scope, technical categories): those
-answers are inherently narrative and menu options would nudge them. Ask in tight rounds; never silently
-skip a question.
+Follow `../../references/operator-choice.md` for **routing** decisions only—where to route next and
+which open question to resolve first. Use **free-form** for the substantive interrogation (the
+five-Why, scope, technical categories): those answers are inherently narrative and menu options
+would nudge them. Ask in tight rounds; never silently skip a question.
 
-In a channel session (`redis-channel` active), `Codex blocking question` cannot be called — inline the choices
-in your reply text instead, following the canonical channel-inline convention in
+In a channel session (`redis-channel` active), inline the choices in your reply text instead,
+following the canonical channel-inline convention in
 `saga/skills/brainstorm/SKILL.md` (do not duplicate its wording here).
 
 Use repo-relative paths in everything you write — absolute paths break portability across worktrees.

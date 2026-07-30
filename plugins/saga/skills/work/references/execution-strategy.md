@@ -69,9 +69,10 @@ constraints below mitigate them.
 
 ## Subagent dispatch (U-ID preservation)
 
-Use the generic `Explore` / `Task` agents (this plugin has no `agents/` dir — do **not** reference named
-`ce-*` agents). For each unit, give the subagent: the full plan path (overall context), the unit's Goal /
-Files / Approach / Execution note / Patterns / Test scenarios / Verification, any resolved
+When implementation delegation is explicitly authorized, use `worker` agents. Otherwise execute
+inline. This plugin has no `agents/` directory; do **not** reference named `ce-*` agents. For each
+delegated unit, give the subagent: the full plan path (overall context), the unit's Goal / Files /
+Approach / Execution note / Patterns / Test scenarios / Verification, any resolved
 deferred-implementation questions, and the instruction to check the unit's test scenarios against all
 four applicable categories (happy / edge / error / integration) and supplement gaps. **Preserve the
 U-ID** in the dispatch and in everything the subagent reports back.
@@ -135,8 +136,8 @@ broad-independent-fanout, or adversarial-confidence review need independently re
 reachable backend **independent of which one won precedence**, so an overlap job (consensus AND
 fan-out) still offers both — escalation stays one step (operator-choice §3.3).
 
-Surface the recommendation with `Codex blocking question` (or channel-inline) pre-selecting
-`recommended`, listing `alternatives`. `source_workflow_excluded=true` means Codex has intentionally
+Surface the recommendation through the native operator-choice contract (or channel-inline),
+pre-selecting `recommended` and listing `alternatives`. `source_workflow_excluded=true` means Codex has intentionally
 removed the source-only workflow backend from the offer. If the operator picks `verified-workflow` but
 delegation is unavailable or backpressured, use serial Verified Workflows with the selected roles and
 validators. If Verified Workflows itself is unsafe or impossible, halt for repair or record an explicit

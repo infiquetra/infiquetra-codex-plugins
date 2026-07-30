@@ -45,7 +45,6 @@ def test_active_guidance_and_runtime_have_no_v1_or_retired_chain_fallback() -> N
         PLUGIN / "README.md",
         PLUGIN / "skills" / "run" / "SKILL.md",
         PLUGIN / "skills" / "review-workflow" / "SKILL.md",
-        PLUGIN / "skills" / "select-agent" / "SKILL.md",
         ROOT / "plugins" / "saga" / "references" / "operator-choice.md",
     )
     forbidden_guidance = (
@@ -80,7 +79,6 @@ def test_runtime_scripts_do_not_import_sibling_workflow_plugins() -> None:
     legacy_plugin_path = "plugins/" + "team-" + "execution"
     for path in (
         PLUGIN / "scripts" / "workflow_dispatch.py",
-        PLUGIN / "scripts" / "workflow_feasibility.py",
         PLUGIN / "scripts" / "gate_evaluator.py",
         PLUGIN / "scripts" / "protocol_probe.py",
         PLUGIN / "scripts" / "result_contract.py",

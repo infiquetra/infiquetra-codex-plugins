@@ -17,7 +17,6 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from engine_overlay import EngineOverlay, load_overlay, overlay_fingerprint  # noqa: E402
 from engine_registry import (
     PANEL_N_CAP as PANEL_N_CAP,
 )
@@ -48,9 +47,7 @@ class Resolution:
     write_capable: bool
     fallback: str | None
     halt: str | None
-    # Row-driven invocation data (base_url/model/auth/effort/via) for transport-keyed dispatch.
-    # Additive and defaulted (R11): existing callers/tests that construct a Resolution without it
-    # stay byte-identical; ``transport: http`` dispatch reads it in ``engine_dispatch._build_invocation``.
+    # Row-driven invocation data (base_url/model/auth/effort/via) for the one-shot harness.
     invocation: dict[str, Any] | None = None
     cost_per_token: dict[str, float] | None = None
     cost_class: str | None = None
@@ -83,14 +80,14 @@ class RunMemo:
     today's uncached behavior (R5/R11) -- this is strictly opt-in.
 
     Keys: ``engine_id`` for legacy preflight probes, ``entry.key`` for row-backed
-    probes, ``(capability, token_estimate, role_kind, overlay_fingerprint)`` for capability
+    probes, ``(capability, token_estimate, role_kind)`` for capability
     resolution decisions, and
     ``(unit_id, protocol_hash, context_hash)`` for assembled dispatch payloads.
     """
 
     def __init__(self) -> None:
         self._preflight: dict[str, dict[str, bool | str]] = {}
-        self._capability: dict[tuple[str, int | None, str, str], _CapabilityDecision] = {}
+        self._capability: dict[tuple[str, int | None, str], _CapabilityDecision] = {}
         self._payload: dict[tuple[str, str, str], str] = {}
         self.last_payload_cache_status: str = ""
 
@@ -105,9 +102,8 @@ class RunMemo:
         capability: str,
         token_estimate: int | None,
         role_kind: str,
-        overlay_key: str = "",
     ) -> _CapabilityDecision | None:
-        return self._capability.get((capability, token_estimate, role_kind, overlay_key))
+        return self._capability.get((capability, token_estimate, role_kind))
 
     def store_capability_decision(
         self,
@@ -115,9 +111,8 @@ class RunMemo:
         token_estimate: int | None,
         decision: _CapabilityDecision,
         role_kind: str,
-        overlay_key: str = "",
     ) -> None:
-        self._capability[(capability, token_estimate, role_kind, overlay_key)] = decision
+        self._capability[(capability, token_estimate, role_kind)] = decision
 
     def payload(self, unit_id: str, protocol_hash: str, context_hash: str) -> str | None:
         cached = self._payload.get((unit_id, protocol_hash, context_hash))
@@ -338,8 +333,6 @@ def resolve(
     registry: Registry,
     memo: RunMemo | None = None,
     known_revision_dates: Mapping[str, Any] | None = None,
-    repo_root: Path | str | None = None,
-    overlay: EngineOverlay | None = None,
 ) -> Resolution:
     """Resolve a capability or explicit engine request into the U2 contract."""
     if mode not in MODES:
@@ -353,7 +346,6 @@ def resolve(
     capability, engine = _request_target(request)
 
     if capability is not None:
-        effective_overlay = _effective_overlay(repo_root=repo_root, overlay=overlay)
         return _resolve_capability(
             capability,
             role_kind=role_kind,
@@ -361,7 +353,6 @@ def resolve(
             registry=registry,
             memo=memo,
             known_revision_dates=release_dates,
-            overlay=effective_overlay,
         )
 
     if engine is None:
@@ -461,12 +452,10 @@ def _resolve_capability(
     registry: Registry,
     memo: RunMemo | None = None,
     known_revision_dates: Mapping[str, Any] | None = None,
-    overlay: EngineOverlay | None = None,
 ) -> Resolution:
     token_estimate = _token_estimate(task_context)
-    overlay_key = overlay_fingerprint(overlay)
     decision = (
-        memo.capability_decision(capability, token_estimate, role_kind, overlay_key)
+        memo.capability_decision(capability, token_estimate, role_kind)
         if memo is not None
         else None
     )
@@ -475,7 +464,6 @@ def _resolve_capability(
             capability,
             registry,
             role_kind=role_kind,
-            overlay=overlay,
         )
         if memo is not None:
             memo.store_capability_decision(
@@ -483,7 +471,6 @@ def _resolve_capability(
                 token_estimate,
                 decision,
                 role_kind,
-                overlay_key,
             )
 
     if decision.no_capability_reason is not None:
@@ -523,10 +510,9 @@ def _decide_capability(
     registry: Registry,
     *,
     role_kind: str,
-    overlay: EngineOverlay | None = None,
 ) -> _CapabilityDecision:
     try:
-        candidates = registry.ranked_candidates(capability, overlay=overlay)
+        candidates = registry.ranked_candidates(capability)
     except RegistryError as exc:
         message = str(exc)
         no_candidate = (
@@ -559,18 +545,6 @@ def _decide_capability(
         )
 
     return _CapabilityDecision(entry=entry, no_capability_reason=None, no_fit_reason=None)
-
-
-def _effective_overlay(
-    *,
-    repo_root: Path | str | None,
-    overlay: EngineOverlay | None,
-) -> EngineOverlay | None:
-    if overlay is not None:
-        return overlay
-    if repo_root is None:
-        return None
-    return load_overlay(repo_root)
 
 
 def _resolve_entry(

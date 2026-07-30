@@ -71,13 +71,13 @@ not a competitor to any of them.
 
 ## Interaction method
 
-Use `Codex blocking question` for choices from a known set (mode = Route / Drive / Resume, destination,
-resume-vs-fresh, doc-review override, the `/resume` opt-in). Call `ToolSearch` with
-`blocking question` first if its schema is not loaded. Ask one question per turn; prefer a concise
-single-select when natural options exist. For open-ended discussion, ask inline in chat.
+Follow `../../references/operator-choice.md` for choices from a known set (mode = Route / Drive /
+Resume, destination, resume-vs-fresh, doc-review override, the `/resume` opt-in). Ask one question
+per turn; prefer a concise single-select when natural options exist. For open-ended discussion, ask
+inline in chat.
 
-In a channel session (`redis-channel` active), `Codex blocking question` cannot be called — inline the choices
-in your reply text instead. Follow the canonical channel-inline convention in
+In a channel session (`redis-channel` active), inline the choices in your reply text instead. Follow
+the canonical channel-inline convention in
 `saga/skills/brainstorm/SKILL.md` (do not duplicate its wording here).
 
 Use repo-relative paths in every generated document and every routing tick. Absolute paths break

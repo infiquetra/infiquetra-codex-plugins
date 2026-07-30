@@ -1,0 +1,32 @@
+[
+  {
+    "source_plugin": "codex-cli",
+    "source_version": "0.146.0",
+    "current_codex_identity": "verified-workflows",
+    "current_codex_version": "2.1.0+codex.20260727035515",
+    "target_codex_identity": "verified-workflows",
+    "target_codex_version": "3.0.0+codex.20260729164721",
+    "policy": "native-harness-alignment",
+    "release_unit": "U6"
+  },
+  {
+    "source_plugin": "codex-cli",
+    "source_version": "0.146.0",
+    "current_codex_identity": "saga",
+    "current_codex_version": "0.82.0+codex.20260727035515",
+    "target_codex_identity": "saga",
+    "target_codex_version": "0.83.0+codex.20260729205037",
+    "policy": "native-harness-alignment",
+    "release_unit": "U6"
+  },
+  {
+    "source_plugin": "codex-cli",
+    "source_version": "0.146.0",
+    "current_codex_identity": "fleet-core",
+    "current_codex_version": "0.13.0+codex.20260726234500",
+    "target_codex_identity": "fleet-core",
+    "target_codex_version": "0.14.0+codex.20260729164721",
+    "policy": "native-harness-alignment",
+    "release_unit": "U6"
+  }
+]

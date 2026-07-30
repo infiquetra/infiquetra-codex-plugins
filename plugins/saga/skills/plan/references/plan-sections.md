@@ -257,7 +257,8 @@ scoring, is thin and warrants the pass. A plan where scoring finds nothing exits
 
 Strengthen **only the selected top 2-5 sections** in place — clarify rationale, tighten requirements
 trace, reorder/split units (never renumber existing U-IDs), add missing pattern/test-file paths, expand
-risk/rollout treatment. Dispatch generic `Explore` / `Task` agents (not `ce-*` agents), at most ~1-3
-per section. Do not rewrite the whole plan, do not add implementation code, do not invent new product
-requirements (record a product-level ambiguity under Open Questions and recommend `/brainstorm`). Add
+risk/rollout treatment. With explicitly authorized delegation, dispatch `explorer` agents (not
+`ce-*` agents), at most ~1-3 per section; otherwise deepen inline. Do not rewrite the whole plan, do
+not add implementation code, do not invent new product requirements (record a product-level
+ambiguity under Open Questions and recommend `/brainstorm`). Add
 `deepened: YYYY-MM-DD` to frontmatter when the plan was substantively improved.

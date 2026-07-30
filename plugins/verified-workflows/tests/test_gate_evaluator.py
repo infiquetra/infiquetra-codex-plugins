@@ -67,8 +67,7 @@ def valid_authorities() -> dict[str, dict[str, str]]:
     for spec in contract().launch_specs:
         if spec.agent_type is None:
             continue
-        fresh = spec.assignment_id == "review"
-        root = "fresh-review-root-1" if fresh else "implementation-root"
+        root = "implementation-root"
         values[spec.assignment_id] = {
             "attempt_id": f"{spec.assignment_id}-attempt-1",
             "session_id": f"{spec.assignment_id}-session",
@@ -135,7 +134,7 @@ def test_arithmetic_mismatch_fails_closed() -> None:
         evaluate(results=results)
 
 
-def test_average_below_nine_blocks() -> None:
+def test_average_below_nine_is_advisory() -> None:
     results = valid_results()
     results["review"]["dimensions"] = [
         {"dimension_id": item["dimension_id"], "score": 8.0, "notes": "needs work"}
@@ -144,19 +143,19 @@ def test_average_below_nine_blocks() -> None:
     results["review"]["denominator"] = 5
     results["review"]["overall"] = 8.0
     decision = evaluate(results=results)
-    assert decision["verdict"] == "block"
-    assert "below 9.0" in " ".join(decision["blocking_reasons"])
+    assert decision["verdict"] == "pass"
+    assert decision["blocking_reasons"] == []
 
 
-def test_dimension_below_seven_blocks() -> None:
+def test_dimension_below_seven_is_advisory() -> None:
     results = valid_results()
     results["review"]["dimensions"][0]["score"] = 6.0
     results["review"]["dimensions"][0]["notes"] = "bad"
     results["review"]["denominator"] = 5
     results["review"]["overall"] = 9.2
     decision = evaluate(results=results)
-    assert decision["verdict"] == "block"
-    assert "below 7.0" in " ".join(decision["blocking_reasons"])
+    assert decision["verdict"] == "pass"
+    assert decision["blocking_reasons"] == []
 
 
 @pytest.mark.parametrize(
@@ -164,7 +163,6 @@ def test_dimension_below_seven_blocks() -> None:
     [
         ({"severity": "P0"}, "unresolved P0"),
         ({"severity": "P1"}, "unresolved P1"),
-        ({"severity": "P2", "category": "security"}, "unresolved security"),
         ({"severity": "P2", "hard_stop": True}, "role hard stop"),
     ],
 )
@@ -185,12 +183,34 @@ def test_missing_attempt_authority_fails_closed() -> None:
         evaluate(attempt_authorities=authorities)
 
 
-def test_implementation_root_or_reused_review_root_is_not_independent() -> None:
+def test_all_assignments_must_share_the_native_root() -> None:
     authorities = valid_authorities()
-    authorities["review"]["execution_root_id"] = "implementation-root"
-    authorities["review"]["parent_thread_id"] = "implementation-root"
-    with pytest.raises(G.GateEvaluationError, match="reuses the implementation root"):
+    authorities["review"]["execution_root_id"] = "different-root"
+    with pytest.raises(G.GateEvaluationError, match="execution root"):
         evaluate(attempt_authorities=authorities)
+
+
+def test_security_category_alone_does_not_block() -> None:
+    results = valid_results()
+    item = finding()
+    item.update({"category": "security", "scope_disposition": "defer"})
+    results["review"]["findings"] = [item]
+    decision = evaluate(results=results)
+    assert decision["verdict"] == "pass"
+
+
+@pytest.mark.parametrize("severity", ["P0", "P1"])
+def test_defer_cannot_bypass_unresolved_critical_finding(severity: str) -> None:
+    results = valid_results()
+    item = finding()
+    item.update({"severity": severity, "scope_disposition": "defer"})
+    results["review"]["findings"] = [item]
+
+    decision = evaluate(results=results)
+
+    assert decision["verdict"] == "block"
+    assert decision["root_release"] is False
+    assert f"unresolved {severity}" in " ".join(decision["blocking_reasons"])
 
 
 def test_result_cannot_select_its_own_attempt_identity() -> None:
@@ -236,6 +256,29 @@ def test_unresolved_finding_after_one_remediation_escalates() -> None:
     results = valid_results()
     results["review"]["findings"] = [finding()]
     decision = evaluate(results=results, remediation_round=1)
+    assert decision["verdict"] == "escalate"
+    assert decision["next_remediation_round"] is None
+
+
+def test_one_hop_budget_is_global_and_second_issue_escalates() -> None:
+    results = valid_results()
+    first = finding()
+    first["scope_disposition"] = "one-hop"
+    second = finding()
+    second.update({"finding_id": "finding-2", "scope_disposition": "one-hop"})
+    results["review"]["findings"] = [first, second]
+    decision = evaluate(results=results)
+    assert decision["verdict"] == "escalate"
+    assert decision["deviation_used"] is True
+    assert "more than one unplanned one-hop" in " ".join(decision["blocking_reasons"])
+
+
+def test_approval_required_escalates_without_automatic_repair() -> None:
+    results = valid_results()
+    item = finding()
+    item["scope_disposition"] = "approval-required"
+    results["review"]["findings"] = [item]
+    decision = evaluate(results=results)
     assert decision["verdict"] == "escalate"
     assert decision["next_remediation_round"] is None
 

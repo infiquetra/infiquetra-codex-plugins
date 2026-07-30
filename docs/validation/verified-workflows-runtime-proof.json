@@ -1,11 +1,11 @@
 {
   "capability_outcome": "diagnostic",
   "claim": "codex-v2-runtime-capability",
-  "codex_cli_version": "0.145.0",
-  "harness_sha256": "3c918e52f4377da71cbf8e42281521e3f6d9b229bd9a7f71a677590660847acc",
+  "codex_cli_version": "0.146.0",
+  "harness_sha256": "7d688964c1ebfea1a358e85ebfee49c22d6752698eedaf3379617f1d30993300",
   "limitations": [
-    "Codex 0.145.0 child permissions inherit the parent turn after profile loading",
-    "this minimal probe covers one read-only child; the receipt-derived matrix covers the full operation set",
+    "Codex 0.146.0 child permissions inherit the parent turn after profile loading",
+    "this candidate canary covers one disposable read-only child",
     "requested spawn fields are never accepted as runtime identity without session_meta and turn_context"
   ],
   "live_invocation_performed": false,
@@ -22,74 +22,39 @@
     {
       "profile_id": "review_max",
       "runtime_agent_name": "review_max",
-      "sha256": "e8594bedca2dc55c515d8cb26180c7c1c3deaa2a75c0b2947584f3e6350bf1a4"
+      "sha256": "93f3ea42b60504e3659f01f94987d454a62cf8927eb84f0ec4adedd7ec2c5492"
     },
     {
       "profile_id": "review_high",
       "runtime_agent_name": "review_high",
-      "sha256": "cb52462ff05bb292c55711c6d51a71fddfa52ba1ca159fa6d91d2479e82ffd4f"
+      "sha256": "5becbc26b7ba9c6162f179299a481ac3f804b57613fb1c8bcc97eceade10e70f"
     },
     {
       "profile_id": "work_medium",
       "runtime_agent_name": "work_medium",
-      "sha256": "657767e357de096bd342c7bad7df7d32bd790846f88718a40a188abf791fc75b"
+      "sha256": "7ec4af44fe7bac4d03b65355bfbc1b3f59b0036ad2436bd229adb8d02141b0fc"
     },
     {
       "profile_id": "work_high",
       "runtime_agent_name": "work_high",
-      "sha256": "2130ec45570e45c32175b2de87b1e666c43c83dcb520b65d3e2ce89668a029a3"
+      "sha256": "a5a870e3931f4fc125ffba7f4ccdba71d0306e27625391d04b8bcbd8f6dca9e5"
     },
     {
       "profile_id": "test_medium",
       "runtime_agent_name": "test_medium",
-      "sha256": "1c05e5cfce139fec97fed352b55dca03fa3d7e71b9c57759763fb7de8fe983bb"
+      "sha256": "bc82be2248c1046b8d1889b810fdca3471776e0a22012b244579dc6b31c92803"
     },
     {
       "profile_id": "scan_low",
       "runtime_agent_name": "scan_low",
-      "sha256": "7590bfcc09c116aedd147e2054279105e017847b889570353a21ea09c4d85b65"
+      "sha256": "cfc37e5c3a4e4ad7a52a579caf80a8fd8c2bfc16bed24850ddadd85934476185"
     },
     {
       "profile_id": "monitor_low",
       "runtime_agent_name": "monitor_low",
-      "sha256": "f606d01ae1e270a3076f3baca59f95b77a79af19ca5ade41a04f0132b4407a38"
+      "sha256": "6d0b4f4811705750eb36b47ffabd674eddf32cd01ea2bc06e4e8f89943f74cd1"
     }
   ],
-  "project_discovery": {
-    "files": [
-      {
-        "filename": "monitor_low.toml",
-        "sha256": "f606d01ae1e270a3076f3baca59f95b77a79af19ca5ade41a04f0132b4407a38"
-      },
-      {
-        "filename": "review_high.toml",
-        "sha256": "cb52462ff05bb292c55711c6d51a71fddfa52ba1ca159fa6d91d2479e82ffd4f"
-      },
-      {
-        "filename": "review_max.toml",
-        "sha256": "e8594bedca2dc55c515d8cb26180c7c1c3deaa2a75c0b2947584f3e6350bf1a4"
-      },
-      {
-        "filename": "scan_low.toml",
-        "sha256": "7590bfcc09c116aedd147e2054279105e017847b889570353a21ea09c4d85b65"
-      },
-      {
-        "filename": "test_medium.toml",
-        "sha256": "1c05e5cfce139fec97fed352b55dca03fa3d7e71b9c57759763fb7de8fe983bb"
-      },
-      {
-        "filename": "work_high.toml",
-        "sha256": "2130ec45570e45c32175b2de87b1e666c43c83dcb520b65d3e2ce89668a029a3"
-      },
-      {
-        "filename": "work_medium.toml",
-        "sha256": "657767e357de096bd342c7bad7df7d32bd790846f88718a40a188abf791fc75b"
-      }
-    ],
-    "location": ".codex/agents",
-    "regular_files_only": true,
-    "source_bytes_match": true
-  },
   "reason": "source and configuration contract only; no live runtime receipt supplied",
   "runtime_readback_fields": [
     "agent_path",
@@ -104,19 +69,53 @@
   ],
   "runtime_receipt": null,
   "schema_version": 2,
-  "snapshot_sha256": "f89c79db0f511fe1804ba50fa3673ae53a9a4440cd9b5039c82d93cf0f33dde2",
+  "snapshot_sha256": "c53a5878c180a595186fa145dc24f2c270644802681c49ec239f2968ece5e2e4",
+  "source_profiles": {
+    "files": [
+      {
+        "filename": "monitor_low.toml",
+        "sha256": "6d0b4f4811705750eb36b47ffabd674eddf32cd01ea2bc06e4e8f89943f74cd1"
+      },
+      {
+        "filename": "review_high.toml",
+        "sha256": "5becbc26b7ba9c6162f179299a481ac3f804b57613fb1c8bcc97eceade10e70f"
+      },
+      {
+        "filename": "review_max.toml",
+        "sha256": "93f3ea42b60504e3659f01f94987d454a62cf8927eb84f0ec4adedd7ec2c5492"
+      },
+      {
+        "filename": "scan_low.toml",
+        "sha256": "cfc37e5c3a4e4ad7a52a579caf80a8fd8c2bfc16bed24850ddadd85934476185"
+      },
+      {
+        "filename": "test_medium.toml",
+        "sha256": "bc82be2248c1046b8d1889b810fdca3471776e0a22012b244579dc6b31c92803"
+      },
+      {
+        "filename": "work_high.toml",
+        "sha256": "a5a870e3931f4fc125ffba7f4ccdba71d0306e27625391d04b8bcbd8f6dca9e5"
+      },
+      {
+        "filename": "work_medium.toml",
+        "sha256": "7ec4af44fe7bac4d03b65355bfbc1b3f59b0036ad2436bd229adb8d02141b0fc"
+      }
+    ],
+    "location": "plugins/verified-workflows/agents",
+    "regular_files_only": true
+  },
   "spawn_request_fields": [
     "agent_type",
     "fork_turns",
     "message",
     "model",
     "reasoning_effort",
-    "service_tier",
     "task_name"
   ],
   "spawn_response_fields": [
+    "agent_id",
     "nickname",
     "task_name"
   ],
-  "tool_namespace": "agents"
+  "tool_namespace": "collaboration"
 }

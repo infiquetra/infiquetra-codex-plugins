@@ -2,6 +2,20 @@
 
 All notable changes to the Codex `fleet-core` plugin are documented here.
 
+## 0.14.0 — 2026-07-29
+
+### Changed
+
+- Narrow Fleet Core to model/profile resolution, bridge and output proof, shims, leases,
+  concurrency, orphan evidence, workflow compatibility, and a stateless bounded 429 helper.
+- Preserve `retry_with_backoff` for existing UniFi consumers while removing plugin-owned
+  circuit-breaker and cross-call retry state.
+
+### Removed
+
+- Remove audit and delegation stores, effort riders, cost weights, the tier-table runtime renderer,
+  and their tests. Codex 0.146 owns child lifecycle and liveness; callers own domain policy.
+
 ## 0.13.0 — 2026-07-26
 
 ### Added

@@ -3,7 +3,7 @@
 ## Contract Metadata
 
 - Status: canonical
-- Runbook version: `3`
+- Runbook version: `4`
 - Machine contract: `ports/<date>-<scope>.json`
 - Contract tool: `../../scripts/port_contract.py`
 - Digest rule: the machine contract stores the SHA-256 of the exact UTF-8 runbook bytes.
@@ -78,17 +78,15 @@ or persist raw catalog instructions.
 
 A feature flag, file on disk, requested model, or caller boolean is not execution proof. A current
 spawn interface that lacks model, effort, profile, or sandbox selectors cannot dynamically enforce
-them. For Sol/Terra MultiAgent V2, first verify whether metadata was hidden by configuration before
-classifying the capability unavailable. The verified bootstrap uses
-`hide_spawn_agent_metadata=false` and a non-reserved `tool_namespace="agents"`; setting only the
-first field under reserved `collaboration` can be rejected by the backend. Custom-agent files may
-configure model, effort, and sandbox intent, but current V2 reapplies the live parent permission
-profile after role selection. Named-profile work must dispatch `agent_type` with `fork_turns=none`
-or a positive bounded value, verify child role/model/effort from host-issued rollout context, and
-verify effective permission separately. Use a permission-homogeneous parent when a boundary matters:
-read-only children beneath read-only, write-capable testers beneath workspace-write. Omitted or `all`
-is a full-history fork that inherits the parent agent type, model, and effort. Goal is continuation
-only. Claude Workflow and fork are not active leaf backends.
+them. Codex 0.146 exposes MultiAgent V2 through the native `collaboration` namespace. Do not add a
+project namespace override or metadata-visibility workaround. Custom-agent files configure model and
+effort intent, but current V2 reapplies the live parent permission profile after role selection.
+Named-profile work dispatches `agent_type` with `fork_turns=none` or a positive bounded value,
+without redundant model/effort overrides, then verifies child role/model/effort from host-issued rollout context
+and effective permission separately. Use a permission-homogeneous parent when a
+boundary matters: read-only children beneath read-only, write-capable testers beneath
+workspace-write. Omitted or `all` is a full-history fork that inherits the parent agent type, model,
+and effort. Goal is continuation only. Claude Workflow and fork are not active leaf backends.
 
 Choose a Codex surface only when the runtime supports the required behavior:
 
@@ -140,10 +138,11 @@ model, effort, sandbox, and tool boundary. Keep the durable execution-class ID s
 Codex runtime agent name: workflow vocabulary may use kebab case, while current native agent names
 must use lowercase letters, digits, and underscores. A deterministic validator has no model class.
 
-Planning selects the logical role and risk-adjusted class. Render standalone custom-agent TOML files
-under `.codex/agents/` for project discovery or `$CODEX_HOME/agents/` for personal installation;
-validate their bytes against the plugin source. A config declaration or task name alone is not
-selection proof. Verify the effective V2 namespace/schema and use `agent_type` plus a non-full-history
+Planning selects the logical role and risk-adjusted class. Maintain standalone custom-agent TOML
+files in the owning plugin and render them into `$CODEX_HOME/agents/` only during an explicitly
+authorized profile synchronization; do not maintain duplicate project `.codex/agents/` overrides.
+Validate installed bytes against plugin source. A config declaration or task name alone is not
+selection proof. Verify the effective native V2 schema and use `agent_type` plus a non-full-history
 fork; then compare the first child `turn_context` or equivalent receipt with the selected profile.
 The root Codex thread owns the DAG,
 spawning, status/clarification messages, waiting, integration, and adjudication. Every execution
@@ -189,6 +188,15 @@ independence and blocks required independence.
    receipt.
 10. Pass `validate --stage cutover`, activate exactly one package identity, and verify exact rollback
     of every managed surface.
+
+### Bounded unplanned repair
+
+One unplanned direct blocker may be repaired inside an already approved write set when it adds no
+file, dependency, interface, schema, persistent state, role, cross-plugin/repository work, or live
+mutation. It receives one implementation attempt and one targeted recheck. A second finding, failed
+recheck, broader write set, adjacent causal layer, or new abstraction stops for operator approval.
+Nonblocking adjacent findings are reported and deferred; they do not authorize issue creation or
+remediation.
 
 ## Versioning And Release Policy
 
