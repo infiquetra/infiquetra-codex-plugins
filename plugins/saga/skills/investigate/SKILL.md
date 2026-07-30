@@ -83,15 +83,14 @@ These are **two separate counters** — do **not** merge them into one "3-strike
 
 ## Interaction method
 
-Use `Codex blocking question` for choices from a known set (fix-vs-diagnosis-vs-rethink, an execution backend for
-large/parallel read-only investigation, the trivial-bug fast-path apply/skip). Call `ToolSearch` with
-`blocking question` first if its schema is not loaded; a pending schema load is not a reason to fall
-back. Ask one question per turn; never silently skip a question. Do not ask questions **by default** —
-investigate first (read code, run tests, trace). Ask only when a genuine ambiguity **blocks**
-investigation and cannot be resolved by reading code or running tests.
+Follow `../../references/operator-choice.md` for choices from a known set
+(fix-vs-diagnosis-vs-rethink, an execution backend for large/parallel read-only investigation, the
+trivial-bug fast-path apply/skip). Ask one question per turn; never silently skip a question. Do not
+ask questions **by default**—investigate first (read code, run tests, trace). Ask only when a
+genuine ambiguity **blocks** investigation and cannot be resolved by reading code or running tests.
 
-In a channel session (`redis-channel` active), `Codex blocking question` cannot be called — inline the choices in
-your reply text instead, following the canonical channel-inline convention in
+In a channel session (`redis-channel` active), inline the choices in your reply text instead,
+following the canonical channel-inline convention in
 `saga/skills/brainstorm/SKILL.md` (do not duplicate its wording here).
 
 Use repo-relative paths in every generated document. Absolute paths break portability across machines and
@@ -206,13 +205,14 @@ symptom, keep investigating.
 **Parallel read-only sub-agents (offer).** When hypotheses are **evidence-bottlenecked across clearly
 independent subsystems**, OFFER a backend per `../../references/operator-choice.md` (`inline` /
 `verified-workflow`) to dispatch read-only probes in parallel — each with one
-explicit hypothesis and a structured evidence-return format, **no edits**. Never auto-spawn; skip when
-hypotheses depend on each other. Parallel sub-agents use **generic** `Explore` / `Task` agents (this
-plugin has no `agents/` dir).
+explicit hypothesis and a structured evidence-return format, **no edits**. Never auto-spawn; skip
+when hypotheses depend on each other. When authorized, parallel read-only probes use `explorer`
+agents. This plugin has no `agents/` directory.
 
 **Present findings + the gate.** Present the root cause (causal-chain summary with `file:line`), the
 proposed fix and which files would change, the recommended regression test, and whether existing tests
-should have caught it. Then run the **fix-vs-diagnosis-vs-rethink gate** via `Codex blocking question`:
+should have caught it. Then run the **fix-vs-diagnosis-vs-rethink gate** through the native
+operator-choice contract:
 
 1. **Fix it now** — proceed to Phase 3 (only applies the fix if it is trivial/single-concern; else
    diagnose + route to `/work`).

@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.83.0 - 2026-07-29
+
+Codex package build: `0.83.0+codex.20260729205037`.
+
+### Changed
+
+- Replace the external-action lifecycle, policy, preference, promotion, status, persistence, and
+  retry layers with closed `saga.harness.request.v1` and `saga.harness.result.v1` contracts.
+- Retain exactly six routes: Claude Opus, Agy Gemini Flash and Pro, Ollama gpt-oss and embeddings,
+  and DeepSeek. Each route performs one invocation and validates a Fleet bridge receipt plus output
+  attestation.
+- Keep direct mode read-only. Approved Verified Workflow writes occur only in a disposable
+  remote-stripped clone and return a patch for explicit Git-operator import.
+- Remove registry overlays, offer/onboarding/promotion helpers, and the second Saga gatekeeper.
+- Replace stale interaction-tool and Claude-agent vocabulary with conditional
+  `request_user_input` guidance and native `explorer`, `worker`, and `default` roles.
+- Reserve native `/resume` for known saved-chat continuation. `saga:resume` now routes only
+  lifecycle reconstruction and explicitly requested multi-session forensics.
+- Document the trusted SessionStart hook as advisory re-entry context, not workflow, identity, or
+  completion proof.
+
 ## 0.82.0 - 2026-07-26
 
 ### Changed

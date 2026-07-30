@@ -155,9 +155,10 @@ is the only destination.
 
 ## Phase 6 — Refine, co-ideate, revive, interview, or hand off
 
-Ask what should happen next. Use the platform's blocking question tool (`Codex blocking question`; call
-`ToolSearch` with `blocking question` first if its schema isn't loaded). If no blocking tool
-exists or the call errors, fall back to numbered options in chat. Never silently skip the question.
+Ask what should happen next using the native contract in
+`../../../references/operator-choice.md`. Use `request_user_input` only when listed and allowed;
+otherwise ask one concise blocking question in the normal response and stop. Never silently skip
+the question.
 
 **Question:** "What should ideate do next?"
 

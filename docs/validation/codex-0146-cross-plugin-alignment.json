@@ -1,0 +1,205 @@
+{
+  "catalog_warnings": [],
+  "checks": {
+    "codex_features": {
+      "hooks": "stable:true",
+      "plugin_hooks": "removed:false"
+    },
+    "full_suite": {
+      "command": "rtk proxy uv run python -m pytest -q",
+      "failed": 0,
+      "passed": 2431
+    },
+    "port_contract": {
+      "classification": "passed",
+      "exact_0145_tag_equivalent_paths": 41,
+      "render_check": "passed",
+      "source_rows": 34,
+      "source_verification": "passed"
+    },
+    "saga_targeted_tests": {
+      "failed": 0,
+      "passed": 57
+    },
+    "static_quality": {
+      "diff_check": "passed",
+      "plugin_validator": "passed",
+      "ruff": "passed"
+    }
+  },
+  "codex_version": "0.146.0",
+  "effort": "low",
+  "marketplace": {
+    "name": "infiquetra-codex-plugins",
+    "original_ref": "main",
+    "original_source": "https://github.com/infiquetra/infiquetra-codex-plugins.git",
+    "original_source_type": "git",
+    "restored": true,
+    "restored_ref": "main",
+    "restored_source": "https://github.com/infiquetra/infiquetra-codex-plugins.git",
+    "restored_source_type": "git",
+    "temporary_source_type": "local"
+  },
+  "model": "gpt-5.6-sol",
+  "plugin_versions": {
+    "deploy": "0.1.1",
+    "discord-identity-assets": "0.2.0",
+    "fleet-core": "0.14.0+codex.20260729164721",
+    "home-lab-ops": "1.0.0",
+    "mission-control": "2.4.2",
+    "python-toolkit": "1.0.0",
+    "saga": "0.83.0+codex.20260729205037",
+    "test-suite": "2.0.0",
+    "unifi": "1.1.0",
+    "verified-workflows": "3.0.0+codex.20260729164721"
+  },
+  "profile": "normal-authenticated",
+  "prompt_template": "Route-only canary. Do not use tools, execute a skill, mutate files, or contact external systems. Given USER_INTENT, return only JSON matching the supplied schema with route set to exactly one canonical route id and a short reason. USER_INTENT: {intent}",
+  "recorded_at": "2026-07-30T00:59:19Z",
+  "repo_head": "0713be75ff96cf07d7a5e90d6f1c1673a994eb58",
+  "rows": [
+    {
+      "actual": "native:resume",
+      "exit_code": 0,
+      "expected": "native:resume",
+      "intent": "Continue my most recent saved Codex chat",
+      "passed": true,
+      "reason": "Resume the most recent saved Codex chat."
+    },
+    {
+      "actual": "saga:resume",
+      "exit_code": 0,
+      "expected": "saga:resume",
+      "intent": "Reconstruct issue 54 across Saga ticks and prior PR rounds",
+      "passed": true,
+      "reason": "Reconstructing issue 54 across prior Saga ticks and PR rounds is a Saga re-entry/resume task."
+    },
+    {
+      "actual": "native:plan-mode",
+      "exit_code": 0,
+      "expected": "native:plan-mode",
+      "intent": "Switch Codex into Plan mode",
+      "passed": true,
+      "reason": "The user explicitly wants Codex switched into native Plan mode."
+    },
+    {
+      "actual": "saga:plan",
+      "exit_code": 0,
+      "expected": "saga:plan",
+      "intent": "Produce a lifecycle implementation plan with review and deploy gates",
+      "passed": true,
+      "reason": "The request is for a lifecycle implementation plan that includes review and deployment gates."
+    },
+    {
+      "actual": "saga:doc-review",
+      "exit_code": 0,
+      "expected": "saga:doc-review",
+      "intent": "Review this implementation plan for readiness",
+      "passed": true,
+      "reason": "The intent is to review an implementation plan for readiness."
+    },
+    {
+      "actual": "saga:code-review",
+      "exit_code": 0,
+      "expected": "saga:code-review",
+      "intent": "Review this PR diff before opening or merging",
+      "passed": true,
+      "reason": "The intent is to review a PR diff before any open or merge action."
+    },
+    {
+      "actual": "deploy:deploy-status",
+      "exit_code": 0,
+      "expected": "deploy:deploy-status",
+      "intent": "Show deployment drift across nonprod, staging, and production",
+      "passed": true,
+      "reason": "The request is to compare deployment versions and drift across nonprod, staging, and production."
+    },
+    {
+      "actual": "deploy:deploy",
+      "exit_code": 0,
+      "expected": "deploy:deploy",
+      "intent": "Promote this repository to nonprod with a deployment tag",
+      "passed": true,
+      "reason": "The intent is to promote the current repository to nonprod using a deployment tag."
+    },
+    {
+      "actual": "mission-control:issues",
+      "exit_code": 0,
+      "expected": "mission-control:issues",
+      "intent": "Prepare a canonical defect issue from these rough notes",
+      "passed": true,
+      "reason": "The intent is to turn rough notes into a canonical defect issue."
+    },
+    {
+      "actual": "mission-control:board",
+      "exit_code": 0,
+      "expected": "mission-control:board",
+      "intent": "Move this project card to Active",
+      "passed": true,
+      "reason": "Moving a project card to Active is a project board status change."
+    },
+    {
+      "actual": "home-lab-ops:inventory-sync",
+      "exit_code": 0,
+      "expected": "home-lab-ops:inventory-sync",
+      "intent": "Validate inventory after a home-lab hardware change",
+      "passed": true,
+      "reason": "Validate inventory consistency after a home-lab hardware change."
+    },
+    {
+      "actual": "python-toolkit:python-patterns",
+      "exit_code": 0,
+      "expected": "python-toolkit:python-patterns",
+      "intent": "Show a Lambda Powertools serverless error-handling pattern",
+      "passed": true,
+      "reason": "The request asks for a serverless Python error-handling pattern using AWS Lambda Powertools."
+    },
+    {
+      "actual": "test-suite:run-quality-checks",
+      "exit_code": 0,
+      "expected": "test-suite:run-quality-checks",
+      "intent": "Run pytest, ruff, mypy, bandit, and coverage together",
+      "passed": true,
+      "reason": "Run the complete Python quality-check suite together."
+    },
+    {
+      "actual": "unifi:unifi-network",
+      "exit_code": 0,
+      "expected": "unifi:unifi-network",
+      "intent": "Manage a UniFi VLAN and firewall rule",
+      "passed": true,
+      "reason": "The request is to manage UniFi network configuration, specifically a VLAN and firewall rule."
+    },
+    {
+      "actual": "discord-identity-assets:discord-identity-assets",
+      "exit_code": 0,
+      "expected": "discord-identity-assets:discord-identity-assets",
+      "intent": "Prepare Discord guild identity assets",
+      "passed": true,
+      "reason": "The request is to prepare Discord guild identity assets."
+    },
+    {
+      "actual": "verified-workflows:review-workflow",
+      "exit_code": 0,
+      "expected": "verified-workflows:review-workflow",
+      "intent": "Review an approved Workflow Contract without launching it",
+      "passed": true,
+      "reason": "Review the approved Workflow Contract without executing it."
+    },
+    {
+      "actual": "verified-workflows:run",
+      "exit_code": 0,
+      "expected": "verified-workflows:run",
+      "intent": "Execute this approved Workflow Contract",
+      "passed": true,
+      "reason": "Execute an already approved Workflow Contract."
+    }
+  ],
+  "schema_version": 1,
+  "summary": {
+    "failed": 0,
+    "passed": 17,
+    "total": 17
+  },
+  "tools_or_skills_executed": false
+}

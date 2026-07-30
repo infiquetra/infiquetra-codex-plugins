@@ -14,11 +14,28 @@ from scripts import port_contract as contract
 
 
 ROOT = Path(__file__).resolve().parents[1]
-MANIFEST_PATH = ROOT / contract.DEFAULT_MANIFEST
+MANIFEST_PATH = (
+    ROOT
+    / "docs"
+    / "portability"
+    / "manifests"
+    / "2026-07-11-external-advisory-execution.json"
+)
 
 
 def load_manifest() -> dict:
     return json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+
+
+def test_current_contract_set_includes_both_codex_0146_cycles() -> None:
+    assert contract.CURRENT_PORT_IDS == {
+        "codex-0146-native-harness-2026-07-29",
+        "codex-0146-cross-plugin-alignment-2026-07-29",
+    }
+
+
+def test_port_contract_accepts_evidence_units_through_u10() -> None:
+    assert contract.UNIT_IDS == {f"U{number}" for number in range(1, 11)}
 
 
 def test_current_manifest_passes_classification_gate() -> None:
@@ -205,7 +222,7 @@ def test_runbook_digest_is_part_of_the_gate() -> None:
 
     errors = contract.validate_manifest(ROOT, manifest, stage="classification")
 
-    assert any("authority.runbook digest is stale" in error for error in errors)
+    assert any("authority.runbook historical preimage" in error for error in errors)
 
 
 def test_capability_schema_digest_is_part_of_the_gate() -> None:
@@ -214,7 +231,9 @@ def test_capability_schema_digest_is_part_of_the_gate() -> None:
 
     errors = contract.validate_manifest(ROOT, manifest, stage="classification")
 
-    assert any("capability_snapshot.schema digest is stale" in error for error in errors)
+    assert any(
+        "capability_snapshot historical preimage" in error for error in errors
+    )
 
 
 def test_nested_capability_schema_is_closed() -> None:
@@ -371,14 +390,14 @@ def test_release_evidence_kind_must_match_release_slot() -> None:
     assert any("release_evidence.review must reference `review` evidence" in error for error in errors)
 
 
-def test_current_u2_unit_and_final_cutover_pass() -> None:
+def test_historical_u2_unit_passes_but_retired_cutover_verifier_blocks_replay() -> None:
     manifest = load_manifest()
 
     unit_errors = contract.validate_manifest(ROOT, manifest, stage="unit", unit="U2")
     cutover_errors = contract.validate_manifest(ROOT, manifest, stage="cutover")
 
     assert unit_errors == []
-    assert cutover_errors == []
+    assert cutover_errors == ["cutover release-proof verifier or artifact is missing"]
 
 
 def test_cutover_requires_exact_tagged_release_proof() -> None:
@@ -392,7 +411,7 @@ def test_cutover_requires_exact_tagged_release_proof() -> None:
     with patch.object(contract.subprocess, "run", return_value=failed):
         errors = contract._validate_cutover_release_proof(ROOT, manifest)
 
-    assert any("evidence bundle missing" in error for error in errors)
+    assert errors == ["cutover release-proof verifier or artifact is missing"]
 
 
 def test_renderer_is_byte_current() -> None:

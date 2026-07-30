@@ -17,7 +17,7 @@ The single auto-apply case: **appending one new, self-contained entry** to `LEAR
 `DECISIONS.md`, `QUEUED.md`, or `ARCHIVE.md`. The file only grows; nothing existing is touched. This is the
 compounding sink — promotion has to be cheap or it does not happen.
 
-### Tier 2 — PROPOSE-DIFF-AND-WAIT (show the diff + `Codex blocking question` apply / skip / modify; NEVER auto-apply)
+### Tier 2 — PROPOSE-DIFF-AND-WAIT (show the diff + native apply / skip / modify choice; NEVER auto-apply)
 
 Everything that deletes, modifies, or moves existing content, plus everything outside the journal:
 
@@ -43,8 +43,8 @@ For each Tier-2 change, present:
    refine-lifecycle / refine-directives / memory-pruning).
 3. **The diff** — a real unified diff (`- ` removed lines, `+ ` added lines) so the operator sees exactly
    what changes.
-4. **The question** — `Codex blocking question`: **apply** / **skip** / **modify** (modify lets the operator
-   redirect the edit). In a channel session, inline the choices instead (brainstorm convention).
+4. **The question**—use the native operator-choice contract for **apply** / **skip** / **modify**
+   (modify lets the operator redirect the edit). In a channel session, inline the choices instead.
 
 Never apply a Tier-2 change without an explicit **apply**. "Modify" loops back to a revised diff.
 
@@ -56,9 +56,10 @@ Directive surfaces are **NOT one bucket**. Classify before proposing:
 
 ### (a) IN-REPO
 
-The repo `AGENTS.md` and the lifecycle SKILLs. This plugin has **no `agents/` dir** — the convention is
-**generic agents** (`Explore` / `Task`), so there is no in-repo agent file to edit. Propose with a normal
-diff and a **repo-relative** path. Affects this repo only.
+The repo `AGENTS.md` and the lifecycle SKILLs. This plugin has no `agents/` directory. When
+implementation delegation is explicitly authorized, use a `worker`; otherwise edit inline. There
+is no in-repo agent file to edit. Propose with a normal diff and a **repo-relative** path. Affects
+this repo only.
 
 ### (b) GLOBAL / CROSS-PROJECT
 

@@ -162,18 +162,13 @@ the operator asks for a cross-engine pass or the artifact clearly warrants one.
   Codex host, Claude-only autonomous panel surfaces (Workflow/TeamCreate) are negative-gated —
   dispatch runs inline/serially.
 
-## External Action Runtime
+## External Harness
 
-Before any external call, run
-`python3 plugins/saga/scripts/external_action.py bundle --stage doc-review --repo-root .` and show the
-resolved action bundle and let the operator remove or edit actions; persist reusable changes with
-`external_action_policy.save_policy`, never by silently changing defaults. Resolve the selected
-provider routes, call `external_action_lifecycle.prepare_bundle` without external egress, and show
-`approval_preview_payload` with provider, cost, egress, requiredness, consumption point, fingerprint,
-and status card. Only after explicit approval call `approve_bundle` and `execute_bundle`. Opinion output
-must contain typed findings; Codex accounts for each through `adjudicate_opinion` before the readiness
-verdict. Best-effort failure continues with a named unavailable status; required failure pauses for
-operator retry, removal, or override. External evidence never persists or satisfies a gate on its own.
+Use an external engine only after the operator chooses the exact registry route and context. Build
+one closed `saga.harness.request.v1` request and run
+`python3 plugins/saga/scripts/external_action_adapters.py --request <json> --repo-root .`.
+Doc-review calls use `mode=direct` and an empty `write_set`. Codex accounts for and independently
+verifies every advisory finding before its own readiness verdict.
 
 ## Safe In-Place Fixes
 

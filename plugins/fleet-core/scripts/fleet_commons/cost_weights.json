@@ -1,9 +1,0 @@
-{
-  "_comment": "Ordinal, relative cost weights for the retained lineage-model axis and the Codex scalar effort ladder. These are not dollar prices. Lineage models remain only to support upstream economics during migration; active Codex selection is execution-class and catalog based. The max column is intentionally complete even where a legacy mapped model would clamp lower.",
-  "weights": {
-    "fable": { "low": 13, "medium": 26, "high": 52, "xhigh": 91, "max": 143 },
-    "opus": { "low": 8, "medium": 16, "high": 32, "xhigh": 56, "max": 88 },
-    "sonnet": { "low": 3, "medium": 6, "high": 12, "xhigh": 21, "max": 33 },
-    "haiku": { "low": 1, "medium": 2, "high": 4, "xhigh": 7, "max": 11 }
-  }
-}

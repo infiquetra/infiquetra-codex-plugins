@@ -1,0 +1,13 @@
+{
+  "command": "python3 -m pytest -q tests/test_codex_runtime_capability_snapshot.py tests/test_verified_workflows_migration.py plugins/verified-workflows/tests/test_run_record.py plugins/saga/tests/test_lifecycle_state.py",
+  "covers": "Codex 0.146 capability snapshot, native orchestration migration, bounded run-record behavior, Saga lifecycle compatibility, and idempotent current-tree validation.",
+  "recorded_at": "2026-07-29T17:39:31Z",
+  "repo_head": "0713be75ff96cf07d7a5e90d6f1c1673a994eb58",
+  "result": {
+    "exit_code": 0,
+    "failed": 0,
+    "passed": 36
+  },
+  "schema_version": 1,
+  "unit": "U1"
+}

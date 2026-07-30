@@ -31,6 +31,7 @@ def finding() -> dict[str, object]:
         "impact": "missed edge case",
         "fix": "add the case",
         "validation": "run the focused test",
+        "scope_disposition": "planned",
         "resolved": False,
         "hard_stop": False,
     }
@@ -139,3 +140,11 @@ def test_typed_finding_is_preserved() -> None:
         payload, launch(), expected_attempt_id="test-attempt-1", expected_agent_path="/root/test"
     )
     assert normalized["findings"][0]["severity"] == "P2"
+    assert normalized["findings"][0]["scope_disposition"] == "planned"
+
+
+def test_deferred_finding_cannot_claim_a_hard_stop() -> None:
+    item = finding()
+    item.update({"scope_disposition": "defer", "hard_stop": True})
+    with pytest.raises(R.ResultContractError, match="cannot combine"):
+        R.validate_finding(item)

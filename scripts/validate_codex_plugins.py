@@ -152,15 +152,15 @@ TARGET_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
 }
 TARGET_EXPECTED_PLUGINS["fleet-core"] = {
     **TARGET_EXPECTED_PLUGINS["fleet-core"],
-    "version": "0.13.0+codex.20260726234500",
+    "version": "0.14.0+codex.20260729164721",
 }
 TARGET_EXPECTED_PLUGINS["saga"] = {
     **TARGET_EXPECTED_PLUGINS["saga"],
-    "version": "0.82.0+codex.20260727035515",
+    "version": "0.83.0+codex.20260729205037",
 }
 TARGET_EXPECTED_PLUGINS["verified-workflows"] = {
-    "version": "2.1.0+codex.20260727035515",
-    "skills": ("run", "review-workflow", "appsec-audit", "select-agent"),
+    "version": "3.0.0+codex.20260729164721",
+    "skills": ("run", "review-workflow", "appsec-audit"),
 }
 CURRENT_ONLY_LEGACY_PLUGINS = {
     "team-execution": PRE_CUTOVER_EXPECTED_PLUGINS["team-execution"],
@@ -263,6 +263,10 @@ STALE_ACTIVE_PATTERNS = (
     ".claude-plugin",
     "Claude Code",
     "Claude Code plugin",
+    "Codex blocking question",
+    "ToolSearch",
+    "`Explore`",
+    "`Task`",
     "claude-plugins repository",
 )
 LINEAGE_ALLOWED_PARTS = {
@@ -325,7 +329,6 @@ LEGACY_WORKFLOW_EXACT_CLASSIFICATIONS = {
     Path("plugins/fleet-core/PORTABILITY.md"): "lineage-documentation",
     Path("plugins/fleet-core/README.md"): "migration-documentation",
     Path("plugins/fleet-core/references/effort-convention.md"): "lineage-documentation",
-    Path("plugins/fleet-core/scripts/fleet_commons/audit_store.py"): "frozen-source-contract",
     Path("plugins/fleet-core/scripts/fleet_commons/lease_broker.py"): "frozen-source-contract",
     Path("plugins/fleet-core/scripts/fleet_commons/orphan_evidence.py"): "frozen-source-contract",
     Path("plugins/fleet-core/scripts/fleet_commons/tier_palette.py"): "legacy-parser",
@@ -555,7 +558,7 @@ def validate_repository(root: Path, mode: str = "current") -> list[str]:
     validate_issue_contract_parity(root, errors)
     validate_port_contract(
         root,
-        "cutover" if mode in {"current", "cutover"} else "classification",
+        "cutover" if mode == "cutover" else "unit",
         errors,
     )
     validate_saga_family_docs(root, errors)
@@ -578,6 +581,24 @@ def validate_port_contract(root: Path, stage: str, errors: list[str]) -> None:
         manifest = port_contract.load_manifest(path)
     except port_contract.ContractError as exc:
         errors.append(f"port contract: {exc}")
+        return
+    if stage == "unit":
+        units = sorted(
+            {
+                unit
+                for section in ("source", "codex")
+                for row in manifest.get(section, {}).get("rows", [])
+                for unit in row.get("units", [])
+            }
+        )
+        for unit in units:
+            for error in port_contract.validate_manifest(
+                root,
+                manifest,
+                stage="unit",
+                unit=unit,
+            ):
+                errors.append(f"port contract (unit {unit}): {error}")
         return
     for error in port_contract.validate_manifest(root, manifest, stage=stage):
         errors.append(f"port contract ({stage}): {error}")
@@ -1074,7 +1095,7 @@ def validate_verified_workflows_canonical_surface(root: Path, errors: list[str])
 
 
 def validate_verified_workflows_agents(root: Path, errors: list[str]) -> None:
-    """Validate the closed role registry and exact six generated profiles."""
+    """Validate the closed role registry and exact seven generated profiles."""
 
     plugin_root = root / "plugins" / "verified-workflows"
     script = plugin_root / "scripts" / "render_codex_agents.py"
@@ -1119,69 +1140,14 @@ def validate_verified_workflows_agents(root: Path, errors: list[str]) -> None:
             raise RuntimeError("renderer did not preserve the 28 logical roles")
         if len(receipt.get("profiles", [])) != 7:
             raise RuntimeError("renderer did not produce the managed profile roster")
-        validate_verified_workflows_project_agents(root, receipt, errors)
+        project_agents = root / ".codex" / "agents"
+        if project_agents.exists() and any(project_agents.iterdir()):
+            errors.append(
+                ".codex/agents: repository-local profile overrides are retired; "
+                "use plugin source or an explicit isolated sync target"
+            )
     except (OSError, RuntimeError, json.JSONDecodeError, subprocess.TimeoutExpired) as exc:
         errors.append(f"verified-workflows: U3 role/profile validation failed: {exc}")
-
-
-def validate_verified_workflows_project_agents(
-    root: Path,
-    render_receipt: dict[str, Any],
-    errors: list[str],
-) -> None:
-    """Bind project-local Codex discovery files to the generated runtime profiles."""
-
-    project_agents = root / ".codex" / "agents"
-    try:
-        children = list(project_agents.iterdir())
-    except OSError as exc:
-        errors.append(f".codex/agents: unreadable project agent directory: {exc}")
-        return
-    rendered = render_receipt.get("profiles")
-    if not isinstance(rendered, list):
-        errors.append("verified-workflows: renderer profile receipt is invalid")
-        return
-    expected_names = {
-        f"{profile.get('runtime_agent_name')}.toml"
-        for profile in rendered
-        if isinstance(profile, dict)
-        and isinstance(profile.get("runtime_agent_name"), str)
-    }
-    actual_names = {child.name for child in children}
-    if actual_names != expected_names:
-        errors.append(
-            ".codex/agents: project runtime agent inventory drifted; "
-            f"missing={sorted(expected_names - actual_names)} "
-            f"unexpected={sorted(actual_names - expected_names)}"
-        )
-    for profile in rendered:
-        if not isinstance(profile, dict):
-            errors.append("verified-workflows: renderer profile entry is invalid")
-            continue
-        runtime_name = profile.get("runtime_agent_name")
-        profile_id = profile.get("profile_id")
-        if not isinstance(runtime_name, str) or not isinstance(profile_id, str):
-            errors.append("verified-workflows: renderer profile identity is invalid")
-            continue
-        project_path = project_agents / f"{runtime_name}.toml"
-        source_path = (
-            root / "plugins" / "verified-workflows" / "agents" / f"{runtime_name}.toml"
-        )
-        if project_path.is_symlink() or not project_path.is_file():
-            errors.append(
-                f".codex/agents/{runtime_name}.toml: project runtime agent must be a regular file"
-            )
-            continue
-        try:
-            if project_path.read_bytes() != source_path.read_bytes():
-                errors.append(
-                    f".codex/agents/{runtime_name}.toml: project runtime agent bytes "
-                    f"drifted from profile `{profile_id}`"
-                )
-        except OSError as exc:
-            errors.append(
-                f".codex/agents/{runtime_name}.toml: runtime agent readback failed: {exc}"
-            )
 
 
 def validate_verified_workflows_runtime(root: Path, errors: list[str]) -> None:
@@ -1190,16 +1156,12 @@ def validate_verified_workflows_runtime(root: Path, errors: list[str]) -> None:
     plugin_root = root / "plugins" / "verified-workflows"
     required = (
         plugin_root / "scripts" / "workflow_dispatch.py",
-        plugin_root / "scripts" / "workflow_feasibility.py",
         plugin_root / "scripts" / "gate_evaluator.py",
         plugin_root / "scripts" / "protocol_probe.py",
         plugin_root / "scripts" / "result_contract.py",
         plugin_root / "scripts" / "run_record.py",
         root / "scripts" / "prove_verified_workflows_runtime.py",
-        root / "scripts" / "build_codex_v2_orchestration_matrix.py",
         root / "docs" / "validation" / "verified-workflows-runtime-proof.json",
-        root / "docs" / "validation" / "codex-v2-orchestration-receipts.json",
-        root / "docs" / "validation" / "codex-v2-orchestration-matrix.json",
     )
     retired = (
         plugin_root / "hooks" / "hooks.json",
@@ -1210,6 +1172,8 @@ def validate_verified_workflows_runtime(root: Path, errors: list[str]) -> None:
         plugin_root / "scripts" / "workflow_records.py",
         plugin_root / "scripts" / "named_child_attestation.py",
         plugin_root / "scripts" / "raw_hook_maintenance.py",
+        plugin_root / "scripts" / "workflow_feasibility.py",
+        plugin_root / "skills" / "select-agent",
     )
     references = {
         "workflow-protocol.md",
@@ -1274,24 +1238,6 @@ def validate_verified_workflows_runtime(root: Path, errors: list[str]) -> None:
             raise RuntimeError("U4 tracked proof must not carry live-envelope evidence")
     except (OSError, RuntimeError, json.JSONDecodeError, subprocess.TimeoutExpired) as exc:
         errors.append(f"verified-workflows: U4 runtime proof validation failed: {exc}")
-    try:
-        matrix = subprocess.run(  # noqa: S603 - fixed repository proof builder
-            [
-                sys.executable,
-                str(root / "scripts" / "build_codex_v2_orchestration_matrix.py"),
-                "--check",
-            ],
-            cwd=root,
-            capture_output=True,
-            text=True,
-            timeout=30,
-            check=False,
-        )
-        if matrix.returncode:
-            detail = matrix.stderr.strip().splitlines()[-1] if matrix.stderr.strip() else "failed"
-            raise RuntimeError(detail)
-    except (OSError, RuntimeError, subprocess.TimeoutExpired) as exc:
-        errors.append(f"verified-workflows: U8 runtime matrix validation failed: {exc}")
 
 
 def is_cross_plugin_module(name: str) -> bool:

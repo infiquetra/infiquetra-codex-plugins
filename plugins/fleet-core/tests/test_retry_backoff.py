@@ -134,39 +134,7 @@ def test_nonpositive_retry_after_uses_computed_jitter(hint: float) -> None:
     assert slept == [expected]
 
 
-def test_circuit_breaker_opens_then_half_opens() -> None:
-    clock = {"t": 0.0}
-    breaker = rb.CircuitBreaker(fail_threshold=2, cooldown=10.0, clock=lambda: clock["t"])
-    breaker.on_failure()
-    assert breaker.state == "CLOSED"
-    breaker.on_failure()
-    assert breaker.state == "OPEN"
-    clock["t"] = 10.0
-    assert breaker.state == "HALF_OPEN"
-    breaker.on_success()
-    assert breaker.state == "CLOSED"
-
-
-def test_bridge_call_short_circuits_when_open() -> None:
-    breaker = rb.CircuitBreaker(fail_threshold=1, cooldown=100.0, clock=lambda: 0.0)
-    breaker.on_failure()  # trip it
-    with pytest.raises(rb.CircuitOpenError):
-        rb.bridge_call(lambda: "never", breaker=breaker, sleep=lambda _s: None)
-
-
-def test_bridge_call_trips_breaker_on_rate_limit_but_not_on_bug() -> None:
-    breaker = rb.CircuitBreaker(fail_threshold=1, cooldown=100.0, clock=lambda: 0.0)
-
-    def bug() -> None:
-        raise _HttpError(500)
-
-    with pytest.raises(_HttpError):
-        rb.bridge_call(bug, breaker=breaker, max_attempts=1, sleep=lambda _s: None)
-    assert breaker.state == "CLOSED"  # correctness bug does not trip the rate-limit breaker
-
-    def limited() -> None:
-        raise _HttpError(429)
-
-    with pytest.raises(_HttpError):
-        rb.bridge_call(limited, breaker=breaker, max_attempts=1, sleep=lambda _s: None)
-    assert breaker.state == "OPEN"
+def test_module_exposes_no_plugin_owned_retry_state() -> None:
+    assert not hasattr(rb, "CircuitBreaker")
+    assert not hasattr(rb, "CircuitOpenError")
+    assert not hasattr(rb, "bridge_call")

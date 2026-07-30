@@ -31,7 +31,6 @@ def _load(name: str) -> ModuleType:
 palette = _load("tier_palette")
 catalog = _load("codex_model_catalog")
 resolver = _load("tier_resolver")
-effort_rider = _load("effort_rider")
 
 
 def _row(
@@ -210,16 +209,6 @@ def test_root_ultra_requires_explicit_independent_fanout(full_snapshot) -> None:
 def test_explicit_empty_root_effort_fails_instead_of_defaulting(full_snapshot) -> None:
     with pytest.raises(resolver.TierResolverError, match="unknown root effort"):
         resolver.resolve_root_orchestration(full_snapshot, effort="")
-
-
-def test_max_rider_is_advisory_and_ultra_is_excluded() -> None:
-    assert set(effort_rider.EFFORT_RIDER) == set(palette.SCALAR_EFFORTS)
-    assert "ultra" not in effort_rider.EFFORT_RIDER
-    prompt = effort_rider.inject_effort("BODY", "max", "agent")
-    assert "EFFORT (max)" in prompt
-    assert "BODY" in prompt
-    drift = effort_rider.reconcile_effort("max", "agent", spawn_prompt="BODY")
-    assert "rider-text" in str(drift)
 
 
 def test_all_consumer_shims_load_the_new_catalog_and_palette() -> None:

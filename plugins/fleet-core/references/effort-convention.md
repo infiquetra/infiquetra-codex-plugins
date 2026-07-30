@@ -5,29 +5,25 @@ The active scalar vocabulary is
 Ultra is not an effort rung: it is root-only orchestration behavior that can add automatic
 delegation.
 
-New work selects an execution class. Fleet Core resolves that class against one immutable Codex
-model-catalog snapshot, preserving the requested effort across ordered model candidates before it
-allows any downward clamp. Roles and allowed risk transitions are owned by Verified Workflows.
+New work selects a maintained native profile. Fleet Core resolves compatibility execution classes
+against one immutable Codex model-catalog snapshot, preserving the requested effort across ordered
+model candidates before it allows any downward clamp. Roles and allowed risk transitions are owned
+by Verified Workflows.
 
 ```text
-logical role -> allowed execution class -> catalog resolution -> managed profile
-                                                          |
-                                             profile digest proves expected effort
-                                                          |
-                                             hook proves active model only
+logical role -> allowed profile -> expected model and effort
+                                      |
+                           native agent_type launch
+                                      |
+                         runtime receipt proves both
 ```
 
-Codex's direct spawn interface currently has no per-child model or effort field. Consequently:
+Codex 0.146 accepts per-child `agent_type`, model, and effort. Consequently:
 
-- The managed custom-agent profile is the enforceable model/effort configuration boundary.
-- The exact installed-profile digest is evidence of expected effort.
-- The SubagentStart/Stop hook can attest active model and agent type, but not reasoning effort.
-- A prompt `EFFORT_RIDER` is advisory only and never proves effective effort.
-
-`effort_rider.inject_effort()` retains historical `workflow`, `external-engine`, and `agent`
-branches temporarily for imported consumers. The generic `agent` branch prepends advisory text;
-`reconcile_effort()` can prove only that the text was constructed, not that the runtime spent the
-requested reasoning effort.
+- The managed profile supplies the default model and effort.
+- Profile bytes prove expected configuration only.
+- Combined `session_meta` and `turn_context` readback proves effective runtime identity.
+- Fleet Core does not inject prompt riders or infer effort from prompt text.
 
 The legacy `tier_palette.EFFORTS` tuple stops at `xhigh` until pre-cutover Saga and Team Execution
 consumers migrate. It is source-lineage compatibility, not the active Codex effort policy.

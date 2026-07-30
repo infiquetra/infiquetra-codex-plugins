@@ -71,7 +71,7 @@
         "multi_agent_v2_config"
       ],
       "properties": {
-        "codex_cli_version": {"const": "0.145.0"},
+        "codex_cli_version": {"const": "0.146.0"},
         "effective_parent_permission_mode": {
           "type": "object",
           "additionalProperties": false,
@@ -91,7 +91,7 @@
         "host_total_slots": {"type": ["integer", "null"], "minimum": 1},
         "effective_total_slots": {"type": ["integer", "null"], "minimum": 1},
         "effective_max_children": {"type": ["integer", "null"], "minimum": 0},
-        "session_fact_source": {"enum": ["current-v1-session-and-official-v2-contract", "current-v2-live-matrix-and-official-v2-contract", "isolated-v2-runtime", "installed-v2-runtime"]},
+        "session_fact_source": {"enum": ["current-v1-session-and-official-v2-contract", "current-v2-live-matrix-and-official-v2-contract", "current-0.146-live-tool-contract", "isolated-v2-runtime", "installed-v2-runtime"]},
         "multi_agent_v2_config": {
           "type": "object",
           "additionalProperties": false,
@@ -178,7 +178,7 @@
           "properties": {
             "available": {"const": true},
             "contract_version": {"const": "v2"},
-            "tool_namespace": {"const": "agents"},
+            "tool_namespace": {"const": "collaboration"},
             "hide_spawn_agent_metadata": {"const": false},
             "request_fields": {"$ref": "#/$defs/stringList"},
             "response_fields": {"$ref": "#/$defs/stringList"},

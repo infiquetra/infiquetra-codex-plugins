@@ -58,32 +58,28 @@ it leaves `lifecycle_phase=work` because `/qa` does not yet advance the phase (s
 
 ## Interaction method
 
-Use `Codex blocking question` for choices from a known set (resume-vs-mint, branch decision, execution backend,
-doc-review override, PR-open / merge confirmation, continuation routing). Call `ToolSearch` with
-`blocking question` first if its schema is not loaded. Ask one question per turn; prefer a concise
-single-select when natural options exist. For open-ended discussion, ask inline in chat. Never silently
-skip a confirmation that mutates GitHub.
+Follow `../../references/operator-choice.md` for choices from a known set (resume-vs-mint, branch
+decision, execution backend, doc-review override, PR-open / merge confirmation, continuation
+routing). Ask one question per turn; prefer a concise single-select when natural options exist. For
+open-ended discussion, ask inline in chat. Never silently skip a confirmation that mutates GitHub.
 
-In a channel session (`redis-channel` active), `Codex blocking question` cannot be called — inline the choices
-in your reply text instead. Follow the canonical channel-inline convention in
+In a channel session (`redis-channel` active), inline the choices in your reply text instead. Follow
+the canonical channel-inline convention in
 `saga/skills/brainstorm/SKILL.md` (do not duplicate its wording here).
 
 Use repo-relative paths in every generated document. Absolute paths break portability across machines
 and worktrees. (The one exception is the saga `--review-paths` value passed through to `/code-review`,
 which mirrors that skill's convention.)
 
-## External Action Runtime
+## External Harness
 
-Before any external call, run
-`python3 plugins/saga/scripts/external_action.py bundle --stage work --repo-root .` and show the
-resolved action bundle and let the operator remove or edit actions; persist reusable changes with
-`external_action_policy.save_policy`, never by silently changing defaults. Resolve the selected
-provider routes, call `external_action_lifecycle.prepare_bundle` without external egress, and show
-`approval_preview_payload` with provider, cost, egress, requiredness, consumption point, fingerprint,
-and status card. Only after explicit approval call `approve_bundle` and `execute_bundle`. Offload patches
-remain inert in disposable workspaces until root adjudicates and consumes them at integration. Typed
-second opinions use `adjudicate_opinion` before remediation. Best-effort failure continues with a
-named unavailable status; required failure pauses for operator retry, removal, or override. External
+Use an external engine only after the operator chooses the exact registry route, context, and write
+set. Direct calls use `mode=direct` and remain read-only. An approved Verified Workflow may use
+`mode=verified-workflow`; the harness runs it in a disposable remote-stripped checkout and returns a
+patch artifact. Only the workflow's Git operator may call `import_verified_workflow_patch`.
+Build one closed `saga.harness.request.v1` request and run
+`python3 plugins/saga/scripts/external_action_adapters.py --request <json> --repo-root . --artifact-root <dir>`.
+External
 evidence never replaces the backend decision or satisfies a gate on its own.
 
 ---

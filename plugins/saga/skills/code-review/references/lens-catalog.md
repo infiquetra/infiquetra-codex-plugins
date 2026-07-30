@@ -3,8 +3,8 @@
 The lean infiquetra review-lens set. Lenses are **judgment-selected**, not a fixed roster: the
 orchestrator reads the full diff and spawns only the lenses with real work to do. A fixed specialist
 list re-opens the "spawn reviewers that find nothing on this diff" problem; this catalog avoids it by
-making selection a reasoned call. Each lens is spawned as a **generic agent** (`Explore`/`Task`) — this
-plugin has no named `ce-*` agents.
+making selection a reasoned call. When delegation is explicitly authorized, each read-only lens uses
+an `explorer` agent. Otherwise run the lens inline. This plugin has no named `ce-*` agents.
 
 ## Always-on lenses (4 — every review)
 

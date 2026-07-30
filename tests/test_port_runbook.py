@@ -86,21 +86,21 @@ def test_runbook_has_exact_versioned_structure() -> None:
 
     assert headings == list(REQUIRED_H2)
     assert "Status: canonical" in text
-    assert "Runbook version: `3`" in text
+    assert "Runbook version: `4`" in text
 
 
-def test_runbook_requires_v2_named_profile_bootstrap_and_non_full_fork() -> None:
+def test_runbook_requires_native_v2_profiles_and_bounded_deviation() -> None:
     text = RUNBOOK.read_text(encoding="utf-8")
 
     for required in (
-        "hide_spawn_agent_metadata=false",
-        'tool_namespace="agents"',
-        "reserved `collaboration`",
+        "native `collaboration` namespace",
+        "without redundant model/effort overrides",
         "`agent_type`",
         "`fork_turns=none`",
         "full-history fork",
         "permission-homogeneous parent",
         "host-issued rollout context",
+        "Bounded unplanned repair",
     ):
         assert required in text
 

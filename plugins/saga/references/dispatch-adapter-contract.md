@@ -1,125 +1,22 @@
-# Dispatch-adapter contract: transport-keyed adapters + bridge_receipt.v1
+# Saga harness adapter contract
 
-How a registry row's `transport` field selects an invocation-building adapter inside
-`engine_dispatch.py`, how the generic HTTP bridge (`engine_bridge_http.py`) fits beside the
-the CLI adapter, and how every adapter — CLI or HTTP — proves it actually ran by emitting a
-`bridge_receipt.v1`. This reference governs the *contract*; `plugins/saga/references/engine-dispatch.md`
-covers dispatch policy, advisory evidence, trust standing, and override semantics.
+`external_action_adapters.py` owns the one-shot adapter boundary. It receives a closed
+`saga.harness.request.v1`, resolves the exact `engine_id/variant` from `engine-registry.yaml`, and
+returns one `saga.harness.result.v1`.
 
-## Transport is a closed-vocab registry field, not a bridge decision
+The harness supports six routes:
 
-Every registry row declares `transport: cli | http` (default `cli` — every pre-existing row is
-unchanged). `_build_invocation` (`engine_dispatch.py`) branches on it:
+- `claude-cli/opus`
+- `agy/gemini-3.5-flash-high`
+- `agy/gemini-3.1-pro-high`
+- `ollama-cloud/gpt-oss-120b`
+- `ollama-cloud/nomic-embed-text`
+- `deepseek/deepseek-chat`
 
-- **`transport: cli`** — an external CLI adapter such as `agy:delegate`. Native Codex children are
-  selected through Verified Workflows profiles and never appear as external-engine rows.
-- **`transport: http`** — a single generic invocation builder driven entirely by the row's own
-  data (`base_url`, `model`, `auth.mode`, `auth.key_env` when `auth.mode: bearer`, `effort`). There
-  is zero per-provider branching inside the bridge itself — a new HTTP-transport provider is a new
-  registry row, not a new code path (#387 AC1).
+CLI providers run in a disposable remote-stripped checkout. Direct Saga calls are read-only.
+Verified Workflow calls may declare writes; the harness returns a bounded patch without touching
+the shared checkout, and only the workflow Git operator imports it.
 
-Add an OpenAI-compatible Chat Completions provider by proposing a reviewed registry row, then run
-the offline registry-to-dispatch conformance gate. Verify the base URL and model id against provider
-documentation and add an availability-gated smoke test when live proof is warranted. No
-provider-specific HTTP bridge is needed.
-
-The offline conformance gate proves exact-key and capability-candidate reachability, real invocation
-materialization, and receipt-emitter registration for every row. It deliberately does not call
-provider preflight, read credentials, or perform network I/O.
-
-## The generic HTTP bridge (`engine_bridge_http.py`)
-
-- Stdlib `urllib.request` only (no new dependency) behind a `Runner`-shaped seam: `runner()` returns
-  a callable with the same `dict -> dict` contract `dispatch()` already uses for every other engine
-  (`{status, output, tokens, latency_seconds, receipt}`).
-- Unit tests inject `FakeHttpRunner` (shared fixture, `tests/test_engine_bridge_http.py`) — the
-  contract is fully testable without live network. A dead/no-op adapter (one that returns without
-  invoking the runner) reds the contract test; a conformant one greens it (#387 AC2).
-- A resolved bearer token exists **only** in the request headers at call time. It is never written
-  into the invocation dict (which flows into run-ledger telemetry), a receipt, `AdvisoryEvidence`,
-  or a log line. A receipt or error message may carry the env var *name* (`auth.key_env`), never
-  its value.
-- An approved HTTP action must carry the canonical registry invocation byte-for-byte. The
-  executable `base_url` host participates in workflow egress validation, so separate route metadata
-  cannot authorize endpoint or credential-environment substitution.
-- HTTP error / timeout / malformed-body responses map onto the existing `FAILURE_STATUSES`
-  vocabulary with a downgrade note — never a fabricated `ok` result.
-
-## `bridge_receipt.v1` — proof of execution
-
-Canonical home: `plugins/fleet-core/scripts/fleet_commons/bridge_receipt.py` (fleet-commons — the
-established cross-plugin shared-primitive mechanism, `{#fleet-commons-mechanism-463}`). Saga loads
-that canonical implementation through its install-safe `fleet_commons_shim.py`. The agy emitter is
-external to this adapter repository and must emit the same schema; conformance keeps it unavailable
-unless its receipt includes every required proof field.
-
-Schema:
-
-```python
-{
-    "schema": "bridge_receipt.v1",
-    "engine_id": str,
-    "variant": str,
-    "transport": "cli" | "http",
-    "wall_time_s": float,
-    "bytes_produced": int,
-    "runner": {...},  # transport-discriminated, see below
-    "invocation_sha256": str,  # canonical digest of the complete secret-free invocation
-}
-```
-
-`runner` is transport-discriminated:
-
-- `transport: cli` → `{"pid": int, "argv": list[str], "exit_code": int}`
-- `transport: http` → `{"url": str, "status_code": int, "model": str}`
-
-`emit_receipt(...)` stamps `schema`/version itself, so a caller cannot mislabel a receipt.
-`validate_receipt(dict) -> list[str]` returns typed errors (empty list = valid).
-
-## Receipt gating: `RAN_AS_REQUESTED` vs `UNPROVEN`
-
-`AdvisoryEvidence` gains an additive `runner_receipt: dict | None = None` field (frozen dataclass —
-no signature break for any existing caller). `dispatch()` populates it from the runner result's
-`receipt` key. `build_dispatch_manifest` (`engine_dispatch.py`) then assigns:
-
-- `Disposition.RAN_AS_REQUESTED` — only when a schema-valid receipt is present.
-- `Disposition.UNPROVEN` (new) — ok-looking evidence with no receipt, or a receipt that fails
-  `validate_receipt`. Receipt-less success is never silently upgraded to "proven."
-- persisted legacy fallback dispositions retain their historical value; a new halted path carries
-  no receipt because there is nothing to prove.
-
-## Read-only CLI routes
-
-CLI actions run in a scoped Git workspace materialized only from approved context. They receive a
-minimal environment and provider-native read-only tools; secret-like paths and high-confidence
-secret content, including bearer/JWT, supported GitHub and Slack tokens, cloud access keys, and
-credential-key assignments, fail before materialization. Undecodable content also fails closed.
-Non-empty external write sets fail closed until the adapter has an enforceable filesystem boundary.
-Caller-supplied route data cannot promote a route, and provider output never applies directly to
-the shared worktree.
-
-## Never a gatekeeper (R6/#387 AC6, restated for the bridge)
-
-No code path in the bridge table lets an engine result set or override a gate/verdict field. A
-runner result carrying a gate-shaped key (`verdict`, `gate_status`, `adjudicated`, `blocking`,
-`hard_stop`, `overall`) is **structurally rejected** — `dispatch()` raises `DispatchError` — not merely policy-rejected. This is the same
-binding decision as the CLI paths (`{#external-engines-never-gatekeepers}` #283), now enforced
-identically across both transports.
-
-## `receipt_emitter` is a required registry key
-
-Every row — CLI or HTTP — must declare `receipt_emitter`. The registry loader raises `RegistryError`
-naming the row if it is missing; a row without receipt wiring cannot be dispatched to (#383 AC3). A
-committed drift guard (`tests/test_bridge_receipt_drift.py`) enumerates every registry
-`receipt_emitter` value and proves each in-repo emitter actually emits through the shared path — a
-test-double bridge that skips the emit call reds the guard. Native Codex execution has no emitter in
-this registry because its selection proof is the host-issued child runtime receipt.
-
-## What this pair does not change
-
-- Verified Workflows logical-role and execution-class selection is untouched. External advisory
-  engines never satisfy its reviewer, validator, or gate arithmetic.
-- The pre-existing CLI dispatch policy in `engine-dispatch.md` retains advisory-only
-  provenance/downgrade semantics; `codex:delegate` is explicitly unsupported.
-- Local/keyless Ollama (`localhost:11434`) is explicitly deferred to a follow-up row; the first
-  HTTP-transport rows are cloud-first (Ollama Cloud, DeepSeek), both bearer-auth from an env var.
+HTTP providers use the generic bridge. Endpoint, model, operation, and auth-variable name come only
+from the registry row. Provider output is accepted only when its Fleet bridge receipt, invocation
+digest, route identity, and output attestation agree. External output is always `non-gating`.

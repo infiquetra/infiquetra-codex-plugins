@@ -1,7 +1,7 @@
 {
   "name": "fleet-core",
-  "version": "0.13.0+codex.20260726234500",
-  "description": "Scripts-only shared Codex library for native model metadata, profile resolution, effort policy, retry behavior, audit primitives, and compatibility readers.",
+  "version": "0.14.0+codex.20260729164721",
+  "description": "Scripts-only shared Codex library for model metadata, profile resolution, proof schemas, leases, and compatibility readers.",
   "author": {
     "name": "Infiquetra",
     "email": "hello@infiquetra.com",
@@ -15,15 +15,14 @@
     "shared-primitives",
     "tier-palette",
     "tier-resolver",
-    "effort-rider",
     "retry-backoff",
     "library",
     "infiquetra"
   ],
   "interface": {
     "displayName": "Fleet Core",
-    "shortDescription": "Shared native model, effort, retry, and compatibility primitives.",
-    "longDescription": "Provides the scripts-only shared library used by Infiquetra Codex plugins to preserve native model-catalog metadata, resolve profile policy, enforce effort and retry contracts, and read closed historical compatibility vocabulary.",
+    "shortDescription": "Shared model, proof, lease, and compatibility primitives.",
+    "longDescription": "Provides the scripts-only shared library used by Infiquetra Codex plugins to preserve native model-catalog metadata, resolve profile policy, validate bridge proof, coordinate leases, and read closed historical compatibility vocabulary.",
     "developerName": "Infiquetra",
     "category": "Coding",
     "capabilities": [

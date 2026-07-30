@@ -63,7 +63,7 @@ def _root_finding(value: object, index: int) -> dict[str, Any]:
     return {**finding, "source": value["source"].strip(), "authority": "root-adopted"}
 
 
-def _validate_reviewer_scores(
+def _validate_reviewer_result(
     result: Mapping[str, Any],
     assignment_id: str,
     *,
@@ -101,11 +101,6 @@ def _validate_reviewer_scores(
     if not math.isclose(float(overall), expected, abs_tol=1e-9):
         raise GateEvaluationError(f"reviewer {assignment_id} arithmetic is invalid")
     issues: list[str] = []
-    if float(overall) < 9.0:
-        issues.append(f"reviewer {assignment_id} average {float(overall):.2f} is below 9.0")
-    minimum = min(float(score) for score in scores)
-    if minimum < 7.0:
-        issues.append(f"reviewer {assignment_id} dimension {minimum:.2f} is below 7.0")
     if result.get("hard_stop") is True:
         issues.append(f"reviewer {assignment_id} declared a role hard stop")
     if result.get("verdict") != "accept":
@@ -159,10 +154,12 @@ def _finding_issue(finding: Mapping[str, Any], *, revalidated: set[str]) -> str 
         return None
     if finding["severity"] in {"P0", "P1"}:
         return f"unresolved {finding['severity']} finding {finding_id}"
-    if finding["category"] == "security":
-        return f"unresolved security finding {finding_id}"
     if finding["hard_stop"] is True:
         return f"unresolved role hard stop {finding_id}"
+    if finding["scope_disposition"] == "approval-required":
+        return f"finding {finding_id} requires operator approval before broader work"
+    if finding["scope_disposition"] == "defer":
+        return None
     return f"unresolved {finding['severity']} finding {finding_id}"
 
 
@@ -210,23 +207,13 @@ def evaluate_gate(
     assignments = {assignment.assignment_id: assignment for assignment in contract.assignments}
     for assignment_id, authority in authorities.items():
         assignment = assignments[assignment_id]
-        parent = assignment.parent
-        if parent == "root":
-            expected_parent = implementation_root_identity
-            expected_root = implementation_root_identity
-            expected_path = f"/root/{assignment_id}"
-        elif parent.startswith("fresh-root:"):
-            expected_parent = authority["execution_root_id"]
-            expected_root = authority["execution_root_id"]
-            expected_path = f"/root/{assignment_id}"
-            if expected_root == implementation_root_identity:
-                raise GateEvaluationError(
-                    f"reviewer {assignment_id} fresh root reuses the implementation root"
-                )
-        else:
+        if assignment.parent != "root":
             raise GateEvaluationError(
-                f"assignment {assignment_id} has an unsupported execution parent {parent!r}"
+                f"assignment {assignment_id} is not a direct child of root"
             )
+        expected_parent = implementation_root_identity
+        expected_root = implementation_root_identity
+        expected_path = f"/root/{assignment_id}"
         if authority["parent_thread_id"] != expected_parent:
             raise GateEvaluationError(
                 f"attempt authority {assignment_id} parent thread does not match the approved graph"
@@ -264,7 +251,7 @@ def evaluate_gate(
             )
         if launch.result_schema == "reviewer-result.v1":
             issues.extend(
-                _validate_reviewer_scores(
+                _validate_reviewer_result(
                     normalized,
                     assignment_id,
                     expected_mandates=launch.reviewer_mandate_ids,
@@ -277,13 +264,20 @@ def evaluate_gate(
         if assignment.is_independent_review
     ]
     if not independent_reviewers:
-        hard_stops.append("no independent fresh-root reviewer is selected")
-    roots_seen: set[str] = set()
+        hard_stops.append("no independent direct-sibling reviewer is selected")
+    paths_seen: set[str] = set()
+    implementation_paths = {
+        authorities[assignment.assignment_id]["agent_path"]
+        for assignment in contract.assignments
+        if assignment.category in {"worker", "tester", "git-operator"}
+    }
     for reviewer in independent_reviewers:
-        root_identity = authorities[reviewer.assignment_id]["execution_root_id"]
-        if root_identity == implementation_root_identity or root_identity in roots_seen:
+        reviewer_path = authorities[reviewer.assignment_id]["agent_path"]
+        if reviewer_path in paths_seen or any(
+            reviewer_path.startswith(f"{path}/") for path in implementation_paths
+        ):
             hard_stops.append(f"reviewer {reviewer.assignment_id} is not independent")
-        roots_seen.add(root_identity)
+        paths_seen.add(reviewer_path)
 
     expected_checks = {check.check_id: check for check in contract.checks}
     unexpected_checks = set(check_outcomes) - set(expected_checks)
@@ -310,13 +304,25 @@ def evaluate_gate(
     all_findings.extend(
         _root_finding(value, index) for index, value in enumerate(adopted_root_findings)
     )
+    one_hop_findings = [
+        finding for finding in all_findings if finding["scope_disposition"] == "one-hop"
+    ]
+    if len(one_hop_findings) > 1:
+        hard_stops.append(
+            "more than one unplanned one-hop finding requires operator approval"
+        )
+    approval_required = any(
+        finding["scope_disposition"] == "approval-required"
+        and finding.get("resolved") is not True
+        for finding in all_findings
+    ) or len(one_hop_findings) > 1
     for finding in all_findings:
         issue = _finding_issue(finding, revalidated=revalidated)
         if issue is not None:
             if (
                 finding["severity"] in {"P0", "P1"}
-                or finding["category"] == "security"
                 or finding["hard_stop"] is True
+                or finding["scope_disposition"] == "approval-required"
             ):
                 hard_stops.append(issue)
             else:
@@ -329,9 +335,14 @@ def evaluate_gate(
 
     blockers = sorted(set(hard_stops + issues))
     actionable_finding_remains = any(
-        finding.get("resolved") is not True for finding in all_findings
+        finding.get("resolved") is not True
+        and finding["scope_disposition"] != "defer"
+        for finding in all_findings
     )
-    if (
+    if approval_required:
+        verdict = "escalate"
+        next_round = None
+    elif (
         blockers
         and remediation_round >= MAX_REMEDIATION_ROUNDS
         and actionable_finding_remains
@@ -345,7 +356,7 @@ def evaluate_gate(
         verdict = "pass"
         next_round = None
     return {
-        "schema_version": 2,
+        "schema_version": 3,
         "verdict": verdict,
         "contract_sha256": contract.contract_sha256,
         "authority_sha256": contract.authority_sha256,
@@ -356,6 +367,7 @@ def evaluate_gate(
         "checks": normalized_checks,
         "reviewers": sorted(reviewer.assignment_id for reviewer in independent_reviewers),
         "finding_count": len(all_findings),
+        "deviation_used": bool(one_hop_findings),
         "root_release": verdict == "pass",
     }
 

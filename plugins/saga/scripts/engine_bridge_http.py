@@ -4,11 +4,11 @@
 Any registry row declaring ``transport: http`` dispatches through this one bridge -- there is zero
 per-provider branching here. Every provider difference (base URL, model id, bearer auth env var)
 lives entirely in the registry row's ``invocation`` data, which reaches the bridge through the
-invocation dict :func:`engine_dispatch._build_invocation` builds. Ollama Cloud and DeepSeek are the
+invocation dict the Saga harness builds. Ollama Cloud and DeepSeek are the
 first two rows; a new OpenAI-compatible provider is a registry row, never a code change.
 
-The bridge is a :data:`Runner` -- the same ``dict -> dict`` seam :func:`engine_dispatch.dispatch`
-already consumes (KTD10). :func:`runner` returns the live urllib-backed runner; unit tests inject a
+The bridge is a :data:`Runner` -- the same ``dict -> dict`` seam the harness consumes.
+:func:`runner` returns the live urllib-backed runner; unit tests inject a
 ``FakeHttpRunner`` instead so the suite needs no live network. A run returns
 ``{status, output, tokens, latency_seconds, receipt}`` where ``receipt`` is a schema-valid
 ``bridge_receipt.v1`` (HTTP shape: ``runner={url, status_code, model}``).
@@ -49,8 +49,7 @@ MIN_TIMEOUT_SECONDS = 1.0
 MAX_TIMEOUT_SECONDS = 120.0
 
 # The bridge's own vocabulary of non-ok terminal statuses, a subset of
-# ``engine_dispatch.FAILURE_STATUSES`` -- an HTTP error / timeout / malformed body maps here and is
-# NEVER reported as ``ok`` (plan U5: "HTTP error/timeout/malformed never fabricate ok").
+# An HTTP error, timeout, or malformed body maps here and is never reported as ``ok``.
 STATUS_OK = "ok"
 STATUS_ERROR = "error"
 STATUS_TIMEOUT = "timeout"
@@ -195,7 +194,7 @@ def _invoke(
     resolver: Resolver | None,
     urlopen_factory: Callable[[str, tuple[str, ...]], UrlOpen] | None,
 ) -> dict[str, Any]:
-    """Build and send one chat/completions request; return the Runner-contract result.
+    """Build and send one chat/completions or embeddings request.
 
     Row-driven: ``base_url``, ``model``, and ``auth`` come from the invocation dict, never from
     provider-specific code. The bearer token (when ``auth.mode == "bearer"``) is resolved here and
@@ -219,10 +218,16 @@ def _invoke(
         if resolution_error:
             return _failure(STATUS_ERROR, resolution_error)
 
-    url = base_url.rstrip("/") + "/chat/completions"
-    body = json.dumps({"model": model, "messages": [{"role": "user", "content": task}]}).encode(
-        "utf-8"
-    )
+    operation = str(invocation.get("operation") or "chat")
+    if operation == "embedding":
+        url = base_url.rstrip("/") + "/embeddings"
+        body_payload = {"model": model, "input": task}
+    elif operation == "chat":
+        url = base_url.rstrip("/") + "/chat/completions"
+        body_payload = {"model": model, "messages": [{"role": "user", "content": task}]}
+    else:
+        return _failure(STATUS_ERROR, f"unsupported HTTP operation {operation!r}")
+    body = json.dumps(body_payload).encode("utf-8")
     headers = {"Content-Type": "application/json"}
 
     # --- SECRET BOUNDARY: token exists only inside this block and the headers dict it feeds. ---
@@ -274,7 +279,7 @@ def _invoke(
 
     latency = max(clock() - started, 0.0)
 
-    output = _extract_output(raw)
+    output = _extract_output(raw, operation=operation)
     if output is None:
         return _failure(STATUS_MALFORMED, f"malformed response body from {url}")
 
@@ -304,10 +309,22 @@ def _invoke(
     }
 
 
-def _extract_output(raw: bytes) -> str | None:
-    """Pull ``choices[0].message.content`` from an OpenAI chat/completions body, or ``None``."""
+def _extract_output(raw: bytes, *, operation: str = "chat") -> str | None:
+    """Extract canonical output from an OpenAI-compatible response."""
     try:
         parsed = json.loads(raw.decode("utf-8"))
+        if operation == "embedding":
+            embedding = parsed["data"][0]["embedding"]
+            if (
+                not isinstance(embedding, list)
+                or not embedding
+                or any(
+                    isinstance(value, bool) or not isinstance(value, (int, float))
+                    for value in embedding
+                )
+            ):
+                return None
+            return json.dumps(embedding, separators=(",", ":"))
         content = parsed["choices"][0]["message"]["content"]
     except (ValueError, KeyError, IndexError, TypeError, UnicodeDecodeError):
         return None

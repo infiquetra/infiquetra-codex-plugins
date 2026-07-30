@@ -64,12 +64,18 @@ def test_common_result_schema_and_reviewer_extension_reach_every_profile() -> No
     bundle = R.render_bundle(registry, R.load_catalog_snapshot())
     for profile in bundle.profiles:
         instructions = tomllib.loads(profile.content.decode())["developer_instructions"]
-        assert "arithmetic-mean-of-applicable-dimensions" in instructions
-        assert "minimum_acceptance_average" in instructions
-        assert "assignment-result.v1" in instructions
-        assert "reviewer-result.v1" in instructions
-        assert "canonical agent path" in instructions
-        assert "protected-evidence" not in instructions
+        assert "compute defaults, not logical-role identity" in instructions
+        assert "requested typed result" in instructions
+        assert "Runtime identity and permissions come from Codex" in instructions
+        assert "minimum_acceptance_average" not in instructions
+        assert "sandbox_mode" not in tomllib.loads(profile.content.decode())
+    assert registry.result_types["finding"]["scope_dispositions"] == [
+        "planned",
+        "one-hop",
+        "defer",
+        "approval-required",
+    ]
+    assert registry.review_policy["scores_are_advisory"] is True
 
 
 def test_representative_reviewer_lenses_preserve_findings_exclusions_and_hard_rules() -> None:
@@ -89,8 +95,8 @@ def test_representative_reviewer_lenses_preserve_findings_exclusions_and_hard_ru
             "Input Validation & Injection",
             "PII / Data Privacy",
             "Dependency & Supply Chain",
-            "BLOCKING",
-            "Preserved Scoring Rubric",
+            "proportional engineering review",
+            "actual P0/P1",
         ),
         "architecture-reviewer": (
             "Pattern Consistency",

@@ -29,7 +29,6 @@ from scripts.validate_codex_plugins import (
     validate_saga_workflow_independence,
     validate_verified_workflows_agents,
     validate_verified_workflows_canonical_surface,
-    validate_verified_workflows_project_agents,
     validate_verified_workflows_runtime,
     workflow_registry_sha256,
     validate_relative_file,
@@ -108,7 +107,7 @@ def copy_verified_workflows_runtime_target(tmp_path: Path) -> Path:
         REPO_ROOT / "scripts" / "build_codex_v2_orchestration_matrix.py",
         root / "scripts" / "build_codex_v2_orchestration_matrix.py",
     )
-    shutil.copytree(REPO_ROOT / ".codex" / "agents", root / ".codex" / "agents")
+    (root / ".codex").mkdir(parents=True)
     shutil.copy2(REPO_ROOT / ".codex" / "config.toml", root / ".codex" / "config.toml")
     (root / "docs" / "validation").mkdir(parents=True)
     for name in (
@@ -133,8 +132,10 @@ def test_target_fixture_validates_without_active_cutover():
     assert validate_repository(REPO_ROOT, mode="target-fixture") == []
 
 
-def test_cutover_validation_passes_after_u8_release_evidence():
-    assert validate_repository(REPO_ROOT, mode="cutover") == []
+def test_cutover_validation_stays_blocked_at_source_ready_boundary():
+    errors = validate_repository(REPO_ROOT, mode="cutover")
+
+    assert any("cutover requires review" in error for error in errors)
 
 
 def test_current_mode_rejects_pending_real_profile_cutover(monkeypatch):
@@ -235,8 +236,8 @@ def test_target_plugin_set_describes_saga_family_cutover():
         "discord-identity-assets",
     )
     assert TARGET_EXPECTED_PLUGINS["verified-workflows"] == {
-        "version": "2.1.0+codex.20260727035515",
-        "skills": ("run", "review-workflow", "appsec-audit", "select-agent"),
+        "version": "3.0.0+codex.20260729164721",
+        "skills": ("run", "review-workflow", "appsec-audit"),
     }
     assert "team-execution" not in TARGET_EXPECTED_PLUGINS
     assert {"blueprint-reviewer", "sdlc-manager"}.isdisjoint(TARGET_EXPECTED_PLUGINS)
@@ -321,16 +322,16 @@ def test_target_fixture_rejects_duplicate_plugin_entries():
         "plugins": [
             {
                 "name": "verified-workflows",
-                "version": "2.1.0+codex.20260727035515",
+                "version": "3.0.0+codex.20260729164721",
                 "publication_status": "released",
-                "skills": ["run", "review-workflow", "appsec-audit", "select-agent"],
+                "skills": ["run", "review-workflow", "appsec-audit"],
                 "forbidden_active_dirs": [".claude-plugin", "commands"],
             },
             {
                 "name": "verified-workflows",
-                "version": "2.1.0+codex.20260727035515",
+                "version": "3.0.0+codex.20260729164721",
                 "publication_status": "released",
-                "skills": ["run", "review-workflow", "appsec-audit", "select-agent"],
+                "skills": ["run", "review-workflow", "appsec-audit"],
                 "forbidden_active_dirs": [".claude-plugin", "commands"],
             },
         ],
@@ -409,58 +410,23 @@ def test_verified_workflows_role_profiles_are_part_of_repo_validation() -> None:
     assert errors == []
 
 
-def test_verified_workflows_project_agents_bind_generated_runtime_names() -> None:
-    errors: list[str] = []
-    profiles = [
-        {"profile_id": profile_id, "runtime_agent_name": profile_id}
-        for profile_id in (
-                "review_max",
-                "review_high",
-                "work_medium",
-                "work_high",
-            "test_medium",
-            "scan_low",
-            "monitor_low",
-        )
-    ]
-
-    validate_verified_workflows_project_agents(
-        REPO_ROOT,
-        {"profiles": profiles},
-        errors,
-    )
-
-    assert errors == []
-
-
-def test_verified_workflows_project_agents_reject_stale_profile_bytes(
+def test_verified_workflows_rejects_repository_local_profile_overrides(
     tmp_path: Path,
 ) -> None:
     root = tmp_path / "repo"
-    shutil.copytree(REPO_ROOT / ".codex" / "agents", root / ".codex" / "agents")
-    (root / "plugins" / "verified-workflows").mkdir(parents=True)
     shutil.copytree(
-        REPO_ROOT / "plugins" / "verified-workflows" / "agents",
-        root / "plugins" / "verified-workflows" / "agents",
+        REPO_ROOT / "plugins",
+        root / "plugins",
     )
-    project_profile = root / ".codex" / "agents" / "review_high.toml"
-    project_profile.write_bytes(project_profile.read_bytes() + b"\n# stale\n")
+    shutil.copytree(REPO_ROOT / "docs" / "validation", root / "docs" / "validation")
+    project_agents = root / ".codex" / "agents"
+    project_agents.mkdir(parents=True)
+    (project_agents / "review_high.toml").write_text("# stale override\n", encoding="utf-8")
     errors: list[str] = []
 
-    validate_verified_workflows_project_agents(
-        root,
-        {
-            "profiles": [
-                {
-                    "profile_id": "review_high",
-                    "runtime_agent_name": "review_high",
-                }
-            ]
-        },
-        errors,
-    )
+    validate_verified_workflows_agents(root, errors)
 
-    assert any("project runtime agent bytes drifted" in error for error in errors)
+    assert any("repository-local profile overrides are retired" in error for error in errors)
 
 
 def test_verified_workflows_runtime_surfaces_are_part_of_repo_validation() -> None:

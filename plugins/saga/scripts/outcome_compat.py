@@ -1171,7 +1171,7 @@ def _refuse_unsafe_handoff_ancestors(path: Path) -> None:
     lstats every entry 0o777, cannot host a handoff store. The typed halt carries relocate/remount
     guidance in its ``next_action``.
 
-    Ported from fleet-core ``audit_store._refuse_unsafe_ancestors`` rather than imported: this
+    Ported from the historical Fleet Core ancestor guard rather than imported: this
     module is the frozen cross-runtime seam and never imports fleet-core. Production callers reach
     this through ``outcome_store.resolve_common_dir``, which resolves the store root before the
     walk; ``resolve`` collapses a symlinked component but its mode bits survive, so a symlink onto
@@ -1206,7 +1206,7 @@ def _refuse_unsafe_handoff_ancestors(path: Path) -> None:
 def _ensure_private_dir(path: Path) -> None:
     """Create the handoff-store directory ``0o700``; refuse an unsafe pre-existing one.
 
-    Mirrors fleet-core ``audit_store._ensure_private_dir`` in both halves: the ancestor walk
+    Mirrors the historical Fleet Core private-directory guard in both halves: the ancestor walk
     runs first, then the final directory must be a real directory (never a symlink), owned by
     the effective uid, mode exactly ``0o700``. A handoff record is protected same-clone state —
     its directory must not be readable or traversable by other users, and a permissive

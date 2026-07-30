@@ -26,9 +26,10 @@ git log -1 --format=%ci origin/<default> | awk '{print $1}'   # latest-commit IS
 ```
 
 **Compute today from the session reminder's `## currentDate`, NEVER from `date`** — a containerized clock
-can be hours off. If the latest-commit date is older than `(today − window)`, **BLOCK**: state the latest
-commit date, the window bounds, the two likely causes (today is wrong in this session, or the base is
-behind the remote), and `Codex blocking question` (confirm today / re-fetch and re-run / proceed-anyway). If the
+can be hours off. If the latest-commit date is older than `(today − window)`, **BLOCK**: state the
+latest commit date, the window bounds, the two likely causes (today is wrong in this session, or the
+base is behind the remote), and offer a native choice (confirm today / re-fetch and re-run /
+proceed-anyway). If the
 model cannot reliably compute "today", it **stops here and asks** rather than proceeding.
 
 The disclosed skip paths all proceed, carrying their one-line reason into the retro narrative
@@ -88,9 +89,10 @@ python3 plugins/saga/scripts/discover_sessions.py --repo <repo-folder> --days <N
 python3 plugins/saga/scripts/extract_session_skeleton.py --output "$SCRATCH/<id>.skeleton.txt" < <session-file>
 ```
 
-**Fan-out (optional, offered).** When several sessions warrant parallel synthesis, **OFFER** a backend per
-`../../../references/operator-choice.md` and dispatch **one generic agent per session** (`Explore` / `Task` —
-this plugin has **no `agents/` dir**). Pass the scratch **paths** + guardrails as prompt text: read ONLY
+**Fan-out (optional, offered).** When several sessions warrant parallel synthesis, **OFFER** a backend
+per `../../../references/operator-choice.md` and, only after explicit authorization, dispatch one
+`default` agent per session. This plugin has no `agents/` directory. Pass the scratch **paths** +
+guardrails as prompt text: read ONLY
 these paths, never read raw `~/.codex/sessions/`, never reproduce tool I/O or thinking blocks, synthesize
 *what was tried / what didn't work / key decisions / related context*. This is CE `ce-compound`'s
 parallel-research pattern applied to the transcript evidence.
@@ -99,7 +101,8 @@ parallel-research pattern applied to the transcript evidence.
 
 ## Pass 4 — Interview question bank (grounded in Pass 1-3 evidence)
 
-Free-form for substance; `Codex blocking question` for choices. Anchor every question in evidence. The bank:
+Use free-form prompts for substance and the native operator-choice contract for choices. Anchor
+every question in evidence. The bank:
 
 - **What shipped?** — confirm the evidence's read of the outcome (what users / the system got).
 - **What surprised you?** — the thing that was not in the original mental model.
@@ -127,8 +130,8 @@ Free-form for substance; `Codex blocking question` for choices. Anchor every que
 - **Journal-rule enforcement** — `MEMORY.md` over the ~24.4KB size rule, an over-long index entry whose
   detail should move to a topic file, an entry missing the **Generalizable rule** line.
 
-Each flagged item → a diff + `Codex blocking question` (apply / skip / modify). A `QUEUED → ARCHIVE` move deletes
-from `QUEUED.md`, so it is propose, not auto.
+Each flagged item → a diff plus a native apply / skip / modify choice. A `QUEUED → ARCHIVE` move
+deletes from `QUEUED.md`, so it is propose, not auto.
 
 ---
 

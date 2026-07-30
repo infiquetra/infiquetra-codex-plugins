@@ -1,8 +1,10 @@
 # Tier 2 — Zero-Save Session Forensics (fallback only)
 
-Tier 2 is `/resume`'s **last resort**: a slim, source-only port of CE's session forensics over local JSONL
-session logs. It runs **only** when Tier 1 found **no saga AND no resolvable issue**. It is context-safe by
-construction — the orchestrator never reads session content; a generic synthesis agent does, file-mediated.
+Tier 2 is `saga:resume`'s **last resort**: a slim, source-only port of CE's session forensics over
+local JSONL session logs. It runs **only** when Tier 1 found no Saga and no resolvable issue **and**
+the operator explicitly requested multi-session reconstruction. It is context-safe by construction:
+the orchestrator never reads session content; an explicitly authorized `default` agent does,
+file-mediated.
 
 ## The corrected trigger — same-machine work that never wrote a saga
 
@@ -75,9 +77,10 @@ python3 plugins/saga/scripts/extract_session_skeleton.py --output "$SCRATCH/<id>
 `extract_session_skeleton.py` reads one JSONL session on **stdin** and writes the filtered skeleton to
 `--output`; stdout carries only the one-line `_meta` status.
 
-Then dispatch a **generic** `Explore` / `Task` agent (this plugin has **no** `agents/` dir — do **NOT**
-reference a named `resume-session-historian` or any `ce-*` agent; mirror `/code-review` SKILL line 164).
-Run it on a mid-tier model — the synthesizer needs no frontier reasoning. The dispatch prompt:
+Then, only after explicit delegation authorization, dispatch a `default` agent. This plugin has no
+`agents/` directory; do **not** reference a named `resume-session-historian` or any `ce-*` agent. If
+delegation is not authorized, stop because the orchestrator must not read the skeletons. The dispatch
+prompt:
 
 - names the problem topic in one sentence;
 - lists the scratch **paths** (one per session) with their platform / timestamp metadata — **paths only,

@@ -1,33 +1,33 @@
 ---
 name: resume
-description: The Infiquetra lifecycle's HEAVY forensic reconstruction engine — the deep half beside /loop's lightweight restore. Two tiers — Tier 1 reconstructs from the saga's WHOLE tick-chain trajectory (not just the last frame) plus PR archaeology and explicit conflict reconciliation; Tier 2 (fallback only, no saga AND no resolvable issue) is a slim source-only port of CE session forensics over local JSONL logs. Read-only on the world; it writes one git-ignored re-entry tick that reuses the restored saga_id, then routes. Triggers on "resume", "reconstruct what happened", "what was tried across these PRs", a corrupt or missing local cache, or same-machine work that never wrote a saga.
+description: Reconstruct an Infiquetra Saga lifecycle across Saga ticks, issues, PRs, committed docs, or explicitly requested multi-session forensics. Use when the user asks to reconstruct lifecycle state, reconcile issue or PR history, recover missing Saga state, or determine the next lifecycle owner. Do not use to continue a known saved Codex chat; native /resume owns that.
 ---
 
 # Resume
 
-`/resume` answers **"What actually happened here, across the whole history — and where do I re-enter?"**
-It is the lifecycle's **heavy forensic reconstruction engine**: the deep dig that runs when a thread is
-tangled across many rounds and PRs, when the local cache is corrupt or absent, or when same-machine work
-ran before any saga was ever written. It reconstructs the full trajectory, reconciles conflicts against
-the durable source of truth, and then **routes** to the one command that owns the next phase. It does
-**not** build, plan, review, file issues, or deploy — it reconstructs and hands off.
+Native Codex `/resume` continues a known saved chat. `saga:resume` instead answers **"What actually
+happened across this lifecycle, and where do I re-enter?"** It is the lifecycle's **heavy forensic
+reconstruction engine**: the deep dig for work tangled across Saga ticks, issues, PRs, and committed
+artifacts, or for explicitly requested multi-session forensics. It reconstructs the full trajectory,
+reconciles conflicts against durable truth, and **routes** to the command that owns the next phase. It
+does **not** continue a saved chat, build, plan, review, file issues, or deploy.
 
-`/resume` is the **deep half beside `/loop`**. `/loop` already does the lightweight restore (latest tick)
-and the inline cold reconstruction (`load_saga_context.py` + reading `docs/*`) — see
-`../loop/references/drive-and-resume.md` (the Resume contract). `/loop` **offers** `/resume` as an
-opt-in only when the lightweight path is not enough. `/resume` is what it offers: the all-ticks
+`saga:resume` is the **deep half beside `saga:loop`**. `saga:loop` already does the lightweight restore
+(latest tick) and inline cold reconstruction (`load_saga_context.py` + reading `docs/*`)—see
+`../loop/references/drive-and-resume.md`. `saga:loop` **offers** `saga:resume` only when the lightweight
+path is not enough. `saga:resume` provides the all-ticks
 trajectory read, deeper PR archaeology, conflict reconciliation, and — as a last resort — JSONL session
-forensics. It never routes back to `/loop` (no ping-pong); it routes forward to the owning command.
+forensics. It never routes back to `saga:loop`; it routes forward to the owning command.
 
 ## Position in the lifecycle
 
-`/resume` sits beside `/loop` as the resume substrate's **forensic** tier:
+`saga:resume` sits beside `saga:loop` as the lifecycle substrate's **forensic** tier:
 
-- `/loop` answers: "Where does this go, and what's already in flight?" (lightweight scan / restore / route)
-- **`/resume` answers: "What happened across the whole history, and where do I re-enter?"** (this engine)
+- `saga:loop` answers: "Where does this go, and what's already in flight?" (lightweight scan / restore / route)
+- **`saga:resume` answers: "What happened across the whole lifecycle, and where do I re-enter?"**
 - the destination command (`/work`, `/handoff`, …) answers its own phase question once routed to
 
-`/loop` does the cheap restore inline; `/resume` is the expensive dig `/loop` defers to. The two
+`saga:loop` does the cheap restore inline; `saga:resume` is the expensive dig it defers to. The two
 reconcile **identically** — they inherit the same durability precedence (committed `docs/*` + GitHub
 authoritative; the git-ignored saga cache is the anchor, not the authority). The only difference is
 depth: `/resume` reads the whole tick chain, not the last frame.
@@ -55,24 +55,32 @@ depth: `/resume` reads the whole tick chain, not the last frame.
    **GENERIC synthesis agent** (its own context window) reads the extracts via paths and returns prose.
    Cap 5 sessions; exclude the current session; never reproduce tool I/O or thinking blocks.
    (See `references/session-forensics.md`.)
-5. **Read-only on the WORLD; one git-ignored tick is the only write.** `/resume` reads code, issues, PRs,
+5. **Read-only on the WORLD; one git-ignored tick is the only write.** `saga:resume` reads code, issues, PRs,
    and the board but mutates none of them. Its **single write** is one re-entry saga tick that **REUSES
    the restored saga_id** (never a paraphrase-derived id). It mints a new saga **only** in the Tier-2
    no-saga branch. **Never `git add`** the tick — saga state is git-ignored, machine-local.
-6. **Route, don't execute.** `/resume` reconstructs and then routes to the one command that owns the next
+6. **Route, don't execute.** `saga:resume` reconstructs and then routes to the one command that owns the next
    phase, via the **shared** `../loop/references/dispatch-table.md` (referenced, never duplicated). The
    common case is `/work` (resume the round-N loop) or `/handoff` (let another session pick it up). It
-   never builds, never files issues, and **never routes back to `/loop`** — no ping-pong.
+   never builds, never files issues, and never routes back to `saga:loop`.
+
+## SessionStart hook boundary
+
+After the plugin is trusted, Codex auto-discovers `hooks/hooks.json` and may run
+`hooks/session_context.py` at SessionStart. The 0.146 hook runner preserves this script's stdout even
+though it exits without reading stdin. The fixed `saga:loop resume <id>` line is advisory re-entry
+context only: it does not prove the current model, agent role, workflow state, completed work, or the
+correct next action. Always re-read Saga state and durable artifacts before acting.
 
 ## Interaction method
 
-Use `Codex blocking question` for choices from a known set (which saga thread when several match, resume-vs-fresh,
-the reconciled-state confirmation, the route destination). Call `ToolSearch` with
-`blocking question` first if its schema is not loaded. Ask one question per turn; prefer a concise
-single-select. For open-ended discussion, ask inline.
+Follow `../../references/operator-choice.md` for choices from a known set (which Saga thread when
+several match, native-chat continuation vs lifecycle reconstruction, the reconciled-state
+confirmation, and the route destination). Ask one question per turn; prefer a concise single-select.
+For open-ended discussion, ask inline.
 
-In a channel session (`redis-channel` active), `Codex blocking question` cannot be called — inline the choices in
-your reply text instead. Follow the canonical channel-inline convention in
+In a channel session (`redis-channel` active), inline the choices in your reply text instead. Follow
+the canonical channel-inline convention in
 `saga/skills/brainstorm/SKILL.md` (do not duplicate its wording here).
 
 Use repo-relative paths in every routing tick and every reference to a committed doc. Absolute paths
@@ -83,11 +91,16 @@ deliberate absolute path — it is throwaway, machine-local, and never committed
 
 ## Phase 0 — Enter, scan, classify the tier
 
-Capture the input and decide which tier the run is before reconstructing anything.
+Capture the input and decide whether native continuation or Saga reconstruction owns it before
+scanning any lifecycle artifact.
 
-The input is a GitHub issue reference, a plan / doc path, a set of PR numbers, the word `resume`, or a
-bare "reconstruct what happened" ask. Take it from command arguments or the active artifact. If empty,
-ask: "What should I reconstruct? Point me at the issue, a plan/doc path, the PRs, or describe the work."
+If the request only identifies a known saved chat or thread and does not ask for lifecycle
+reconstruction, route to native Codex `/resume` and stop. Do not scan Saga state or write a re-entry
+tick. If ownership is ambiguous, ask one concise choice before scanning.
+
+Saga input is a GitHub issue reference, a plan or document path, a set of PR numbers, or an explicit
+"reconstruct what happened" ask. Take it from command arguments or the active artifact. If empty,
+ask: "What lifecycle should I reconstruct? Point me at the issue, plan, document, or PRs."
 
 Scan the saga log to find in-flight candidates:
 
@@ -104,8 +117,10 @@ the orchestration pointer. Classify the run:
 - **resolvable-issue** — no matching saga, but the input names a GitHub issue (or one resolves via
   `state.json.sagas[*].issue_ref` ending in `#N`) -> **Tier 1** via PR archaeology + the issue
   (Phase 2's `load_saga_context.py` / `saga.py context` path).
-- **NEITHER** — no matching saga AND no resolvable issue -> **Tier 2** (Phase 3b), the last-resort JSONL
-  session forensics.
+- **NEITHER + explicit multi-session request** — no matching Saga, no resolvable issue, and the
+  operator explicitly requested local multi-session reconstruction -> **Tier 2** (Phase 3b).
+- **NEITHER without explicit multi-session request** — stop and ask whether to run Tier 2; never
+  inspect local session logs implicitly.
 
 ---
 
@@ -115,7 +130,7 @@ Pick the one saga thread to reconstruct and **capture its EXACT `saga_id`** — 
 Phase 5; never re-derive it from a paraphrase of the task.
 
 - If `scan` surfaced **one** matching candidate, select it.
-- If **several** match, disambiguate with `Codex blocking question` (single-select over the candidate list:
+- If **several** match, disambiguate through the native operator-choice contract (single-select over the candidate list:
   `saga_id` + `lifecycle_phase` + `issue_ref` + `updated_at`).
 - For an issue whose `issue-<N>` directory is absent, resolve the id via `state.json.sagas[*].issue_ref`
   ending in `#N` — the id is **sticky**; **never** rename the directory (slug-instability guard,
@@ -211,8 +226,9 @@ explicitly and confirm the reconciled state with the operator (Interaction metho
 
 ## Phase 3b — Tier 2: zero-save JSONL session forensics (FALLBACK ONLY)
 
-Fires **only** when Phase 0 found **no saga AND no resolvable issue** — same-machine work that never
-wrote a saga: raw sessions, pre-saga-adoption work, or a session that crashed before its first tick.
+Fires **only** when Phase 0 found **no Saga AND no resolvable issue** and the operator explicitly
+requested multi-session forensics—same-machine work that never wrote a Saga: raw sessions,
+pre-Saga-adoption work, or a session that crashed before its first tick.
 This is **not** the "fresh clone on a new machine" case (there the local session logs are simply absent —
 fall back to the committed `docs/*` instead). Tier 2 is a slim source-only port of CE session forensics.
 
@@ -245,9 +261,10 @@ extract content into the dispatch prompt. (Full recipe + the CE guardrails: `ref
    python3 plugins/saga/scripts/extract_session_skeleton.py --output "$SCRATCH/<id>.skeleton.txt" < <session-file>
    ```
 
-4. **Dispatch a GENERIC synthesis agent** (`Explore` / `Task` — this plugin has **no** `agents/` dir, so
-   do **not** reference a named `ce-*` / `resume-session-historian` agent; mirror `/code-review` SKILL
-   line 164). Pass the scratch **paths** + the historian guardrails as prompt text: read ONLY these
+4. **Dispatch a `default` synthesis agent only after explicit authorization.** This plugin has no
+   `agents/` directory; do **not** reference a named `ce-*` or `resume-session-historian` agent. If
+   delegation is not authorized, stop because the orchestrator must not read the skeletons. Pass the
+   scratch **paths** + the historian guardrails as prompt text: read ONLY these
    paths, never read raw `~/.codex/sessions/`, never invoke `Skill`, never reproduce tool I/O or thinking
    blocks, synthesize *what was tried / what didn't work / key decisions / related context*.
 
@@ -322,13 +339,13 @@ python3 plugins/saga/scripts/saga.py save \
 
 ## Boundary negatives
 
-`/resume` reconstructs and routes. It does **NOT**:
+`saga:resume` reconstructs and routes. It does **NOT**:
 
 - build, test, or open / merge a PR (-> `/work`);
 - file SDLC issues (-> `/handoff` / `mission-control`);
 - deploy (-> `deploy`);
-- add an `agents/` dir or a custom subagent — Tier 2 uses **generic** `Explore` / `Task` agents
-  (mirror `/code-review` SKILL line 164);
+- add an `agents/` directory or a custom subagent—Tier 2 uses `default` only after explicit
+  authorization;
 - re-port gstack's context save/restore — that **is** the saga (`scripts/saga.py`), already shipped;
 - adopt a `[gstack-context]` commit trailer or any commit-side state;
 - duplicate the dispatch table — it **references** `../loop/references/dispatch-table.md`;

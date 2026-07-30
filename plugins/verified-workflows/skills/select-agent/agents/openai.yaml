@@ -1,6 +1,0 @@
-interface:
-  display_name: "Select Agent"
-  short_description: "Choose and launch a maintained Codex agent"
-  default_prompt: "Use $verified-workflows:select-agent to show the available profiles and launch the one I choose."
-policy:
-  allow_implicit_invocation: false

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Closed data contract for Saga external actions."""
+"""Closed one-shot request/result contract for the Saga external harness."""
 
 from __future__ import annotations
 
@@ -7,95 +7,24 @@ import hashlib
 import json
 import re
 from dataclasses import asdict, dataclass, field
-from enum import StrEnum
+from pathlib import PurePosixPath
 from typing import Any, Mapping
 
 
-REQUEST_SCHEMA = "saga.external-action.request.v1"
-APPROVAL_SCHEMA = "saga.external-action.approval.v1"
-EVENT_SCHEMA = "saga.external-action.event.v1"
-ID_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{0,127}$")
-STAGES = frozenset({"ideate", "brainstorm", "plan", "work", "doc-review", "code-review"})
-INTENTS = frozenset({"offload", "second-opinion"})
-SENSITIVITY = frozenset({"public", "internal", "sensitive"})
+REQUEST_SCHEMA = "saga.harness.request.v1"
+RESULT_SCHEMA = "saga.harness.result.v1"
 AUTHORITY = "non-gating"
+MODES = frozenset({"direct", "verified-workflow"})
+STATUSES = frozenset({"available", "unavailable", "timed-out", "invalid-output"})
+ID_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{0,127}$")
+HEX64_RE = re.compile(r"^[0-9a-f]{64}$")
 GATEKEEPER_KEYS = frozenset(
     {"adjudicated", "blocking", "gate_status", "hard_stop", "overall", "verdict"}
 )
 
 
 class ContractError(ValueError):
-    """An external-action record violates the closed contract."""
-
-
-class Requiredness(StrEnum):
-    BEST_EFFORT = "best-effort"
-    REQUIRED = "required-before-continue"
-
-
-class State(StrEnum):
-    REQUESTED = "requested"
-    RESOLVED = "resolved"
-    APPROVED = "approved"
-    CLAIMED = "claimed"
-    LAUNCHED = "launched"
-    AVAILABLE = "available"
-    ACCEPTED = "accepted"
-    CONSUMED = "consumed"
-    REJECTED = "rejected"
-    NOT_LAUNCHED = "not-launched"
-    UNAVAILABLE = "unavailable"
-    TIMED_OUT = "timed-out"
-    INTERRUPTED = "interrupted"
-    CANCELED = "canceled"
-    INVALID_EVIDENCE = "invalid-evidence"
-
-
-TERMINAL_FAILURE_STATES = frozenset(
-    {
-        State.REJECTED,
-        State.NOT_LAUNCHED,
-        State.UNAVAILABLE,
-        State.TIMED_OUT,
-        State.INTERRUPTED,
-        State.CANCELED,
-        State.INVALID_EVIDENCE,
-    }
-)
-
-TRANSITIONS: dict[State, dict[str, State]] = {
-    State.REQUESTED: {"resolve": State.RESOLVED},
-    State.RESOLVED: {
-        "approve": State.APPROVED,
-        "reject": State.REJECTED,
-        "remove": State.NOT_LAUNCHED,
-        "invalidate": State.RESOLVED,
-    },
-    State.APPROVED: {
-        "claim": State.CLAIMED,
-        "invalidate": State.RESOLVED,
-        "cancel": State.CANCELED,
-    },
-    State.CLAIMED: {
-        "launch": State.LAUNCHED,
-        "unavailable": State.UNAVAILABLE,
-        "not-launch": State.NOT_LAUNCHED,
-        "interrupt": State.INTERRUPTED,
-    },
-    State.LAUNCHED: {
-        "complete": State.AVAILABLE,
-        "timeout": State.TIMED_OUT,
-        "interrupt": State.INTERRUPTED,
-        "cancel": State.CANCELED,
-        "invalidate-evidence": State.INVALID_EVIDENCE,
-    },
-    State.AVAILABLE: {
-        "accept": State.ACCEPTED,
-        "reject": State.REJECTED,
-        "invalidate-evidence": State.INVALID_EVIDENCE,
-    },
-    State.ACCEPTED: {"consume": State.CONSUMED},
-}
+    """A Saga harness request or result violates its closed contract."""
 
 
 def canonical_json(value: Any) -> str:
@@ -106,105 +35,105 @@ def digest(value: Any) -> str:
     return hashlib.sha256(canonical_json(value).encode("utf-8")).hexdigest()
 
 
-def require_id(value: str, *, field_name: str) -> str:
-    if not isinstance(value, str) or not ID_RE.fullmatch(value):
-        raise ContractError(f"{field_name} must match {ID_RE.pattern}")
-    return value
-
-
-def _string(value: Any, *, field_name: str) -> str:
+def _string(value: object, field_name: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise ContractError(f"{field_name} must be a non-empty string")
     return value.strip()
 
 
-def _required_str(data: Mapping[str, Any], field_name: str) -> str:
-    return _string(data.get(field_name), field_name=field_name)
-
-
-def _string_tuple(value: Any, *, field_name: str) -> tuple[str, ...]:
-    if value is None:
-        return ()
-    if not isinstance(value, (list, tuple)) or any(
-        not isinstance(item, str) or not item.strip() for item in value
-    ):
-        raise ContractError(f"{field_name} must be a list of non-empty strings")
-    normalized = tuple(item.strip() for item in value)
-    if len(set(normalized)) != len(normalized):
-        raise ContractError(f"{field_name} must not contain duplicates")
+def _id(value: object, field_name: str) -> str:
+    normalized = _string(value, field_name)
+    if ID_RE.fullmatch(normalized) is None:
+        raise ContractError(f"{field_name} must match {ID_RE.pattern}")
     return normalized
 
 
+def _path(value: object, field_name: str) -> str:
+    normalized = _string(value, field_name)
+    path = PurePosixPath(normalized)
+    if (
+        normalized.startswith(("/", "~"))
+        or "\\" in normalized
+        or normalized in {".", ".."}
+        or any(part in {"", ".", "..", ".git"} for part in path.parts)
+        or path.as_posix() != normalized
+    ):
+        raise ContractError(f"{field_name} must be a safe repository-relative path")
+    return normalized
+
+
+def _paths(value: object, field_name: str) -> tuple[str, ...]:
+    if not isinstance(value, (list, tuple)):
+        raise ContractError(f"{field_name} must be a path list")
+    result = tuple(_path(item, f"{field_name}[{index}]") for index, item in enumerate(value))
+    if len(result) != len(set(result)):
+        raise ContractError(f"{field_name} must not contain duplicates")
+    return result
+
+
+def _closed(data: Mapping[str, Any], expected: set[str], where: str) -> None:
+    if set(data) != expected:
+        raise ContractError(
+            f"{where} fields must be exactly {sorted(expected)}; got {sorted(data)}"
+        )
+
+
 @dataclass(frozen=True, slots=True)
-class ActionRequest:
-    saga_id: str
-    run_id: str
-    action_id: str
-    stage: str
-    intent: str
-    trigger: str
-    requiredness: Requiredness
-    provider_constraints: Mapping[str, Any]
-    context_scope: tuple[str, ...]
-    sensitivity: str
-    write_set: tuple[str, ...]
-    evidence_destination: str
-    consumption_point: str
-    created_at: str
-    attempt: int = 1
-    predecessor_request_sha256: str | None = None
+class HarnessRequest:
+    request_id: str
+    engine_id: str
+    variant: str
+    task: str
+    base_revision: str
+    context_scope: tuple[str, ...] = ()
+    write_set: tuple[str, ...] = ()
+    mode: str = "direct"
+    authority: str = field(default=AUTHORITY, init=False)
     schema: str = field(default=REQUEST_SCHEMA, init=False)
 
     def __post_init__(self) -> None:
-        require_id(self.saga_id, field_name="saga_id")
-        require_id(self.run_id, field_name="run_id")
-        require_id(self.action_id, field_name="action_id")
-        if self.stage not in STAGES:
-            raise ContractError(f"stage must be one of {sorted(STAGES)}")
-        if self.intent not in INTENTS:
-            raise ContractError(f"intent must be one of {sorted(INTENTS)}")
-        _string(self.trigger, field_name="trigger")
-        if not isinstance(self.provider_constraints, Mapping):
-            raise ContractError("provider_constraints must be an object")
-        if self.sensitivity not in SENSITIVITY:
-            raise ContractError(f"sensitivity must be one of {sorted(SENSITIVITY)}")
-        _string(self.evidence_destination, field_name="evidence_destination")
-        _string(self.consumption_point, field_name="consumption_point")
-        _string(self.created_at, field_name="created_at")
-        if isinstance(self.attempt, bool) or not isinstance(self.attempt, int) or self.attempt < 1:
-            raise ContractError("attempt must be a positive integer")
-        if self.predecessor_request_sha256 is not None and not re.fullmatch(
-            r"[0-9a-f]{64}", self.predecessor_request_sha256
-        ):
-            raise ContractError("predecessor_request_sha256 must be a SHA-256 digest")
+        _id(self.request_id, "request_id")
+        _id(self.engine_id, "engine_id")
+        _id(self.variant, "variant")
+        _string(self.task, "task")
+        _string(self.base_revision, "base_revision")
+        _paths(self.context_scope, "context_scope")
+        _paths(self.write_set, "write_set")
+        if self.mode not in MODES:
+            raise ContractError(f"mode must be one of {sorted(MODES)}")
+        if self.mode == "direct" and self.write_set:
+            raise ContractError("direct Saga external calls are read-only")
 
     @classmethod
-    def from_dict(cls, data: Mapping[str, Any]) -> ActionRequest:
-        if data.get("schema") not in {None, REQUEST_SCHEMA}:
-            raise ContractError("request schema is unsupported")
+    def from_dict(cls, data: Mapping[str, Any]) -> HarnessRequest:
+        expected = {
+            "schema",
+            "request_id",
+            "engine_id",
+            "variant",
+            "task",
+            "base_revision",
+            "context_scope",
+            "write_set",
+            "mode",
+            "authority",
+        }
+        _closed(data, expected, "harness request")
+        if data.get("schema") != REQUEST_SCHEMA or data.get("authority") != AUTHORITY:
+            raise ContractError("harness request schema or authority is invalid")
         return cls(
-            saga_id=_required_str(data, "saga_id"),
-            run_id=_required_str(data, "run_id"),
-            action_id=_required_str(data, "action_id"),
-            stage=_required_str(data, "stage"),
-            intent=_required_str(data, "intent"),
-            trigger=_required_str(data, "trigger"),
-            requiredness=Requiredness(_required_str(data, "requiredness")),
-            provider_constraints=dict(data.get("provider_constraints", {})),
-            context_scope=_string_tuple(data.get("context_scope"), field_name="context_scope"),
-            sensitivity=_required_str(data, "sensitivity"),
-            write_set=_string_tuple(data.get("write_set"), field_name="write_set"),
-            evidence_destination=_required_str(data, "evidence_destination"),
-            consumption_point=_required_str(data, "consumption_point"),
-            created_at=_required_str(data, "created_at"),
-            attempt=data.get("attempt", 1),
-            predecessor_request_sha256=data.get("predecessor_request_sha256"),
+            request_id=_id(data.get("request_id"), "request_id"),
+            engine_id=_id(data.get("engine_id"), "engine_id"),
+            variant=_id(data.get("variant"), "variant"),
+            task=_string(data.get("task"), "task"),
+            base_revision=_string(data.get("base_revision"), "base_revision"),
+            context_scope=_paths(data.get("context_scope"), "context_scope"),
+            write_set=_paths(data.get("write_set"), "write_set"),
+            mode=_string(data.get("mode"), "mode"),
         )
 
     def to_dict(self) -> dict[str, Any]:
         value = asdict(self)
-        value["requiredness"] = self.requiredness.value
-        value["provider_constraints"] = dict(self.provider_constraints)
         value["context_scope"] = list(self.context_scope)
         value["write_set"] = list(self.write_set)
         return value
@@ -215,94 +144,117 @@ class ActionRequest:
 
 
 @dataclass(frozen=True, slots=True)
-class ActionApproval:
-    action_id: str
-    approved_at: str
-    operator: str
-    route: Mapping[str, Any]
-    context_scope: tuple[str, ...]
-    sensitivity: str
-    base_revision: str
-    write_set: tuple[str, ...]
-    cost_class: str
-    egress: Mapping[str, Any]
-    request_sha256: str
-    payload: Any = None
-    payload_sha256: str = field(default_factory=lambda: digest(None))
-    dirty_overlap: tuple[str, ...] = ()
-    dirty_overlap_sha256: str = field(default_factory=lambda: digest([]))
-    schema: str = field(default=APPROVAL_SCHEMA, init=False)
+class HarnessResult:
+    request_id: str
+    engine_id: str
+    variant: str
+    status: str
+    evidence: str
+    findings: tuple[Mapping[str, str], ...]
+    receipt: Mapping[str, Any] | None
+    changed_paths: tuple[str, ...] = ()
+    patch_ref: str | None = None
+    patch_sha256: str | None = None
+    detail: str = ""
+    authority: str = field(default=AUTHORITY, init=False)
+    schema: str = field(default=RESULT_SCHEMA, init=False)
 
     def __post_init__(self) -> None:
-        require_id(self.action_id, field_name="action_id")
-        _string(self.approved_at, field_name="approved_at")
-        _string(self.operator, field_name="operator")
-        if not isinstance(self.route, Mapping) or not self.route:
-            raise ContractError("route must be a non-empty object")
-        if self.sensitivity not in SENSITIVITY:
-            raise ContractError(f"sensitivity must be one of {sorted(SENSITIVITY)}")
-        if not re.fullmatch(r"[0-9a-f]{40}", self.base_revision):
-            raise ContractError("base_revision must be a full commit SHA")
-        _string(self.cost_class, field_name="cost_class")
-        if not isinstance(self.egress, Mapping):
-            raise ContractError("egress must be an object")
-        if not re.fullmatch(r"[0-9a-f]{64}", self.request_sha256):
-            raise ContractError("request_sha256 must be a SHA-256 digest")
-        if self.payload_sha256 != digest(self.payload):
-            raise ContractError("payload_sha256 does not match payload")
-        if self.dirty_overlap_sha256 != digest(list(self.dirty_overlap)):
-            raise ContractError("dirty_overlap_sha256 does not match dirty_overlap")
+        _id(self.request_id, "request_id")
+        _id(self.engine_id, "engine_id")
+        _id(self.variant, "variant")
+        if self.status not in STATUSES:
+            raise ContractError(f"status must be one of {sorted(STATUSES)}")
+        if not isinstance(self.evidence, str) or not isinstance(self.detail, str):
+            raise ContractError("evidence and detail must be strings")
+        _paths(self.changed_paths, "changed_paths")
+        if not isinstance(self.findings, tuple) or any(
+            not isinstance(item, Mapping)
+            or set(item) != {"content"}
+            or not isinstance(item.get("content"), str)
+            or not item["content"]
+            for item in self.findings
+        ):
+            raise ContractError("findings must contain only non-empty content objects")
+        if self.receipt is not None and not isinstance(self.receipt, Mapping):
+            raise ContractError("receipt must be an object or null")
+        if (self.patch_ref is None) != (self.patch_sha256 is None):
+            raise ContractError("patch_ref and patch_sha256 must be present together")
+        if self.patch_ref is not None:
+            _string(self.patch_ref, "patch_ref")
+            if self.patch_sha256 is None or HEX64_RE.fullmatch(self.patch_sha256) is None:
+                raise ContractError("patch_sha256 must be a SHA-256 digest")
+        if self.status == "available" and not self.evidence:
+            raise ContractError("available result requires non-empty evidence")
+        if self.changed_paths and self.patch_ref is None:
+            raise ContractError("changed paths require a patch artifact")
+        if self.status != "available" and (
+            self.changed_paths or self.patch_ref is not None or self.receipt is not None
+        ):
+            raise ContractError("non-available result cannot carry execution proof or a patch")
 
     @classmethod
-    def from_dict(cls, data: Mapping[str, Any]) -> ActionApproval:
-        if data.get("schema") not in {None, APPROVAL_SCHEMA}:
-            raise ContractError("approval schema is unsupported")
+    def from_dict(cls, data: Mapping[str, Any]) -> HarnessResult:
+        expected = {
+            "schema",
+            "request_id",
+            "engine_id",
+            "variant",
+            "status",
+            "evidence",
+            "evidence_sha256",
+            "findings",
+            "receipt",
+            "changed_paths",
+            "patch_ref",
+            "patch_sha256",
+            "detail",
+            "authority",
+        }
+        _closed(data, expected, "harness result")
+        if data.get("schema") != RESULT_SCHEMA or data.get("authority") != AUTHORITY:
+            raise ContractError("harness result schema or authority is invalid")
+        evidence = data.get("evidence")
+        if not isinstance(evidence, str):
+            raise ContractError("evidence must be a string")
+        evidence_sha256 = data.get("evidence_sha256")
+        expected_digest = hashlib.sha256(evidence.encode("utf-8")).hexdigest()
+        if evidence_sha256 != expected_digest:
+            raise ContractError("evidence_sha256 does not match evidence")
+        findings = data.get("findings")
+        if not isinstance(findings, list):
+            raise ContractError("findings must be a list")
+        receipt = data.get("receipt")
+        if receipt is not None and not isinstance(receipt, Mapping):
+            raise ContractError("receipt must be an object or null")
+        changed_paths = _paths(data.get("changed_paths"), "changed_paths")
+        patch_ref = data.get("patch_ref")
+        patch_sha256 = data.get("patch_sha256")
+        detail = data.get("detail")
+        if patch_ref is not None and not isinstance(patch_ref, str):
+            raise ContractError("patch_ref must be a string or null")
+        if patch_sha256 is not None and not isinstance(patch_sha256, str):
+            raise ContractError("patch_sha256 must be a string or null")
+        if not isinstance(detail, str):
+            raise ContractError("detail must be a string")
         return cls(
-            action_id=_required_str(data, "action_id"),
-            approved_at=_required_str(data, "approved_at"),
-            operator=_required_str(data, "operator"),
-            route=dict(data.get("route", {})),
-            context_scope=_string_tuple(data.get("context_scope"), field_name="context_scope"),
-            sensitivity=_required_str(data, "sensitivity"),
-            base_revision=_required_str(data, "base_revision"),
-            write_set=_string_tuple(data.get("write_set"), field_name="write_set"),
-            cost_class=_required_str(data, "cost_class"),
-            egress=dict(data.get("egress", {})),
-            request_sha256=_required_str(data, "request_sha256"),
-            payload=data.get("payload"),
-            payload_sha256=data.get("payload_sha256", digest(data.get("payload"))),
-            dirty_overlap=_string_tuple(data.get("dirty_overlap"), field_name="dirty_overlap"),
-            dirty_overlap_sha256=data.get(
-                "dirty_overlap_sha256", digest(list(data.get("dirty_overlap", [])))
-            ),
+            request_id=_id(data.get("request_id"), "request_id"),
+            engine_id=_id(data.get("engine_id"), "engine_id"),
+            variant=_id(data.get("variant"), "variant"),
+            status=_string(data.get("status"), "status"),
+            evidence=evidence,
+            findings=tuple(findings),
+            receipt=dict(receipt) if receipt is not None else None,
+            changed_paths=changed_paths,
+            patch_ref=patch_ref,
+            patch_sha256=patch_sha256,
+            detail=detail,
         )
 
     def to_dict(self) -> dict[str, Any]:
         value = asdict(self)
-        value["route"] = dict(self.route)
-        value["context_scope"] = list(self.context_scope)
-        value["write_set"] = list(self.write_set)
-        value["egress"] = dict(self.egress)
-        value["dirty_overlap"] = list(self.dirty_overlap)
+        value["findings"] = [dict(item) for item in self.findings]
+        value["receipt"] = dict(self.receipt) if self.receipt is not None else None
+        value["changed_paths"] = list(self.changed_paths)
+        value["evidence_sha256"] = hashlib.sha256(self.evidence.encode("utf-8")).hexdigest()
         return value
-
-    @property
-    def approval_fingerprint(self) -> str:
-        payload = self.to_dict()
-        payload.pop("schema", None)
-        payload.pop("approved_at", None)
-        payload.pop("operator", None)
-        return digest(payload)
-
-
-def next_state(current: State, event: str, *, rationale: str | None = None) -> State:
-    if event == "override-continue":
-        if current not in TERMINAL_FAILURE_STATES:
-            raise ContractError("override-continue is allowed only from a terminal failure")
-        if not isinstance(rationale, str) or not rationale.strip():
-            raise ContractError("override-continue requires a rationale")
-        return current
-    try:
-        return TRANSITIONS[current][event]
-    except KeyError as exc:
-        raise ContractError(f"event {event!r} is invalid from state {current.value!r}") from exc

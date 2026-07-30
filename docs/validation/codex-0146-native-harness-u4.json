@@ -1,0 +1,13 @@
+{
+  "command": "python3 -m pytest -q tests/test_external_action_adapters.py plugins/saga/tests/test_external_action_adapters.py tests/test_external_action_egress.py tests/test_external_action_workspace.py tests/test_engine_bridge_http.py plugins/saga/tests/test_engine_routing.py plugins/verified-workflows/tests/test_role_registry.py",
+  "covers": "Thin Saga harness request/result contracts, closed result parsing and route binding, disposable workspaces, remote stripping, patch-only write results, engine HTTP routing, and role-registry compatibility.",
+  "recorded_at": "2026-07-29T18:01:27Z",
+  "repo_head": "0713be75ff96cf07d7a5e90d6f1c1673a994eb58",
+  "result": {
+    "exit_code": 0,
+    "failed": 0,
+    "passed": 68
+  },
+  "schema_version": 1,
+  "unit": "U4"
+}

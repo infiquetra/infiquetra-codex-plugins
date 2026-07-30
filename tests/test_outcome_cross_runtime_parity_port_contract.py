@@ -179,10 +179,14 @@ def test_unit_row_sets_partition_the_ported_rows() -> None:
 def test_classification_authority_hashes_and_render_are_current() -> None:
     manifest = _manifest()
     authority = manifest["authority"]
-    artifacts = [authority["plan"], *authority["reviews"], authority["runbook"]]
+    artifacts = [authority["plan"], *authority["reviews"]]
 
     for artifact in artifacts:
         assert _sha256(ROOT / artifact["path"]) == artifact["sha256"]
+    runbook = authority["runbook"]
+    assert port_contract._historical_file_by_sha256(
+        ROOT, runbook["path"], runbook["sha256"]
+    )
     capability = authority["capability_snapshot"]
     assert _sha256(ROOT / capability["path"]) == capability["sha256"]
     assert _sha256(ROOT / capability["schema_path"]) == capability["schema_sha256"]

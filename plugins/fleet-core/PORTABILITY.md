@@ -15,14 +15,16 @@ and targets fleet-core `0.8.4`. The per-path treatment and preservation obligati
 `../../docs/portability/ports/2026-07-10-saga-07517.json`. U2 behavior may land before the U8
 version and installed-state cutover; the staged contract records that distinction explicitly.
 
-Fleet-core is the maintained authority for shared Codex model, effort, cost, proof, and workflow
-compatibility policy. Consumer shims are synchronized derivatives; installed cache is never source.
+Fleet-core is the maintained authority for shared Codex model/profile resolution, bridge proof,
+leases, concurrency, orphan evidence, and workflow compatibility policy. Consumer shims are
+synchronized derivatives; installed cache is never source.
 
 ## Codex Port Shape
 
 `fleet-core` is a scripts-only library plugin: it has no skills, commands, or agents. It is the
 canonical home for cross-plugin shared primitives (model/effort tier palette, tier resolver,
-effort rider, retry/backoff) and the canonical copy of `fleet_commons_shim.py`, the resolution
+bridge/output proof, leases, and stateless retry/backoff) and the canonical copy of
+`fleet_commons_shim.py`, the resolution
 shim consuming plugins (`saga`, temporary legacy `team-execution`, staged `verified-workflows`,
 `mission-control`, `unifi`) vendor
 byte-identically.
@@ -45,8 +47,10 @@ byte-identically.
   consumers load the registry only through their own fleet-core shim. Surviving old tokens are
   exact-path and digest bound by the generated legacy-workflow inventory.
 - **Proof split:** external-engine bridge receipts and output attestations are shared schemas but
-  never attest a Verified Workflows role or effective reasoning effort. Delegation audit/state is
-  advisory and writes only contained ignored Codex state.
+  never attest a Verified Workflows role or effective reasoning effort.
+- **Native-harness alignment:** Codex 0.146 owns agent lifecycle and liveness. Fleet no longer
+  carries delegation/audit state, effort or cost riders, circuit-breaker state, or the tier-table
+  renderer. The stateless retry helper remains because UniFi consumes it directly.
 - No manifest `skills` field, no `interface.defaultPrompt` — validator treats this plugin as a
   library plugin (`scripts/validate_codex_plugins.py`, `TARGET_EXPECTED_PLUGINS["fleet-core"]`).
 - No `.claude-plugin`, command files, or agent markdown carried over — scripts and stdlib-only

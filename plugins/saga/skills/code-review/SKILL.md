@@ -58,29 +58,24 @@ where `/work` set it.
 
 ## Interaction method
 
-Use `Codex blocking question` for choices from a known set (review mode, execution backend, fixer-dispatch
-routing). Call `ToolSearch` with `blocking question` first if its schema is not loaded. Ask one
-question per turn. For open-ended discussion, ask inline in chat. Never silently skip a question.
+Follow `../../references/operator-choice.md` for choices from a known set (review mode, execution
+backend, fixer-dispatch routing). Ask one question per turn. For open-ended discussion, ask inline
+in chat. Never silently skip a question.
 
-In a channel session (`redis-channel` active), `Codex blocking question` cannot be called — inline the choices
-in your reply text instead. Follow the canonical channel-inline convention in
+In a channel session (`redis-channel` active), inline the choices in your reply text instead. Follow
+the canonical channel-inline convention in
 `saga/skills/brainstorm/SKILL.md` (do not duplicate its wording here).
 
 Use repo-relative paths in every generated document. Absolute paths break portability across machines
 and worktrees. (The one exception is the saga `--review-paths` value — see Phase 5.)
 
-## External Action Runtime
+## External Harness
 
-Before any external call, run
-`python3 plugins/saga/scripts/external_action.py bundle --stage code-review --repo-root .` and show the
-resolved action bundle and let the operator remove or edit actions; persist reusable changes with
-`external_action_policy.save_policy`, never by silently changing defaults. Resolve the selected
-provider routes, call `external_action_lifecycle.prepare_bundle` without external egress, and show
-`approval_preview_payload` with provider, cost, egress, requiredness, consumption point, fingerprint,
-and status card. Only after explicit approval call `approve_bundle` and `execute_bundle`. Opinion output
-must contain typed findings; Codex accounts for each through `adjudicate_opinion` before the review
-verdict. Best-effort failure continues with a named unavailable status; required failure pauses for
-operator retry, removal, or override. External evidence never persists or satisfies a gate on its own.
+Use an external engine only after the operator chooses the exact registry route and context. Build
+one closed `saga.harness.request.v1` request and run
+`python3 plugins/saga/scripts/external_action_adapters.py --request <json> --repo-root .`.
+Code-review calls use `mode=direct` and an empty `write_set`. Codex accounts for and independently
+verifies every advisory finding before its own verdict; external output never satisfies a gate.
 
 ---
 
@@ -187,9 +182,9 @@ the same ground — do not relitigate it. This is advisory (R8): it narrows redu
 never suppresses a lens that would examine *new* surface, and an absent manifest tree changes
 nothing.
 
-Spawn the selected lenses as **generic agents** (`Explore`/`Task` — this plugin has no `agents/` dir, so
-do **not** reference named `ce-*` agents). Each lens returns findings in the schema defined by
-`references/findings-schema.md`.
+When delegation is explicitly authorized, spawn the selected read-only lenses as `explorer` agents;
+otherwise run them inline. This plugin has no `agents/` directory, so do **not** reference named
+`ce-*` agents. Each lens returns findings in the schema defined by `references/findings-schema.md`.
 
 **Operator-choice workflow mode.** Offer the workflow mode per `../../references/operator-choice.md` (the
 plugin-root decision contract). There are exactly three active Codex modes — `inline | manual |

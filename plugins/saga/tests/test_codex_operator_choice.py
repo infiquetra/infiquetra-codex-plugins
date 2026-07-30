@@ -49,7 +49,7 @@ def test_manifest_and_skill_inventory_match_target_fixture() -> None:
     target = next(entry for entry in fixture["plugins"] if entry["name"] == "saga")
 
     assert manifest["name"] == "saga"
-    assert manifest["version"] == "0.82.0+codex.20260727035515"
+    assert manifest["version"] == "0.83.0+codex.20260729205037"
     assert set(target["skills"]) == EXPECTED_SKILLS
     assert {path.parent.name for path in (PLUGIN_ROOT / "skills").glob("*/SKILL.md")} == EXPECTED_SKILLS
     assert not (PLUGIN_ROOT / ".claude-plugin").exists()
@@ -61,10 +61,14 @@ def test_active_saga_text_has_no_old_host_or_command_only_surface() -> None:
     forbidden = (
         ".claude",
         "AskUserQuestion",
-            ".claude-plugin",
+        ".claude-plugin",
         "suggested_command",
         "/issue --prepare",
         "exactly three backends",
+        "Codex blocking question",
+        "ToolSearch",
+        "`Explore`",
+        "`Task`",
     )
 
     offenders: dict[str, list[str]] = {}
@@ -79,6 +83,7 @@ def test_active_saga_text_has_no_old_host_or_command_only_surface() -> None:
 
 def test_operator_choice_documents_separate_codex_capability_dimensions() -> None:
     text = (PLUGIN_ROOT / "references/operator-choice.md").read_text(encoding="utf-8")
+    normalized = " ".join(text.split())
 
     for dimension in (
         "Lifecycle and state",
@@ -97,3 +102,10 @@ def test_operator_choice_documents_separate_codex_capability_dimensions() -> Non
     assert "child self-report" in text
     assert "Ultra is a root-only orchestration control" in text
     assert "Missing or mismatched readback fails visibly" in text
+    assert "Use `request_user_input` only when it is listed and allowed" in normalized
+    assert "Otherwise ask one concise blocking question" in normalized
+    assert "Never search for a core interaction tool" in normalized
+    assert "`explorer` for read-only discovery" in normalized
+    assert "`worker` for implementation" in normalized
+    assert "`default` when neither specialization fits" in normalized
+    assert "Never auto-spawn" in normalized

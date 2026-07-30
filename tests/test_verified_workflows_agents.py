@@ -15,6 +15,16 @@ TARGET_ROOT = ROOT / "plugins" / "verified-workflows"
 LEGACY_TREE = "66b23ca83b6ce3b29871954c63a6554c39bfd72e"
 RENDERER_PATH = TARGET_ROOT / "scripts" / "render_codex_agents.py"
 SYNC_PATH = TARGET_ROOT / "scripts" / "sync_codex_agents.py"
+NATIVE_HARNESS_ADAPTED_ROLES = {
+    "architecture-reviewer",
+    "devils-advocate-reviewer",
+    "privacy-reviewer",
+    "security-reviewer",
+}
+ADVISORY_SCORE_ROLES = {
+    "architecture-reviewer",
+    "devils-advocate-reviewer",
+}
 
 
 def _load_renderer():
@@ -126,7 +136,20 @@ def test_legacy_role_behaviors_are_preserved_with_three_general_roles() -> None:
         target = (TARGET_ROOT / "roles" / f"{role_id}.md").read_text(encoding="utf-8")
         target_body = target.split("\n---\n", 1)[1].lstrip("\n")
         assert hashlib.sha256(source.encode()).hexdigest() == by_id[role_id].source_behavior_sha256
-        assert target_body.startswith(_adapt_source_behavior(source).rstrip("\n"))
+        expected_body = _adapt_source_behavior(source).rstrip("\n")
+        if role_id not in NATIVE_HARNESS_ADAPTED_ROLES:
+            assert target_body.startswith(expected_body)
+        else:
+            assert target_body.startswith(expected_body.splitlines()[0])
+        if role_id in ADVISORY_SCORE_ROLES:
+            assert "Scores are advisory." in target_body
+
+    assert "actual personal-data flow" in (
+        TARGET_ROOT / "roles" / "privacy-reviewer.md"
+    ).read_text(encoding="utf-8")
+    assert "real trust boundary" in (
+        TARGET_ROOT / "roles" / "security-reviewer.md"
+    ).read_text(encoding="utf-8")
 
 
 def test_renderer_cli_checks_the_committed_profile_bundle() -> None:

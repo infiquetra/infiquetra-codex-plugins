@@ -19,8 +19,7 @@ assurance_policy:
 review_policy:
   dimension_score_type: number[0,10]
   overall_calculation: arithmetic-mean-of-applicable-dimensions
-  minimum_acceptance_average: 9.0
-  minimum_dimension_score: 7.0
+  scores_are_advisory: true
   exclusion_reason: static-non-applicable
   role_specific_hard_stops_override: true
 result_schemas:
@@ -77,6 +76,7 @@ result_types:
     - impact
     - fix
     - validation
+    - scope_disposition
     - resolved
     - hard_stop
     severities:
@@ -84,6 +84,11 @@ result_types:
     - P1
     - P2
     - P3
+    scope_dispositions:
+    - planned
+    - one-hop
+    - defer
+    - approval-required
   scored-dimension:
     required_fields:
     - dimension_id
@@ -120,7 +125,7 @@ roles:
     external_mutation: forbidden
     profile_may_not_widen_role: true
   result_schema: assignment-result.v1
-  source_behavior_sha256: 6e950e87c8e79826eaf7279466f64cd1745cb19ead8945f675ad070afd39cc41
+  source_behavior_sha256: fa7b3da3660079c65b2a83d5e6bdda6901b3a8c4480baba6cf5c64bc46e4c027
 - id: remediation-worker
   kind: agent-lens
   category: worker
@@ -144,7 +149,7 @@ roles:
     external_mutation: forbidden
     profile_may_not_widen_role: true
   result_schema: assignment-result.v1
-  source_behavior_sha256: e1dfe90302ac914f4dc4543ce653f6bd4e075bca5006b7e4860cbe05d896768d
+  source_behavior_sha256: 1cd6aef88da485d61ce113376019185309740d309316f7e331289c10da396c0c
 - id: git-integration-operator
   kind: agent-lens
   category: git-operator

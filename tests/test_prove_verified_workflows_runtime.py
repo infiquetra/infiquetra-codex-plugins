@@ -103,12 +103,12 @@ def test_dry_run_is_v2_diagnostic_and_sanitized() -> None:
     )
 
     assert proof["capability_outcome"] == "diagnostic"
-    assert proof["tool_namespace"] == "agents"
-    assert proof["spawn_response_fields"] == ["nickname", "task_name"]
+    assert proof["tool_namespace"] == "collaboration"
+    assert proof["spawn_response_fields"] == ["agent_id", "nickname", "task_name"]
     assert proof["live_invocation_performed"] is False
     assert len(proof["profiles"]) == 7
-    assert proof["project_discovery"]["location"] == ".codex/agents"
-    assert proof["project_discovery"]["source_bytes_match"] is True
+    assert proof["source_profiles"]["location"] == "plugins/verified-workflows/agents"
+    assert proof["source_profiles"]["regular_files_only"] is True
     P.validate_sanitized_proof(proof)
 
 
@@ -265,15 +265,16 @@ def test_snapshot_projection_records_inherited_not_per_child_sandbox() -> None:
         P._snapshot_projection(value)
 
 
-def test_live_command_reuses_current_auth_and_project_profiles() -> None:
+def test_live_command_reuses_current_auth_with_disposable_source_profiles() -> None:
     source = SCRIPT.read_text()
 
-    assert "shutil.copy" not in source
     assert "shell=True" not in source
     assert 'env["CODEX_HOME"]' in source
     assert '"auth.json"' not in source
     assert '"models_cache.json"' in source
     assert "infiquetra-v1.json" not in source
     assert '"--strict-config"' in source
-    assert '"--enable"' not in source
-    assert "str(REPO_ROOT)" in source
+    assert "TemporaryDirectory" in source
+    assert "Path(raw_workspace).resolve()" in source
+    assert "isolated_target=True" in source
+    assert '"--skip-git-repo-check"' in source

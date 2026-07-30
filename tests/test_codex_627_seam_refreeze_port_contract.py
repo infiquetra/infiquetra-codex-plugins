@@ -60,6 +60,10 @@ PROMOTED_PREDECESSOR_ROWS = {
     "tests/test_outcome_worktrees.py",
 }
 PROMOTED_UNIT = "U6"
+RETIRED_CURRENT_ARTIFACTS = {
+    "plugins/fleet-core/scripts/fleet_commons/audit_store.py",
+    "plugins/fleet-core/tests/test_audit_store.py",
+}
 
 SOURCE_REPO_ENV = "CODEX_PORT_SOURCE_REPO"
 DEFAULT_SOURCE_REPO = ROOT.parent / "infiquetra-claude-plugins"
@@ -196,7 +200,7 @@ def test_every_planned_target_exists_in_the_codex_tree() -> None:
 
     assert targets
     for target in sorted(targets):
-        assert (ROOT / target).is_file(), target
+        assert (ROOT / target).is_file() or target in RETIRED_CURRENT_ARTIFACTS, target
 
 
 def test_planned_artifacts_resolve_to_a_real_codex_directory() -> None:
@@ -218,7 +222,7 @@ def test_planned_artifacts_resolve_to_a_real_codex_directory() -> None:
     assert planned
     pending = sorted(artifact for artifact in planned if not (ROOT / artifact).is_file())
 
-    assert pending == []
+    assert pending == sorted(RETIRED_CURRENT_ARTIFACTS & planned)
     for artifact in sorted(planned):
         assert (ROOT / artifact).parent.is_dir(), artifact
 
