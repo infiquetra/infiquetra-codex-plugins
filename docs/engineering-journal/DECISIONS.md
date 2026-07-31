@@ -1,5 +1,17 @@
 # Decisions
 
+## 2026-07-30: Frozen-Source Port Oracles Resolve Through Git's Common Directory And Fail Closed
+
+The two current frozen-source port contracts must not derive the Claude checkout from the active worktree's parent. A clean detached worktree lives outside the sibling checkout layout, so that rule skips eight source-oracle tests in the same full-suite command that is used as the repository gate.
+
+The shared pytest resolver first honors `CODEX_PORT_SOURCE_REPO`. Without it, it reads the current clone's absolute Git common directory, derives the primary clone's sibling directory from the manifest source repository identifier, and validates the candidate's normalized `origin` identity. This locates the normal sibling checkout even when the active worktree is elsewhere, while refusing an unrelated Git repository.
+
+When neither route produces the expected source checkout, the oracle fails with the override name rather than skipping. A source-free environment cannot re-derive frozen source truth; a red gate is accurate and a green gate with that evidence missing is not.
+
+**Rejected alternatives:** retaining skips with clearer text (the gate remains passable without the oracle); hard-coding a machine-local path or adding a repository-local path registry (neither is portable); and changing `scripts/port_contract.py` (the sealed validator is outside this test-resolution defect).
+
+Plan: `docs/plans/2026-07-30-codex-67-port-source-oracle-resolution-plan.md`.
+
 ## 2026-07-26: A Frozen Port Range Can Enforce An Exclusion That Prose Cannot
 
 codex#54 ports Claude `#617`'s registry forward-compatibility. The obvious framing — "copy Claude's

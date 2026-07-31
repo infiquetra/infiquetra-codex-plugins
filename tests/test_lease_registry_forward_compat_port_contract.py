@@ -10,11 +10,9 @@ pytest contract rather than by unfreezing the shared CLI validator. This module 
 from __future__ import annotations
 
 import json
-import os
 import subprocess
+from collections.abc import Callable
 from pathlib import Path
-
-import pytest
 
 from scripts import port_contract
 
@@ -58,18 +56,12 @@ EXCLUDED_DRIFT_SYMBOLS = [
 AUTHORITY = ROOT / "plugins/fleet-core/scripts/fleet_commons/lease_broker.py"
 ADAPTER = ROOT / "plugins/saga/scripts/lease_broker.py"
 
-SOURCE_REPO_ENV = "CODEX_PORT_SOURCE_REPO"
-DEFAULT_SOURCE_REPO = ROOT.parent / "infiquetra-claude-plugins"
-
-
 def _manifest() -> dict:
     return json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
 
 
-def _source_repo() -> Path | None:
-    configured = os.environ.get(SOURCE_REPO_ENV)
-    candidate = Path(configured) if configured else DEFAULT_SOURCE_REPO
-    return candidate if (candidate / ".git").exists() else None
+def _source_repo(port_source_oracle: Callable[[Path, str], Path]) -> Path:
+    return port_source_oracle(ROOT, _manifest()["source"]["repository_id"])
 
 
 def test_manifest_validates_at_the_classification_stage() -> None:
@@ -87,7 +79,9 @@ def test_frozen_range_and_pathspecs_are_exactly_the_617_payload() -> None:
     assert source["repository_id"] == "infiquetra/infiquetra-claude-plugins"
 
 
-def test_expected_count_and_inventory_digest_are_derived_not_hand_written() -> None:
+def test_expected_count_and_inventory_digest_are_derived_not_hand_written(
+    port_source_oracle: Callable[[Path, str], Path],
+) -> None:
     """codex#45's P1 #5 was a file ported under zero contract rows while the CLI still exited 0.
 
     `validate --stage classification` checks the rows a contract HAS, not the ones it should have,
@@ -95,10 +89,7 @@ def test_expected_count_and_inventory_digest_are_derived_not_hand_written() -> N
     them here and require an exact match.
     """
 
-    repo = _source_repo()
-    if repo is None:
-        pytest.skip(f"source checkout unavailable; set {SOURCE_REPO_ENV}")
-
+    repo = _source_repo(port_source_oracle)
     source = _manifest()["source"]
     rows = port_contract.normalize_inventory(
         port_contract.git_inventory(repo, SOURCE_BASE, SOURCE_TARGET, SOURCE_PATHSPECS)
@@ -109,13 +100,12 @@ def test_expected_count_and_inventory_digest_are_derived_not_hand_written() -> N
     assert source["inventory_sha256"] == port_contract.inventory_digest(rows)
 
 
-def test_every_changed_source_path_has_a_row() -> None:
+def test_every_changed_source_path_has_a_row(
+    port_source_oracle: Callable[[Path, str], Path],
+) -> None:
     """The inverse of the P1 #5 failure: no path in the frozen diff may be missing a row."""
 
-    repo = _source_repo()
-    if repo is None:
-        pytest.skip(f"source checkout unavailable; set {SOURCE_REPO_ENV}")
-
+    repo = _source_repo(port_source_oracle)
     changed = subprocess.run(
         [
             "git",
@@ -137,13 +127,12 @@ def test_every_changed_source_path_has_a_row() -> None:
     assert set(changed) == row_paths == set(SOURCE_PATHSPECS)
 
 
-def test_frozen_target_is_byte_equivalent_to_claude_origin_main_for_these_paths() -> None:
+def test_frozen_target_is_byte_equivalent_to_claude_origin_main_for_these_paths(
+    port_source_oracle: Callable[[Path, str], Path],
+) -> None:
     """The range is not stale: neither file has moved since the #617 merge."""
 
-    repo = _source_repo()
-    if repo is None:
-        pytest.skip(f"source checkout unavailable; set {SOURCE_REPO_ENV}")
-
+    repo = _source_repo(port_source_oracle)
     moved = subprocess.run(
         [
             "git",
@@ -164,17 +153,16 @@ def test_frozen_target_is_byte_equivalent_to_claude_origin_main_for_these_paths(
     assert moved == []
 
 
-def test_excluded_drift_predates_the_frozen_range() -> None:
+def test_excluded_drift_predates_the_frozen_range(
+    port_source_oracle: Callable[[Path, str], Path],
+) -> None:
     """R10 is enforced by the range itself, not by reviewer discipline.
 
     Each excluded symbol already exists at SOURCE_BASE, so it is outside the diff the contract
     derives its rows from and cannot land under a row.
     """
 
-    repo = _source_repo()
-    if repo is None:
-        pytest.skip(f"source checkout unavailable; set {SOURCE_REPO_ENV}")
-
+    repo = _source_repo(port_source_oracle)
     before = subprocess.run(
         [
             "git",

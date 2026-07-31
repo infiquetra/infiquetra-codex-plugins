@@ -3,7 +3,7 @@
 ## Contract Metadata
 
 - Status: canonical
-- Runbook version: `4`
+- Runbook version: `5`
 - Machine contract: `ports/<date>-<scope>.json`
 - Contract tool: `../../scripts/port_contract.py`
 - Digest rule: the machine contract stores the SHA-256 of the exact UTF-8 runbook bytes.
@@ -210,6 +210,22 @@ docs, and install proof as one release unit. A source version is lineage, not a 
 The classification gate proves complete treatment before source behavior work. A unit gate proves the
 claimed rows and Codex invariants. The cutover gate proves every non-deferred row, current defer/reject
 rationales, review, isolated install, fresh-session readback, and rollback evidence.
+
+### Frozen-source port-oracle checkout resolution
+
+A pytest port oracle that re-derives a frozen source range MUST resolve a verified source checkout
+before it reads any frozen ref. `CODEX_PORT_SOURCE_REPO` is the highest-precedence explicit override
+for nonstandard layouts. Without that override, derive the source checkout from Git's absolute
+common directory: identify the primary Codex clone, then select its sibling named by the terminal
+component of the manifest's `source.repository_id`. This makes a clean detached worktree independent
+of its disposable checkout path.
+
+The selected directory MUST be a Git worktree whose `origin` normalizes to the manifest repository
+identifier. Accept the standard GitHub HTTPS, `ssh://git@github.com/`, and `git@github.com:` forms;
+do not treat a `.git` path alone as sufficient proof. If Git is unavailable, the common directory is
+malformed, the candidate is missing, or its identity differs, the oracle MUST fail with a message
+that names `CODEX_PORT_SOURCE_REPO`. It MUST NOT skip the frozen-source check or return green without
+executing it.
 
 Before real-profile mutation, create a protected local rollback bundle containing exact managed bytes
 and trust/state material. Commit only sanitized relative inventories, hashes, versions, and results.

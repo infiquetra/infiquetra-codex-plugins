@@ -10,8 +10,8 @@ from __future__ import annotations
 
 import copy
 import json
-import os
 from argparse import Namespace
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
@@ -65,10 +65,6 @@ RETIRED_CURRENT_ARTIFACTS = {
     "plugins/fleet-core/tests/test_audit_store.py",
 }
 
-SOURCE_REPO_ENV = "CODEX_PORT_SOURCE_REPO"
-DEFAULT_SOURCE_REPO = ROOT.parent / "infiquetra-claude-plugins"
-
-
 def _semver(version: str) -> tuple[int, ...]:
     """Parse a bare `X.Y.Z` into a comparable tuple (no pre-release handling needed here)."""
 
@@ -83,14 +79,8 @@ def _predecessor() -> dict:
     return json.loads(PREDECESSOR_PATH.read_text(encoding="utf-8"))
 
 
-def _source_repo() -> Path:
-    candidate = Path(os.environ.get(SOURCE_REPO_ENV, str(DEFAULT_SOURCE_REPO)))
-    if not (candidate / ".git").exists():
-        pytest.skip(
-            f"Claude source clone unavailable at {candidate}; "
-            f"set {SOURCE_REPO_ENV} to run the frozen-source oracles"
-        )
-    return candidate
+def _source_repo(port_source_oracle: Callable[[Path, str], Path]) -> Path:
+    return port_source_oracle(ROOT, _manifest()["source"]["repository_id"])
 
 
 def test_classification_gate_passes_on_the_new_contract() -> None:
@@ -291,8 +281,10 @@ def test_promotion_left_the_frozen_predecessor_inventory_untouched() -> None:
     )
 
 
-def test_verify_source_passes_against_the_pinned_claude_clone() -> None:
-    result = port_contract.verify_source(_source_repo(), _manifest())
+def test_verify_source_passes_against_the_pinned_claude_clone(
+    port_source_oracle: Callable[[Path, str], Path],
+) -> None:
+    result = port_contract.verify_source(_source_repo(port_source_oracle), _manifest())
 
     assert result["verified"] is True
     assert result["base_ref"] == SOURCE_BASE
@@ -301,19 +293,23 @@ def test_verify_source_passes_against_the_pinned_claude_clone() -> None:
     assert result["inventory_sha256"] == _manifest()["source"]["inventory_sha256"]
 
 
-def test_verify_source_still_passes_on_the_predecessor_after_promotion() -> None:
-    result = port_contract.verify_source(_source_repo(), _predecessor())
+def test_verify_source_still_passes_on_the_predecessor_after_promotion(
+    port_source_oracle: Callable[[Path, str], Path],
+) -> None:
+    result = port_contract.verify_source(_source_repo(port_source_oracle), _predecessor())
 
     assert result["verified"] is True
     assert result["target_ref"] == SOURCE_BASE
     assert result["row_count"] == 46
 
 
-def test_worktrees_row_cannot_be_re_derived_from_the_new_range() -> None:
+def test_worktrees_row_cannot_be_re_derived_from_the_new_range(
+    port_source_oracle: Callable[[Path, str], Path],
+) -> None:
     """R4b's structural premise: `outcome_worktrees.py` has zero changed lines across the frozen
     range, so a new contract yields no row for it and promotion is the only available treatment."""
     inventory = port_contract.git_inventory(
-        _source_repo(),
+        _source_repo(port_source_oracle),
         SOURCE_BASE,
         SOURCE_TARGET,
         ["plugins/saga/scripts/outcome_worktrees.py"],
@@ -322,10 +318,12 @@ def test_worktrees_row_cannot_be_re_derived_from_the_new_range() -> None:
     assert inventory == []
 
 
-def test_expected_count_matches_the_live_diff_row_count() -> None:
+def test_expected_count_matches_the_live_diff_row_count(
+    port_source_oracle: Callable[[Path, str], Path],
+) -> None:
     source = _manifest()["source"]
     inventory = port_contract.git_inventory(
-        _source_repo(), SOURCE_BASE, SOURCE_TARGET, source["pathspecs"]
+        _source_repo(port_source_oracle), SOURCE_BASE, SOURCE_TARGET, source["pathspecs"]
     )
 
     assert len(inventory) == source["expected_count"]
