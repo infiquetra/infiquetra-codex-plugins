@@ -86,7 +86,7 @@ def test_runbook_has_exact_versioned_structure() -> None:
 
     assert headings == list(REQUIRED_H2)
     assert "Status: canonical" in text
-    assert "Runbook version: `4`" in text
+    assert "Runbook version: `5`" in text
 
 
 def test_runbook_requires_native_v2_profiles_and_bounded_deviation() -> None:
