@@ -108,10 +108,13 @@ def test_dry_run_is_read_only_and_reports_sanitized_plan(tmp_path: Path) -> None
             "model",
             "effort",
             "default_profile",
-            "allowed_profiles",
             "result_schema",
         }
         <= set(role)
+        for role in receipt["roles"]
+    )
+    assert all(
+        {"allowed_profiles", "workspace_cap", "external_cap"}.isdisjoint(role)
         for role in receipt["roles"]
     )
     assert str(tmp_path) not in json.dumps(receipt)

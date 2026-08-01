@@ -831,3 +831,29 @@ def test_script_reference_requires_existing_file(tmp_path):
 
     assert errors
     assert "points to missing file" in errors[0]
+
+
+def test_runtime_scratch_directories_are_excluded_from_the_legacy_token_scan(tmp_path):
+    """Agent-runtime scratch trees must never enter the legacy-token inventory.
+
+    `.saga` holds dispatch settlement evidence whose agent notes quote the legacy
+    tokens verbatim. Scanning it aborts the inventory builder with
+    `unclassified legacy workflow token paths` on any machine mid-run, while a clean
+    CI checkout passes -- an intermittent failure that is expensive to diagnose.
+    """
+    for scratch in (".claude", ".codex", ".saga"):
+        assert scratch in validator.LEGACY_WORKFLOW_EXCLUDED_TOP_LEVEL
+
+    token = sorted(
+        value
+        for spec in validator.WORKFLOW_COMPAT.REGISTRY.values()
+        for value in spec.legacy
+    )[0]
+    (tmp_path / ".saga").mkdir()
+    (tmp_path / ".saga" / "evidence.json").write_text(token, encoding="utf-8")
+    (tmp_path / "tracked.md").write_text(token, encoding="utf-8")
+
+    facts = validator.legacy_workflow_file_facts(tmp_path)
+
+    assert "tracked.md" in facts
+    assert not [path for path in facts if path.startswith(".saga/")]

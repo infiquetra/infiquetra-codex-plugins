@@ -5,7 +5,7 @@ description: Compile and review an approved Workflow Contract for Codex V2 graph
 
 # Review Workflow Contract
 
-Validate the operator-visible `## Workflow Contract` before execution. The main Codex session remains the sole orchestrator and owns dependency release, integration, Git, gate, and completion decisions.
+Validate the operator-visible `## Workflow Contract` before execution. The main Codex session remains the sole orchestrator and owns dependency release, gate, and completion decisions. Every executable action, including integration and Git, belongs to an approved assignment.
 
 Run the read-only compiler:
 

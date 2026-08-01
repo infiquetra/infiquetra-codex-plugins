@@ -288,7 +288,7 @@ STAGED_MARKETPLACE_SHA256 = (
     "42803919b39b720599b9692bfdcd95bcfe8c31b06ebb2c976aacaa890fdfea8a"
 )
 LEGACY_WORKFLOW_HISTORICAL_INVENTORY_SHA256 = (
-    "4e86ea31996e8087a57d6a1be8ce84bb0c61f1145a7cad641cc8014c99e8d1e6"
+    "b397fd9dfc741b85aa0622a0c33a1733230d369b9b9e6cb2d53faf1e9af6da0c"
 )
 LEGACY_WORKFLOW_INVENTORY = Path(
     "docs/validation/verified-workflows-legacy-token-inventory.json"
@@ -304,6 +304,7 @@ LEGACY_WORKFLOW_EXCLUDED_TOP_LEVEL = {
     ".ruff_cache",
     ".codex",
     ".claude",
+    ".saga",
     ".serena",
 }
 

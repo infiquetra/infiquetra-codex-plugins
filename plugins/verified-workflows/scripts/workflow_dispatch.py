@@ -17,10 +17,10 @@ import render_codex_agents as renderer
 
 MAX_PLAN_BYTES = 2 * 1024 * 1024
 ID_RE = re.compile(r"^[a-z][a-z0-9-]{0,63}$")
-FALLBACK_RE = re.compile(
-    r"^(review_max|review_high|work_medium|work_high|test_medium|scan_low|monitor_low)@([a-z0-9][a-z0-9-]{0,63})$"
-)
-GIT_WORD_RE = re.compile(r"(?:^|\s)(?:git|gh)(?:\s|$)", re.I)
+# Shape only. The profile name is checked against renderer.PROFILE_IDS in
+# _parse_assignment so an unmanaged-but-well-formed name gets that error rather
+# than a misleading syntax error, and PROFILE_IDS stays the one authoritative list.
+FALLBACK_RE = re.compile(r"^([a-z][a-z0-9_]{0,63})@([a-z0-9][a-z0-9-]{0,63})$")
 
 ASSIGNMENT_HEADERS = (
     "id",
@@ -309,31 +309,19 @@ def _parse_assignment(
         _repo_path(item, f"assignment {assignment_id}.writes")
         for item in _list_cell(row["writes"], f"assignment {assignment_id}.writes")
     )
-    if profile_resolution.workspace_boundary == "read-only" and writes:
-        raise WorkflowDispatchError(f"read-only assignment {assignment_id} cannot declare writes")
     owns_git = role == "git-integration-operator"
-    if GIT_WORD_RE.search(completion) and not owns_git:
-        raise WorkflowDispatchError(
-            f"assignment {assignment_id} assigns a Git command to non-Git role {role!r}"
-        )
     if owns_git and "git diff --name-only" not in completion.casefold():
         raise WorkflowDispatchError(
             f"Git integration assignment {assignment_id} must include final git diff --name-only validation"
         )
     fallback = _parse_fallbacks(row["fallback"], f"assignment {assignment_id}.fallback")
     for candidate in fallback:
-        if candidate.profile not in role_resolution.role.allowed_profiles:
+        if candidate.profile not in renderer.PROFILE_IDS:
             raise WorkflowDispatchError(
-                f"assignment {assignment_id} fallback {candidate.profile} widens role {role!r}"
+                f"assignment {assignment_id} fallback {candidate.profile} is not a managed profile"
             )
-        candidate_resolution = renderer.resolve_profile(candidate.profile, catalog)
-        if (
-            candidate_resolution.workspace_boundary != profile_resolution.workspace_boundary
-            or candidate_resolution.external_boundary != profile_resolution.external_boundary
-        ):
-            raise WorkflowDispatchError(
-                f"assignment {assignment_id} fallback {candidate.profile} widens its boundary"
-            )
+        # Resolve for catalog validity only; profile boundaries are no longer declared policy.
+        renderer.resolve_profile(candidate.profile, catalog)
     return Assignment(
         assignment_id,
         depends,

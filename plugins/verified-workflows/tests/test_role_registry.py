@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 import importlib.util
 import sys
 from pathlib import Path
@@ -46,12 +47,15 @@ def test_registry_preserves_exact_role_contracts() -> None:
     assert sum(role.category == "scanner" for role in registry.roles) == 4
     assert sum(role.category == "monitor" for role in registry.roles) == 3
 
+    spec_fields = {field.name for field in dataclasses.fields(R.RoleSpec)}
+    assert "allowed_profiles" not in spec_fields
+    assert "workspace_cap" not in spec_fields
+    assert "external_cap" not in spec_fields
+
     for role in registry.roles:
-        policy = R.ROLE_PROFILE_POLICY[role.category]
-        assert role.default_profile == policy["default"]
-        assert role.allowed_profiles == policy["allowed"]
-        assert role.workspace_cap == policy["workspace"]
-        assert role.external_cap == policy["external"]
+        assert role.default_profile in R.PROFILE_IDS
+        assert not hasattr(role, "workspace_cap")
+        assert not hasattr(role, "external_cap")
         assert role.minimum_independence == (
             "required" if role.category == "reviewer" else "preferred"
         )
@@ -93,21 +97,92 @@ def test_role_resolution_uses_only_underscore_profile_ids() -> None:
     with pytest.raises(R.RoleRegistryError, match="cannot use profile"):
         R.resolve_role(
             registry,
-            "devils-advocate-reviewer",
-            requested_profile="work_high",
-        )
-    with pytest.raises(R.RoleRegistryError, match="cannot use profile"):
-        R.resolve_role(
-            registry,
-            "security-scanner",
-            requested_profile="test_medium",
-        )
-    with pytest.raises(R.RoleRegistryError, match="cannot use profile"):
-        R.resolve_role(
-            registry,
             "scenario-tester",
             requested_profile="test-medium",
         )
+
+
+def test_any_managed_profile_may_be_requested_for_any_role() -> None:
+    registry = R.load_role_registry()
+
+    git_operator = R.resolve_role(
+        registry,
+        "git-integration-operator",
+        requested_profile="work_high",
+    )
+    scanner = R.resolve_role(
+        registry,
+        "security-scanner",
+        requested_profile="test_medium",
+    )
+    reviewer = R.resolve_role(
+        registry,
+        "devils-advocate-reviewer",
+        requested_profile="work_high",
+    )
+
+    assert git_operator.selected_profile == "work_high"
+    assert scanner.selected_profile == "test_medium"
+    assert reviewer.selected_profile == "work_high"
+    assert reviewer.effective_independence == "required"
+
+
+def test_role_resolution_without_a_request_falls_back_to_the_default_profile() -> None:
+    registry = R.load_role_registry()
+
+    for role in registry.roles:
+        resolution = R.resolve_role(registry, role.role_id)
+        assert resolution.selected_profile == role.default_profile
+
+    assert (
+        R.resolve_role(registry, "git-integration-operator").selected_profile
+        == "work_medium"
+    )
+
+
+def test_registry_rejects_a_role_carrying_a_stale_boundaries_block(tmp_path: Path) -> None:
+    payload = _registry_payload()
+    payload["roles"][0]["boundaries"] = {
+        "workspace_cap": "declared-write",
+        "external_cap": "none",
+        "external_mutation": "forbidden",
+        "profile_may_not_widen_role": True,
+    }
+    stale_root = tmp_path / "boundaries"
+    stale_root.mkdir()
+    path = _write_registry(stale_root, payload)
+
+    with pytest.raises(R.RoleRegistryError, match=r"role \S+ fields must be exactly"):
+        R.load_role_registry(path, R.DEFAULT_ROLES_DIR)
+
+
+def test_registry_rejects_a_role_carrying_a_stale_allowed_profiles_key(
+    tmp_path: Path,
+) -> None:
+    payload = _registry_payload()
+    payload["roles"][0]["allowed_profiles"] = ["work_medium", "work_high"]
+    stale_root = tmp_path / "allowed"
+    stale_root.mkdir()
+    path = _write_registry(stale_root, payload)
+
+    with pytest.raises(R.RoleRegistryError, match=r"role \S+ fields must be exactly"):
+        R.load_role_registry(path, R.DEFAULT_ROLES_DIR)
+
+
+def test_registry_rejects_independence_that_disagrees_with_the_category(
+    tmp_path: Path,
+) -> None:
+    payload = _registry_payload()
+    reviewer_row = next(
+        row for row in payload["roles"] if row["category"] == "reviewer"
+    )
+    reviewer_row["minimum_independence"] = "preferred"
+    root = tmp_path / "independence"
+    root.mkdir()
+    path = _write_registry(root, payload)
+
+    with pytest.raises(R.RoleRegistryError, match="minimum_independence must be"):
+        R.load_role_registry(path, R.DEFAULT_ROLES_DIR)
 
 
 def test_result_contract_is_common_with_one_reviewer_extension() -> None:
@@ -152,16 +227,17 @@ def test_registry_rejects_hyphenated_or_ultra_profile_ids(tmp_path: Path) -> Non
     hyphen_root.mkdir()
     path = _write_registry(hyphen_root, payload)
 
-    with pytest.raises(R.RoleRegistryError, match="profile transition"):
+    with pytest.raises(R.RoleRegistryError, match="default_profile is not a managed profile"):
         R.load_role_registry(path, R.DEFAULT_ROLES_DIR)
 
-    payload = _registry_payload()
-    payload["roles"][0]["allowed_profiles"].append("ultra")
-    ultra_root = tmp_path / "ultra"
-    ultra_root.mkdir()
-    path = _write_registry(ultra_root, payload)
-    with pytest.raises(R.RoleRegistryError, match="profile transition"):
-        R.load_role_registry(path, R.DEFAULT_ROLES_DIR)
+    registry = R.load_role_registry()
+    for outside in ("ultra", "root", "review-high"):
+        with pytest.raises(R.RoleRegistryError, match="cannot use profile"):
+            R.resolve_role(
+                registry,
+                "implementation-worker",
+                requested_profile=outside,
+            )
 
 
 def test_registry_rejects_duplicate_keys_and_yaml_aliases(tmp_path: Path) -> None:
@@ -200,3 +276,16 @@ def test_registry_rejects_assurance_and_result_contract_drift(tmp_path: Path) ->
     path = _write_registry(root, payload)
     with pytest.raises(R.RoleRegistryError, match="result schema"):
         R.load_role_registry(path, R.DEFAULT_ROLES_DIR)
+
+
+def test_bundle_receipt_drops_the_removed_capability_keys() -> None:
+    bundle = R.render_bundle(R.load_role_registry(), R.load_catalog_snapshot())
+    receipt = R.bundle_receipt(bundle)
+
+    assert len(receipt["roles"]) == 28
+    removed = {"allowed_profiles", "workspace_cap", "external_cap"}
+    for role in receipt["roles"]:
+        assert removed.isdisjoint(role)
+        assert role["default_profile"] in R.PROFILE_IDS
+        assert role["selected_profile"] in R.PROFILE_IDS
+    assert removed.isdisjoint(set().union(*(set(p) for p in receipt["profiles"])))

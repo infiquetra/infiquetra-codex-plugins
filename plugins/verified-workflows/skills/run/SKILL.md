@@ -45,9 +45,13 @@ Every writable assignment declares repository-relative paths. Concurrent writers
 write sets; writers that share a file or directory must be dependency-ordered or combined. Workers
 return their actual changed paths.
 
-Only `git-integration-operator` may run Git commands. Its assignment performs the final
-`git diff --name-only` comparison against the union of approved write paths before any approved Git
-integration.
+No compile-time rule restricts which role may name a Git command; the approved contract decides, and
+a non-Git role whose completion condition mentions `git` or `gh` compiles. The restriction is
+enforced by observation instead: `scripts/protocol_probe.py` fails the run when a runtime receipt
+shows a role other than `git-integration-operator` actually invoked Git. A `git-integration-operator`
+assignment must still perform the final `git diff --name-only` comparison against the union of
+approved write paths before any approved Git integration, and the compiler refuses that assignment
+without it.
 
 ## Review Convergence
 
