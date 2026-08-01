@@ -1,5 +1,42 @@
 # Learnings
 
+## 2026-08-01: A Merged Pull Request Closes Nothing It Does Not Name
+
+**Evidence:** issue 67, "frozen-source port oracles skip silently in the one run that is
+authoritative." Its fix merged 2026-07-31 as #70, merge commit `0c20724`. Five days later the issue
+was still `OPEN`, still carrying the `needs-plan` label, and its Operations card still sat in
+`Shaping` — so the board advertised the defect as unplanned work while the fix was already on `main`
+and passing. The next lifecycle command aimed at it was `/saga:plan`, which would have produced a
+second plan for shipped code.
+
+The cause is visible in one grep. `gh pr view 70 --json body` contains no `#67` reference at all and
+no closing keyword; `gh pr view 72 --json body` contains `Closes #71.` Issue 71 auto-closed on merge.
+Issue 67 did not. Nothing else differed between the two.
+
+Re-verified before closing, against `main` at `1327c31`: both frozen-source contract modules run
+`33 passed, 0 skipped` in a detached worktree created outside `/Users/jefcox/workspace/infiquetra/`
+with `CODEX_PORT_SOURCE_REPO` unset and no sibling clone reachable — the exact condition the defect
+describes. `-k port_contract` reports `111 passed`, `scripts/port_contract.py validate --stage
+classification` and `scripts/validate_codex_plugins.py` both exit `0`.
+
+**Mechanism:** this repository has no CI, so a merge triggers no job that reconciles issue state
+against shipped code. GitHub's linking automation is the only thing that closes an issue on merge,
+and it fires solely on a closing keyword in the pull request body or a linked-issue association. Both
+are author-supplied and optional, and their absence is silent — no warning, no check, no annotation.
+The board's Status field is a third, entirely separate write that no automation performs under any
+circumstance.
+
+So the three surfaces that should agree — code on `main`, issue state, board column — are coupled by
+nothing but author discipline, and they fail apart in the quiet direction. Every one of them
+independently reads as "not done," which is indistinguishable from genuinely unstarted work. The cost
+is not the stale card; it is that the next operator, reading the board, starts the lifecycle over.
+
+**Generalizable rule:** in a repository without CI, a merge is not a closure event. Put `Closes #N`
+in the pull request body when the branch is created, and after any merge read back all three surfaces
+— `gh issue view N --json state,labels,projectItems` — rather than inferring closure from the merge.
+Before running any lifecycle command against an issue, verify the work is not already on `main`; an
+open issue with a planning label is evidence of nothing.
+
 ## 2026-08-01: A Policy The Host Does Not Implement Is Documentation, Not A Control
 
 **Evidence:** issue 71, "Remove Verified Workflows' unenforceable capability policy." The filing was
