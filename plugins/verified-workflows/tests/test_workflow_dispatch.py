@@ -66,13 +66,21 @@ def worker(
     )
 
 
-def git_operator(*, depends: str = "implement,test") -> list[str]:
+def git_operator(
+    *,
+    depends: str = "implement,test",
+    profile: str = "work_medium",
+    completion: str = "run git diff --name-only against the approved write-path union",
+    fallback: str = "none",
+) -> list[str]:
     return assignment(
         "integrate",
         depends=depends,
         role="git-integration-operator",
+        profile=profile,
         writes="none",
-        completion="run git diff --name-only against the approved write-path union",
+        completion=completion,
+        fallback=fallback,
     )
 
 
@@ -278,16 +286,29 @@ def test_ordered_overlapping_writes_are_allowed() -> None:
     assert compile_fixture(rows).contract_sha256
 
 
-def test_profile_must_be_allowed_for_role() -> None:
-    rows = [assignment("implement"), reviewer(), worker(profile="review_high")]
-    with pytest.raises(W.WorkflowDispatchError, match="cannot use profile"):
+def test_profile_outside_the_managed_set_is_rejected() -> None:
+    rows = [assignment("implement"), reviewer(), worker(profile="work_ultra")]
+    with pytest.raises(W.WorkflowDispatchError, match="profile must be one of"):
         compile_fixture(rows)
 
 
-def test_widened_fallback_is_rejected() -> None:
-    rows = [assignment("implement"), reviewer(), worker(fallback="review_max@ambiguity")]
-    with pytest.raises(W.WorkflowDispatchError, match="widens role"):
+def test_fallback_outside_the_managed_set_is_rejected() -> None:
+    rows = [assignment("implement"), reviewer(), worker(fallback="work_ultra@ambiguity")]
+    with pytest.raises(W.WorkflowDispatchError, match="fallback"):
         compile_fixture(rows)
+
+
+def test_fallback_across_a_former_boundary_now_compiles() -> None:
+    # review_max was formerly "read-only"/"none" while test_medium was "declared-write";
+    # the boundary-equality refusal that rejected this pairing is gone.
+    rows = [
+        assignment("implement"),
+        reviewer(),
+        worker(fallback="review_max@ambiguity"),
+    ]
+    contract = compile_fixture(rows)
+    spec = next(item for item in contract.launch_specs if item.assignment_id == "test")
+    assert [candidate.profile for candidate in spec.fallback] == ["review_max"]
 
 
 def test_executable_root_assignment_is_rejected() -> None:
@@ -340,10 +361,81 @@ def test_dynamic_work_profiles_derive_model_and_effort() -> None:
     )
 
 
-def test_worker_git_mutation_is_rejected() -> None:
-    rows = [assignment("implement"), reviewer(), worker(completion="git commit the change")]
-    with pytest.raises(W.WorkflowDispatchError, match="non-Git role"):
-        compile_fixture(rows)
+def test_non_git_role_may_mention_git_in_its_completion_condition() -> None:
+    rows = [
+        assignment("implement"),
+        reviewer(),
+        worker(completion="targeted tests pass and git status reports a clean tree"),
+    ]
+    contract = compile_fixture(rows)
+    spec = next(item for item in contract.launch_specs if item.assignment_id == "test")
+    assert spec.role == "scenario-tester"
+    assert "git status" in spec.completion
+
+
+def test_publication_contract_with_push_and_pr_compiles_and_dispatches() -> None:
+    """Acceptance criterion for issue 71: a publication row compiles and dispatches.
+
+    This is a regression guard, not a red-first reproduction. The same row already
+    compiled before the capability removal: the deleted Git-word refusal was gated on
+    `not owns_git`, so it never applied to `git-integration-operator`. The test pins the
+    behavior the issue asks for and proves the retained `git diff --name-only` evidence
+    step still gates the Git role.
+    """
+    rows = [
+        assignment("implement"),
+        worker(),
+        reviewer(),
+        git_operator(
+            completion=(
+                "git push the approved branch, gh pr create the publication pull request, "
+                "then run git diff --name-only against the approved write-path union"
+            )
+        ),
+    ]
+    contract = compile_fixture(rows, checks=[check(owner="integrate", after="integrate")])
+
+    spec = next(item for item in contract.launch_specs if item.assignment_id == "integrate")
+    assert spec.role == "git-integration-operator"
+    assert "git push" in spec.completion
+    assert "gh pr create" in spec.completion
+    integrate = next(item for item in contract.assignments if item.assignment_id == "integrate")
+    assert integrate.role == "git-integration-operator"
+
+
+def test_git_integration_operator_resolves_a_requested_work_high_profile() -> None:
+    rows = [
+        assignment("implement"),
+        worker(),
+        reviewer(),
+        git_operator(profile="work_high"),
+    ]
+    contract = compile_fixture(rows, checks=[check(owner="integrate", after="integrate")])
+
+    spec = next(item for item in contract.launch_specs if item.assignment_id == "integrate")
+    assert spec.agent_type == "work_high"
+    assert (spec.expected_model, spec.expected_reasoning_effort) == ("gpt-5.6-sol", "high")
+
+
+def test_graph_mechanics_survive_the_capability_policy_removal() -> None:
+    cyclic = [
+        assignment("a", depends="b"),
+        assignment("b", depends="a"),
+        reviewer(depends="a"),
+        git_operator(depends="a"),
+    ]
+    with pytest.raises(W.WorkflowDispatchError, match="cycle"):
+        compile_fixture(cyclic, checks=[check(owner="integrate", after="integrate")])
+
+    overlapping = [
+        assignment("implement"),
+        worker("left", writes="src"),
+        worker("right", writes="src/feature.py"),
+        reviewer(),
+        git_operator(depends="implement"),
+    ]
+    with pytest.raises(W.WorkflowDispatchError, match="overlap writes"):
+        compile_fixture(overlapping, checks=[check(owner="integrate", after="integrate")])
 
 
 def test_git_integration_operator_may_own_git_commands() -> None:

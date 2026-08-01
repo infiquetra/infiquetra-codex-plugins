@@ -2,10 +2,10 @@
 
 Root-owned Codex V2 workflow orchestration for Infiquetra work.
 
-The main Codex session is the sole orchestrator and Git owner. Codex V2 owns the live agent
-hierarchy, liveness, messaging, waiting, interruption, and restoration. This plugin compiles an
-operator-approved contract, validates runtime identity and typed results, audits writable attempts,
-evaluates gates, and writes one concise run record.
+The main Codex session is the sole orchestrator of the approved graph and the adjudicator of its
+evidence. Codex V2 owns the live agent hierarchy, liveness, messaging, waiting, interruption, and
+restoration. This plugin compiles an operator-approved contract, validates runtime identity and
+typed results, audits writable attempts, evaluates gates, and writes one concise run record.
 
 Release candidate: `3.0.0+codex.20260729164721` is the explicit, root-orchestrated V2-only package. Historical Team
 Execution names and earlier V1 or hook-based proof artifacts are lineage only; they are not active
@@ -62,7 +62,7 @@ external-action, or authority change requires a new preview and approval.
 Logical roles are separate from compute profiles. The role registry preserves 28 role lenses; the
 workflow selects one of seven generated profiles:
 
-| Profile | Model | Effort | Workspace intent | Purpose |
+| Profile | Model | Effort | Contract write intent | Purpose |
 |---|---|---|---|---|
 | `review_max` | `gpt-5.6-sol` | `max` | read-only | Exceptional-risk independent review |
 | `review_high` | `gpt-5.6-sol` | `high` | read-only | Normal independent review |
@@ -72,9 +72,12 @@ workflow selects one of seven generated profiles:
 | `scan_low` | `gpt-5.6-terra` | `low` | read-only | Low-cost repository scanning |
 | `monitor_low` | `gpt-5.6-terra` | `low` | read-only | Allowlisted external observation |
 
-Ultra is root-only. Codex 0.146.0 children inherit the parent turn's effective permission profile;
-the profiles do not duplicate permission or sandbox policy. Luna remains V1 in the 0.146 catalog,
-so the V2-only low profiles use Terra/low.
+Ultra is root-only. The write-intent column states what the approved contract expects an assignment
+to do. It is not a sandbox control. Codex 0.146.0 children inherit the parent turn's effective
+permission profile. A generated profile carries a model, an effort, and instruction text, and no key
+that could constrain a filesystem or a network. Scope comes from the operator-approved plan and
+contract; runtime readback reports the permission that actually applied. Luna remains V1 in the
+0.146 catalog, so the V2-only low profiles use Terra/low.
 
 Generate and verify the maintained source profiles:
 
@@ -99,9 +102,10 @@ validates it with `result_contract.py`; prose, mailbox messages, and terminal no
 dependencies. Same-attempt continuation uses `followup_task` on the same path. Retry, remediation,
 and revalidation use a fresh attempt ID and fresh canonical path.
 
-Concurrent writable assignments must have disjoint write sets. Dependency-ordered assignments may
-share paths. Returned changed paths must remain inside the assignment's approved write paths, and
-only `git-integration-operator` may run Git commands.
+Concurrent writable assignments must have disjoint write sets; the compiler rejects an overlap.
+Dependency-ordered assignments may share paths. A returned changed path outside the assignment's
+approved write paths does not discard the result. The validator records one `P2` `one-hop` finding
+for it, and more than one unplanned `one-hop` finding in a run is a hard stop for operator approval.
 
 At least one authority-bearing reviewer runs as a direct sibling of the implementation assignment
 with no implementation turns. The implementer and its descendants cannot review their own work.

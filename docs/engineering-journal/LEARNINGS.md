@@ -1,5 +1,50 @@
 # Learnings
 
+## 2026-08-01: A Policy The Host Does Not Implement Is Documentation, Not A Control
+
+**Evidence:** issue 71, "Remove Verified Workflows' unenforceable capability policy." The filing was
+prompted by a stall in the Hermes profile self-sovereign evolution workflow: the compiler assigned
+publication to `git-integration-operator`, the agent committed, and then could not push or open the
+pull request. That anecdote turned out not to support the conclusion drawn from it — see the
+2026-08-01 entry in `DECISIONS.md`. Neither removed mechanism could have caused it, because both
+exempted `git-integration-operator` by name, and no run record survives. What justifies the removal
+is the mechanism below, which is verifiable from source without the anecdote.
+
+The removal touches `plugins/verified-workflows/config/role-registry.yaml` (every `boundaries` block
+and `allowed_profiles` list, 216 lines), `plugins/verified-workflows/scripts/render_codex_agents.py`
+(the boundary parse, `ROOT_ONLY_ACTIONS`, the `ProfileResolution` boundary fields, and three
+refusals), `plugins/verified-workflows/scripts/workflow_dispatch.py` (three more refusals),
+`plugins/verified-workflows/scripts/result_contract.py` (undeclared changed paths now synthesize a
+finding instead of raising), the seven rendered `plugins/verified-workflows/agents/*.toml` profiles,
+four test files under `plugins/verified-workflows/tests/` (`test_role_registry.py`,
+`test_sync_codex_agents.py`, `test_workflow_dispatch.py`, `test_result_contract.py`), the two tracked
+digest artifacts under `docs/validation/` (`verified-workflows-runtime-proof.json` and
+`verified-workflows-legacy-token-inventory.json`) with the matching frozen constant in
+`scripts/validate_codex_plugins.py`, and the prose in `plugins/verified-workflows/README.md`,
+`plugins/verified-workflows/skills/run/SKILL.md`,
+`plugins/verified-workflows/skills/run/references/workflow-protocol.md`,
+`plugins/verified-workflows/skills/run/references/delegation-safety.md`,
+`plugins/verified-workflows/skills/review-workflow/SKILL.md`, and
+`plugins/saga/references/operator-choice.md`.
+
+**Mechanism:** Codex 0.146 children inherit the parent turn's effective permission profile, so a
+profile can neither widen nor narrow what a child may do, and a generated `agents/*.toml` carries no
+key that any sandbox or network layer reads. The declared per-role capability string was therefore
+compared against a hardcoded constant inside the plugin's own compiler and against nothing else. The
+check was string against string, never host against agent. A layer built that way has exactly one
+power: it can refuse work. It can never permit or prevent an action at runtime, which is the only
+thing a capability declaration is for.
+
+That asymmetry is what makes the failure late and expensive. An unenforceable permission looks
+harmless for as long as no assignment needs it, and costs nothing to keep — right up to the day the
+compiler's own refusal is the only thing standing between an approved assignment and its completion.
+Nothing protected anyone in the meantime.
+
+**Generalizable rule:** before declaring a per-role or per-profile capability, name the host
+mechanism that reads it and the observation that would show it enforced. If the only reader is your
+own validator, you have written documentation, not a control — and it will eventually block real
+work while protecting nothing.
+
 ## 2026-07-26: A Per-Port Contract That Pins The Live Version Breaks Every Later Port
 
 **Evidence:** the codex#54 version bump (fleet-core 0.12.0 → 0.13.0, saga 0.80.0 → 0.81.0) turned

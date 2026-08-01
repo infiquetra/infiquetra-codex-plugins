@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import math
 import re
 from typing import Any, Mapping
@@ -48,6 +49,7 @@ FINDING_CATEGORIES = {
     "performance",
     "compatibility",
 }
+UNDECLARED_WRITE_FINDING_PREFIX = "undeclared-write-"
 
 
 class ResultContractError(ValueError):
@@ -130,6 +132,44 @@ def _finding(value: object, index: int) -> dict[str, Any]:
         "resolved": item["resolved"],
         "hard_stop": item["hard_stop"],
     }
+
+
+def _undeclared_write_finding_id(path: str) -> str:
+    """Return one stable finding ID for an undeclared changed path."""
+
+    slug = re.sub(r"[^a-z0-9]+", "-", path.lower()).strip("-")[:48].strip("-")
+    digest = hashlib.sha256(path.encode("utf-8")).hexdigest()[:12]
+    return f"{UNDECLARED_WRITE_FINDING_PREFIX}{slug}-{digest}" if slug else (
+        f"{UNDECLARED_WRITE_FINDING_PREFIX}{digest}"
+    )
+
+
+def _undeclared_write_finding(path: str, declared: tuple[str, ...], index: int) -> dict[str, Any]:
+    """Synthesize the validator-owned finding for one out-of-scope changed path."""
+
+    declared_text = ", ".join(declared) if declared else "none (the assignment declared no writes)"
+    return _finding(
+        {
+            "finding_id": _undeclared_write_finding_id(path),
+            "severity": "P2",
+            "category": "operations",
+            "location": path,
+            "impact": (
+                f"{path} was changed but sits outside the declared write set: {declared_text}"
+            ),
+            "fix": (
+                f"either revert {path} or widen the assignment write set beyond {declared_text} "
+                "with operator approval"
+            ),
+            "validation": (
+                f"re-run the assignment and confirm changed paths stay inside {declared_text}"
+            ),
+            "scope_disposition": "one-hop",
+            "resolved": False,
+            "hard_stop": False,
+        },
+        index,
+    )
 
 
 def validate_finding(value: object, *, where: str = "finding") -> dict[str, Any]:
@@ -240,23 +280,27 @@ def validate_result(
     no_change = payload["no_change"]
     if not isinstance(no_change, bool) or no_change != (not changed_paths):
         raise ResultContractError("no_change must be true exactly when changed_paths is empty")
+    declared_writes = tuple(
+        allowed for allowed in launch.writes if not allowed.startswith("unit:")
+    )
     undeclared = [
         path
         for path in changed_paths
         if not any(
-            path == allowed or path.startswith(f"{allowed}/")
-            for allowed in launch.writes
-            if not allowed.startswith("unit:")
+            path == allowed or path.startswith(f"{allowed}/") for allowed in declared_writes
         )
     ]
-    if undeclared:
-        raise ResultContractError(f"terminal result changed paths exceed assignment writes: {undeclared}")
     checks_raw = payload["checks"]
     findings_raw = payload["findings"]
     if not isinstance(checks_raw, list) or not isinstance(findings_raw, list):
         raise ResultContractError("terminal result checks and findings must be lists")
     checks = [_check(item, index) for index, item in enumerate(checks_raw)]
     findings = [_finding(item, index) for index, item in enumerate(findings_raw)]
+    agent_finding_count = len(findings)
+    findings.extend(
+        _undeclared_write_finding(path, declared_writes, agent_finding_count + offset)
+        for offset, path in enumerate(undeclared)
+    )
     residual_risks = list(
         _string_list(payload["residual_risks"], "terminal result.residual_risks", max_items=128)
     )

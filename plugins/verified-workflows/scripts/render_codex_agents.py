@@ -93,100 +93,65 @@ PROFILE_POLICY = {
         "description": "Maximum-effort independent review for exceptional risk.",
         "model": "gpt-5.6-sol",
         "effort": "max",
-        "workspace": "read-only",
-        "external": "none",
     },
     "review_high": {
         "description": "High-effort independent review across maintained role lenses.",
         "model": "gpt-5.6-sol",
         "effort": "high",
-        "workspace": "read-only",
-        "external": "none",
     },
     "work_high": {
         "description": "High-effort implementation for complex bounded workspace changes.",
         "model": "gpt-5.6-sol",
         "effort": "high",
-        "workspace": "declared-write",
-        "external": "none",
     },
     "work_medium": {
         "description": "Ordinary implementation, remediation, and Git integration for bounded changes.",
         "model": "gpt-5.6-terra",
         "effort": "medium",
-        "workspace": "declared-write",
-        "external": "none",
     },
     "test_medium": {
         "description": "Ordinary implementation and test execution for bounded workspace changes.",
         "model": "gpt-5.6-terra",
         "effort": "medium",
-        "workspace": "declared-write",
-        "external": "none",
     },
     "scan_low": {
         "description": "Low-cost read-only scanning with no external access.",
         "model": "gpt-5.6-terra",
         "effort": "low",
-        "workspace": "read-only",
-        "external": "none",
     },
     "monitor_low": {
         "description": "Low-cost read-only monitoring through allowlisted external reads.",
         "model": "gpt-5.6-terra",
         "effort": "low",
-        "workspace": "read-only",
-        "external": "allowlisted-read",
     },
 }
 ROLE_PROFILE_POLICY = {
     "reviewer": {
         "default": "review_high",
         "allowed": ("review_high", "review_max"),
-        "workspace": "read-only",
-        "external": "none",
     },
     "worker": {
         "default": "work_medium",
         "allowed": ("work_medium", "work_high"),
-        "workspace": "declared-write",
-        "external": "none",
     },
     "git-operator": {
         "default": "work_medium",
         "allowed": ("work_medium",),
-        "workspace": "declared-write",
-        "external": "none",
     },
     "tester": {
         "default": "test_medium",
         "allowed": ("test_medium", "work_high"),
-        "workspace": "declared-write",
-        "external": "none",
     },
     "scanner": {
         "default": "scan_low",
         "allowed": ("scan_low",),
-        "workspace": "read-only",
-        "external": "none",
     },
     "monitor": {
         "default": "monitor_low",
         "allowed": ("monitor_low",),
-        "workspace": "read-only",
-        "external": "allowlisted-read",
     },
 }
 REQUIRED_REVIEWER_ID = "devils-advocate-reviewer"
-ROOT_ONLY_ACTIONS = (
-    "git-mutation",
-    "workflow-state",
-    "integration",
-    "merge",
-    "deploy-initiation",
-    "credential-change",
-    "completion",
-)
 GATE_STATUSES = ("pass", "warn", "hard-fail", "skipped-by-config", "blocked")
 SOURCE_FILE_SHA256 = {
     "reviewer-registry.md": "6452b315f087617689023d430398d007ed59483c950b0f26297a73ff65a6b88c",
@@ -342,9 +307,6 @@ class RoleSpec:
     signals: tuple[str, ...]
     minimum_independence: str | None
     default_profile: str | None
-    allowed_profiles: tuple[str, ...]
-    workspace_cap: str | None
-    external_cap: str | None
     result_schema: str
     source_behavior_sha256: str
     lens_path: str | None
@@ -410,8 +372,6 @@ class ProfileResolution:
     profile_id: str
     model: str
     effort: str
-    workspace_boundary: str
-    external_boundary: str
     catalog_sha256: str
 
 
@@ -631,31 +591,8 @@ def _parse_agent_lens(
             f"role {role_id}.minimum_independence must be {expected_independence!r}"
         )
     default = raw.get("default_profile")
-    allowed = _string_list(
-        raw.get("allowed_profiles"),
-        f"role {role_id}.allowed_profiles",
-        nonempty=True,
-    )
-    policy = ROLE_PROFILE_POLICY[category]
-    if default != policy["default"] or allowed != policy["allowed"]:
-        raise RoleRegistryError(f"role {role_id} profile transition violates KTD4")
-    boundaries = _closed_keys(
-        raw.get("boundaries"),
-        {
-            "workspace_cap",
-            "external_cap",
-            "external_mutation",
-            "profile_may_not_widen_role",
-        },
-        f"role {role_id}.boundaries",
-    )
-    if boundaries != {
-        "workspace_cap": policy["workspace"],
-        "external_cap": policy["external"],
-        "external_mutation": "forbidden",
-        "profile_may_not_widen_role": True,
-    }:
-        raise RoleRegistryError(f"role {role_id} boundary cap violates its category contract")
+    if default not in PROFILE_IDS:
+        raise RoleRegistryError(f"role {role_id}.default_profile is not a managed profile")
     result_schema = _validate_result_schema(
         role_id, category, raw.get("result_schema"), result_schemas
     )
@@ -673,9 +610,6 @@ def _parse_agent_lens(
         signals=signals,
         minimum_independence=str(minimum),
         default_profile=str(default),
-        allowed_profiles=allowed,
-        workspace_cap=str(boundaries["workspace_cap"]),
-        external_cap=str(boundaries["external_cap"]),
         result_schema=result_schema,
         source_behavior_sha256=source_hash,
         lens_path=expected_spec,
@@ -797,9 +731,6 @@ def _parse_deterministic(
         signals=signals,
         minimum_independence=None,
         default_profile=None,
-        allowed_profiles=(),
-        workspace_cap=None,
-        external_cap=str(command["network"]),
         result_schema=result_schema,
         source_behavior_sha256=source_hash,
         lens_path=None,
@@ -833,8 +764,6 @@ def _parse_role(
         "selection",
         "minimum_independence",
         "default_profile",
-        "allowed_profiles",
-        "boundaries",
         "result_schema",
         "source_behavior_sha256",
     }
@@ -953,14 +882,14 @@ def resolve_role(
     requested_profile: str | None = None,
     requested_independence: str | None = None,
 ) -> RoleResolution:
-    """Resolve a role-level profile/independence request without widening its contract."""
+    """Resolve a role-level profile/independence request against the managed profile set."""
 
     role = registry.role(role_id)
     selected_profile = requested_profile or role.default_profile
-    if selected_profile not in role.allowed_profiles:
+    if selected_profile not in PROFILE_IDS:
         raise RoleRegistryError(
             f"role {role_id} cannot use profile {selected_profile!r}; "
-            f"allowed={role.allowed_profiles}"
+            f"allowed={PROFILE_IDS}"
         )
     independence = requested_independence or role.minimum_independence
     if independence not in {"preferred", "required"}:
@@ -1043,8 +972,8 @@ def _profile_instructions(resolution: ProfileResolution) -> str:
     return f"""You are the managed Verified Workflows `{resolution.profile_id}` execution profile.
 
 This profile supplies compute defaults, not logical-role identity. Follow the bounded role and task
-from the root thread, stay within declared writes, and return the requested typed result. Do not run
-Git unless the role is `git-integration-operator`. Runtime identity and permissions come from Codex
+from the root thread, stay within declared writes, and return the requested typed result. Perform
+only the assigned bounded role and stay inside it. Runtime identity and permissions come from Codex
 readback, not from this instruction.
 """
 
@@ -1088,8 +1017,6 @@ def resolve_profile(
         profile_id=profile_id,
         model=model_slug,
         effort=policy["effort"],
-        workspace_boundary=policy["workspace"],
-        external_boundary=policy["external"],
         catalog_sha256=catalog_snapshot.normalized_sha256,
     )
 
@@ -1202,8 +1129,6 @@ def bundle_receipt(
                 "runtime_agent_name": profile.runtime_agent_name,
                 "model": resolution.model,
                 "effort": resolution.effort,
-                "workspace_boundary": resolution.workspace_boundary,
-                "external_boundary": resolution.external_boundary,
                 "profile_sha256": profile.sha256,
                 "relative_path": f"agents/{profile.filename}",
                 "action": actions.get(profile.profile_id, "rendered"),
@@ -1225,14 +1150,11 @@ def bundle_receipt(
                 "minimum_independence": role.minimum_independence,
                 "effective_independence": resolved.effective_independence,
                 "default_profile": role.default_profile,
-                "allowed_profiles": list(role.allowed_profiles),
                 "selected_profile": resolved.selected_profile,
                 "selected_runtime_agent_name": profile.runtime_agent_name,
                 "selection_basis": "registry-default",
                 "model": profile_resolution.model,
                 "effort": profile_resolution.effort,
-                "workspace_cap": role.workspace_cap,
-                "external_cap": role.external_cap,
                 "result_schema": role.result_schema,
                 "profile_sha256": profile.sha256,
                 "action": actions.get(str(resolved.selected_profile), "rendered"),

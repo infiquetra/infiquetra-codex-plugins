@@ -1,5 +1,107 @@
 # Decisions
 
+## 2026-08-01: Delegated Git Publication Replaces Root-Only Git Ownership In Verified Workflows
+
+Verified Workflows deletes the capability layer it invented rather than trying to make it truthful.
+The per-role `workspace_cap`, `external_cap`, and `external_mutation` declarations, the
+`allowed_profiles` membership check, the `ROOT_ONLY_ACTIONS` constant, the per-profile `workspace`
+and `external` keys, and six compiler refusals built on them are removed. Three came out of
+`render_codex_agents.py`: the `profile transition violates KTD4` assert, the `boundary cap violates
+its category contract` check, and the `allowed_profiles` gate inside `resolve_role`. Three came out
+of `workflow_dispatch.py`: a read-only profile may not declare writes, a non-Git role may not name a
+Git command in its completion condition, and a fallback may not cross its profile's boundary. A
+seventh was rewritten rather than deleted — the fallback check that read `role.allowed_profiles` now
+tests membership in `PROFILE_IDS`. An assignment may select any member of `PROFILE_IDS`.
+
+**What this changed for a publication assignment is narrower than the issue framing suggests, and
+the record should be exact.** A `git-integration-operator` row whose completion condition names
+`git push` and `gh pr create` *already compiled before this change*. The deleted guard read
+`if GIT_WORD_RE.search(completion) and not owns_git`, and `owns_git` was true for that role, so it
+never applied to the Git operator at all (pre-change `workflow_dispatch.py:314-318` at `0c20724`).
+Three things did change for that role: it is no longer pinned to `work_medium` and may select any
+managed profile; a non-Git role may now name Git or `gh` in a completion condition; and the rendered
+`work_medium` profile no longer instructs the child "Do not run Git unless the role is
+`git-integration-operator`."
+
+The reason for the removal is that none of it was ever enforced. Codex 0.146 children inherit the
+parent turn's effective permission profile, so a profile can neither widen nor narrow what a child
+may do (`plugins/saga/references/operator-choice.md`), and a generated `agents/*.toml` carries no
+key that a sandbox or network layer reads. The declared capability string was only ever compared
+against a hardcoded constant inside the plugin's own compiler. That argument is verified from source
+and is what this decision rests on.
+
+**The Hermes anecdote does not support the conclusion it was cited for.** Issue 71 reports that
+during the Hermes profile self-sovereign evolution workflow the compiler assigned publication to
+`git-integration-operator`, the agent committed, and then could not push or open the pull request,
+and concludes that declared policy rather than authentication was the blocker. Neither removed
+mechanism can have produced that failure: the compiler's Git-word refusal exempted
+`git-integration-operator` by construction, and the `work_medium` instruction text exempted it by
+name. No run record for that failure exists under `~/.codex/verified-workflows/state/`, so its
+actual cause is unestablished. The issue's stop condition fires only if a red-first reproduction
+shows the Codex harness itself refused; the reproduction showed neither that nor a compiler refusal,
+so the work proceeded. Whoever next touches this should treat the Hermes cause as an open question
+and not as settled precedent.
+
+This supersedes the 2026-07-24 decision "Codex V2 Owns Live Execution And Verified Workflows Becomes
+A Minimal Kernel" in one specific respect: its assertion that the main Codex session "owns workflow
+preview, approval binding, dependency release, integration, Git, gates, merge, installation,
+rollback, and completion" no longer holds for Git and integration inside a dispatched workflow. Root
+remains the orchestrator, the gate evaluator, and the approval boundary; it is no longer the only
+actor that may run Git or GitHub commands during a run. The rest of that decision — the V2 kernel,
+the canonical tables, the managed profiles, the run record, the external-action control plane —
+stands unchanged.
+
+The 2026-07-18 decision "Feasibility Review Keeps Root-Owned Workflows Usable" is not superseded
+here, because it was already conditionally superseded by the 2026-07-24 decision, which stated it
+would take effect "after the U8 live cutover gate passes." That gate passed. The QA record
+`docs/qa/qa-task-codex-v2-orchestrated-execution-system-2026-07-24.md` returns verdict PASS across
+installed-byte readback, six managed profiles, a fresh-session V2 proof, an attended rollback drill,
+and a reapply smoke, and PR #46's merge commit `74258be` is present on `main`. So the operative
+predecessor on 2026-08-01 is the 2026-07-24 entry, and the 2026-07-18 entry is already historical;
+this decision does not supersede it a second time.
+
+**The weak link, stated on the record.** The 2026-07-18 decision let native children leave advisory
+status only if "a runtime can provide authenticated host-issued child attestation." Codex ships
+nothing under that name. What it ships is combined `session_meta` and `turn_context` readback on the
+canonical agent path, which root must match against the approved path, profile, model, effort,
+provider, permission profile, sandbox, and V2 mode before it accepts an assignment
+(`plugins/verified-workflows/skills/run/references/workflow-protocol.md`). This decision reads that
+readback as satisfying the 2026-07-18 condition: it is host-reported rather than child-reported, and
+a mismatch fails visibly. The honest gap is that it proves *identity*, not *confinement* — it tells
+you which agent ran, and cannot show that the host held that agent inside a narrower boundary,
+because on 0.146 the child inherits the parent turn's permission profile outright. It was also first
+proved on 0.145.0 at cutover and carried forward to 0.146. A future reader may reasonably conclude
+that the 2026-07-18 condition was never actually met and that this decision relaxed it rather than
+satisfied it. That disagreement is recorded rather than resolved.
+
+**One nearby decision survives and still governs this change.** The 2026-07-17 decision "Normalize
+Subject-Exclusion Parent Links And Bootstrap Self-Hosting Fixes Manually" holds that Verified
+Workflows cannot grant gate authority to changes in its own implementation, and that self-hosting
+patches keep root ownership of implementation, integration, Git, release, and installation. This
+change is exactly that category — Verified Workflows editing itself — so the root session performs
+every Git operation for it and children remain advisory here, even though the plugin no longer
+forbids delegated publication in ordinary workflows. Do not read the relaxation above as reaching
+self-hosting work. (This is a different entry from the 2026-07-17 "Force Sol And Terra Back To
+MultiAgent V1 Temporarily" catalog policy, which is the 2026-07-17 policy the 2026-07-24 decision
+superseded.)
+
+Nothing else in the execution path moves. The dependency graph, the concurrent-writer overlap check,
+typed results, runtime identity readback, gate evaluation, reviewer independence, and the
+`git diff --name-only` completion requirement are unchanged. An undeclared changed path now
+validates and carries a synthesized finding instead of raising `ResultContractError`, so the
+evidence is still recorded — it just no longer refuses the result.
+
+**Rejected alternatives:** a conditionally publication-capable `work_medium`, and a dedicated
+publication profile. Both assume a profile can carry permission, which it cannot on Codex 0.146, so
+each would have shipped a second unenforceable claim in place of the first.
+
+**Revisit when:** Codex gives a profile an enforceable permission or sandbox key, or emits a signed
+child attestation distinct from readback. Either would make a declared per-role capability a control
+again rather than prose, and delegated Git could then be bounded by something the host actually
+reads.
+
+Plan: `docs/plans/2026-08-01-verified-workflows-capability-policy-removal-plan.md`.
+
 ## 2026-07-30: Frozen-Source Port Oracles Resolve Through Git's Common Directory And Fail Closed
 
 The two current frozen-source port contracts must not derive the Claude checkout from the active worktree's parent. A clean detached worktree lives outside the sibling checkout layout, so that rule skips eight source-oracle tests in the same full-suite command that is used as the repository gate.

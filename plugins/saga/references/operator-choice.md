@@ -53,6 +53,10 @@ Therefore:
 Missing or mismatched readback fails visibly. Do not fall back to another agent mode while claiming
 that the approved profile ran.
 
+Inherited permission is the reason a plugin-side capability declaration proves nothing. It is not a
+reason to withhold approved work from a child. Scope comes from the operator-approved plan and
+contract, and readback reports the permission that actually applied.
+
 ## Current Recommendation
 
 `plugins/saga/scripts/lifecycle_state.py recommend-backend` returns `inline`, `manual`, or

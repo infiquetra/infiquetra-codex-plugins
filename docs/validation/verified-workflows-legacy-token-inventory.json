@@ -82,7 +82,7 @@
     {
       "classification": "historical-evidence",
       "path": "docs/engineering-journal/DECISIONS.md",
-      "sha256": "c962dbc597ade34d460089e37711dc7073fb7c7ebf4693a801d819c726f7d693",
+      "sha256": "96cee5933f73a797e50500458f8d225db7fdb071f8783a9ce078c9bf9d62b76c",
       "tokens": [
         "## Team Structure",
         "Team Execution",
@@ -818,7 +818,7 @@
     {
       "classification": "legacy-parser",
       "path": "plugins/saga/references/operator-choice.md",
-      "sha256": "c9b5bd5ac882f710e5162cdae41434784f2fb3abddc15d55f91984687f77a0cc",
+      "sha256": "7ab79641f6d92ef65c30eb2ee08fbc0b677d76b5760dbe3810e1f69f6ef3d847",
       "tokens": [
         "team-execution"
       ]
@@ -1196,7 +1196,7 @@
     }
   ],
   "generated_by": "scripts/build_legacy_workflow_inventory.py",
-  "historical_inventory_sha256": "4e86ea31996e8087a57d6a1be8ce84bb0c61f1145a7cad641cc8014c99e8d1e6",
+  "historical_inventory_sha256": "b397fd9dfc741b85aa0622a0c33a1733230d369b9b9e6cb2d53faf1e9af6da0c",
   "history_sentinels": {
     "docs/investigations/2026-06-30-team-execution-saga-orchestration-debug-report.md": {
       "sha256": "ecc08eceda3a67dc81d15b1930753fe236ca7c1ae9b3ad9dd506cdecfb0ac4fa",

@@ -14,13 +14,13 @@ id | depends | role | profile | writes | completion | fallback
 - `id` and `depends` form one acyclic graph.
 - Every row is executable by a managed role; root rows are forbidden.
 - `profile` must be explicit. Model and effort are derived from the maintained profile.
-- `writes` is `none` or a repository-relative allowlist. Read-only profiles cannot write.
+- `writes` is `none` or a repository-relative allowlist. Review, scan, and monitor assignments
+  declare `none`.
 - Concurrent writers must have disjoint write sets. Shared paths require dependency ordering or one
   combined assignment.
-- Only `git-integration-operator` may own Git commands, and its completion condition must include the
-  final `git diff --name-only` validation.
-- `fallback` is `none` or an ordered `profile@condition` list within the role's allowed profiles and
-  permission boundary.
+- A `git-integration-operator` row's completion condition must include the final
+  `git diff --name-only` validation. The compiler rejects the row without it.
+- `fallback` is `none` or an ordered `profile@condition` list naming managed profiles.
 
 Every assignment launches as a direct child of root with `fork_turns=none`. The independent
 reviewer is therefore a sibling of the implementation workers rather than their descendant.

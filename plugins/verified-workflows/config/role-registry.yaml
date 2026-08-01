@@ -116,14 +116,6 @@ roles:
     - bounded write
   minimum_independence: preferred
   default_profile: work_medium
-  allowed_profiles:
-  - work_medium
-  - work_high
-  boundaries:
-    workspace_cap: declared-write
-    external_cap: none
-    external_mutation: forbidden
-    profile_may_not_widen_role: true
   result_schema: assignment-result.v1
   source_behavior_sha256: fa7b3da3660079c65b2a83d5e6bdda6901b3a8c4480baba6cf5c64bc46e4c027
 - id: remediation-worker
@@ -140,14 +132,6 @@ roles:
     - targeted fix
   minimum_independence: preferred
   default_profile: work_medium
-  allowed_profiles:
-  - work_medium
-  - work_high
-  boundaries:
-    workspace_cap: declared-write
-    external_cap: none
-    external_mutation: forbidden
-    profile_may_not_widen_role: true
   result_schema: assignment-result.v1
   source_behavior_sha256: 1cd6aef88da485d61ce113376019185309740d309316f7e331289c10da396c0c
 - id: git-integration-operator
@@ -164,13 +148,6 @@ roles:
     - push
   minimum_independence: preferred
   default_profile: work_medium
-  allowed_profiles:
-  - work_medium
-  boundaries:
-    workspace_cap: declared-write
-    external_cap: none
-    external_mutation: forbidden
-    profile_may_not_widen_role: true
   result_schema: assignment-result.v1
   source_behavior_sha256: 050812df2b54432699c83290acabac851d27c57fa9b3fcfc5639f88e9fe6f231
 - id: ai-usefulness-reviewer
@@ -197,14 +174,6 @@ roles:
     - spec
   minimum_independence: required
   default_profile: review_high
-  allowed_profiles:
-  - review_high
-  - review_max
-  boundaries:
-    workspace_cap: read-only
-    external_cap: none
-    external_mutation: forbidden
-    profile_may_not_widen_role: true
   result_schema: reviewer-result.v1
   source_behavior_sha256: 445853509f9f1ab3794fa7352514fbcb91be2d37bcde64fbc416de97c76e7b8c
 - id: api-compat-scanner
@@ -225,13 +194,6 @@ roles:
     - endpoint change
   minimum_independence: preferred
   default_profile: scan_low
-  allowed_profiles:
-  - scan_low
-  boundaries:
-    workspace_cap: read-only
-    external_cap: none
-    external_mutation: forbidden
-    profile_may_not_widen_role: true
   result_schema: assignment-result.v1
   source_behavior_sha256: 227b006799a77a28f8c50436a22a6f8b812feecfb400e5e4cef8316549bb861b
 - id: api-contract-tester
@@ -249,14 +211,6 @@ roles:
     - generated client
   minimum_independence: preferred
   default_profile: test_medium
-  allowed_profiles:
-  - test_medium
-  - work_high
-  boundaries:
-    workspace_cap: declared-write
-    external_cap: none
-    external_mutation: forbidden
-    profile_may_not_widen_role: true
   result_schema: assignment-result.v1
   source_behavior_sha256: ef847055406b326759491951c3ea6fe38b720658dfcb44abf3285f0c3baea2fe
 - id: api-reviewer
@@ -282,14 +236,6 @@ roles:
     - breaking change
   minimum_independence: required
   default_profile: review_high
-  allowed_profiles:
-  - review_high
-  - review_max
-  boundaries:
-    workspace_cap: read-only
-    external_cap: none
-    external_mutation: forbidden
-    profile_may_not_widen_role: true
   result_schema: reviewer-result.v1
   source_behavior_sha256: fc17ce3fe07fa50f881171e9899ed64694eaeb3e2ebccc8ffc49768aa501e988
 - id: architecture-reviewer
@@ -311,14 +257,6 @@ roles:
     - ADR
   minimum_independence: required
   default_profile: review_high
-  allowed_profiles:
-  - review_high
-  - review_max
-  boundaries:
-    workspace_cap: read-only
-    external_cap: none
-    external_mutation: forbidden
-    profile_may_not_widen_role: true
   result_schema: reviewer-result.v1
   source_behavior_sha256: 40cef29a50e6f95a2ef34bb1ea884e99ff2f771498c53863da924c480eb96b61
 - id: clarity-reviewer
@@ -343,14 +281,6 @@ roles:
     - documentation
   minimum_independence: required
   default_profile: review_high
-  allowed_profiles:
-  - review_high
-  - review_max
-  boundaries:
-    workspace_cap: read-only
-    external_cap: none
-    external_mutation: forbidden
-    profile_may_not_widen_role: true
   result_schema: reviewer-result.v1
   source_behavior_sha256: cc8ca6e530b03b91c2c87eb1a4aa06ec10cfc92614e0614cb7394b1316f0f77c
 - id: code-quality-reviewer
@@ -377,14 +307,6 @@ roles:
     - abstraction
   minimum_independence: required
   default_profile: review_high
-  allowed_profiles:
-  - review_high
-  - review_max
-  boundaries:
-    workspace_cap: read-only
-    external_cap: none
-    external_mutation: forbidden
-    profile_may_not_widen_role: true
   result_schema: reviewer-result.v1
   source_behavior_sha256: 8b7ceb86ef2dc2e9d70fe19d859847c1ce5891c966016325916e4570c8bfd849
 - id: concurrency-tester
@@ -405,14 +327,6 @@ roles:
     - concurrency
   minimum_independence: preferred
   default_profile: test_medium
-  allowed_profiles:
-  - test_medium
-  - work_high
-  boundaries:
-    workspace_cap: declared-write
-    external_cap: none
-    external_mutation: forbidden
-    profile_may_not_widen_role: true
   result_schema: assignment-result.v1
   source_behavior_sha256: 8b5be26d8b11518c61c5e460e0a9f78a06e29af011422ef76fd78b07b0cfe010
 - id: dependency-scanner
@@ -431,13 +345,6 @@ roles:
     - package publishing
   minimum_independence: preferred
   default_profile: scan_low
-  allowed_profiles:
-  - scan_low
-  boundaries:
-    workspace_cap: read-only
-    external_cap: none
-    external_mutation: forbidden
-    profile_may_not_widen_role: true
   result_schema: assignment-result.v1
   source_behavior_sha256: a273e1018fda591b02d16036afeed68419ba8bf514ecb35d34f0cab196b26e2f
 - id: deploy-watcher
@@ -455,13 +362,6 @@ roles:
     - publish-nonprod workflow
   minimum_independence: preferred
   default_profile: monitor_low
-  allowed_profiles:
-  - monitor_low
-  boundaries:
-    workspace_cap: read-only
-    external_cap: allowlisted-read
-    external_mutation: forbidden
-    profile_may_not_widen_role: true
   result_schema: assignment-result.v1
   source_behavior_sha256: 42feeae5643a640140b07f81ff97fc5d6d9ea693d0136291e6e5540dd71c696b
 - id: devils-advocate-reviewer
@@ -476,14 +376,6 @@ roles:
     signals: []
   minimum_independence: required
   default_profile: review_high
-  allowed_profiles:
-  - review_high
-  - review_max
-  boundaries:
-    workspace_cap: read-only
-    external_cap: none
-    external_mutation: forbidden
-    profile_may_not_widen_role: true
   result_schema: reviewer-result.v1
   source_behavior_sha256: a6e291806e2a8935e149f0e18217075b30c1074f01313cb84d7bfcd2c74c75ab
 - id: event-flow-tester
@@ -503,14 +395,6 @@ roles:
     - async workflow
   minimum_independence: preferred
   default_profile: test_medium
-  allowed_profiles:
-  - test_medium
-  - work_high
-  boundaries:
-    workspace_cap: declared-write
-    external_cap: none
-    external_mutation: forbidden
-    profile_may_not_widen_role: true
   result_schema: assignment-result.v1
   source_behavior_sha256: e2c9e088998b8b62e02084891661fb68f5d6de0ae01d458d3b6465b57cd121ea
 - id: github-actions-monitor
@@ -529,13 +413,6 @@ roles:
     - GitHub workflow
   minimum_independence: preferred
   default_profile: monitor_low
-  allowed_profiles:
-  - monitor_low
-  boundaries:
-    workspace_cap: read-only
-    external_cap: allowlisted-read
-    external_mutation: forbidden
-    profile_may_not_widen_role: true
   result_schema: assignment-result.v1
   source_behavior_sha256: 9438da53e0947fc713217a16ee7858818e9970b944c80710e8fa849704f0b734
 - id: iac-cost-scanner
@@ -556,13 +433,6 @@ roles:
     - cloud cost
   minimum_independence: preferred
   default_profile: scan_low
-  allowed_profiles:
-  - scan_low
-  boundaries:
-    workspace_cap: read-only
-    external_cap: none
-    external_mutation: forbidden
-    profile_may_not_widen_role: true
   result_schema: assignment-result.v1
   source_behavior_sha256: 91faa9ae2fe336e88b38e631a87fe91c1c48ca8feed27305a6eb0026e35a4964
 - id: infra-reviewer
@@ -589,14 +459,6 @@ roles:
     - AWS
   minimum_independence: required
   default_profile: review_high
-  allowed_profiles:
-  - review_high
-  - review_max
-  boundaries:
-    workspace_cap: read-only
-    external_cap: none
-    external_mutation: forbidden
-    profile_may_not_widen_role: true
   result_schema: reviewer-result.v1
   source_behavior_sha256: 3119f3b9a5811261409bfa56515365351746d748edd65a2d4461f8b5b732ba9a
 - id: performance-tester
@@ -616,14 +478,6 @@ roles:
     - runtime cost claim
   minimum_independence: preferred
   default_profile: test_medium
-  allowed_profiles:
-  - test_medium
-  - work_high
-  boundaries:
-    workspace_cap: declared-write
-    external_cap: none
-    external_mutation: forbidden
-    profile_may_not_widen_role: true
   result_schema: assignment-result.v1
   source_behavior_sha256: 88e4550c90be689588ec188052eead305ba5ccb8517e1b5a8c7238beef8c80c1
 - id: privacy-reviewer
@@ -649,14 +503,6 @@ roles:
     - privacy
   minimum_independence: required
   default_profile: review_high
-  allowed_profiles:
-  - review_high
-  - review_max
-  boundaries:
-    workspace_cap: read-only
-    external_cap: none
-    external_mutation: forbidden
-    profile_may_not_widen_role: true
   result_schema: reviewer-result.v1
   source_behavior_sha256: 5b8f419068768556c024402c5abf94ddad6f5473d29a380a1fd1861a4642202c
 - id: runtime-monitor
@@ -674,13 +520,6 @@ roles:
     - runtime health
   minimum_independence: preferred
   default_profile: monitor_low
-  allowed_profiles:
-  - monitor_low
-  boundaries:
-    workspace_cap: read-only
-    external_cap: allowlisted-read
-    external_mutation: forbidden
-    profile_may_not_widen_role: true
   result_schema: assignment-result.v1
   source_behavior_sha256: d34c14f8b4603b385ae4c60a4eafdc0b0ec2bf40ccad402b6f1523dab7d2e8b8
 - id: scenario-tester
@@ -697,14 +536,6 @@ roles:
     - user-visible flow
   minimum_independence: preferred
   default_profile: test_medium
-  allowed_profiles:
-  - test_medium
-  - work_high
-  boundaries:
-    workspace_cap: declared-write
-    external_cap: none
-    external_mutation: forbidden
-    profile_may_not_widen_role: true
   result_schema: assignment-result.v1
   source_behavior_sha256: edf11e36d7842fa18c3180f4b5d541f7c49a137e06daaa2caa61d5e344f64b5b
 - id: sdk-regression-tester
@@ -722,14 +553,6 @@ roles:
     - compatibility fixture
   minimum_independence: preferred
   default_profile: test_medium
-  allowed_profiles:
-  - test_medium
-  - work_high
-  boundaries:
-    workspace_cap: declared-write
-    external_cap: none
-    external_mutation: forbidden
-    profile_may_not_widen_role: true
   result_schema: assignment-result.v1
   source_behavior_sha256: 1f3b9b03f69b0fedfdf5e4191cf729fbc7147afd4860c1efe50c2704ea6785e6
 - id: security-reviewer
@@ -751,14 +574,6 @@ roles:
     - security boundary
   minimum_independence: required
   default_profile: review_high
-  allowed_profiles:
-  - review_high
-  - review_max
-  boundaries:
-    workspace_cap: read-only
-    external_cap: none
-    external_mutation: forbidden
-    profile_may_not_widen_role: true
   result_schema: reviewer-result.v1
   source_behavior_sha256: 7c42df2da1e8fcad8719d239ba892deca31a2ca421d84e929a090f1c98b1eda9
 - id: security-scanner
@@ -778,13 +593,6 @@ roles:
     - broad code change
   minimum_independence: preferred
   default_profile: scan_low
-  allowed_profiles:
-  - scan_low
-  boundaries:
-    workspace_cap: read-only
-    external_cap: none
-    external_mutation: forbidden
-    profile_may_not_widen_role: true
   result_schema: assignment-result.v1
   source_behavior_sha256: a7caade7638258bf92f5583344de010016d74198976c6e1912d4cb3ab2bdb73b
 - id: smoke-tester
@@ -804,14 +612,6 @@ roles:
     - smoke target
   minimum_independence: preferred
   default_profile: test_medium
-  allowed_profiles:
-  - test_medium
-  - work_high
-  boundaries:
-    workspace_cap: declared-write
-    external_cap: none
-    external_mutation: forbidden
-    profile_may_not_widen_role: true
   result_schema: assignment-result.v1
   source_behavior_sha256: 4c28323ece534218965915902f807af7fa0b0a92c2d0c648bfb537affb946f95
 - id: testing-reviewer
@@ -837,14 +637,6 @@ roles:
     - test suite
   minimum_independence: required
   default_profile: review_high
-  allowed_profiles:
-  - review_high
-  - review_max
-  boundaries:
-    workspace_cap: read-only
-    external_cap: none
-    external_mutation: forbidden
-    profile_may_not_widen_role: true
   result_schema: reviewer-result.v1
   source_behavior_sha256: 55e1691990ea441dc3e299422cd437b14b1b7caa3cbe05f82026cf3d6b933283
 - id: ui-regression-tester
@@ -863,13 +655,5 @@ roles:
     - browser workflow
   minimum_independence: preferred
   default_profile: test_medium
-  allowed_profiles:
-  - test_medium
-  - work_high
-  boundaries:
-    workspace_cap: declared-write
-    external_cap: none
-    external_mutation: forbidden
-    profile_may_not_widen_role: true
   result_schema: assignment-result.v1
   source_behavior_sha256: e5ddcffd500720bfa4385ecf63e3507eb9cf3406798324704d5c3c7956a645cd

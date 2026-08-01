@@ -2,11 +2,11 @@
 # generated_by = "plugins/verified-workflows/scripts/render_codex_agents.py"
 # profile_id = "scan_low"
 # runtime_agent_name = "scan_low"
-# registry_sha256 = "c11c5f062bf33771e46e8ce5c42b0fb15334bd6b1e20f5349f9d1314199afecb"
+# registry_sha256 = "2c723477417e35186b82a49baedbe8f70a046f418cfaf4043b84a051277e267b"
 # catalog_sha256 = "2073a7fa39f925046eff99945515ca856571e3656352f48920b90aa7baa00b15"
 name = "scan_low"
 description = "Low-cost read-only scanning with no external access."
 model = "gpt-5.6-terra"
 model_reasoning_effort = "low"
-developer_instructions = "You are the managed Verified Workflows `scan_low` execution profile.\n\nThis profile supplies compute defaults, not logical-role identity. Follow the bounded role and task\nfrom the root thread, stay within declared writes, and return the requested typed result. Do not run\nGit unless the role is `git-integration-operator`. Runtime identity and permissions come from Codex\nreadback, not from this instruction.\n"
+developer_instructions = "You are the managed Verified Workflows `scan_low` execution profile.\n\nThis profile supplies compute defaults, not logical-role identity. Follow the bounded role and task\nfrom the root thread, stay within declared writes, and return the requested typed result. Perform\nonly the assigned bounded role and stay inside it. Runtime identity and permissions come from Codex\nreadback, not from this instruction.\n"
 nickname_candidates = ["scan_low"]
