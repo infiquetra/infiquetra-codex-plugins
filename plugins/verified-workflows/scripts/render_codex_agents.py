@@ -125,32 +125,18 @@ PROFILE_POLICY = {
         "effort": "low",
     },
 }
-ROLE_PROFILE_POLICY = {
-    "reviewer": {
-        "default": "review_high",
-        "allowed": ("review_high", "review_max"),
-    },
-    "worker": {
-        "default": "work_medium",
-        "allowed": ("work_medium", "work_high"),
-    },
-    "git-operator": {
-        "default": "work_medium",
-        "allowed": ("work_medium",),
-    },
-    "tester": {
-        "default": "test_medium",
-        "allowed": ("test_medium", "work_high"),
-    },
-    "scanner": {
-        "default": "scan_low",
-        "allowed": ("scan_low",),
-    },
-    "monitor": {
-        "default": "monitor_low",
-        "allowed": ("monitor_low",),
-    },
-}
+# The set of valid role categories. This is a vocabulary check on the declared
+# category, not a capability policy: any role may request any managed profile.
+ROLE_CATEGORIES = frozenset(
+    {
+        "reviewer",
+        "worker",
+        "git-operator",
+        "tester",
+        "scanner",
+        "monitor",
+    }
+)
 REQUIRED_REVIEWER_ID = "devils-advocate-reviewer"
 GATE_STATUSES = ("pass", "warn", "hard-fail", "skipped-by-config", "blocked")
 SOURCE_FILE_SHA256 = {
@@ -571,7 +557,7 @@ def _parse_agent_lens(
 ) -> RoleSpec:
     role_id = str(raw["id"])
     category = raw.get("category")
-    if category not in ROLE_PROFILE_POLICY:
+    if category not in ROLE_CATEGORIES:
         raise RoleRegistryError(f"role {role_id}.category is invalid")
     spec_version = raw.get("spec_version")
     if spec_version != 1:
@@ -624,7 +610,7 @@ def _parse_deterministic(
     if raw.get("spec_version") != 1:
         raise RoleRegistryError(f"role {role_id}.spec_version must be 1")
     category = raw.get("category")
-    if category not in ROLE_PROFILE_POLICY:
+    if category not in ROLE_CATEGORIES:
         raise RoleRegistryError(f"role {role_id}.category is invalid")
     mode, signals = _parse_selection(raw.get("selection"), role_id)
     command = _closed_keys(

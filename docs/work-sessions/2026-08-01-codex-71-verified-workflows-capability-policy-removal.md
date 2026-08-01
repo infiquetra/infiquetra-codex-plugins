@@ -98,6 +98,38 @@ a clean CI checkout has no `.saga`.
 'PIL'`. The dependency is present in the uv environment and absent from system Python; it is an
 interpreter-selection artifact, not a repository gap, and predates this change.
 
+## Pre-PR review findings, and their fix
+
+The inline review of `becc9a8` found no `P0`/`P1` and 13/13 requirements DONE
+(`docs/code-reviews/2026-08-01-fix-71-verified-workflows-capability-policy-removal-code-review.md`).
+Two `P2` findings were both the change's own defect class surviving in a different shape, and the
+operator authorized fixing both on this branch rather than deferring them:
+
+1. **`ROLE_PROFILE_POLICY` was dead data still declaring the removed pin.** It was read at only two
+   sites, both `category not in ROLE_PROFILE_POLICY` membership tests; its `default` and `allowed`
+   values had no reader. One of them was `"git-operator": {"allowed": ("work_medium",)}` — the exact
+   profile pin this change deletes, contradicting both the decision record and a passing test.
+   Replaced with `ROLE_CATEGORIES`, a plain `frozenset` of the six category names.
+
+2. **The retained fallback guard could not fire.** `FALLBACK_RE` hardcoded the same seven profile
+   names as `PROFILE_IDS`, so `_parse_fallbacks` rejected any other name before the membership check
+   ran, and `test_fallback_outside_the_managed_set_is_rejected` asserted only `match="fallback"` —
+   a substring of the `where` string — so it passed on the regex error and would have passed with
+   the check deleted. `FALLBACK_RE` now matches shape only, leaving `PROFILE_IDS` the single
+   authoritative list; an unmanaged-but-well-formed name gets "is not a managed profile" instead of
+   a misleading syntax error. Three tests replace the loose one: the membership path, the shape
+   path, and a drift guard asserting every managed profile is accepted by the regex.
+
+The `P3` test gap on the new `.saga` exclusion is closed too, by
+`test_runtime_scratch_directories_are_excluded_from_the_legacy_token_scan`.
+
+Two advisories were recorded and not acted on: an unenforced patch-import convention in
+`plugins/verified-workflows/README.md:130` and `plugins/saga/README.md:54` whose only enforcement is
+a docstring in saga's external-action adapter (same defect family, different subsystem, worth its
+own issue), and the deterministic-validator branch's surviving `command.network` and
+`workspace_writes` constraints, which the plan deliberately scoped out and which are unreachable
+because no registry entry uses `kind: deterministic-validator`.
+
 ## Verifier contract divergence — do not re-emit this harness
 
 The saga's `verify.pass_rule` accepts only `majority` or `unanimous` and has no severity axis, so the

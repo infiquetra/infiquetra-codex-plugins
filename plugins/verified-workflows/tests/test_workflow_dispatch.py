@@ -293,9 +293,25 @@ def test_profile_outside_the_managed_set_is_rejected() -> None:
 
 
 def test_fallback_outside_the_managed_set_is_rejected() -> None:
+    # Well-formed but unmanaged: must fail the PROFILE_IDS membership check, not the
+    # shape regex, so the operator is told the real problem.
     rows = [assignment("implement"), reviewer(), worker(fallback="work_ultra@ambiguity")]
-    with pytest.raises(W.WorkflowDispatchError, match="fallback"):
+    with pytest.raises(W.WorkflowDispatchError, match="work_ultra is not a managed profile"):
         compile_fixture(rows)
+
+
+def test_malformed_fallback_entry_is_rejected_on_shape() -> None:
+    rows = [assignment("implement"), reviewer(), worker(fallback="Work-Medium@ambiguity")]
+    with pytest.raises(W.WorkflowDispatchError, match="must be profile@condition"):
+        compile_fixture(rows)
+
+
+def test_every_managed_profile_is_accepted_as_a_fallback_name() -> None:
+    """Pin FALLBACK_RE's shape against PROFILE_IDS so the two cannot drift apart."""
+    for profile_id in W.renderer.PROFILE_IDS:
+        match = W.FALLBACK_RE.fullmatch(f"{profile_id}@ambiguity")
+        assert match is not None, f"{profile_id} is managed but FALLBACK_RE rejects it"
+        assert match.group(1) == profile_id
 
 
 def test_fallback_across_a_former_boundary_now_compiles() -> None:

@@ -1149,7 +1149,7 @@
     {
       "classification": "migration-fixture",
       "path": "tests/test_validate_codex_plugins.py",
-      "sha256": "e2b59fd6391e497435fbc82b68be65dfe78880f6e51e521509e33f41714abbad",
+      "sha256": "faa96b3fc985eff705baaf12282aa3ba7b2e68e7328b61480dd86181f5da8b6f",
       "tokens": [
         ".codex/team-execution/",
         "team-execution",

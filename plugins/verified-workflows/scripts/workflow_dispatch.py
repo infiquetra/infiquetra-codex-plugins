@@ -17,9 +17,10 @@ import render_codex_agents as renderer
 
 MAX_PLAN_BYTES = 2 * 1024 * 1024
 ID_RE = re.compile(r"^[a-z][a-z0-9-]{0,63}$")
-FALLBACK_RE = re.compile(
-    r"^(review_max|review_high|work_medium|work_high|test_medium|scan_low|monitor_low)@([a-z0-9][a-z0-9-]{0,63})$"
-)
+# Shape only. The profile name is checked against renderer.PROFILE_IDS in
+# _parse_assignment so an unmanaged-but-well-formed name gets that error rather
+# than a misleading syntax error, and PROFILE_IDS stays the one authoritative list.
+FALLBACK_RE = re.compile(r"^([a-z][a-z0-9_]{0,63})@([a-z0-9][a-z0-9-]{0,63})$")
 
 ASSIGNMENT_HEADERS = (
     "id",
