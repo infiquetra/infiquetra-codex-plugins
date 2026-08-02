@@ -58,9 +58,7 @@ def test_current_marketplace_and_target_fixture_expose_exactly_one_workflow_iden
     targets = {entry["name"]: entry for entry in fixture["plugins"]}
 
     assert active & {"team-execution", "verified-workflows"} == {"verified-workflows"}
-    assert set(targets) & {"team-execution", "verified-workflows"} == {
-        "verified-workflows"
-    }
+    assert set(targets) & {"team-execution", "verified-workflows"} == {"verified-workflows"}
     target = targets["verified-workflows"]
     assert target["version"] == "3.0.0+codex.20260729164721"
     assert target["publication_status"] == "released"
@@ -89,9 +87,12 @@ def test_legacy_token_inventory_is_exact_digest_bound_and_current() -> None:
     payload = json.loads(expected)
     entries = {entry["path"]: entry for entry in payload["entries"]}
     assert entries["plugins/saga/scripts/outcome.py"]["classification"] == "legacy-parser"
-    assert entries[
-        "docs/plans/2026-06-30-team-execution-saga-orchestration-repair-plan.md"
-    ]["classification"] == "historical-evidence"
+    assert (
+        entries["docs/plans/2026-06-30-team-execution-saga-orchestration-repair-plan.md"][
+            "classification"
+        ]
+        == "historical-evidence"
+    )
     for title_only_history in (
         "docs/reviews/2026-07-10-codex-plugin-model-execution-modernization-plan-doc-review-r2.md",
         "docs/reviews/2026-07-10-codex-plugin-model-execution-modernization-plan-doc-review.md",
@@ -103,9 +104,7 @@ def test_legacy_token_inventory_is_exact_digest_bound_and_current() -> None:
     assert entries["docs/engineering-journal/QUEUED.md"]["classification"] == (
         "mutable-engineering-journal"
     )
-    assert sum(
-        entry["classification"] == "historical-evidence" for entry in entries.values()
-    ) == 47
+    assert sum(entry["classification"] == "historical-evidence" for entry in entries.values()) == 47
     assert all(len(entry["sha256"]) == 64 for entry in entries.values())
 
 
@@ -187,7 +186,7 @@ def test_target_manifest_skills_and_native_v2_runtime_surfaces_are_complete() ->
         "monitor_low.toml",
     }
     assert (TARGET_ROOT / "config" / "role-registry.yaml").is_file()
-    assert len(list((TARGET_ROOT / "roles").glob("*.md"))) == 28
+    assert len(list((TARGET_ROOT / "roles").glob("*.md"))) == 29
 
 
 def test_frozen_team_execution_rows_have_explicit_verified_workflows_targets() -> None:
@@ -195,9 +194,7 @@ def test_frozen_team_execution_rows_have_explicit_verified_workflows_targets() -
     rows = [
         row
         for row in manifest["source"]["rows"]
-        if (row.get("new_path") or row.get("old_path") or "").startswith(
-            "plugins/team-execution/"
-        )
+        if (row.get("new_path") or row.get("old_path") or "").startswith("plugins/team-execution/")
     ]
 
     assert len(rows) == 10
@@ -208,16 +205,12 @@ def test_frozen_team_execution_rows_have_explicit_verified_workflows_targets() -
     )
     identity = next(row for row in rows if row["row_id"] == "src-c75fe471946e3b4e")
     assert identity["units"] == ["U9"]
-    assert identity["planned_targets"] == [
-        "plugins/verified-workflows/.codex-plugin/plugin.json"
-    ]
+    assert identity["planned_targets"] == ["plugins/verified-workflows/.codex-plugin/plugin.json"]
 
 
 def test_target_operational_surfaces_emit_no_legacy_vocabulary_or_cross_plugin_imports() -> None:
     lineage_docs = {"README.md", "PORTABILITY.md", "CHANGELOG.md"}
-    legacy_tokens = {
-        value for entry in WORKFLOW_COMPAT.REGISTRY.values() for value in entry.legacy
-    }
+    legacy_tokens = {value for entry in WORKFLOW_COMPAT.REGISTRY.values() for value in entry.legacy}
     for path in TARGET_ROOT.rglob("*"):
         if (
             not path.is_file()

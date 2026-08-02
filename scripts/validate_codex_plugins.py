@@ -146,9 +146,7 @@ PRE_CUTOVER_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
 }
 
 TARGET_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
-    name: spec
-    for name, spec in PRE_CUTOVER_EXPECTED_PLUGINS.items()
-    if name != "team-execution"
+    name: spec for name, spec in PRE_CUTOVER_EXPECTED_PLUGINS.items() if name != "team-execution"
 }
 TARGET_EXPECTED_PLUGINS["fleet-core"] = {
     **TARGET_EXPECTED_PLUGINS["fleet-core"],
@@ -232,9 +230,7 @@ REQUIRED_STATE_ROOTS = {
     ".codex/saga/",
     WORKFLOW_COMPAT.emit(WORKFLOW_COMPAT.REPO_STATE_ROOT),
 }
-REQUIRED_LEGACY_STATE_ROOTS = set(
-    WORKFLOW_COMPAT.legacy_values(WORKFLOW_COMPAT.REPO_STATE_ROOT)
-)
+REQUIRED_LEGACY_STATE_ROOTS = set(WORKFLOW_COMPAT.legacy_values(WORKFLOW_COMPAT.REPO_STATE_ROOT))
 REQUIRED_UNPUBLISHED_PLUGINS: set[str] = set()
 REQUIRED_LEGACY_READ_PLUGINS = {"team-execution"}
 TARGET_REMOVED_PLUGINS = OLD_ACTIVE_PLUGINS | {"team-execution"}
@@ -277,22 +273,16 @@ LINEAGE_ALLOWED_PARTS = {
     "docs/portability/saga-family-capability-map.md",
     "docs/portability/saga-family-known-use-inventory.md",
 }
-TEAM_EXECUTION_AGENT_MARKER = WORKFLOW_COMPAT.legacy_values(
-    WORKFLOW_COMPAT.MANAGED_AGENT_MARKER
-)[0]
+TEAM_EXECUTION_AGENT_MARKER = WORKFLOW_COMPAT.legacy_values(WORKFLOW_COMPAT.MANAGED_AGENT_MARKER)[0]
 LEGACY_TEAM_EXECUTION_FILE_COUNT = 52
 LEGACY_TEAM_EXECUTION_TREE_SHA256 = (
     "ee3486b96fc07308d089d0cabf09a218ecd3008369c5adb2444e70719c1e8c0e"
 )
-STAGED_MARKETPLACE_SHA256 = (
-    "42803919b39b720599b9692bfdcd95bcfe8c31b06ebb2c976aacaa890fdfea8a"
-)
+STAGED_MARKETPLACE_SHA256 = "42803919b39b720599b9692bfdcd95bcfe8c31b06ebb2c976aacaa890fdfea8a"
 LEGACY_WORKFLOW_HISTORICAL_INVENTORY_SHA256 = (
-    "b397fd9dfc741b85aa0622a0c33a1733230d369b9b9e6cb2d53faf1e9af6da0c"
+    "44535dc3ab466b677ca4e6daac6fb370aa1ed3bc36189e61e8ae8eb12890a3ed"
 )
-LEGACY_WORKFLOW_INVENTORY = Path(
-    "docs/validation/verified-workflows-legacy-token-inventory.json"
-)
+LEGACY_WORKFLOW_INVENTORY = Path("docs/validation/verified-workflows-legacy-token-inventory.json")
 LEGACY_WORKFLOW_INVENTORY_EXCLUDED = {
     LEGACY_WORKFLOW_INVENTORY,
     Path("scripts/validate_codex_plugins.py"),
@@ -499,6 +489,8 @@ TEAM_EXECUTION_AGENT_ROSTER = {
     "testing-reviewer",
     "ui-regression-tester",
 }
+
+
 def _derive_model_hints() -> dict[str, tuple[str, str]]:
     """Derive the lineage->``(codex_model, codex_effort)`` hint map from the fleet-core palette.
 
@@ -802,19 +794,13 @@ def validate_legacy_history_sentinels(root: Path, errors: list[str]) -> None:
             errors.append(f"historical workflow sentinel digest drifted `{raw_path}`")
         missing = [token for token in spec["tokens"] if token not in text]
         if missing:
-            errors.append(
-                f"historical workflow sentinel `{raw_path}` missing tokens {missing}"
-            )
+            errors.append(f"historical workflow sentinel `{raw_path}` missing tokens {missing}")
 
 
 def legacy_workflow_file_facts(root: Path) -> dict[str, dict[str, Any]]:
     """Return exact token and digest facts, excluding separately bound legacy source."""
 
-    tokens = {
-        value
-        for spec in WORKFLOW_COMPAT.REGISTRY.values()
-        for value in spec.legacy
-    }
+    tokens = {value for spec in WORKFLOW_COMPAT.REGISTRY.values() for value in spec.legacy}
     facts: dict[str, dict[str, Any]] = {}
     for path in sorted(root.rglob("*")):
         if not path.is_file() or path.is_symlink():
@@ -869,9 +855,7 @@ def validate_legacy_workflow_token_allowlist(
         "entries",
     }
     if set(inventory) != expected_keys:
-        errors.append(
-            f"{LEGACY_WORKFLOW_INVENTORY}: fields must be {sorted(expected_keys)}"
-        )
+        errors.append(f"{LEGACY_WORKFLOW_INVENTORY}: fields must be {sorted(expected_keys)}")
     if inventory.get("schema_version") != 1:
         errors.append(f"{LEGACY_WORKFLOW_INVENTORY}: schema_version must be 1")
     if inventory.get("generated_by") != "scripts/build_legacy_workflow_inventory.py":
@@ -886,8 +870,7 @@ def validate_legacy_workflow_token_allowlist(
     if inventory.get("history_sentinels") != serialized_legacy_history_sentinels():
         errors.append(f"{LEGACY_WORKFLOW_INVENTORY}: historical sentinel binding drifted")
     if enforce_history_sentinels and (
-        inventory.get("historical_inventory_sha256")
-        != LEGACY_WORKFLOW_HISTORICAL_INVENTORY_SHA256
+        inventory.get("historical_inventory_sha256") != LEGACY_WORKFLOW_HISTORICAL_INVENTORY_SHA256
     ):
         errors.append(f"{LEGACY_WORKFLOW_INVENTORY}: historical inventory binding drifted")
 
@@ -984,11 +967,7 @@ def validate_verified_workflows_canonical_surface(root: Path, errors: list[str])
         plugin_root / "PORTABILITY.md",
         plugin_root / "CHANGELOG.md",
     }
-    legacy_tokens = {
-        value
-        for spec in WORKFLOW_COMPAT.REGISTRY.values()
-        for value in spec.legacy
-    }
+    legacy_tokens = {value for spec in WORKFLOW_COMPAT.REGISTRY.values() for value in spec.legacy}
     candidates = sorted(
         path
         for path in plugin_root.rglob("*")
@@ -996,8 +975,7 @@ def validate_verified_workflows_canonical_surface(root: Path, errors: list[str])
         and "__pycache__" not in path.parts
         and path not in lineage_docs
         and path.name != "fleet_commons_shim.py"
-        and expected_legacy_workflow_classification(path.relative_to(root))
-        != "migration-fixture"
+        and expected_legacy_workflow_classification(path.relative_to(root)) != "migration-fixture"
     )
     for path in candidates:
         try:
@@ -1018,7 +996,9 @@ def validate_verified_workflows_canonical_surface(root: Path, errors: list[str])
                 "plugins/saga",
             ):
                 if forbidden in text:
-                    errors.append(f"{rel}: target source contains cross-plugin import `{forbidden}`")
+                    errors.append(
+                        f"{rel}: target source contains cross-plugin import `{forbidden}`"
+                    )
             try:
                 parsed = ast.parse(text, filename=str(path))
             except SyntaxError as exc:
@@ -1035,9 +1015,7 @@ def validate_verified_workflows_canonical_surface(root: Path, errors: list[str])
                     continue
                 imported.add(node.module)
                 imported.update(f"{node.module}.{alias.name}" for alias in node.names)
-            forbidden_imports = {
-                name for name in imported if is_cross_plugin_module(name)
-            }
+            forbidden_imports = {name for name in imported if is_cross_plugin_module(name)}
             if forbidden_imports and not is_test_source:
                 errors.append(
                     f"{rel}: target source directly imports another workflow plugin "
@@ -1090,9 +1068,7 @@ def validate_verified_workflows_canonical_surface(root: Path, errors: list[str])
             r"(?i)\bbyte-identical\s+to\s+(?:the\s+)?upstream\b",
         )
         if any(re.search(pattern, portability) for pattern in byte_parity_claims):
-            errors.append(
-                "verified-workflows/PORTABILITY.md: must not claim upstream byte parity"
-            )
+            errors.append("verified-workflows/PORTABILITY.md: must not claim upstream byte parity")
 
 
 def validate_verified_workflows_agents(root: Path, errors: list[str]) -> None:
@@ -1137,8 +1113,8 @@ def validate_verified_workflows_agents(root: Path, errors: list[str]) -> None:
         receipt = json.loads(result.stdout)
         if receipt.get("claim") != "expected-profile-configuration-only":
             raise RuntimeError("renderer made an unsupported runtime claim")
-        if receipt.get("registry", {}).get("role_count") != 28:
-            raise RuntimeError("renderer did not preserve the 28 logical roles")
+        if receipt.get("registry", {}).get("role_count") != 29:
+            raise RuntimeError("renderer did not preserve the 29 logical roles")
         if len(receipt.get("profiles", [])) != 7:
             raise RuntimeError("renderer did not produce the managed profile roster")
         project_agents = root / ".codex" / "agents"
@@ -1208,9 +1184,7 @@ def validate_verified_workflows_runtime(root: Path, errors: list[str]) -> None:
             cwd=root,
             env={
                 **os.environ,
-                "FLEET_COMMONS_ROOT": str(
-                    (root / "plugins" / "fleet-core").resolve()
-                ),
+                "FLEET_COMMONS_ROOT": str((root / "plugins" / "fleet-core").resolve()),
                 "PYTHONDONTWRITEBYTECODE": "1",
             },
             capture_output=True,
@@ -1233,9 +1207,10 @@ def validate_verified_workflows_runtime(root: Path, errors: list[str]) -> None:
             raise RuntimeError("U4 tracked proof must remain a non-mutating characterization")
         if proof.get("runtime_receipt_ref") is not None:
             raise RuntimeError("U4 tracked proof must not claim a live receipt")
-        if proof.get("runtime_receipt_sha256") is not None or proof.get(
-            "live_envelope_sha256"
-        ) is not None:
+        if (
+            proof.get("runtime_receipt_sha256") is not None
+            or proof.get("live_envelope_sha256") is not None
+        ):
             raise RuntimeError("U4 tracked proof must not carry live-envelope evidence")
     except (OSError, RuntimeError, json.JSONDecodeError, subprocess.TimeoutExpired) as exc:
         errors.append(f"verified-workflows: U4 runtime proof validation failed: {exc}")
@@ -1299,7 +1274,9 @@ def validate_saga_workflow_independence(root: Path, errors: list[str]) -> None:
             text = path.read_text(encoding="utf-8")
             parsed = ast.parse(text, filename=str(path))
         except (OSError, UnicodeDecodeError, SyntaxError) as exc:
-            errors.append(f"Saga source unreadable while checking workflow independence `{path}`: {exc}")
+            errors.append(
+                f"Saga source unreadable while checking workflow independence `{path}`: {exc}"
+            )
             continue
         imported: set[str] = set()
         for node in ast.walk(parsed):
@@ -1309,15 +1286,11 @@ def validate_saga_workflow_independence(root: Path, errors: list[str]) -> None:
                 imported.add(node.module)
                 imported.update(f"{node.module}.{alias.name}" for alias in node.names)
         literal_targets = {
-            value
-            for node in ast.walk(parsed)
-            if (value := static_string_value(node)) is not None
+            value for node in ast.walk(parsed) if (value := static_string_value(node)) is not None
         }
         references = imported | literal_targets
         forbidden = sorted(
-            value
-            for value in references
-            if is_verified_workflows_source_reference(value)
+            value for value in references if is_verified_workflows_source_reference(value)
         )
         if forbidden:
             errors.append(
@@ -1388,7 +1361,9 @@ def validate_plugins(
 ) -> None:
     plugins_root = root / "plugins"
     actual_plugins = {
-        path.name for path in plugins_root.iterdir() if path.is_dir() and not path.name.startswith(".")
+        path.name
+        for path in plugins_root.iterdir()
+        if path.is_dir() and not path.name.startswith(".")
     }
     expected_plugin_names = set(expected_plugins)
     optional_plugin_names = set(optional_plugins or {}) - expected_plugin_names
@@ -1484,9 +1459,7 @@ def validate_plugin(
             continue
         frontmatter_name = extract_frontmatter_name(text)
         if frontmatter_name != skill_name:
-            errors.append(
-                f"{plugin_name}/{skill_name}: frontmatter name must be `{skill_name}`"
-            )
+            errors.append(f"{plugin_name}/{skill_name}: frontmatter name must be `{skill_name}`")
 
     for markdown_path in iter_plugin_markdown_files(plugin_root):
         text = read_text(markdown_path, errors)
@@ -1529,9 +1502,7 @@ def validate_team_execution_agents(agents_root: Path, errors: list[str]) -> None
         if source_model is None:
             errors.append(f"team-execution/{path.name}: missing source_model lineage")
         elif source_model not in TEAM_EXECUTION_MODEL_HINTS:
-            errors.append(
-                f"team-execution/{path.name}: unsupported source_model `{source_model}`"
-            )
+            errors.append(f"team-execution/{path.name}: unsupported source_model `{source_model}`")
 
         codex_model_match = CODEX_MODEL_HINT_RE.search(text)
         codex_model_hint = codex_model_match.group("model") if codex_model_match else None
@@ -1617,7 +1588,9 @@ def validate_relative_file(
     errors: list[str],
 ) -> None:
     candidate = Path(raw_path)
-    rel_source = source_path.relative_to(allowed_root.parent if allowed_root.name == "plugins" else allowed_root)
+    rel_source = source_path.relative_to(
+        allowed_root.parent if allowed_root.name == "plugins" else allowed_root
+    )
     if candidate.is_absolute() or ".." in candidate.parts:
         errors.append(f"{rel_source}: script reference `{raw_path}` must stay inside package")
         return
@@ -1647,7 +1620,9 @@ def validate_matrix(root: Path, mode: str, errors: list[str]) -> None:
             f"missing={sorted(CLAUDE_CATALOG - set(rows))} "
             f"unexpected={sorted(set(rows) - CLAUDE_CATALOG)}"
         )
-    bad_statuses = {plugin: status for plugin, status in rows.items() if status not in ALLOWED_STATUSES}
+    bad_statuses = {
+        plugin: status for plugin, status in rows.items() if status not in ALLOWED_STATUSES
+    }
     if bad_statuses:
         errors.append(f"portability matrix has invalid statuses: {bad_statuses}")
     if rows.get("team-execution") == "blocked":
@@ -1733,9 +1708,7 @@ def validate_target_fixture_payload(
         if entry is None:
             continue
         if entry.get("version") != expected["version"]:
-            errors.append(
-                f"{path}: {plugin_name} version must be {expected['version']}"
-            )
+            errors.append(f"{path}: {plugin_name} version must be {expected['version']}")
         if plugin_name == "verified-workflows" and entry.get("publication_status") != "released":
             errors.append(f"{path}: verified-workflows must be marked released after U8")
         skills = entry.get("skills")
@@ -1855,9 +1828,7 @@ def validate_cutover_evidence(root: Path, mode: str, errors: list[str]) -> None:
     modernization_doc = (
         root / "docs" / "portability" / "codex-plugin-modernization-cutover-and-rollback.md"
     )
-    modernization_record = (
-        root / "docs" / "validation" / "codex-plugin-modernization-cutover.json"
-    )
+    modernization_record = root / "docs" / "validation" / "codex-plugin-modernization-cutover.json"
     for path in (
         proof_doc,
         proof_schema,
@@ -1966,20 +1937,16 @@ def validate_modernization_cutover_record(
         or clean.get("installed_plugin_count") != 10
         or clean.get("legacy_workflow_active") is not False
         or clean.get("canonical_workflow_active") is not True
-        or clean.get("profile_counts")
-        != {"canonical": 5, "legacy": 0, "unmanaged": 0}
+        or clean.get("profile_counts") != {"canonical": 5, "legacy": 0, "unmanaged": 0}
         or clean.get("isolated_credentials_copied") is not False
     ):
         errors.append(f"{path.relative_to(root)} clean-home evidence is invalid")
     seeded = payload.get("seeded_migration_lane")
     if not isinstance(seeded, dict) or (
         seeded.get("plugin_pre_sha256") != seeded.get("plugin_restored_sha256")
-        or seeded.get("plugin_archive_pre_sha256")
-        != seeded.get("plugin_archive_restored_sha256")
-        or seeded.get("profile_pre_state_sha256")
-        != seeded.get("profile_restored_sha256")
-        or seeded.get("profile_archive_pre_sha256")
-        != seeded.get("profile_archive_restored_sha256")
+        or seeded.get("plugin_archive_pre_sha256") != seeded.get("plugin_archive_restored_sha256")
+        or seeded.get("profile_pre_state_sha256") != seeded.get("profile_restored_sha256")
+        or seeded.get("profile_archive_pre_sha256") != seeded.get("profile_archive_restored_sha256")
         or seeded.get("duplicate_workflow_surface") is not False
         or seeded.get("rollback_exact") is not True
     ):
@@ -1991,7 +1958,7 @@ def validate_modernization_cutover_record(
         raw_text = path.read_text(encoding="utf-8")
     except OSError:
         raw_text = ""
-    if any(token in raw_text for token in ('/Users/', 'file://', '"HOME"', '"CODEX_HOME"')):
+    if any(token in raw_text for token in ("/Users/", "file://", '"HOME"', '"CODEX_HOME"')):
         errors.append(f"{path.relative_to(root)} contains an unsanitized local value")
     real = payload.get("real_profile")
     if not isinstance(real, dict):
@@ -2027,9 +1994,7 @@ def validate_deletion_migration_map(root: Path, errors: list[str]) -> None:
             errors.append(f"migration docs missing old invocation `{skill}`")
         for replacement in replacements:
             if f"`{replacement}`" not in combined and replacement not in combined:
-                errors.append(
-                    f"migration docs missing replacement `{replacement}` for `{skill}`"
-                )
+                errors.append(f"migration docs missing replacement `{replacement}` for `{skill}`")
 
 
 def compare_inventory(
@@ -2077,7 +2042,9 @@ def validate_issue_contract_parity(root: Path, errors: list[str]) -> None:
             actual = hashlib.sha256(artifact.read_bytes()).hexdigest()
             expected = sidecar.read_text(encoding="utf-8").strip()
         except OSError as exc:
-            errors.append(f"issue-contract artifact unreadable `{artifact.relative_to(root)}`: {exc}")
+            errors.append(
+                f"issue-contract artifact unreadable `{artifact.relative_to(root)}`: {exc}"
+            )
             continue
         if actual != expected:
             errors.append(

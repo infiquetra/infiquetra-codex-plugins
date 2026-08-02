@@ -1,5 +1,14 @@
 # Decisions
 
+## 2026-08-01: Harness Integration Is A Logical Role, Not A Compute Profile
+
+Verified Workflows adds `harness-integration-engineer` for assignments that connect producer-owned
+contracts to a native harness. The role discovers native extension seams, keeps adapters thin,
+declares unsupported behavior, exercises adversarial compatibility cases, and updates approved
+release metadata. It defaults to the existing `work_high` compute profile; the managed profile set,
+model choices, and reasoning efforts remain unchanged. The compiler binds the role lens bytes into
+workflow authority and therefore into the operator approval digest.
+
 ## 2026-08-01: Delegated Git Publication Replaces Root-Only Git Ownership In Verified Workflows
 
 Verified Workflows deletes the capability layer it invented rather than trying to make it truthful.

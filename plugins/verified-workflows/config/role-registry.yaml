@@ -118,6 +118,25 @@ roles:
   default_profile: work_medium
   result_schema: assignment-result.v1
   source_behavior_sha256: fa7b3da3660079c65b2a83d5e6bdda6901b3a8c4480baba6cf5c64bc46e4c027
+- id: harness-integration-engineer
+  kind: agent-lens
+  category: worker
+  spec_version: 1
+  spec: roles/harness-integration-engineer.md
+  description: Harness integration worker for one approved native adapter and compatibility assignment.
+  selection:
+    mode: conditional
+    signals:
+    - native harness
+    - harness integration
+    - adapter boundary
+    - producer contract
+    - compatibility
+    - release metadata
+  minimum_independence: preferred
+  default_profile: work_high
+  result_schema: assignment-result.v1
+  source_behavior_sha256: bb92c6d456bd83d0e6801874cc6a56b146e47eafa94362736599f8d4d6a58f66
 - id: remediation-worker
   kind: agent-lens
   category: worker

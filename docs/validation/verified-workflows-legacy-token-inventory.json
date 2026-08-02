@@ -82,7 +82,7 @@
     {
       "classification": "historical-evidence",
       "path": "docs/engineering-journal/DECISIONS.md",
-      "sha256": "96cee5933f73a797e50500458f8d225db7fdb071f8783a9ce078c9bf9d62b76c",
+      "sha256": "5c314bb044e10af835454e3b22615a2788c65102edde6303c1aaefd2e67173f3",
       "tokens": [
         "## Team Structure",
         "Team Execution",
@@ -971,7 +971,7 @@
     {
       "classification": "lineage-documentation",
       "path": "plugins/verified-workflows/PORTABILITY.md",
-      "sha256": "5cb189bd02ea5c3fed05dff292b32faaa5b6ac52485b93d0375c793b2005ebde",
+      "sha256": "435a84ab0429cc1c38425a7fa9d9f2b17c3f87a35245f6430da1b1fa9f9e40f7",
       "tokens": [
         "team-execution"
       ]
@@ -1178,7 +1178,7 @@
     {
       "classification": "migration-fixture",
       "path": "tests/test_verified_workflows_agents.py",
-      "sha256": "aaac18ae04ce3259ed07083f81463b3b0564ec2b357765161aecba6dc07e634d",
+      "sha256": "d90bb7f1be4dc49d462bbb9b1b6aaf3c015f70371ae942b098ace731a26f20a7",
       "tokens": [
         ".team-execution.json",
         "Team Execution",
@@ -1188,7 +1188,7 @@
     {
       "classification": "migration-fixture",
       "path": "tests/test_verified_workflows_migration.py",
-      "sha256": "a7f56802a407af7f2673189e7703e7176a082e27ac5e4abeafea92383ca46d3c",
+      "sha256": "200ffa91a6d5b17b799f467dae001c940a25f73cc7a3073ba5f378568e6c4ccc",
       "tokens": [
         "Team Execution",
         "team-execution"
@@ -1196,7 +1196,7 @@
     }
   ],
   "generated_by": "scripts/build_legacy_workflow_inventory.py",
-  "historical_inventory_sha256": "b397fd9dfc741b85aa0622a0c33a1733230d369b9b9e6cb2d53faf1e9af6da0c",
+  "historical_inventory_sha256": "44535dc3ab466b677ca4e6daac6fb370aa1ed3bc36189e61e8ae8eb12890a3ed",
   "history_sentinels": {
     "docs/investigations/2026-06-30-team-execution-saga-orchestration-debug-report.md": {
       "sha256": "ecc08eceda3a67dc81d15b1930753fe236ca7c1ae9b3ad9dd506cdecfb0ac4fa",
