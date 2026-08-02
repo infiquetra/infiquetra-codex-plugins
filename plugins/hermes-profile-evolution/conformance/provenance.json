@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "closed_schema": true,
+  "artifacts": [
+    {
+      "name": "profile-change-classifier",
+      "schema_version": 1,
+      "fixture_version": 1,
+      "producer_repository": "infiquetra/team-mimir",
+      "producer_path": "profile-governance/conformance/profile-change-classifier.v1.json",
+      "source_commit": "9440dc744afc6553927fbde7f979ad433e0d1378",
+      "merge_commit": "a21e2bc462d89ce38837a31a9727fae05c9e3447",
+      "sha256": "04a73d33bec429081606b58851b53053059f2b90a9511f94d6ab26bbcaa34bfc"
+    },
+    {
+      "name": "profile-request-cli",
+      "schema_version": 1,
+      "fixture_version": 1,
+      "producer_repository": "infiquetra/infiquetra-hermes-plugins",
+      "producer_path": "plugins/profile_evolution/conformance/profile-request-cli.v1.json",
+      "source_commit": "292c62eb4dbff9a2b0d2683501a1cd00ed119f7b",
+      "merge_commit": "08e432ef5ed7e75dd84ecc301eecb975c27dd02d",
+      "sha256": "b651eff9ac155758719f0fee59ad7dcf22fc6a81f11f27bc1668da0720eaf61c"
+    }
+  ]
+}

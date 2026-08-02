@@ -160,12 +160,68 @@ TARGET_EXPECTED_PLUGINS["verified-workflows"] = {
     "version": "3.0.0+codex.20260729164721",
     "skills": ("run", "review-workflow", "appsec-audit"),
 }
+HERMES_PROFILE_EVOLUTION_SPEC = {
+    "version": "0.1.0",
+    "skills": ("hermes-profile-evolution",),
+}
+HERMES_PROFILE_EVOLUTION_PRODUCER_PINS = (
+    {
+        "name": "profile-change-classifier",
+        "producer_repository": "infiquetra/team-mimir",
+        "producer_path": "profile-governance/conformance/profile-change-classifier.v1.json",
+        "source_commit": "9440dc744afc6553927fbde7f979ad433e0d1378",
+        "merge_commit": "a21e2bc462d89ce38837a31a9727fae05c9e3447",
+        "schema_version": 1,
+        "fixture_version": 1,
+        "imported_path": (
+            "plugins/hermes-profile-evolution/conformance/profile-change-classifier.v1.json"
+        ),
+        "sha256": "04a73d33bec429081606b58851b53053059f2b90a9511f94d6ab26bbcaa34bfc",
+    },
+    {
+        "name": "profile-request-cli",
+        "producer_repository": "infiquetra/infiquetra-hermes-plugins",
+        "producer_path": "plugins/profile_evolution/conformance/profile-request-cli.v1.json",
+        "source_commit": "292c62eb4dbff9a2b0d2683501a1cd00ed119f7b",
+        "merge_commit": "08e432ef5ed7e75dd84ecc301eecb975c27dd02d",
+        "schema_version": 1,
+        "fixture_version": 1,
+        "imported_path": "plugins/hermes-profile-evolution/conformance/profile-request-cli.v1.json",
+        "sha256": "b651eff9ac155758719f0fee59ad7dcf22fc6a81f11f27bc1668da0720eaf61c",
+    },
+)
+HERMES_PROFILE_EVOLUTION_VALIDATION_COMMANDS = {
+    "focused_tests": (
+        "python3 -m pytest -q tests/test_hermes_profile_evolution.py "
+        "tests/test_validate_codex_plugins.py::"
+        "test_hermes_profile_evolution_producer_pins_and_native_surfaces_validate "
+        "tests/test_validate_codex_plugins.py::"
+        "test_hermes_profile_evolution_validator_rejects_fixture_drift_and_non_native_hook "
+        "tests/test_validate_codex_plugins.py::"
+        "test_hermes_profile_evolution_validator_rejects_coherent_producer_replacement "
+        "tests/test_validate_codex_plugins.py::"
+        "test_hermes_profile_evolution_validator_requires_closed_validation_receipt"
+    ),
+    "repository_validator": "python3 scripts/validate_codex_plugins.py",
+    "formatter": (
+        "uv run ruff format --check plugins/hermes-profile-evolution/hooks/advisory.py "
+        "plugins/hermes-profile-evolution/scripts/profile_request.py "
+        "scripts/validate_codex_plugins.py tests/test_hermes_profile_evolution.py "
+        "tests/test_validate_codex_plugins.py"
+    ),
+    "legacy_inventory": "python3 scripts/build_legacy_workflow_inventory.py --check",
+    "full_suite": "PYTHONPATH=. uv run python -m pytest -q",
+}
 CURRENT_ONLY_LEGACY_PLUGINS = {
     "team-execution": PRE_CUTOVER_EXPECTED_PLUGINS["team-execution"],
 }
 
-# U8 completed the source and marketplace cutover; current and target inventories now agree.
-CURRENT_EXPECTED_PLUGINS = TARGET_EXPECTED_PLUGINS
+# U8 completed the Saga-family cutover. The Hermes adapter is a later independent release and is
+# optional when replaying that older target fixture.
+CURRENT_EXPECTED_PLUGINS = {
+    **TARGET_EXPECTED_PLUGINS,
+    "hermes-profile-evolution": HERMES_PROFILE_EVOLUTION_SPEC,
+}
 
 # Backward-compatible name for current-mode tests and callers.
 EXPECTED_PLUGINS = CURRENT_EXPECTED_PLUGINS
@@ -176,6 +232,7 @@ CLAUDE_CATALOG = {
     "docs-generator",
     "fleet-core",
     "home-lab-ops",
+    "hermes-profile-evolution",
     "identity-toolkit",
     "marketplace-lister",
     "mission-control",
@@ -280,7 +337,7 @@ LEGACY_TEAM_EXECUTION_TREE_SHA256 = (
 )
 STAGED_MARKETPLACE_SHA256 = "42803919b39b720599b9692bfdcd95bcfe8c31b06ebb2c976aacaa890fdfea8a"
 LEGACY_WORKFLOW_HISTORICAL_INVENTORY_SHA256 = (
-    "44535dc3ab466b677ca4e6daac6fb370aa1ed3bc36189e61e8ae8eb12890a3ed"
+    "12d1d12fe0c31ec0f6505e80c44037219615bb4d92695ca3d4b32baea36dce72"
 )
 LEGACY_WORKFLOW_INVENTORY = Path("docs/validation/verified-workflows-legacy-token-inventory.json")
 LEGACY_WORKFLOW_INVENTORY_EXCLUDED = {
@@ -528,8 +585,18 @@ def validate_repository(root: Path, mode: str = "current") -> list[str]:
         validate_cutover_evidence(root, mode, errors)
     elif mode == "cutover":
         expected_plugins = TARGET_EXPECTED_PLUGINS
-        validate_marketplace(root, expected_plugins, errors)
-        validate_plugins(root, expected_plugins, errors)
+        validate_marketplace(
+            root,
+            expected_plugins,
+            errors,
+            optional_plugins={"hermes-profile-evolution"},
+        )
+        validate_plugins(
+            root,
+            expected_plugins,
+            errors,
+            optional_plugins={"hermes-profile-evolution": HERMES_PROFILE_EVOLUTION_SPEC},
+        )
         validate_verified_workflows_canonical_surface(root, errors)
         validate_saga_workflow_independence(root, errors)
         validate_legacy_workflow_token_allowlist(root, errors, mode="cutover")
@@ -537,10 +604,17 @@ def validate_repository(root: Path, mode: str = "current") -> list[str]:
     else:
         expected_plugins = TARGET_EXPECTED_PLUGINS
         validate_target_fixture(root, errors)
+        validate_marketplace(
+            root,
+            expected_plugins,
+            errors,
+            optional_plugins={"hermes-profile-evolution"},
+        )
         validate_plugins(
             root,
             expected_plugins,
             errors,
+            optional_plugins={"hermes-profile-evolution": HERMES_PROFILE_EVOLUTION_SPEC},
         )
         validate_verified_workflows_canonical_surface(root, errors)
         validate_saga_workflow_independence(root, errors)
@@ -554,6 +628,7 @@ def validate_repository(root: Path, mode: str = "current") -> list[str]:
         "cutover" if mode == "cutover" else "unit",
         errors,
     )
+    validate_hermes_profile_evolution(root, errors)
     validate_saga_family_docs(root, errors)
     validate_deletion_migration_map(root, errors)
     validate_verified_workflows_agents(root, errors)
@@ -1313,6 +1388,7 @@ def validate_marketplace(
     root: Path,
     expected_plugins: dict[str, dict[str, Any]],
     errors: list[str],
+    optional_plugins: set[str] | None = None,
 ) -> None:
     path = root / ".agents" / "plugins" / "marketplace.json"
     payload = load_json(path, errors)
@@ -1346,10 +1422,11 @@ def validate_marketplace(
             errors.append(f"marketplace entry `{name}` must be installable")
 
     expected = set(expected_plugins)
-    if seen != expected:
+    allowed = expected | (optional_plugins or set())
+    if not expected <= seen or not seen <= allowed:
         errors.append(
             "marketplace inventory mismatch: "
-            f"missing={sorted(expected - seen)} unexpected={sorted(seen - expected)}"
+            f"missing={sorted(expected - seen)} unexpected={sorted(seen - allowed)}"
         )
 
 
@@ -1646,10 +1723,158 @@ def validate_provenance(
     if text is None:
         return
     for plugin_name in expected_plugins:
+        if plugin_name == "hermes-profile-evolution":
+            continue
         if f"`{plugin_name}`" not in text:
             errors.append(f"provenance missing `{plugin_name}`")
     if "Proof-Port Recipe" not in text or "test-suite" not in text:
         errors.append("provenance missing test-suite proof-port recipe")
+
+
+def validate_hermes_profile_evolution(root: Path, errors: list[str]) -> None:
+    """Validate the producer pins and truthful Codex-native adapter boundary."""
+
+    plugin = root / "plugins" / "hermes-profile-evolution"
+    if not plugin.is_dir():
+        errors.append("hermes-profile-evolution: plugin directory is missing")
+        return
+    provenance_path = plugin / "conformance" / "provenance.json"
+    provenance = load_json(provenance_path, errors)
+    port_path = root / "docs/portability/ports/2026-08-01-hermes-profile-evolution.json"
+    port = load_json(port_path, errors)
+    if provenance is None or port is None:
+        return
+    if set(provenance) != {"schema_version", "closed_schema", "artifacts"}:
+        errors.append("hermes-profile-evolution: provenance must use its closed producer schema")
+        return
+    artifacts = provenance.get("artifacts")
+    if (
+        provenance.get("schema_version") != 1
+        or provenance.get("closed_schema") is not True
+        or not isinstance(artifacts, list)
+    ):
+        errors.append("hermes-profile-evolution: provenance header is incompatible")
+        return
+    expected_provenance = [
+        {key: value for key, value in pin.items() if key != "imported_path"}
+        for pin in HERMES_PROFILE_EVOLUTION_PRODUCER_PINS
+    ]
+    if artifacts != expected_provenance:
+        errors.append("hermes-profile-evolution: approved producer provenance pins drifted")
+    for pin in HERMES_PROFILE_EVOLUTION_PRODUCER_PINS:
+        fixture = root / pin["imported_path"]
+        if not fixture.is_file():
+            errors.append(f"hermes-profile-evolution: imported fixture is missing `{fixture.name}`")
+            continue
+        digest = hashlib.sha256(fixture.read_bytes()).hexdigest()
+        if digest != pin["sha256"]:
+            errors.append(
+                f"hermes-profile-evolution: approved fixture digest drifted `{fixture.name}`"
+            )
+            continue
+        fixture_payload = load_json(fixture, errors)
+        if fixture_payload is None:
+            continue
+        schema = fixture_payload.get(
+            "schema_version", fixture_payload.get("classifier_schema_version")
+        )
+        fixture_version = fixture_payload.get("fixture_version", pin["fixture_version"])
+        if schema != pin["schema_version"] or fixture_version != pin["fixture_version"]:
+            errors.append(
+                f"hermes-profile-evolution: approved fixture schema drifted `{fixture.name}`"
+            )
+
+    if port.get("schema_version") != 1 or port.get("classification") != "passed":
+        errors.append("hermes-profile-evolution: port classification gate has not passed")
+    if port.get("producer_contracts") != list(HERMES_PROFILE_EVOLUTION_PRODUCER_PINS):
+        errors.append("hermes-profile-evolution: approved port receipt producer pins drifted")
+
+    receipt = port.get("validation_receipt")
+    if not isinstance(receipt, dict) or set(receipt) != {
+        "schema_version",
+        "proof_scope",
+        "proof_exclusions",
+        "proof_statement",
+        "records",
+    }:
+        errors.append("hermes-profile-evolution: validation receipt schema is missing or open")
+    else:
+        if (
+            receipt.get("schema_version") != 1
+            or receipt.get("proof_scope") != "source_tree_only"
+            or receipt.get("proof_exclusions") != ["ci", "installation", "live_runtime"]
+            or receipt.get("proof_statement")
+            != "No CI, installation, or live-runtime proof was performed."
+        ):
+            errors.append("hermes-profile-evolution: validation receipt proof boundary drifted")
+        records = receipt.get("records")
+        seen: set[str] = set()
+        if not isinstance(records, list) or len(records) != len(
+            HERMES_PROFILE_EVOLUTION_VALIDATION_COMMANDS
+        ):
+            errors.append("hermes-profile-evolution: validation receipt records are incomplete")
+        else:
+            for record in records:
+                if not isinstance(record, dict) or set(record) != {
+                    "check",
+                    "command",
+                    "exit_code",
+                    "result",
+                }:
+                    errors.append(
+                        "hermes-profile-evolution: validation receipt record schema is open"
+                    )
+                    continue
+                check = record.get("check")
+                command = record.get("command")
+                result = record.get("result")
+                if (
+                    not isinstance(check, str)
+                    or check in seen
+                    or HERMES_PROFILE_EVOLUTION_VALIDATION_COMMANDS.get(check) != command
+                    or record.get("exit_code") != 0
+                    or not isinstance(result, str)
+                    or not result
+                    or len(result) > 200
+                ):
+                    errors.append(
+                        "hermes-profile-evolution: validation receipt record is incompatible"
+                    )
+                    continue
+                seen.add(check)
+            if seen != set(HERMES_PROFILE_EVOLUTION_VALIDATION_COMMANDS):
+                errors.append("hermes-profile-evolution: validation receipt check set drifted")
+
+    hooks = load_json(plugin / "hooks/hooks.json", errors)
+    if hooks is not None:
+        hook_groups = hooks.get("hooks", {}).get("PreToolUse")
+        if not isinstance(hook_groups, list) or len(hook_groups) != 1:
+            errors.append("hermes-profile-evolution: one native PreToolUse hook is required")
+        else:
+            group = hook_groups[0]
+            handler = group.get("hooks", [{}])[0] if isinstance(group, dict) else {}
+            if group.get("matcher") != "apply_patch|Edit|Write":
+                errors.append("hermes-profile-evolution: hook matcher must cover native file edits")
+            if handler.get("command") != 'python3 "$PLUGIN_ROOT/hooks/advisory.py"':
+                errors.append("hermes-profile-evolution: hook command must use PLUGIN_ROOT")
+
+    skill = plugin / "skills/hermes-profile-evolution/SKILL.md"
+    skill_text = read_text(skill, errors)
+    if skill_text is not None and (
+        "$PLUGIN_ROOT" in skill_text or "python3 ../../scripts/profile_request.py" not in skill_text
+    ):
+        errors.append(
+            "hermes-profile-evolution: skill must use the installed skill-relative adapter path"
+        )
+
+    forbidden = [
+        plugin / ".claude-plugin",
+        plugin / "commands",
+        plugin / "hooks/manifest.json",
+    ]
+    present = [path.relative_to(root).as_posix() for path in forbidden if path.exists()]
+    if present:
+        errors.append(f"hermes-profile-evolution: unsupported host surfaces remain {present}")
 
 
 def validate_target_fixture(root: Path, errors: list[str]) -> None:

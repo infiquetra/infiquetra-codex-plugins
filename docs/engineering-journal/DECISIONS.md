@@ -1,5 +1,15 @@
 # Decisions
 
+## 2026-08-02: Hermes Profile Evolution Remains A Thin Codex Adapter
+
+The Codex plugin calls Team Mimir's real classifier and canonical `hermes profile-request` instead
+of copying custody policy or command schemas. Pinned producer fixtures define the closed response
+keys, bounds, and exact doctor fields. Ordinary repository work does not contact Hermes. Governed
+file edits intercepted by Codex receive a native advisory stop and target-addressed dialogue
+suggestion; the documentation explicitly excludes shell, external-editor, disabled-hook,
+untrusted-hook, same-user, and root enforcement. Conversation requests are bounded JSON on standard
+input and are never queued or persisted by this adapter.
+
 ## 2026-08-01: Harness Integration Is A Logical Role, Not A Compute Profile
 
 Verified Workflows adds `harness-integration-engineer` for assignments that connect producer-owned

@@ -1,0 +1,250 @@
+{
+  "cases": [
+    {
+      "expected": {
+        "category": "ordinary_repository",
+        "disposition": "normal_merge",
+        "owner": "mimir-engineer",
+        "paths": [
+          {
+            "category": "ordinary_repository",
+            "disposition": "normal_merge",
+            "owner": "mimir-engineer",
+            "path": "docs/team/README.md",
+            "reason": "repository documentation, tests, governance, or code uses ordinary review"
+          }
+        ],
+        "reason": "all paths classify as ordinary_repository",
+        "schema_version": 1
+      },
+      "id": "ordinary-repository",
+      "paths": [
+        "docs/team/README.md"
+      ]
+    },
+    {
+      "expected": {
+        "category": "profile_owned_behavior",
+        "disposition": "target_request",
+        "owner": "brokkr",
+        "paths": [
+          {
+            "category": "profile_owned_behavior",
+            "disposition": "target_request",
+            "owner": "brokkr",
+            "path": "profiles/brokkr/SOUL.md",
+            "reason": "repo-safe behavior is authored only by the named target"
+          }
+        ],
+        "reason": "all paths classify as profile_owned_behavior",
+        "schema_version": 1
+      },
+      "id": "target-owned",
+      "paths": [
+        "profiles/brokkr/SOUL.md"
+      ]
+    },
+    {
+      "expected": {
+        "category": "custodian_owned_runtime",
+        "disposition": "custodian_review",
+        "owner": "mimir-engineer",
+        "paths": [
+          {
+            "category": "custodian_owned_runtime",
+            "disposition": "custodian_review",
+            "owner": "mimir-engineer",
+            "path": "profiles/brokkr/manifest.yml",
+            "reason": "manifest or distribution metadata is a governed custody surface"
+          }
+        ],
+        "reason": "all paths classify as custodian_owned_runtime",
+        "schema_version": 1
+      },
+      "id": "custodian-owned-runtime",
+      "paths": [
+        "profiles/brokkr/manifest.yml"
+      ]
+    },
+    {
+      "expected": {
+        "category": "external_plugin_source",
+        "disposition": "external_source",
+        "owner": "source-custodian",
+        "paths": [
+          {
+            "category": "external_plugin_source",
+            "disposition": "external_source",
+            "owner": "source-custodian",
+            "path": "plugins/profile-evolution/plugin.py",
+            "reason": "plugin bytes retain their source-repository provenance"
+          }
+        ],
+        "reason": "all paths classify as external_plugin_source",
+        "schema_version": 1
+      },
+      "id": "external-source-custody",
+      "paths": [
+        "plugins/profile-evolution/plugin.py"
+      ]
+    },
+    {
+      "expected": {
+        "category": "unknown",
+        "disposition": "governed_review",
+        "owner": "mimir-engineer",
+        "paths": [
+          {
+            "category": "unknown",
+            "disposition": "governed_review",
+            "owner": "mimir-engineer",
+            "path": "unrecognized/surface.txt",
+            "reason": "unknown repository path fails closed"
+          }
+        ],
+        "reason": "one or more paths are unclassified",
+        "schema_version": 1
+      },
+      "id": "unknown-path",
+      "paths": [
+        "unrecognized/surface.txt"
+      ]
+    },
+    {
+      "expected": {
+        "category": "prohibited_secret_material",
+        "disposition": "prohibited",
+        "owner": "external-custody",
+        "paths": [
+          {
+            "category": "prohibited_secret_material",
+            "disposition": "prohibited",
+            "owner": "external-custody",
+            "path": "profiles/brokkr/.env",
+            "reason": "secret or private runtime material is outside repository lineage"
+          }
+        ],
+        "reason": "one or more paths contain prohibited secret or private runtime material",
+        "schema_version": 1
+      },
+      "id": "prohibited-secret-file",
+      "paths": [
+        "profiles/brokkr/.env"
+      ]
+    },
+    {
+      "expected": {
+        "category": "prohibited_secret_material",
+        "disposition": "prohibited",
+        "owner": "external-custody",
+        "paths": [
+          {
+            "category": "prohibited_secret_material",
+            "disposition": "prohibited",
+            "owner": "external-custody",
+            "path": "profiles/brokkr/runtime.db",
+            "reason": "secret or private runtime material is outside repository lineage"
+          }
+        ],
+        "reason": "one or more paths contain prohibited secret or private runtime material",
+        "schema_version": 1
+      },
+      "id": "prohibited-private-runtime",
+      "paths": [
+        "profiles/brokkr/runtime.db"
+      ]
+    },
+    {
+      "expected": {
+        "category": "mixed_custody",
+        "disposition": "governed_review",
+        "owner": "mimir-engineer",
+        "paths": [
+          {
+            "category": "profile_owned_behavior",
+            "disposition": "target_request",
+            "owner": "brokkr",
+            "path": "profiles/brokkr/SOUL.md",
+            "reason": "repo-safe behavior is authored only by the named target"
+          },
+          {
+            "category": "ordinary_repository",
+            "disposition": "normal_merge",
+            "owner": "mimir-engineer",
+            "path": "docs/team/README.md",
+            "reason": "repository documentation, tests, governance, or code uses ordinary review"
+          }
+        ],
+        "reason": "paths span different custody categories and require a split",
+        "schema_version": 1
+      },
+      "id": "mixed-target-and-ordinary",
+      "paths": [
+        "profiles/brokkr/SOUL.md",
+        "docs/team/README.md"
+      ]
+    },
+    {
+      "expected": {
+        "category": "mixed_custody",
+        "disposition": "governed_review",
+        "owner": "mimir-engineer",
+        "paths": [
+          {
+            "category": "profile_owned_behavior",
+            "disposition": "target_request",
+            "owner": "brokkr",
+            "path": "profiles/brokkr/SOUL.md",
+            "reason": "repo-safe behavior is authored only by the named target"
+          },
+          {
+            "category": "external_plugin_source",
+            "disposition": "external_source",
+            "owner": "source-custodian",
+            "path": "plugins/profile-evolution/plugin.py",
+            "reason": "plugin bytes retain their source-repository provenance"
+          }
+        ],
+        "reason": "paths span different custody categories and require a split",
+        "schema_version": 1
+      },
+      "id": "mixed-target-and-external",
+      "paths": [
+        "profiles/brokkr/SOUL.md",
+        "plugins/profile-evolution/plugin.py"
+      ]
+    },
+    {
+      "expected": {
+        "category": "mixed_custody",
+        "disposition": "governed_review",
+        "owner": "frozen-roster",
+        "paths": [
+          {
+            "category": "profile_owned_behavior",
+            "disposition": "target_request",
+            "owner": "brokkr",
+            "path": "profiles/brokkr/SOUL.md",
+            "reason": "repo-safe behavior is authored only by the named target"
+          },
+          {
+            "category": "profile_owned_behavior",
+            "disposition": "target_request",
+            "owner": "eitri",
+            "path": "profiles/eitri/config.projection.yml",
+            "reason": "repo-safe behavior is authored only by the named target"
+          }
+        ],
+        "reason": "profile-owned paths name multiple targets and require independent requests",
+        "schema_version": 1
+      },
+      "id": "cross-target-aggregation",
+      "paths": [
+        "profiles/brokkr/SOUL.md",
+        "profiles/eitri/config.projection.yml"
+      ]
+    }
+  ],
+  "classifier_schema_version": 1,
+  "fixture_version": 1
+}

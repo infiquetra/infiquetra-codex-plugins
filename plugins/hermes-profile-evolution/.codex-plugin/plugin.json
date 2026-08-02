@@ -1,0 +1,28 @@
+{
+  "name": "hermes-profile-evolution",
+  "version": "0.1.0",
+  "description": "Codex-native advisory routing for target-sovereign Team Mimir profile evolution.",
+  "author": {
+    "name": "Infiquetra",
+    "email": "hello@infiquetra.com",
+    "url": "https://github.com/infiquetra"
+  },
+  "homepage": "https://github.com/infiquetra/infiquetra-codex-plugins/tree/main/plugins/hermes-profile-evolution",
+  "repository": "https://github.com/infiquetra/infiquetra-codex-plugins",
+  "license": "MIT",
+  "keywords": ["hermes", "profiles", "sovereignty", "governance", "codex"],
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json",
+  "interface": {
+    "displayName": "Hermes Profile Evolution",
+    "shortDescription": "Route profile behavior proposals into target-owned Hermes dialogue.",
+    "longDescription": "Classifies Team Mimir paths with the producer-owned classifier, allows ordinary repository work, and routes governed profile proposals through the canonical Hermes profile-request dialogue over bounded standard input.",
+    "developerName": "Infiquetra",
+    "category": "Coding",
+    "capabilities": ["Interactive", "Read", "Write"],
+    "brandColor": "#6B5B95",
+    "defaultPrompt": [
+      "Use Hermes Profile Evolution when a requested Team Mimir edit may affect profile-owned behavior."
+    ]
+  }
+}
