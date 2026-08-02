@@ -40,7 +40,7 @@ def test_registry_preserves_exact_role_contracts() -> None:
     registry = R.load_role_registry()
 
     assert {role.role_id for role in registry.roles} == R.EXPECTED_ROLE_IDS
-    assert len(registry.roles) == 28
+    assert len(registry.roles) == 29
     assert {role.kind for role in registry.roles} == {"agent-lens"}
     assert sum(role.category == "reviewer" for role in registry.roles) == 10
     assert sum(role.category == "tester" for role in registry.roles) == 8
@@ -134,9 +134,25 @@ def test_role_resolution_without_a_request_falls_back_to_the_default_profile() -
         resolution = R.resolve_role(registry, role.role_id)
         assert resolution.selected_profile == role.default_profile
 
-    assert (
-        R.resolve_role(registry, "git-integration-operator").selected_profile
-        == "work_medium"
+    assert R.resolve_role(registry, "git-integration-operator").selected_profile == "work_medium"
+
+
+def test_harness_integration_role_defaults_to_work_high_without_adding_a_profile() -> None:
+    registry = R.load_role_registry()
+    role = registry.role("harness-integration-engineer")
+    resolution = R.resolve_role(registry, role.role_id)
+
+    assert role.category == "worker"
+    assert role.result_schema == "assignment-result.v1"
+    assert resolution.selected_profile == "work_high"
+    assert R.PROFILE_IDS == (
+        "review_max",
+        "review_high",
+        "work_medium",
+        "work_high",
+        "test_medium",
+        "scan_low",
+        "monitor_low",
     )
 
 
@@ -173,9 +189,7 @@ def test_registry_rejects_independence_that_disagrees_with_the_category(
     tmp_path: Path,
 ) -> None:
     payload = _registry_payload()
-    reviewer_row = next(
-        row for row in payload["roles"] if row["category"] == "reviewer"
-    )
+    reviewer_row = next(row for row in payload["roles"] if row["category"] == "reviewer")
     reviewer_row["minimum_independence"] = "preferred"
     root = tmp_path / "independence"
     root.mkdir()
@@ -282,7 +296,8 @@ def test_bundle_receipt_drops_the_removed_capability_keys() -> None:
     bundle = R.render_bundle(R.load_role_registry(), R.load_catalog_snapshot())
     receipt = R.bundle_receipt(bundle)
 
-    assert len(receipt["roles"]) == 28
+    assert len(receipt["roles"]) == 29
+    assert len(receipt["profiles"]) == 7
     removed = {"allowed_profiles", "workspace_cap", "external_cap"}
     for role in receipt["roles"]:
         assert removed.isdisjoint(role)

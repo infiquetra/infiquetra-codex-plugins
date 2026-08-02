@@ -2,7 +2,7 @@
 # generated_by = "plugins/verified-workflows/scripts/render_codex_agents.py"
 # profile_id = "monitor_low"
 # runtime_agent_name = "monitor_low"
-# registry_sha256 = "2c723477417e35186b82a49baedbe8f70a046f418cfaf4043b84a051277e267b"
+# registry_sha256 = "d9143f578d4253e158d6550af66226ef3fde7eaacc1e84cc0a17caa8a062c78d"
 # catalog_sha256 = "2073a7fa39f925046eff99945515ca856571e3656352f48920b90aa7baa00b15"
 name = "monitor_low"
 description = "Low-cost read-only monitoring through allowlisted external reads."

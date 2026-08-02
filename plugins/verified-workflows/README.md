@@ -59,7 +59,7 @@ external-action, or authority change requires a new preview and approval.
 
 ## Managed V2 Profiles
 
-Logical roles are separate from compute profiles. The role registry preserves 28 role lenses; the
+Logical roles are separate from compute profiles. The role registry preserves 29 role lenses; the
 workflow selects one of seven generated profiles:
 
 | Profile | Model | Effort | Contract write intent | Purpose |

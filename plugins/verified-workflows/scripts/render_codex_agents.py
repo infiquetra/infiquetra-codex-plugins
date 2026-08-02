@@ -34,7 +34,9 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_REGISTRY = PLUGIN_ROOT / "config" / "role-registry.yaml"
 DEFAULT_ROLES_DIR = PLUGIN_ROOT / "roles"
 DEFAULT_AGENTS_DIR = PLUGIN_ROOT / "agents"
-DEFAULT_CATALOG_SNAPSHOT = REPO_ROOT / "docs" / "validation" / "codex-runtime-capability-snapshot.json"
+DEFAULT_CATALOG_SNAPSHOT = (
+    REPO_ROOT / "docs" / "validation" / "codex-runtime-capability-snapshot.json"
+)
 SOURCE_TRANSACTION_DIR = PLUGIN_ROOT / ".agents-render-transaction"
 
 MAX_REGISTRY_BYTES = 1024 * 1024
@@ -60,6 +62,7 @@ EXPECTED_ROLE_IDS = frozenset(
         "event-flow-tester",
         "git-integration-operator",
         "github-actions-monitor",
+        "harness-integration-engineer",
         "iac-cost-scanner",
         "implementation-worker",
         "infra-reviewer",
@@ -552,9 +555,7 @@ def _validate_result_schema(
     return str(result_schema)
 
 
-def _parse_agent_lens(
-    raw: dict[str, Any], roles_dir: Path, result_schemas: set[str]
-) -> RoleSpec:
+def _parse_agent_lens(raw: dict[str, Any], roles_dir: Path, result_schemas: set[str]) -> RoleSpec:
     role_id = str(raw["id"])
     category = raw.get("category")
     if category not in ROLE_CATEGORIES:
@@ -641,9 +642,7 @@ def _parse_deterministic(
         f"role {role_id}.command.implementation",
     )
     command_root = (
-        REPO_ROOT
-        if roles_dir.resolve() == DEFAULT_ROLES_DIR.resolve()
-        else roles_dir.parent
+        REPO_ROOT if roles_dir.resolve() == DEFAULT_ROLES_DIR.resolve() else roles_dir.parent
     )
     implementation_path = _contained_relative(
         command_root,
@@ -694,9 +693,7 @@ def _parse_deterministic(
     try:
         evidence_contract = json.loads(evidence_bytes)
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise RoleRegistryError(
-            f"role {role_id}.evidence_schema must be UTF-8 JSON"
-        ) from exc
+        raise RoleRegistryError(f"role {role_id}.evidence_schema must be UTF-8 JSON") from exc
     if category != "tester" or evidence_contract != DETERMINISTIC_TESTER_OUTPUT_SCHEMA:
         raise RoleRegistryError(
             f"role {role_id} must use the closed deterministic tester output schema"
@@ -731,9 +728,7 @@ def _parse_deterministic(
     )
 
 
-def _parse_role(
-    value: object, roles_dir: Path, result_schemas: set[str]
-) -> RoleSpec:
+def _parse_role(value: object, roles_dir: Path, result_schemas: set[str]) -> RoleSpec:
     if not isinstance(value, dict):
         raise RoleRegistryError("role rows must be objects")
     role_id = value.get("id")
@@ -824,9 +819,7 @@ def load_role_registry(
     roles_raw = payload.get("roles")
     if not isinstance(roles_raw, list) or not roles_raw:
         raise RoleRegistryError("role registry.roles must be a non-empty list")
-    roles = tuple(
-        _parse_role(value, roles_dir, set(result_schemas)) for value in roles_raw
-    )
+    roles = tuple(_parse_role(value, roles_dir, set(result_schemas)) for value in roles_raw)
     ids = tuple(role.role_id for role in roles)
     if len(ids) != len(set(ids)):
         raise RoleRegistryError("role registry contains duplicate role ids")
@@ -843,9 +836,11 @@ def load_role_registry(
             raise RoleRegistryError(f"roles directory is unreadable: {exc}") from exc
         actual = {child.name for child in children if child.is_file() and not child.is_symlink()}
         expected = {f"{role_id}.md" for role_id in expected_role_ids}
-        if actual != expected or any(child.is_symlink() or not child.is_file() for child in children):
+        if actual != expected or any(
+            child.is_symlink() or not child.is_file() for child in children
+        ):
             raise RoleRegistryError(
-                f"roles directory must contain exactly the 25 regular lens files; "
+                f"roles directory must contain exactly {len(expected)} regular lens files; "
                 f"missing={sorted(expected - actual)} unexpected={sorted(actual - expected)}"
             )
     return RoleRegistry(
@@ -874,8 +869,7 @@ def resolve_role(
     selected_profile = requested_profile or role.default_profile
     if selected_profile not in PROFILE_IDS:
         raise RoleRegistryError(
-            f"role {role_id} cannot use profile {selected_profile!r}; "
-            f"allowed={PROFILE_IDS}"
+            f"role {role_id} cannot use profile {selected_profile!r}; allowed={PROFILE_IDS}"
         )
     independence = requested_independence or role.minimum_independence
     if independence not in {"preferred", "required"}:
@@ -929,9 +923,7 @@ def load_catalog_snapshot(path: Path = DEFAULT_CATALOG_SNAPSHOT) -> Any:
             {
                 "slug": row.get("slug"),
                 "default_reasoning_level": row.get("default_effort"),
-                "supported_reasoning_levels": [
-                    {"effort": effort} for effort in efforts
-                ],
+                "supported_reasoning_levels": [{"effort": effort} for effort in efforts],
                 "visibility": row.get("visibility"),
                 "supported_in_api": row.get("supported_in_api"),
                 "multi_agent_version": row.get("multi_agent_version"),
@@ -990,13 +982,9 @@ def resolve_profile(
         model_slug = "gpt-5.6-luna"
     model = catalog_snapshot.model(model_slug)
     if model is None or not model.selectable:
-        raise RoleRegistryError(
-            f"profile {profile_id} model {model_slug!r} is not selectable"
-        )
+        raise RoleRegistryError(f"profile {profile_id} model {model_slug!r} is not selectable")
     if policy["effort"] not in model.supported_efforts:
-        raise RoleRegistryError(
-            f"profile {profile_id} effort {policy['effort']!r} is unsupported"
-        )
+        raise RoleRegistryError(f"profile {profile_id} effort {policy['effort']!r} is unsupported")
     if policy["effort"] == "ultra":
         raise RoleRegistryError("Ultra is root-only and cannot be a managed child profile")
     return ProfileResolution(
@@ -1007,9 +995,7 @@ def resolve_profile(
     )
 
 
-def render_profile(
-    resolution: ProfileResolution, registry: RoleRegistry
-) -> RenderedProfile:
+def render_profile(resolution: ProfileResolution, registry: RoleRegistry) -> RenderedProfile:
     """Render and parse-check one profile-bound custom-agent TOML."""
 
     policy = PROFILE_POLICY[resolution.profile_id]
@@ -1023,12 +1009,12 @@ def render_profile(
         f'# runtime_agent_name = "{runtime_agent_name}"',
         f'# registry_sha256 = "{registry.sha256}"',
         f'# catalog_sha256 = "{resolution.catalog_sha256}"',
-        f'name = {_toml_string(runtime_agent_name)}',
-        f'description = {_toml_string(policy["description"])}',
-        f'model = {_toml_string(resolution.model)}',
-        f'model_reasoning_effort = {_toml_string(resolution.effort)}',
-        f'developer_instructions = {_toml_string(_profile_instructions(resolution))}',
-        f'nickname_candidates = [{_toml_string(resolution.profile_id)}]',
+        f"name = {_toml_string(runtime_agent_name)}",
+        f"description = {_toml_string(policy['description'])}",
+        f"model = {_toml_string(resolution.model)}",
+        f"model_reasoning_effort = {_toml_string(resolution.effort)}",
+        f"developer_instructions = {_toml_string(_profile_instructions(resolution))}",
+        f"nickname_candidates = [{_toml_string(resolution.profile_id)}]",
         "",
     ]
     content = "\n".join(lines).encode("utf-8")
@@ -1085,9 +1071,18 @@ def render_bundle(
     )
     roles = tuple(resolve_role(registry, role.role_id) for role in registry.roles)
     selected = {role.selected_profile for role in roles}
-    if selected != {"review_high", "work_medium", "test_medium", "scan_low", "monitor_low"}:
+    expected_defaults = {
+        "review_high",
+        "work_medium",
+        "work_high",
+        "test_medium",
+        "scan_low",
+        "monitor_low",
+    }
+    if selected != expected_defaults:
         raise RoleRegistryError(
-            "default role mapping must use review_high, work_medium, test_medium, scan_low, and monitor_low"
+            "default role mapping must use review_high, work_medium, work_high, test_medium, "
+            "scan_low, and monitor_low"
         )
     return RenderBundle(
         registry=registry,
@@ -1183,7 +1178,10 @@ def check_generated(bundle: RenderBundle, agents_dir: Path = DEFAULT_AGENTS_DIR)
         )
     for profile in bundle.profiles:
         path = agents_dir / profile.filename
-        if _regular_single_link(path, f"managed profile {profile.filename}", MAX_ROLE_BYTES) != profile.content:
+        if (
+            _regular_single_link(path, f"managed profile {profile.filename}", MAX_ROLE_BYTES)
+            != profile.content
+        ):
             raise RoleRegistryError(f"managed profile {profile.filename} is stale")
 
 
@@ -1310,9 +1308,7 @@ def _restore_source_transaction(transaction: Path, agents_dir: Path) -> None:
         )
         if not isinstance(state["present"], bool):
             raise RoleRegistryError("renderer transaction presence is invalid")
-        if not isinstance(state["after_sha256"], str) or not HEX64.fullmatch(
-            state["after_sha256"]
-        ):
+        if not isinstance(state["after_sha256"], str) or not HEX64.fullmatch(state["after_sha256"]):
             raise RoleRegistryError("renderer transaction output digest is invalid")
         if state["present"]:
             if not isinstance(state["before_sha256"], str) or not HEX64.fullmatch(
@@ -1335,9 +1331,7 @@ def _restore_source_transaction(transaction: Path, agents_dir: Path) -> None:
                     MAX_ROLE_BYTES,
                 )
                 if _sha256(current) != state["before_sha256"]:
-                    raise RoleRegistryError(
-                        "preparing renderer transaction source drifted"
-                    )
+                    raise RoleRegistryError("preparing renderer transaction source drifted")
             elif target.exists() or target.is_symlink():
                 raise RoleRegistryError(
                     "preparing renderer transaction created an unexpected profile"
@@ -1374,9 +1368,7 @@ def _restore_source_transaction(transaction: Path, agents_dir: Path) -> None:
                 MAX_ROLE_BYTES,
             )
             if _sha256(current) != state["after_sha256"]:
-                raise RoleRegistryError(
-                    f"renderer recovery refuses unexpected profile {name}"
-                )
+                raise RoleRegistryError(f"renderer recovery refuses unexpected profile {name}")
             target.unlink()
     _fsync_directory(agents_dir)
     _cleanup_source_transaction(transaction)
@@ -1431,9 +1423,7 @@ def write_generated(bundle: RenderBundle, agents_dir: Path = DEFAULT_AGENTS_DIR)
             transaction.rmdir()
             _fsync_directory(transaction.parent)
         elif contents:
-            raise RoleRegistryError(
-                "renderer pre-manifest residue is not safely recoverable"
-            )
+            raise RoleRegistryError("renderer pre-manifest residue is not safely recoverable")
         else:
             transaction.rmdir()
             _fsync_directory(transaction.parent)
@@ -1444,7 +1434,9 @@ def write_generated(bundle: RenderBundle, agents_dir: Path = DEFAULT_AGENTS_DIR)
         raise RoleRegistryError("managed agents source contains an unsafe entry")
     unexpected = {child.name for child in existing} - expected
     if unexpected:
-        raise RoleRegistryError(f"managed agents source contains unexpected files {sorted(unexpected)}")
+        raise RoleRegistryError(
+            f"managed agents source contains unexpected files {sorted(unexpected)}"
+        )
     states: dict[str, dict[str, Any]] = {}
     before_contents: dict[str, bytes] = {}
     for profile in bundle.profiles:
@@ -1497,9 +1489,7 @@ def write_generated(bundle: RenderBundle, agents_dir: Path = DEFAULT_AGENTS_DIR)
             _restore_source_transaction(transaction, agents_dir)
         else:
             if any(transaction.iterdir()):
-                raise RoleRegistryError(
-                    "renderer pre-manifest residue requires validated recovery"
-                )
+                raise RoleRegistryError("renderer pre-manifest residue requires validated recovery")
             transaction.rmdir()
         raise
     _cleanup_source_transaction(transaction)

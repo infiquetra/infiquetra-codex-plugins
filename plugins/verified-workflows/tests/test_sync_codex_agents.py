@@ -96,7 +96,7 @@ def test_dry_run_is_read_only_and_reports_sanitized_plan(tmp_path: Path) -> None
     assert not S._lock_path(plan.target).exists()
     assert not S._transaction_dir(plan.target).exists()
     assert len(receipt["profiles"]) == 7
-    assert len(receipt["roles"]) == 28
+    assert len(receipt["roles"]) == 29
     assert {
         "sha256",
         "canonical_sha256",
@@ -150,9 +150,7 @@ def test_unmanaged_profiles_are_preserved_and_name_collisions_block(tmp_path: Pa
     plan = _plan(target)
     receipt = S.apply_sync(plan)
     assert unrelated.read_bytes() == before
-    assert receipt["pre_state"]["unrelated_sha256"] == receipt["readback"][
-        "unrelated_sha256"
-    ]
+    assert receipt["pre_state"]["unrelated_sha256"] == receipt["readback"]["unrelated_sha256"]
 
     collision_target = tmp_path / "collision"
     collision_target.mkdir()
@@ -169,9 +167,7 @@ def test_stale_canonical_profile_requires_explicit_cleanup(tmp_path: Path) -> No
     target = tmp_path / "agents"
     target.mkdir()
     stale = target / "obsolete-profile.toml"
-    stale.write_text(
-        _agent_text("obsolete-profile", S.renderer.MANAGED_MARKER), encoding="utf-8"
-    )
+    stale.write_text(_agent_text("obsolete-profile", S.renderer.MANAGED_MARKER), encoding="utf-8")
     local = target / "local-agent.toml"
     local.write_text(_agent_text("local-agent"), encoding="utf-8")
 
@@ -486,9 +482,7 @@ def test_applying_transaction_is_recovered_to_exact_absent_pre_state(
         assert target_fd is not None and created
         stage_fd = S._open_directory_chain(transaction / "stage")
         try:
-            first = next(
-                action for action in plan.actions if action.action == "install"
-            )
+            first = next(action for action in plan.actions if action.action == "install")
             os.link(
                 first.name,
                 first.name,
@@ -598,8 +592,7 @@ def test_update_boundary_retains_concurrently_substituted_unmanaged_bytes(
     )
     plan = _plan(target)
     assert any(
-        action.name == "review_high.toml" and action.action == "update"
-        for action in plan.actions
+        action.name == "review_high.toml" and action.action == "update" for action in plan.actions
     )
     substitute = _agent_text("user_review_high").encode()
     recheck = S._recheck_action_target

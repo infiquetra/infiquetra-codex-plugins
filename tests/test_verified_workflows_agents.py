@@ -103,7 +103,7 @@ def _adapt_source_behavior(source: str) -> str:
     return body
 
 
-def test_legacy_role_behaviors_are_preserved_with_three_general_roles() -> None:
+def test_legacy_role_behaviors_are_preserved_with_four_general_roles() -> None:
     registry = R.load_role_registry()
     by_id = {role.role_id: role for role in registry.roles}
     listing = subprocess.run(
@@ -120,6 +120,7 @@ def test_legacy_role_behaviors_are_preserved_with_three_general_roles() -> None:
     assert legacy_ids < set(by_id)
     assert set(by_id) - legacy_ids == {
         "implementation-worker",
+        "harness-integration-engineer",
         "remediation-worker",
         "git-integration-operator",
     }
@@ -144,12 +145,12 @@ def test_legacy_role_behaviors_are_preserved_with_three_general_roles() -> None:
         if role_id in ADVISORY_SCORE_ROLES:
             assert "Scores are advisory." in target_body
 
-    assert "actual personal-data flow" in (
-        TARGET_ROOT / "roles" / "privacy-reviewer.md"
-    ).read_text(encoding="utf-8")
-    assert "real trust boundary" in (
-        TARGET_ROOT / "roles" / "security-reviewer.md"
-    ).read_text(encoding="utf-8")
+    assert "actual personal-data flow" in (TARGET_ROOT / "roles" / "privacy-reviewer.md").read_text(
+        encoding="utf-8"
+    )
+    assert "real trust boundary" in (TARGET_ROOT / "roles" / "security-reviewer.md").read_text(
+        encoding="utf-8"
+    )
 
 
 def test_renderer_cli_checks_the_committed_profile_bundle() -> None:
@@ -163,12 +164,10 @@ def test_renderer_cli_checks_the_committed_profile_bundle() -> None:
     payload = json.loads(result.stdout)
 
     assert payload["claim"] == "expected-profile-configuration-only"
-    assert payload["registry"]["role_count"] == 28
-    assert payload["registry"]["role_kind_counts"] == {"agent-lens": 28}
+    assert payload["registry"]["role_count"] == 29
+    assert payload["registry"]["role_kind_counts"] == {"agent-lens": 29}
     assert len(payload["profiles"]) == 7
-    assert {profile["profile_id"] for profile in payload["profiles"]} == set(
-        R.PROFILE_IDS
-    )
+    assert {profile["profile_id"] for profile in payload["profiles"]} == set(R.PROFILE_IDS)
 
 
 def test_sync_cli_uses_isolated_codex_home_and_emits_relative_receipt(tmp_path: Path) -> None:

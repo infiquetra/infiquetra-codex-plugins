@@ -5,7 +5,7 @@
 - Frozen Claude lineage: `team-execution` at `38742ece89880a6b140be237edad6d3f13c97b54`
 - Prior Codex adapter: `team-execution` `2.3.0`
 - Canonical Codex package: `verified-workflows`
-- Active architecture: root-orchestrated Codex V2 workflow execution with 28 role lenses and seven managed
+- Active architecture: root-orchestrated Codex V2 workflow execution with 29 role lenses and seven managed
   profiles
 
 This is a behavior adaptation, not an upstream byte-parity claim. The frozen path classifications

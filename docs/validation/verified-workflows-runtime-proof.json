@@ -22,37 +22,37 @@
     {
       "profile_id": "review_max",
       "runtime_agent_name": "review_max",
-      "sha256": "362945e7c25e7f71407136447489a92658b8050e5bc449b91e6b1bb4c3e1dacc"
+      "sha256": "1ba1a3ac02af046319dfb3102d28a40c28fb55b3ecc0b080ee74de712ef8a324"
     },
     {
       "profile_id": "review_high",
       "runtime_agent_name": "review_high",
-      "sha256": "7c0439a78fc5d2a2a3413306455039df8e95c034b7cff54f02290f0a67c21a23"
+      "sha256": "6b64fc06f16d79db8b31e2ae102d8bbc94970f8764dbe624d1ce5367bf8b14b6"
     },
     {
       "profile_id": "work_medium",
       "runtime_agent_name": "work_medium",
-      "sha256": "f75d9a40c9ca66eb37b68ad12fba8e7995abdfef8c3af08fd08a9a818fa36805"
+      "sha256": "01db3acf8a7ef8c8f585646f0bfe1bb660f5303d58842f5c5308135afe068aff"
     },
     {
       "profile_id": "work_high",
       "runtime_agent_name": "work_high",
-      "sha256": "4b7ec4c8c232cc63f1a949b8eab7ec9ce8ef68d68a8ad5c921c0adf870957542"
+      "sha256": "a8662e666c21cf5ae3450a6b9d8b38134773ceb2105b0f298cfe203e554aaa8d"
     },
     {
       "profile_id": "test_medium",
       "runtime_agent_name": "test_medium",
-      "sha256": "245244101472fea1f1544ab8c66c6f054a0629ba35c5df691d5c64258d745849"
+      "sha256": "1e9dbc9c9f80532c901f3ef23f45b2f6e49ddbe0346dbd4ed87eaec606d8cc9f"
     },
     {
       "profile_id": "scan_low",
       "runtime_agent_name": "scan_low",
-      "sha256": "7efb7b6c9cfb41b51c3061337dbe654ad92f668efa2d19a6caa836be52c0cb16"
+      "sha256": "2e14d78f925012810f6899d3fc959702ceae19997031d71f86394d0c611bc840"
     },
     {
       "profile_id": "monitor_low",
       "runtime_agent_name": "monitor_low",
-      "sha256": "510d9c2584fa562f5ee66430d78f6950fd478d2b1a7ca9103ac5fe7a1095574b"
+      "sha256": "3d879807e287e70646b9bd7a5c923cbf20e915a5157d776b55d8a19f5d142f8a"
     }
   ],
   "reason": "source and configuration contract only; no live runtime receipt supplied",
@@ -74,31 +74,31 @@
     "files": [
       {
         "filename": "monitor_low.toml",
-        "sha256": "510d9c2584fa562f5ee66430d78f6950fd478d2b1a7ca9103ac5fe7a1095574b"
+        "sha256": "3d879807e287e70646b9bd7a5c923cbf20e915a5157d776b55d8a19f5d142f8a"
       },
       {
         "filename": "review_high.toml",
-        "sha256": "7c0439a78fc5d2a2a3413306455039df8e95c034b7cff54f02290f0a67c21a23"
+        "sha256": "6b64fc06f16d79db8b31e2ae102d8bbc94970f8764dbe624d1ce5367bf8b14b6"
       },
       {
         "filename": "review_max.toml",
-        "sha256": "362945e7c25e7f71407136447489a92658b8050e5bc449b91e6b1bb4c3e1dacc"
+        "sha256": "1ba1a3ac02af046319dfb3102d28a40c28fb55b3ecc0b080ee74de712ef8a324"
       },
       {
         "filename": "scan_low.toml",
-        "sha256": "7efb7b6c9cfb41b51c3061337dbe654ad92f668efa2d19a6caa836be52c0cb16"
+        "sha256": "2e14d78f925012810f6899d3fc959702ceae19997031d71f86394d0c611bc840"
       },
       {
         "filename": "test_medium.toml",
-        "sha256": "245244101472fea1f1544ab8c66c6f054a0629ba35c5df691d5c64258d745849"
+        "sha256": "1e9dbc9c9f80532c901f3ef23f45b2f6e49ddbe0346dbd4ed87eaec606d8cc9f"
       },
       {
         "filename": "work_high.toml",
-        "sha256": "4b7ec4c8c232cc63f1a949b8eab7ec9ce8ef68d68a8ad5c921c0adf870957542"
+        "sha256": "a8662e666c21cf5ae3450a6b9d8b38134773ceb2105b0f298cfe203e554aaa8d"
       },
       {
         "filename": "work_medium.toml",
-        "sha256": "f75d9a40c9ca66eb37b68ad12fba8e7995abdfef8c3af08fd08a9a818fa36805"
+        "sha256": "01db3acf8a7ef8c8f585646f0bfe1bb660f5303d58842f5c5308135afe068aff"
       }
     ],
     "location": "plugins/verified-workflows/agents",

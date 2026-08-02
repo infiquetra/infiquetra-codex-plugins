@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import importlib.util
+import shutil
 import tomllib
 import sys
 from pathlib import Path
@@ -22,6 +23,11 @@ def _load_renderer():
 
 
 R = _load_renderer()
+if str(PLUGIN_ROOT / "scripts") not in sys.path:
+    sys.path.insert(0, str(PLUGIN_ROOT / "scripts"))
+
+import workflow_dispatch as W  # noqa: E402
+
 FROZEN_SOURCE = Path(__file__).resolve().parent / "fixtures" / "frozen-source"
 
 
@@ -33,7 +39,7 @@ def test_every_lens_is_versioned_digest_bound_and_has_a_result_contract() -> Non
     registry = R.load_role_registry()
     roles = tuple(role for role in registry.roles if role.kind == "agent-lens")
 
-    assert len({role.source_behavior_sha256 for role in roles}) == 28
+    assert len({role.source_behavior_sha256 for role in roles}) == 29
     for role in roles:
         text = _role_text(role.role_id)
         assert f"role_id: {role.role_id}" in text
@@ -162,3 +168,80 @@ def test_ai_usefulness_lens_uses_codex_instruction_surfaces() -> None:
     assert "AGENTS.md" in text
     assert "Context Gap Questions" in text
     assert "Machine-Parseable Structure" in text
+
+
+def test_harness_integration_lens_preserves_its_specialized_behavior() -> None:
+    text = _role_text("harness-integration-engineer")
+
+    for marker in (
+        "native harness",
+        "adapter boundaries",
+        "producer-owned contracts",
+        "unsupported features",
+        "adversarial compatibility checks",
+        "release metadata",
+    ):
+        assert marker in text
+
+
+def _harness_workflow_plan() -> str:
+    return """# Plan
+
+## Workflow Contract
+
+| id | depends | role | profile | writes | completion | fallback |
+| --- | --- | --- | --- | --- | --- | --- |
+| integrate | - | harness-integration-engineer | work_high | src/adapter.py | adapter passes compatibility checks | none |
+| review | integrate | devils-advocate-reviewer | review_high | none | reviewer result has no blocking finding | none |
+
+### Blocking Checks
+
+| id | owner | after | command-or-proof | blocking | failure |
+| --- | --- | --- | --- | --- | --- |
+| reviewer-assurance | review | review | reviewer result satisfies policy | yes | stop |
+
+### External Actions
+
+`External actions: []` is the exact approved value.
+
+## Implementation Units
+"""
+
+
+def test_harness_lens_bytes_bind_compiler_authority_and_operator_approval(
+    tmp_path: Path,
+) -> None:
+    registry_path = tmp_path / "role-registry.yaml"
+    registry_path.write_bytes(R.DEFAULT_REGISTRY.read_bytes())
+    roles_dir = tmp_path / "roles"
+    shutil.copytree(R.DEFAULT_ROLES_DIR, roles_dir)
+
+    approved = W.compile_workflow_contract(
+        _harness_workflow_plan(),
+        plan_revision="approved-harness-role",
+        registry_path=registry_path,
+        roles_dir=roles_dir,
+    )
+    target = roles_dir / "harness-integration-engineer.md"
+    target.write_text(
+        target.read_text(encoding="utf-8").replace(
+            "adapter boundaries", "adapter integration boundaries", 1
+        ),
+        encoding="utf-8",
+    )
+    changed = W.compile_workflow_contract(
+        _harness_workflow_plan(),
+        plan_revision="approved-harness-role",
+        registry_path=registry_path,
+        roles_dir=roles_dir,
+    )
+
+    approved_spec = next(
+        spec for spec in approved.launch_specs if spec.assignment_id == "integrate"
+    )
+    changed_spec = next(spec for spec in changed.launch_specs if spec.assignment_id == "integrate")
+    assert changed.contract_sha256 == approved.contract_sha256
+    assert changed.registry_sha256 == approved.registry_sha256
+    assert changed_spec.role_lens_sha256 != approved_spec.role_lens_sha256
+    assert changed.authority_sha256 != approved.authority_sha256
+    assert changed.approval_binding_sha256 != approved.approval_binding_sha256
