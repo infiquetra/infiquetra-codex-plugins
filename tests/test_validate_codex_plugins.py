@@ -30,6 +30,7 @@ from scripts.validate_codex_plugins import (
     validate_verified_workflows_agents,
     validate_verified_workflows_canonical_surface,
     validate_verified_workflows_runtime,
+    validate_hermes_profile_evolution,
     workflow_registry_sha256,
     validate_relative_file,
     validate_repository,
@@ -139,12 +140,7 @@ def test_cutover_validation_stays_blocked_at_source_ready_boundary():
 
 
 def test_current_mode_rejects_pending_real_profile_cutover(monkeypatch):
-    path = (
-        REPO_ROOT
-        / "docs"
-        / "validation"
-        / "codex-plugin-modernization-cutover.json"
-    )
+    path = REPO_ROOT / "docs" / "validation" / "codex-plugin-modernization-cutover.json"
     pending = json.loads(path.read_text(encoding="utf-8"))
     pending["status"] = "isolated-gates-passed-real-profile-pending"
     pending["real_profile"] = {
@@ -164,20 +160,17 @@ def test_current_mode_rejects_pending_real_profile_cutover(monkeypatch):
 
 
 def test_modernization_cutover_versions_are_frozen_receipt_values():
-    path = (
-        REPO_ROOT
-        / "docs"
-        / "validation"
-        / "codex-plugin-modernization-cutover.json"
-    )
+    path = REPO_ROOT / "docs" / "validation" / "codex-plugin-modernization-cutover.json"
     payload = json.loads(path.read_text(encoding="utf-8"))
 
     assert payload["versions"] == MODERNIZATION_CUTOVER_VERSIONS
-    assert MODERNIZATION_CUTOVER_VERSIONS["fleet-core"] != (
-        TARGET_EXPECTED_PLUGINS["fleet-core"]["version"]
+    assert (
+        MODERNIZATION_CUTOVER_VERSIONS["fleet-core"]
+        != (TARGET_EXPECTED_PLUGINS["fleet-core"]["version"])
     )
-    assert MODERNIZATION_CUTOVER_VERSIONS["verified-workflows"] != (
-        TARGET_EXPECTED_PLUGINS["verified-workflows"]["version"]
+    assert (
+        MODERNIZATION_CUTOVER_VERSIONS["verified-workflows"]
+        != (TARGET_EXPECTED_PLUGINS["verified-workflows"]["version"])
     )
 
 
@@ -201,9 +194,10 @@ def test_expected_plugin_set_is_current_post_cutover_inventory():
         "unifi",
         "test-suite",
         "fleet-core",
+        "hermes-profile-evolution",
     }
     assert EXPECTED_PLUGINS is CURRENT_EXPECTED_PLUGINS
-    assert EXPECTED_PLUGINS is TARGET_EXPECTED_PLUGINS
+    assert EXPECTED_PLUGINS is not TARGET_EXPECTED_PLUGINS
 
 
 def test_legacy_plugin_set_remains_only_for_migration_checks():
@@ -241,6 +235,90 @@ def test_target_plugin_set_describes_saga_family_cutover():
     }
     assert "team-execution" not in TARGET_EXPECTED_PLUGINS
     assert {"blueprint-reviewer", "sdlc-manager"}.isdisjoint(TARGET_EXPECTED_PLUGINS)
+
+
+def test_hermes_profile_evolution_producer_pins_and_native_surfaces_validate():
+    errors: list[str] = []
+    validate_hermes_profile_evolution(REPO_ROOT, errors)
+    assert errors == []
+
+
+def test_hermes_profile_evolution_validator_rejects_fixture_drift_and_non_native_hook(
+    tmp_path: Path,
+):
+    root = tmp_path / "repo"
+    shutil.copytree(
+        REPO_ROOT / "plugins/hermes-profile-evolution",
+        root / "plugins/hermes-profile-evolution",
+    )
+    port = root / "docs/portability/ports/2026-08-01-hermes-profile-evolution.json"
+    port.parent.mkdir(parents=True)
+    shutil.copy2(REPO_ROOT / port.relative_to(root), port)
+    fixture = (
+        root / "plugins/hermes-profile-evolution/conformance/profile-change-classifier.v1.json"
+    )
+    fixture.write_bytes(fixture.read_bytes() + b"\n")
+    legacy_hook = root / "plugins/hermes-profile-evolution/hooks/manifest.json"
+    legacy_hook.write_text("{}", encoding="utf-8")
+
+    errors: list[str] = []
+    validate_hermes_profile_evolution(root, errors)
+
+    assert any("approved fixture digest drifted" in error for error in errors)
+    assert any("unsupported host surfaces" in error for error in errors)
+
+
+def test_hermes_profile_evolution_validator_rejects_coherent_producer_replacement(
+    tmp_path: Path,
+):
+    root = tmp_path / "repo"
+    shutil.copytree(
+        REPO_ROOT / "plugins/hermes-profile-evolution",
+        root / "plugins/hermes-profile-evolution",
+    )
+    port = root / "docs/portability/ports/2026-08-01-hermes-profile-evolution.json"
+    port.parent.mkdir(parents=True)
+    shutil.copy2(REPO_ROOT / port.relative_to(root), port)
+    fixture = (
+        root / "plugins/hermes-profile-evolution/conformance/profile-change-classifier.v1.json"
+    )
+    fixture.write_bytes(fixture.read_bytes() + b"\n")
+    replacement_digest = hashlib.sha256(fixture.read_bytes()).hexdigest()
+    provenance_path = root / "plugins/hermes-profile-evolution/conformance/provenance.json"
+    provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+    provenance["artifacts"][0]["sha256"] = replacement_digest
+    provenance_path.write_text(json.dumps(provenance), encoding="utf-8")
+    port_payload = json.loads(port.read_text(encoding="utf-8"))
+    port_payload["producer_contracts"][0]["sha256"] = replacement_digest
+    port.write_text(json.dumps(port_payload), encoding="utf-8")
+
+    errors: list[str] = []
+    validate_hermes_profile_evolution(root, errors)
+
+    assert any("approved producer provenance pins drifted" in error for error in errors)
+    assert any("approved fixture digest drifted" in error for error in errors)
+    assert any("approved port receipt producer pins drifted" in error for error in errors)
+
+
+def test_hermes_profile_evolution_validator_requires_closed_validation_receipt(
+    tmp_path: Path,
+):
+    root = tmp_path / "repo"
+    shutil.copytree(
+        REPO_ROOT / "plugins/hermes-profile-evolution",
+        root / "plugins/hermes-profile-evolution",
+    )
+    port = root / "docs/portability/ports/2026-08-01-hermes-profile-evolution.json"
+    port.parent.mkdir(parents=True)
+    shutil.copy2(REPO_ROOT / port.relative_to(root), port)
+    payload = json.loads(port.read_text(encoding="utf-8"))
+    payload["validation_receipt"]["records"][0]["unbounded_evidence"] = True
+    port.write_text(json.dumps(payload), encoding="utf-8")
+
+    errors: list[str] = []
+    validate_hermes_profile_evolution(root, errors)
+
+    assert any("validation receipt record schema is open" in error for error in errors)
 
 
 def test_target_fixture_requires_namespace_proof():
@@ -356,8 +434,7 @@ def test_target_fixture_rejects_legacy_namespace_in_canonical_proof_set():
     validate_target_fixture_payload(payload, REPO_ROOT / "fixture.json", errors)
 
     assert any(
-        "namespace proof skills mismatch" in error
-        and "team-execution:team-execution" in error
+        "namespace proof skills mismatch" in error and "team-execution:team-execution" in error
         for error in errors
     )
 
@@ -525,7 +602,7 @@ def test_verified_workflows_rejects_dynamic_saga_import(tmp_path):
     make_verified_workflows_target(
         tmp_path,
         "bad.py",
-        'from importlib import import_module\n'
+        "from importlib import import_module\n"
         'import_module("plugins." + "sa" + "ga" + ".scripts.saga")\n',
     )
     errors: list[str] = []
@@ -655,17 +732,14 @@ def test_legacy_workflow_tokens_require_an_explicit_path_classification(tmp_path
         for error in errors
     )
     assert (
-        expected_legacy_workflow_classification(
-            Path("plugins/saga/scripts/new_serializer.py")
-        )
+        expected_legacy_workflow_classification(Path("plugins/saga/scripts/new_serializer.py"))
         is None
     )
 
 
 def test_active_capability_capture_has_no_legacy_workflow_tokens():
-    assert (
-        "scripts/capture_codex_runtime_capabilities.py"
-        not in legacy_workflow_file_facts(REPO_ROOT)
+    assert "scripts/capture_codex_runtime_capabilities.py" not in legacy_workflow_file_facts(
+        REPO_ROOT
     )
 
 
@@ -845,9 +919,7 @@ def test_runtime_scratch_directories_are_excluded_from_the_legacy_token_scan(tmp
         assert scratch in validator.LEGACY_WORKFLOW_EXCLUDED_TOP_LEVEL
 
     token = sorted(
-        value
-        for spec in validator.WORKFLOW_COMPAT.REGISTRY.values()
-        for value in spec.legacy
+        value for spec in validator.WORKFLOW_COMPAT.REGISTRY.values() for value in spec.legacy
     )[0]
     (tmp_path / ".saga").mkdir()
     (tmp_path / ".saga" / "evidence.json").write_text(token, encoding="utf-8")

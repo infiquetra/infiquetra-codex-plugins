@@ -124,6 +124,18 @@
         "authentication": "ON_INSTALL"
       },
       "category": "Coding"
+    },
+    {
+      "name": "hermes-profile-evolution",
+      "source": {
+        "source": "local",
+        "path": "./plugins/hermes-profile-evolution"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Coding"
     }
   ]
 }

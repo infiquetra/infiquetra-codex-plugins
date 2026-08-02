@@ -1,0 +1,1721 @@
+{
+  "artifact": "profile-request-cli-conformance",
+  "cases": [
+    {
+      "case_id": "proposal-valid",
+      "expected": {
+        "outcome": "success",
+        "value": {
+          "created_at": "2026-08-01T12:00:00Z",
+          "delegation_chain": [
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            }
+          ],
+          "evidence_references": [
+            "docs/conformance-input.md"
+          ],
+          "intent": "Consider this sanitized conformance request.",
+          "proposal_id": "proposal-conformance-0001",
+          "record_type": "proposal_envelope",
+          "requester": {
+            "actor_id": "operator-conformance",
+            "actor_kind": "operator",
+            "verification": "claimed"
+          },
+          "revision_digest": "ea46d3d8cdffcfb7b6e29b91e10dfba72f2e086bd84eb784bf477e1c9448112d",
+          "schema_version": 1,
+          "target": "mimir-engineer"
+        }
+      },
+      "input": {
+        "source": "proposal_envelope"
+      },
+      "producer": "parse_envelope"
+    },
+    {
+      "argv": [
+        "suggest"
+      ],
+      "case_id": "suggest",
+      "expected": {
+        "outcome": "success",
+        "stdout_json": [
+          {
+            "choices": [
+              {
+                "message": {
+                  "content": "considered"
+                }
+              }
+            ]
+          },
+          {
+            "continuity_digest": "5cf32eb974cfb89bf9add518f252c4c5a714b629e0f086fdc06947fa33e9d8b5",
+            "proposal_id": "proposal-conformance-0001",
+            "proposal_revision_digest": "ea46d3d8cdffcfb7b6e29b91e10dfba72f2e086bd84eb784bf477e1c9448112d",
+            "response_digests": [
+              "36a9b8e8af25f84e42397a02d7004cff7875a8ca622ea3fe8de7f6c37c1e1b2f"
+            ],
+            "target": "mimir-engineer",
+            "updated_at": "2026-08-01T12:01:00Z"
+          }
+        ]
+      },
+      "producer": "command_handler",
+      "stdin": {
+        "source": "proposal_envelope"
+      }
+    },
+    {
+      "argv": [
+        "reply",
+        "--message",
+        "Please compare the current revision."
+      ],
+      "case_id": "reply",
+      "expected": {
+        "outcome": "success",
+        "stdout_json": [
+          {
+            "choices": [
+              {
+                "message": {
+                  "content": "considered"
+                }
+              }
+            ]
+          },
+          {
+            "continuity_digest": "5cf32eb974cfb89bf9add518f252c4c5a714b629e0f086fdc06947fa33e9d8b5",
+            "proposal_id": "proposal-conformance-0001",
+            "proposal_revision_digest": "ea46d3d8cdffcfb7b6e29b91e10dfba72f2e086bd84eb784bf477e1c9448112d",
+            "response_digests": [
+              "36a9b8e8af25f84e42397a02d7004cff7875a8ca622ea3fe8de7f6c37c1e1b2f"
+            ],
+            "target": "mimir-engineer",
+            "updated_at": "2026-08-01T12:01:00Z"
+          }
+        ]
+      },
+      "producer": "command_handler",
+      "stdin": {
+        "source": "proposal_envelope"
+      }
+    },
+    {
+      "argv": [
+        "resume"
+      ],
+      "case_id": "resume",
+      "expected": {
+        "outcome": "success",
+        "stdout_json": [
+          {
+            "choices": [
+              {
+                "message": {
+                  "content": "considered"
+                }
+              }
+            ]
+          },
+          {
+            "continuity_digest": "5cf32eb974cfb89bf9add518f252c4c5a714b629e0f086fdc06947fa33e9d8b5",
+            "proposal_id": "proposal-conformance-0001",
+            "proposal_revision_digest": "ea46d3d8cdffcfb7b6e29b91e10dfba72f2e086bd84eb784bf477e1c9448112d",
+            "response_digests": [
+              "36a9b8e8af25f84e42397a02d7004cff7875a8ca622ea3fe8de7f6c37c1e1b2f"
+            ],
+            "target": "mimir-engineer",
+            "updated_at": "2026-08-01T12:01:00Z"
+          }
+        ]
+      },
+      "producer": "command_handler",
+      "stdin": {
+        "source": "proposal_envelope"
+      }
+    },
+    {
+      "argv": [
+        "status",
+        "--proposal-id",
+        "proposal-conformance-0001",
+        "--revision",
+        "ea46d3d8cdffcfb7b6e29b91e10dfba72f2e086bd84eb784bf477e1c9448112d",
+        "--target",
+        "mimir-engineer"
+      ],
+      "case_id": "status",
+      "expected": {
+        "outcome": "success",
+        "stdout_json": [
+          {
+            "deadline": "2026-08-08T12:00:00Z",
+            "evidence_verification": "verified",
+            "proposal_revision_digest": "ea46d3d8cdffcfb7b6e29b91e10dfba72f2e086bd84eb784bf477e1c9448112d",
+            "public_evidence_digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "result": "adopted",
+            "target": "mimir-engineer"
+          }
+        ]
+      },
+      "producer": "command_handler"
+    },
+    {
+      "argv": [
+        "census"
+      ],
+      "case_id": "census",
+      "expected": {
+        "outcome": "success",
+        "stdout_json": [
+          [
+            {
+              "census_id": "census-conformance-0001",
+              "commit_state": "none",
+              "drift_state": "none",
+              "evidence_verification": "verified",
+              "observed_at": "2026-08-01T12:02:00Z",
+              "public_evidence_digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+              "record_type": "census_entry",
+              "recovery_state": "none",
+              "result": "adopted",
+              "schema_version": 1,
+              "target": "mimir-engineer"
+            }
+          ]
+        ]
+      },
+      "producer": "command_handler",
+      "stdin": {
+        "literal": {
+          "census_id": "census-conformance-0001",
+          "created_at": "2026-08-01T12:00:00Z",
+          "schema_version": 1,
+          "targets": [
+            "mimir-engineer"
+          ]
+        }
+      }
+    },
+    {
+      "argv": [
+        "doctor",
+        "--target",
+        "mimir-engineer"
+      ],
+      "case_id": "doctor",
+      "expected": {
+        "outcome": "success",
+        "stdout_json": [
+          {
+            "credential_available": true,
+            "route_registered": true,
+            "service_available": true,
+            "target": "mimir-engineer"
+          }
+        ]
+      },
+      "producer": "command_handler"
+    },
+    {
+      "case_id": "proposal-malformed-json",
+      "expected": {
+        "error_type": "ProposalError",
+        "message": "standard input must contain one JSON proposal envelope",
+        "outcome": "error"
+      },
+      "input": {
+        "literal_text": "{not-json"
+      },
+      "producer": "parse_envelope"
+    },
+    {
+      "boundary": {
+        "edge": "min_characters",
+        "limit": "opaque_identifier",
+        "position": "outside"
+      },
+      "case_id": "proposal-opaque-identifier-below-minimum",
+      "expected": {
+        "error_type": "IdentityError",
+        "message": "native proposal provenance is missing or invalid",
+        "outcome": "error"
+      },
+      "input": {
+        "mutation": {
+          "count": 7,
+          "field": "proposal_id",
+          "repeat": "a"
+        },
+        "source": "proposal_envelope"
+      },
+      "producer": "parse_envelope"
+    },
+    {
+      "case_id": "proposal-invalid-timestamp",
+      "expected": {
+        "error_type": "ProposalError",
+        "message": "proposal created_at must be an ISO 8601 timestamp",
+        "outcome": "error"
+      },
+      "input": {
+        "mutation": {
+          "field": "created_at",
+          "value": "not-a-timestamp"
+        },
+        "source": "proposal_envelope"
+      },
+      "producer": "parse_envelope"
+    },
+    {
+      "case_id": "proposal-secret-bearing-reference",
+      "expected": {
+        "error_type": "ProposalError",
+        "message": "proposal contains a prohibited or unsafe evidence reference",
+        "outcome": "error"
+      },
+      "input": {
+        "mutation": {
+          "field": "evidence_references",
+          "recompute_revision_digest": true,
+          "value": [
+            "secrets/../token.txt"
+          ]
+        },
+        "source": "proposal_envelope"
+      },
+      "producer": "parse_envelope"
+    },
+    {
+      "boundary": {
+        "edge": "min_characters",
+        "limit": "profile_name",
+        "position": "at"
+      },
+      "case_id": "proposal-profile-name-at-minimum",
+      "expected": {
+        "outcome": "success",
+        "value": {
+          "created_at": "2026-08-01T12:00:00Z",
+          "delegation_chain": [
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            }
+          ],
+          "evidence_references": [
+            "docs/conformance-input.md"
+          ],
+          "intent": "Consider this sanitized conformance request.",
+          "proposal_id": "proposal-conformance-0001",
+          "record_type": "proposal_envelope",
+          "requester": {
+            "actor_id": "operator-conformance",
+            "actor_kind": "operator",
+            "verification": "claimed"
+          },
+          "revision_digest": "343e8415682a850ea884cb710478ea73b75ead65e0c5080e73ada9876a1ede5d",
+          "schema_version": 1,
+          "target": "aa"
+        }
+      },
+      "input": {
+        "mutation": {
+          "count": 2,
+          "field": "target",
+          "recompute_revision_digest": true,
+          "repeat": "a"
+        },
+        "source": "proposal_envelope"
+      },
+      "producer": "parse_envelope"
+    },
+    {
+      "boundary": {
+        "edge": "min_characters",
+        "limit": "profile_name",
+        "position": "outside"
+      },
+      "case_id": "proposal-profile-name-below-minimum",
+      "expected": {
+        "error_type": "IdentityError",
+        "message": "active Hermes profile identity is missing or invalid",
+        "outcome": "error"
+      },
+      "input": {
+        "mutation": {
+          "count": 1,
+          "field": "target",
+          "recompute_revision_digest": true,
+          "repeat": "a"
+        },
+        "source": "proposal_envelope"
+      },
+      "producer": "parse_envelope"
+    },
+    {
+      "boundary": {
+        "edge": "max_characters",
+        "limit": "profile_name",
+        "position": "at"
+      },
+      "case_id": "proposal-profile-name-at-maximum",
+      "expected": {
+        "outcome": "success",
+        "value": {
+          "created_at": "2026-08-01T12:00:00Z",
+          "delegation_chain": [
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            }
+          ],
+          "evidence_references": [
+            "docs/conformance-input.md"
+          ],
+          "intent": "Consider this sanitized conformance request.",
+          "proposal_id": "proposal-conformance-0001",
+          "record_type": "proposal_envelope",
+          "requester": {
+            "actor_id": "operator-conformance",
+            "actor_kind": "operator",
+            "verification": "claimed"
+          },
+          "revision_digest": "a309ac205bc5a2e7629349096a71e5b59bf760e3c4f399e3cab764b6bc321186",
+          "schema_version": 1,
+          "target": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      },
+      "input": {
+        "mutation": {
+          "count": 64,
+          "field": "target",
+          "recompute_revision_digest": true,
+          "repeat": "a"
+        },
+        "source": "proposal_envelope"
+      },
+      "producer": "parse_envelope"
+    },
+    {
+      "boundary": {
+        "edge": "max_characters",
+        "limit": "profile_name",
+        "position": "outside"
+      },
+      "case_id": "proposal-profile-name-above-maximum",
+      "expected": {
+        "error_type": "IdentityError",
+        "message": "active Hermes profile identity is missing or invalid",
+        "outcome": "error"
+      },
+      "input": {
+        "mutation": {
+          "count": 65,
+          "field": "target",
+          "recompute_revision_digest": true,
+          "repeat": "a"
+        },
+        "source": "proposal_envelope"
+      },
+      "producer": "parse_envelope"
+    },
+    {
+      "boundary": {
+        "edge": "min_characters",
+        "limit": "opaque_identifier",
+        "position": "at"
+      },
+      "case_id": "proposal-opaque-identifier-at-minimum",
+      "expected": {
+        "outcome": "success",
+        "value": {
+          "created_at": "2026-08-01T12:00:00Z",
+          "delegation_chain": [
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            }
+          ],
+          "evidence_references": [
+            "docs/conformance-input.md"
+          ],
+          "intent": "Consider this sanitized conformance request.",
+          "proposal_id": "aaaaaaaa",
+          "record_type": "proposal_envelope",
+          "requester": {
+            "actor_id": "operator-conformance",
+            "actor_kind": "operator",
+            "verification": "claimed"
+          },
+          "revision_digest": "ea46d3d8cdffcfb7b6e29b91e10dfba72f2e086bd84eb784bf477e1c9448112d",
+          "schema_version": 1,
+          "target": "mimir-engineer"
+        }
+      },
+      "input": {
+        "mutation": {
+          "count": 8,
+          "field": "proposal_id",
+          "repeat": "a"
+        },
+        "source": "proposal_envelope"
+      },
+      "producer": "parse_envelope"
+    },
+    {
+      "boundary": {
+        "edge": "max_characters",
+        "limit": "opaque_identifier",
+        "position": "at"
+      },
+      "case_id": "proposal-opaque-identifier-at-maximum",
+      "expected": {
+        "outcome": "success",
+        "value": {
+          "created_at": "2026-08-01T12:00:00Z",
+          "delegation_chain": [
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            }
+          ],
+          "evidence_references": [
+            "docs/conformance-input.md"
+          ],
+          "intent": "Consider this sanitized conformance request.",
+          "proposal_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "record_type": "proposal_envelope",
+          "requester": {
+            "actor_id": "operator-conformance",
+            "actor_kind": "operator",
+            "verification": "claimed"
+          },
+          "revision_digest": "ea46d3d8cdffcfb7b6e29b91e10dfba72f2e086bd84eb784bf477e1c9448112d",
+          "schema_version": 1,
+          "target": "mimir-engineer"
+        }
+      },
+      "input": {
+        "mutation": {
+          "count": 128,
+          "field": "proposal_id",
+          "repeat": "a"
+        },
+        "source": "proposal_envelope"
+      },
+      "producer": "parse_envelope"
+    },
+    {
+      "boundary": {
+        "edge": "max_characters",
+        "limit": "opaque_identifier",
+        "position": "outside"
+      },
+      "case_id": "proposal-opaque-identifier-above-maximum",
+      "expected": {
+        "error_type": "IdentityError",
+        "message": "native proposal provenance is missing or invalid",
+        "outcome": "error"
+      },
+      "input": {
+        "mutation": {
+          "count": 129,
+          "field": "proposal_id",
+          "repeat": "a"
+        },
+        "source": "proposal_envelope"
+      },
+      "producer": "parse_envelope"
+    },
+    {
+      "boundary": {
+        "edge": "min_characters",
+        "limit": "delegation_actor_id",
+        "position": "at"
+      },
+      "case_id": "proposal-actor-id-at-minimum",
+      "expected": {
+        "outcome": "success",
+        "value": {
+          "created_at": "2026-08-01T12:00:00Z",
+          "delegation_chain": [
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            }
+          ],
+          "evidence_references": [
+            "docs/conformance-input.md"
+          ],
+          "intent": "Consider this sanitized conformance request.",
+          "proposal_id": "proposal-conformance-0001",
+          "record_type": "proposal_envelope",
+          "requester": {
+            "actor_id": "a",
+            "actor_kind": "operator",
+            "verification": "claimed"
+          },
+          "revision_digest": "0046ec4139c23ea35f2266ff50119ec04780359998d2adb139e7c0b0f039184c",
+          "schema_version": 1,
+          "target": "mimir-engineer"
+        }
+      },
+      "input": {
+        "mutation": {
+          "count": 1,
+          "field": "requester.actor_id",
+          "recompute_revision_digest": true,
+          "repeat": "a"
+        },
+        "source": "proposal_envelope"
+      },
+      "producer": "parse_envelope"
+    },
+    {
+      "boundary": {
+        "edge": "min_characters",
+        "limit": "delegation_actor_id",
+        "position": "outside"
+      },
+      "case_id": "proposal-actor-id-below-minimum",
+      "expected": {
+        "error_type": "ProposalError",
+        "message": "delegation hop actor is invalid",
+        "outcome": "error"
+      },
+      "input": {
+        "mutation": {
+          "field": "requester.actor_id",
+          "recompute_revision_digest": true,
+          "value": ""
+        },
+        "source": "proposal_envelope"
+      },
+      "producer": "parse_envelope"
+    },
+    {
+      "boundary": {
+        "edge": "max_characters",
+        "limit": "delegation_actor_id",
+        "position": "at"
+      },
+      "case_id": "proposal-actor-id-at-maximum",
+      "expected": {
+        "outcome": "success",
+        "value": {
+          "created_at": "2026-08-01T12:00:00Z",
+          "delegation_chain": [
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            }
+          ],
+          "evidence_references": [
+            "docs/conformance-input.md"
+          ],
+          "intent": "Consider this sanitized conformance request.",
+          "proposal_id": "proposal-conformance-0001",
+          "record_type": "proposal_envelope",
+          "requester": {
+            "actor_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "actor_kind": "operator",
+            "verification": "claimed"
+          },
+          "revision_digest": "25a3ba86c35f14c5cb7524ce0a384640f41ab82b870f3ffa533decb072c15243",
+          "schema_version": 1,
+          "target": "mimir-engineer"
+        }
+      },
+      "input": {
+        "mutation": {
+          "count": 128,
+          "field": "requester.actor_id",
+          "recompute_revision_digest": true,
+          "repeat": "a"
+        },
+        "source": "proposal_envelope"
+      },
+      "producer": "parse_envelope"
+    },
+    {
+      "boundary": {
+        "edge": "max_characters",
+        "limit": "delegation_actor_id",
+        "position": "outside"
+      },
+      "case_id": "proposal-actor-id-above-maximum",
+      "expected": {
+        "error_type": "ProposalError",
+        "message": "delegation hop actor is invalid",
+        "outcome": "error"
+      },
+      "input": {
+        "mutation": {
+          "count": 129,
+          "field": "requester.actor_id",
+          "recompute_revision_digest": true,
+          "repeat": "a"
+        },
+        "source": "proposal_envelope"
+      },
+      "producer": "parse_envelope"
+    },
+    {
+      "boundary": {
+        "edge": "min_items",
+        "limit": "delegation_chain",
+        "position": "at"
+      },
+      "case_id": "proposal-delegation-chain-at-minimum",
+      "expected": {
+        "outcome": "success",
+        "value": {
+          "created_at": "2026-08-01T12:00:00Z",
+          "delegation_chain": [
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            }
+          ],
+          "evidence_references": [
+            "docs/conformance-input.md"
+          ],
+          "intent": "Consider this sanitized conformance request.",
+          "proposal_id": "proposal-conformance-0001",
+          "record_type": "proposal_envelope",
+          "requester": {
+            "actor_id": "operator-conformance",
+            "actor_kind": "operator",
+            "verification": "claimed"
+          },
+          "revision_digest": "ea46d3d8cdffcfb7b6e29b91e10dfba72f2e086bd84eb784bf477e1c9448112d",
+          "schema_version": 1,
+          "target": "mimir-engineer"
+        }
+      },
+      "input": {
+        "source": "proposal_envelope"
+      },
+      "producer": "parse_envelope"
+    },
+    {
+      "boundary": {
+        "edge": "min_items",
+        "limit": "delegation_chain",
+        "position": "outside"
+      },
+      "case_id": "proposal-delegation-chain-below-minimum",
+      "expected": {
+        "error_type": "ProposalError",
+        "message": "delegation chain must contain between 1 and 32 hops",
+        "outcome": "error"
+      },
+      "input": {
+        "mutation": {
+          "field": "delegation_chain",
+          "recompute_revision_digest": true,
+          "value": []
+        },
+        "source": "proposal_envelope"
+      },
+      "producer": "parse_envelope"
+    },
+    {
+      "boundary": {
+        "edge": "max_items",
+        "limit": "delegation_chain",
+        "position": "at"
+      },
+      "case_id": "proposal-delegation-chain-at-maximum",
+      "expected": {
+        "outcome": "success",
+        "value": {
+          "created_at": "2026-08-01T12:00:00Z",
+          "delegation_chain": [
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            },
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            },
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            },
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            },
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            },
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            },
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            },
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            },
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            },
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            },
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            },
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            },
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            },
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            },
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            },
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            },
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            },
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            },
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            },
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            },
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            },
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            },
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            },
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            },
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            },
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            },
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            },
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            },
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            },
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            },
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            },
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            }
+          ],
+          "evidence_references": [
+            "docs/conformance-input.md"
+          ],
+          "intent": "Consider this sanitized conformance request.",
+          "proposal_id": "proposal-conformance-0001",
+          "record_type": "proposal_envelope",
+          "requester": {
+            "actor_id": "operator-conformance",
+            "actor_kind": "operator",
+            "verification": "claimed"
+          },
+          "revision_digest": "a944f5842152e286da5c5accb16e8faf70398d4a172a2cdaf05a0cef7a5d2567",
+          "schema_version": 1,
+          "target": "mimir-engineer"
+        }
+      },
+      "input": {
+        "mutation": {
+          "count": 32,
+          "field": "delegation_chain",
+          "recompute_revision_digest": true,
+          "repeat_value": {
+            "actor_id": "harness-conformance",
+            "actor_kind": "harness",
+            "verification": "claimed"
+          }
+        },
+        "source": "proposal_envelope"
+      },
+      "producer": "parse_envelope"
+    },
+    {
+      "boundary": {
+        "edge": "max_items",
+        "limit": "delegation_chain",
+        "position": "outside"
+      },
+      "case_id": "proposal-delegation-chain-above-maximum",
+      "expected": {
+        "error_type": "ProposalError",
+        "message": "delegation chain must contain between 1 and 32 hops",
+        "outcome": "error"
+      },
+      "input": {
+        "mutation": {
+          "count": 33,
+          "field": "delegation_chain",
+          "recompute_revision_digest": true,
+          "repeat_value": {
+            "actor_id": "harness-conformance",
+            "actor_kind": "harness",
+            "verification": "claimed"
+          }
+        },
+        "source": "proposal_envelope"
+      },
+      "producer": "parse_envelope"
+    },
+    {
+      "boundary": {
+        "edge": "min_non_whitespace_characters",
+        "limit": "intent",
+        "position": "at"
+      },
+      "case_id": "proposal-intent-at-minimum",
+      "expected": {
+        "outcome": "success",
+        "value": {
+          "created_at": "2026-08-01T12:00:00Z",
+          "delegation_chain": [
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            }
+          ],
+          "evidence_references": [
+            "docs/conformance-input.md"
+          ],
+          "intent": "x",
+          "proposal_id": "proposal-conformance-0001",
+          "record_type": "proposal_envelope",
+          "requester": {
+            "actor_id": "operator-conformance",
+            "actor_kind": "operator",
+            "verification": "claimed"
+          },
+          "revision_digest": "6d31ffdd4b8251cd3a48cfc27fae68b7722918a65cb4131535d2a6c5d67f58e6",
+          "schema_version": 1,
+          "target": "mimir-engineer"
+        }
+      },
+      "input": {
+        "mutation": {
+          "field": "intent",
+          "recompute_revision_digest": true,
+          "value": "x"
+        },
+        "source": "proposal_envelope"
+      },
+      "producer": "parse_envelope"
+    },
+    {
+      "boundary": {
+        "edge": "min_non_whitespace_characters",
+        "limit": "intent",
+        "position": "outside"
+      },
+      "case_id": "proposal-intent-below-minimum",
+      "expected": {
+        "error_type": "ProposalError",
+        "message": "proposal intent is missing or too large",
+        "outcome": "error"
+      },
+      "input": {
+        "mutation": {
+          "field": "intent",
+          "recompute_revision_digest": true,
+          "value": " "
+        },
+        "source": "proposal_envelope"
+      },
+      "producer": "parse_envelope"
+    },
+    {
+      "boundary": {
+        "edge": "max_characters",
+        "limit": "intent",
+        "position": "at"
+      },
+      "case_id": "proposal-intent-at-maximum",
+      "expected": {
+        "outcome": "success",
+        "value": {
+          "created_at": "2026-08-01T12:00:00Z",
+          "delegation_chain": [
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            }
+          ],
+          "evidence_references": [
+            "docs/conformance-input.md"
+          ],
+          "intent": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "proposal_id": "proposal-conformance-0001",
+          "record_type": "proposal_envelope",
+          "requester": {
+            "actor_id": "operator-conformance",
+            "actor_kind": "operator",
+            "verification": "claimed"
+          },
+          "revision_digest": "b597b1ae58f06f54a908eacc9cef697419a307e84912d1b1473789a0c5632147",
+          "schema_version": 1,
+          "target": "mimir-engineer"
+        }
+      },
+      "input": {
+        "mutation": {
+          "count": 8192,
+          "field": "intent",
+          "recompute_revision_digest": true,
+          "repeat": "x"
+        },
+        "source": "proposal_envelope"
+      },
+      "producer": "parse_envelope"
+    },
+    {
+      "boundary": {
+        "edge": "max_characters",
+        "limit": "intent",
+        "position": "outside"
+      },
+      "case_id": "proposal-intent-above-maximum",
+      "expected": {
+        "error_type": "ProposalError",
+        "message": "proposal intent is missing or too large",
+        "outcome": "error"
+      },
+      "input": {
+        "mutation": {
+          "count": 8193,
+          "field": "intent",
+          "recompute_revision_digest": true,
+          "repeat": "x"
+        },
+        "source": "proposal_envelope"
+      },
+      "producer": "parse_envelope"
+    },
+    {
+      "boundary": {
+        "edge": "min_items",
+        "limit": "evidence_references",
+        "position": "at"
+      },
+      "case_id": "proposal-evidence-reference-count-at-minimum",
+      "expected": {
+        "outcome": "success",
+        "value": {
+          "created_at": "2026-08-01T12:00:00Z",
+          "delegation_chain": [
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            }
+          ],
+          "evidence_references": [],
+          "intent": "Consider this sanitized conformance request.",
+          "proposal_id": "proposal-conformance-0001",
+          "record_type": "proposal_envelope",
+          "requester": {
+            "actor_id": "operator-conformance",
+            "actor_kind": "operator",
+            "verification": "claimed"
+          },
+          "revision_digest": "cad9b4d6f8507cee923a5ef7f091cc1895a2f746802b257953c0ecaf1f849d71",
+          "schema_version": 1,
+          "target": "mimir-engineer"
+        }
+      },
+      "input": {
+        "mutation": {
+          "field": "evidence_references",
+          "recompute_revision_digest": true,
+          "value": []
+        },
+        "source": "proposal_envelope"
+      },
+      "producer": "parse_envelope"
+    },
+    {
+      "boundary": {
+        "edge": "max_items",
+        "limit": "evidence_references",
+        "position": "at"
+      },
+      "case_id": "proposal-evidence-reference-count-at-maximum",
+      "expected": {
+        "outcome": "success",
+        "value": {
+          "created_at": "2026-08-01T12:00:00Z",
+          "delegation_chain": [
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            }
+          ],
+          "evidence_references": [
+            "docs/evidence-0.md",
+            "docs/evidence-1.md",
+            "docs/evidence-2.md",
+            "docs/evidence-3.md",
+            "docs/evidence-4.md",
+            "docs/evidence-5.md",
+            "docs/evidence-6.md",
+            "docs/evidence-7.md",
+            "docs/evidence-8.md",
+            "docs/evidence-9.md",
+            "docs/evidence-10.md",
+            "docs/evidence-11.md",
+            "docs/evidence-12.md",
+            "docs/evidence-13.md",
+            "docs/evidence-14.md",
+            "docs/evidence-15.md",
+            "docs/evidence-16.md",
+            "docs/evidence-17.md",
+            "docs/evidence-18.md",
+            "docs/evidence-19.md",
+            "docs/evidence-20.md",
+            "docs/evidence-21.md",
+            "docs/evidence-22.md",
+            "docs/evidence-23.md",
+            "docs/evidence-24.md",
+            "docs/evidence-25.md",
+            "docs/evidence-26.md",
+            "docs/evidence-27.md",
+            "docs/evidence-28.md",
+            "docs/evidence-29.md",
+            "docs/evidence-30.md",
+            "docs/evidence-31.md",
+            "docs/evidence-32.md",
+            "docs/evidence-33.md",
+            "docs/evidence-34.md",
+            "docs/evidence-35.md",
+            "docs/evidence-36.md",
+            "docs/evidence-37.md",
+            "docs/evidence-38.md",
+            "docs/evidence-39.md",
+            "docs/evidence-40.md",
+            "docs/evidence-41.md",
+            "docs/evidence-42.md",
+            "docs/evidence-43.md",
+            "docs/evidence-44.md",
+            "docs/evidence-45.md",
+            "docs/evidence-46.md",
+            "docs/evidence-47.md",
+            "docs/evidence-48.md",
+            "docs/evidence-49.md",
+            "docs/evidence-50.md",
+            "docs/evidence-51.md",
+            "docs/evidence-52.md",
+            "docs/evidence-53.md",
+            "docs/evidence-54.md",
+            "docs/evidence-55.md",
+            "docs/evidence-56.md",
+            "docs/evidence-57.md",
+            "docs/evidence-58.md",
+            "docs/evidence-59.md",
+            "docs/evidence-60.md",
+            "docs/evidence-61.md",
+            "docs/evidence-62.md",
+            "docs/evidence-63.md",
+            "docs/evidence-64.md",
+            "docs/evidence-65.md",
+            "docs/evidence-66.md",
+            "docs/evidence-67.md",
+            "docs/evidence-68.md",
+            "docs/evidence-69.md",
+            "docs/evidence-70.md",
+            "docs/evidence-71.md",
+            "docs/evidence-72.md",
+            "docs/evidence-73.md",
+            "docs/evidence-74.md",
+            "docs/evidence-75.md",
+            "docs/evidence-76.md",
+            "docs/evidence-77.md",
+            "docs/evidence-78.md",
+            "docs/evidence-79.md",
+            "docs/evidence-80.md",
+            "docs/evidence-81.md",
+            "docs/evidence-82.md",
+            "docs/evidence-83.md",
+            "docs/evidence-84.md",
+            "docs/evidence-85.md",
+            "docs/evidence-86.md",
+            "docs/evidence-87.md",
+            "docs/evidence-88.md",
+            "docs/evidence-89.md",
+            "docs/evidence-90.md",
+            "docs/evidence-91.md",
+            "docs/evidence-92.md",
+            "docs/evidence-93.md",
+            "docs/evidence-94.md",
+            "docs/evidence-95.md",
+            "docs/evidence-96.md",
+            "docs/evidence-97.md",
+            "docs/evidence-98.md",
+            "docs/evidence-99.md",
+            "docs/evidence-100.md",
+            "docs/evidence-101.md",
+            "docs/evidence-102.md",
+            "docs/evidence-103.md",
+            "docs/evidence-104.md",
+            "docs/evidence-105.md",
+            "docs/evidence-106.md",
+            "docs/evidence-107.md",
+            "docs/evidence-108.md",
+            "docs/evidence-109.md",
+            "docs/evidence-110.md",
+            "docs/evidence-111.md",
+            "docs/evidence-112.md",
+            "docs/evidence-113.md",
+            "docs/evidence-114.md",
+            "docs/evidence-115.md",
+            "docs/evidence-116.md",
+            "docs/evidence-117.md",
+            "docs/evidence-118.md",
+            "docs/evidence-119.md",
+            "docs/evidence-120.md",
+            "docs/evidence-121.md",
+            "docs/evidence-122.md",
+            "docs/evidence-123.md",
+            "docs/evidence-124.md",
+            "docs/evidence-125.md",
+            "docs/evidence-126.md",
+            "docs/evidence-127.md"
+          ],
+          "intent": "Consider this sanitized conformance request.",
+          "proposal_id": "proposal-conformance-0001",
+          "record_type": "proposal_envelope",
+          "requester": {
+            "actor_id": "operator-conformance",
+            "actor_kind": "operator",
+            "verification": "claimed"
+          },
+          "revision_digest": "6f32a17eaddd12f7db4050df0ef86bd047c093c0c6d5ce0b68ab24637f46d9c1",
+          "schema_version": 1,
+          "target": "mimir-engineer"
+        }
+      },
+      "input": {
+        "mutation": {
+          "count": 128,
+          "field": "evidence_references",
+          "indexed_format": "docs/evidence-{index}.md",
+          "recompute_revision_digest": true
+        },
+        "source": "proposal_envelope"
+      },
+      "producer": "parse_envelope"
+    },
+    {
+      "boundary": {
+        "edge": "max_items",
+        "limit": "evidence_references",
+        "position": "outside"
+      },
+      "case_id": "proposal-evidence-reference-count-above-maximum",
+      "expected": {
+        "error_type": "ProposalError",
+        "message": "proposal evidence references are invalid",
+        "outcome": "error"
+      },
+      "input": {
+        "mutation": {
+          "count": 129,
+          "field": "evidence_references",
+          "indexed_format": "docs/evidence-{index}.md",
+          "recompute_revision_digest": true
+        },
+        "source": "proposal_envelope"
+      },
+      "producer": "parse_envelope"
+    },
+    {
+      "boundary": {
+        "edge": "min_characters",
+        "limit": "evidence_reference",
+        "position": "at"
+      },
+      "case_id": "proposal-evidence-reference-length-at-minimum",
+      "expected": {
+        "outcome": "success",
+        "value": {
+          "created_at": "2026-08-01T12:00:00Z",
+          "delegation_chain": [
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            }
+          ],
+          "evidence_references": [
+            "e"
+          ],
+          "intent": "Consider this sanitized conformance request.",
+          "proposal_id": "proposal-conformance-0001",
+          "record_type": "proposal_envelope",
+          "requester": {
+            "actor_id": "operator-conformance",
+            "actor_kind": "operator",
+            "verification": "claimed"
+          },
+          "revision_digest": "9f71b10dac693542e3ab066753bfcf14ffb84d99e668090b55fcd30d11a558c2",
+          "schema_version": 1,
+          "target": "mimir-engineer"
+        }
+      },
+      "input": {
+        "mutation": {
+          "field": "evidence_references",
+          "recompute_revision_digest": true,
+          "value": [
+            "e"
+          ]
+        },
+        "source": "proposal_envelope"
+      },
+      "producer": "parse_envelope"
+    },
+    {
+      "boundary": {
+        "edge": "min_characters",
+        "limit": "evidence_reference",
+        "position": "outside"
+      },
+      "case_id": "proposal-evidence-reference-length-below-minimum",
+      "expected": {
+        "error_type": "ProposalError",
+        "message": "proposal contains a prohibited or unsafe evidence reference",
+        "outcome": "error"
+      },
+      "input": {
+        "mutation": {
+          "field": "evidence_references",
+          "recompute_revision_digest": true,
+          "value": [
+            ""
+          ]
+        },
+        "source": "proposal_envelope"
+      },
+      "producer": "parse_envelope"
+    },
+    {
+      "boundary": {
+        "edge": "max_characters",
+        "limit": "evidence_reference",
+        "position": "at"
+      },
+      "case_id": "proposal-evidence-reference-length-at-maximum",
+      "expected": {
+        "outcome": "success",
+        "value": {
+          "created_at": "2026-08-01T12:00:00Z",
+          "delegation_chain": [
+            {
+              "actor_id": "harness-conformance",
+              "actor_kind": "harness",
+              "verification": "claimed"
+            }
+          ],
+          "evidence_references": [
+            "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+          ],
+          "intent": "Consider this sanitized conformance request.",
+          "proposal_id": "proposal-conformance-0001",
+          "record_type": "proposal_envelope",
+          "requester": {
+            "actor_id": "operator-conformance",
+            "actor_kind": "operator",
+            "verification": "claimed"
+          },
+          "revision_digest": "7c7f6762300491b4801895880f70fc2a4ddd0ad5926fbc4519715521c39c65ab",
+          "schema_version": 1,
+          "target": "mimir-engineer"
+        }
+      },
+      "input": {
+        "mutation": {
+          "count": 512,
+          "field": "evidence_references",
+          "recompute_revision_digest": true,
+          "repeat_item": "e"
+        },
+        "source": "proposal_envelope"
+      },
+      "producer": "parse_envelope"
+    },
+    {
+      "boundary": {
+        "edge": "max_characters",
+        "limit": "evidence_reference",
+        "position": "outside"
+      },
+      "case_id": "proposal-evidence-reference-length-above-maximum",
+      "expected": {
+        "error_type": "ProposalError",
+        "message": "proposal contains a prohibited or unsafe evidence reference",
+        "outcome": "error"
+      },
+      "input": {
+        "mutation": {
+          "count": 513,
+          "field": "evidence_references",
+          "recompute_revision_digest": true,
+          "repeat_item": "e"
+        },
+        "source": "proposal_envelope"
+      },
+      "producer": "parse_envelope"
+    },
+    {
+      "case_id": "proposal-contradictory-revision",
+      "expected": {
+        "error_type": "ProposalError",
+        "message": "proposal revision digest does not match its content",
+        "outcome": "error"
+      },
+      "input": {
+        "mutation": {
+          "field": "intent",
+          "value": "Changed without a new revision."
+        },
+        "source": "proposal_envelope"
+      },
+      "producer": "parse_envelope"
+    },
+    {
+      "argv": [
+        "reply",
+        "--message"
+      ],
+      "boundary": {
+        "edge": "min_non_whitespace_characters",
+        "limit": "reply_message",
+        "position": "at"
+      },
+      "case_id": "reply-message-at-minimum",
+      "expected": {
+        "outcome": "success",
+        "stdout_json": [
+          {
+            "choices": [
+              {
+                "message": {
+                  "content": "considered"
+                }
+              }
+            ]
+          },
+          {
+            "continuity_digest": "5cf32eb974cfb89bf9add518f252c4c5a714b629e0f086fdc06947fa33e9d8b5",
+            "proposal_id": "proposal-conformance-0001",
+            "proposal_revision_digest": "ea46d3d8cdffcfb7b6e29b91e10dfba72f2e086bd84eb784bf477e1c9448112d",
+            "response_digests": [
+              "36a9b8e8af25f84e42397a02d7004cff7875a8ca622ea3fe8de7f6c37c1e1b2f"
+            ],
+            "target": "mimir-engineer",
+            "updated_at": "2026-08-01T12:01:00Z"
+          }
+        ]
+      },
+      "generated_argument": {
+        "count": 1,
+        "repeat": "x"
+      },
+      "producer": "command_handler",
+      "stdin": {
+        "source": "proposal_envelope"
+      }
+    },
+    {
+      "argv": [
+        "reply",
+        "--message"
+      ],
+      "boundary": {
+        "edge": "min_non_whitespace_characters",
+        "limit": "reply_message",
+        "position": "outside"
+      },
+      "case_id": "reply-message-below-minimum",
+      "expected": {
+        "error_type": "ApiClientError",
+        "message": "profile request message is missing or too large",
+        "outcome": "error"
+      },
+      "generated_argument": {
+        "count": 1,
+        "repeat": " "
+      },
+      "producer": "command_handler",
+      "stdin": {
+        "source": "proposal_envelope"
+      }
+    },
+    {
+      "argv": [
+        "reply",
+        "--message"
+      ],
+      "boundary": {
+        "edge": "max_characters",
+        "limit": "reply_message",
+        "position": "at"
+      },
+      "case_id": "reply-message-at-maximum",
+      "expected": {
+        "outcome": "success",
+        "stdout_json": [
+          {
+            "choices": [
+              {
+                "message": {
+                  "content": "considered"
+                }
+              }
+            ]
+          },
+          {
+            "continuity_digest": "5cf32eb974cfb89bf9add518f252c4c5a714b629e0f086fdc06947fa33e9d8b5",
+            "proposal_id": "proposal-conformance-0001",
+            "proposal_revision_digest": "ea46d3d8cdffcfb7b6e29b91e10dfba72f2e086bd84eb784bf477e1c9448112d",
+            "response_digests": [
+              "36a9b8e8af25f84e42397a02d7004cff7875a8ca622ea3fe8de7f6c37c1e1b2f"
+            ],
+            "target": "mimir-engineer",
+            "updated_at": "2026-08-01T12:01:00Z"
+          }
+        ]
+      },
+      "generated_argument": {
+        "count": 16384,
+        "repeat": "x"
+      },
+      "producer": "command_handler",
+      "stdin": {
+        "source": "proposal_envelope"
+      }
+    },
+    {
+      "argv": [
+        "reply",
+        "--message"
+      ],
+      "boundary": {
+        "edge": "max_characters",
+        "limit": "reply_message",
+        "position": "outside"
+      },
+      "case_id": "reply-message-above-maximum",
+      "expected": {
+        "error_type": "ApiClientError",
+        "message": "profile request message is missing or too large",
+        "outcome": "error"
+      },
+      "generated_argument": {
+        "count": 16385,
+        "repeat": "x"
+      },
+      "producer": "command_handler",
+      "stdin": {
+        "source": "proposal_envelope"
+      }
+    }
+  ],
+  "contracts": {
+    "doctor_fields": [
+      "credential_available",
+      "route_registered",
+      "service_available",
+      "target"
+    ],
+    "limits": {
+      "created_at": "ISO 8601 parsed by datetime.fromisoformat",
+      "delegation_actor_id": {
+        "max_characters": 128,
+        "min_characters": 1
+      },
+      "delegation_chain": {
+        "max_items": 32,
+        "min_items": 1
+      },
+      "evidence_reference": {
+        "max_characters": 512,
+        "min_characters": 1
+      },
+      "evidence_references": {
+        "max_items": 128,
+        "min_items": 0
+      },
+      "intent": {
+        "max_characters": 8192,
+        "min_non_whitespace_characters": 1
+      },
+      "opaque_identifier": {
+        "max_characters": 128,
+        "min_characters": 8
+      },
+      "profile_name": {
+        "max_characters": 64,
+        "min_characters": 2
+      },
+      "reply_message": {
+        "max_characters": 16384,
+        "min_non_whitespace_characters": 1
+      }
+    },
+    "proposal_fields": [
+      "created_at",
+      "delegation_chain",
+      "evidence_references",
+      "intent",
+      "proposal_id",
+      "record_type",
+      "requester",
+      "revision_digest",
+      "schema_version",
+      "target"
+    ],
+    "status_arguments": [
+      "--proposal-id",
+      "--revision",
+      "--target"
+    ]
+  },
+  "producer": {
+    "command_handler": "profile_evolution.cli.command_handler",
+    "command_parser": "profile_evolution.cli.setup_parser",
+    "proposal_parser": "profile_evolution.proposals.parse_envelope"
+  },
+  "proposal_envelope": {
+    "created_at": "2026-08-01T12:00:00Z",
+    "delegation_chain": [
+      {
+        "actor_id": "harness-conformance",
+        "actor_kind": "harness",
+        "verification": "claimed"
+      }
+    ],
+    "evidence_references": [
+      "docs/conformance-input.md"
+    ],
+    "intent": "Consider this sanitized conformance request.",
+    "proposal_id": "proposal-conformance-0001",
+    "record_type": "proposal_envelope",
+    "requester": {
+      "actor_id": "operator-conformance",
+      "actor_kind": "operator",
+      "verification": "claimed"
+    },
+    "revision_digest": "ea46d3d8cdffcfb7b6e29b91e10dfba72f2e086bd84eb784bf477e1c9448112d",
+    "schema_version": 1,
+    "target": "mimir-engineer"
+  },
+  "schema_version": 1
+}

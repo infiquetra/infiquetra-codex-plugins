@@ -1,6 +1,6 @@
 # Portability Matrix
 
-Verified: 2026-07-29
+Verified: 2026-08-02
 
 Source snapshot:
 
@@ -21,6 +21,7 @@ tool-specific orchestration.
 | `discord-identity-assets` | proof-port | no | no | Codex-born reusable Discord visual identity workflow extracted from home-lab scripts and Norns/Mimir operating evidence. | Add one Codex skill plus deterministic scripts for bot and guild manifest validation, image post-processing, Discord upload/readback, receipt writeback, and secret-safe dry-run/live gates. |
 | `docs-generator` | deferred | yes | yes | Documentation generation needs separate proof for repo-specific output conventions. | Reassess after `test-suite` proof and validation patterns settle. |
 | `fleet-core` | proof-port | yes | no | Shared Codex model/profile resolution, proof schemas, leases, concurrency, orphan evidence, and compatibility policy. | Keep the narrow shared policy canonical in `plugins/fleet-core`, preserve native model-catalog V2 metadata, and keep consumer shims synchronized. Codex owns agent lifecycle and liveness. |
+| `hermes-profile-evolution` | proof-port | yes | yes | Profile dialogue requires producer-owned custody and command contracts plus a truthful native advisory boundary. | Call the real Team Mimir classifier, send bounded standard input to canonical Hermes, and ship only a Codex skill plus trusted advisory hook. |
 | `home-lab-ops` | included | yes | yes | Already visible in Codex cache and mostly instruction/reference content. | Keep skills and references, omit top-level agent persona. |
 | `identity-toolkit` | deferred | yes | yes | Identity flows are higher risk and need fresh Codex-specific validation before porting. | Inventory only for MVP. |
 | `marketplace-lister` | deferred | yes | yes | Marketplace mechanics differ by host and should wait for Codex marketplace validation. | Revisit after this repo is installed from a trusted source. |
@@ -38,6 +39,10 @@ tool-specific orchestration.
 | `unifi` | included | yes | yes | Already visible in Codex cache and skill-plus-script payload is portable with confirmation gates. | Keep skills, references, and scripts. |
 
 ## Notes
+
+- 2026-08-02: `hermes-profile-evolution` `0.1.0` consumes pinned producer conformance
+  artifacts. It exposes one Codex skill and one native advisory `PreToolUse` hook. Credentials,
+  profile mutation, offline queuing, and absolute same-user enforcement remain outside the plugin.
 
 - 2026-07-29: Codex 0.146 alignment removes repository-local agent copies, `select-agent`,
   snapshot feasibility gating, plugin-owned lifecycle substitutes, and Fleet audit/delegation

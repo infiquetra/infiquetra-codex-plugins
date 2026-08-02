@@ -1,0 +1,18 @@
+{
+  "description": "Advisory custody check for Codex-native file edits in Team Mimir.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "apply_patch|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$PLUGIN_ROOT/hooks/advisory.py\"",
+            "timeout": 8,
+            "statusMessage": "Checking Team Mimir profile custody"
+          }
+        ]
+      }
+    ]
+  }
+}
