@@ -82,11 +82,18 @@ model or effort departs from its class without a declared reason all fail the re
 falling back.
 
 Ultra is root-only. The write-intent column states what the approved contract expects an assignment
-to do. It is not a sandbox control. Codex 0.146.0 children inherit the parent turn's effective
-permission profile. A generated profile carries a model, an effort, and instruction text, and no key
-that could constrain a filesystem or a network. Scope comes from the operator-approved plan and
-contract; runtime readback reports the permission that actually applied. Luna remains V1 in the
-0.146 catalog, so the V2-only low profiles use Terra/low.
+to do. It is not a sandbox control. Codex 0.147.0 children inherit the parent turn's effective
+permission profile, and a child cannot widen beyond its parent: a child declaring
+`workspace-write` under a read-only root runs read-only, measured across all seven rows of
+[the permission receipt](../../docs/validation/codex-0147-permission-inheritance.json). A generated
+profile carries a model, an effort, and instruction text, and no key that could constrain a
+filesystem or a network. Scope comes from the operator-approved plan and contract; runtime readback
+reports the permission that actually applied.
+
+The low profiles use Terra/low by policy, not because Luna is unavailable. Luna passes the 0.147.0
+MultiAgent V2 override filter; promotion is available per profile through
+`sync_codex_agents.py --luna-canary-receipt` and is withheld from the committed bytes because the
+canary measured eligibility without measuring output quality.
 
 Generate and verify the maintained source profiles:
 

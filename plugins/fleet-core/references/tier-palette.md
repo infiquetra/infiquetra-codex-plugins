@@ -44,8 +44,15 @@ clamping, a hidden or API-ineligible model, an absent compatible fallback, and U
 fail loud.
 
 `scan-low` and `monitor-low` intentionally share model policy but remain distinct because their
-external-read boundaries differ. Codex 0.145.0 exposes Luna only through MultiAgent V1, so the
-V2-only cutover selects Terra/low for both profiles.
+external-read boundaries differ. Both select Terra/low.
+
+Luna is no longer excluded. Codex 0.147.0 gates model override on "the catalog does not report
+`disabled`" rather than on the catalog reporting `v2`, so the `v1` Luna row passes and a V2 session
+may select it. What keeps these two profiles on Terra is a policy choice rather than a capability
+limit: promotion runs per profile from a canary receipt passed at install time
+(`sync_codex_agents.py --luna-canary-receipt`), and the committed bytes stay unpromoted because that
+receipt measured collaboration-tool eligibility and deliberately did not measure output quality. A
+Luna child is offered no collaboration namespace, so only non-delegating leaves are ever candidates.
 
 ## Effort and Ultra
 

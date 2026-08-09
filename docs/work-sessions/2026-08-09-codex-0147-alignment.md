@@ -999,8 +999,80 @@ repository's own convention has it changing on every substantive commit — goes
 - Zero model calls. Every probe ran against a disposable `CODEX_HOME`; `~/.codex` was read but never
   written.
 
+## Phase 11 — U11, claim corrections and the negative inventory
+
+### Six locations, three dispositions
+
+The superseded conclusion — "Luna is unavailable to MultiAgent V2" — was written down in six
+places. Correcting all six identically would have been wrong in both directions: leaving a stale
+operational claim is the obvious failure, and editing a dated record so it says what we believe now
+destroys the evidence of what was believed then.
+
+| location | disposition |
+| --- | --- |
+| `scripts/build_codex_v2_orchestration_matrix.py` | updated |
+| `plugins/fleet-core/references/tier-palette.md` | updated |
+| `plugins/verified-workflows/README.md` | updated |
+| `docs/validation/codex-v2-orchestration-matrix.json` | frozen |
+| `plugins/verified-workflows/CHANGELOG.md` | frozen |
+| `docs/portability/matrix.md` | superseding note appended |
+
+The Verified Workflows README also asserted permission inheritance for Codex 0.146.0; it now names
+0.147.0 and cites the seven-row receipt U7 took.
+
+### The matrix builder cannot run
+
+`scripts/build_codex_v2_orchestration_matrix.py` digests repository-local profiles at
+`.codex/agents/*.toml` — which the 0.146 alignment deliberately removed, and which
+`tests/test_build_codex_v2_orchestration_matrix.py` asserts stay absent. Running it now fails with
+`project profile review_max is unreadable`.
+
+So the committed matrix cannot be regenerated. That decides its disposition: it is frozen historical
+evidence pinned by digest, and the inventory is what routes a reader from it to
+`docs/validation/codex-0147-luna-canary.json`. The builder's own string is still corrected, because
+source that would emit a falsehood if revived is wrong whether or not it runs today. Reviving the
+builder is recorded as an open question rather than attempted — deciding what a 0.145.0 attestation
+means when rebuilt from 0.147-era inputs is larger than a claim correction.
+
+### Provenance without relabelling (KTD2)
+
+The matrix header says `0.145.0`, and it stays saying that. Restamping the header because one row
+was reproved would claim evidence for every other row that was never retaken. Instead the builder
+gained `ROW_PROVENANCE`, which names per row the version its evidence came from and the artifact
+that supplies it. A test asserts the header version is **not** read from `CODEX_TARGET_VERSION` —
+wiring them together is exactly how a target silently becomes an observation.
+
+### Six no-change rows, each measured
+
+| upstream change | evidence it does not touch this repository |
+| --- | --- |
+| `codex exec --full-auto` removed | the flag is rejected on 0.147.0, and appears zero times here |
+| MCP 2026-07-28 protocol opt-in | no plugin manifest declares an MCP server |
+| Apps | no plugin declares an app id |
+| tool-registry collision policy | no plugin uses tool or registry keys; no MCP server ships |
+| symlink handling on install | `find plugins -type l` returns nothing |
+| portable Agent Plugin packaging | all eleven ship `.codex-plugin/`; no `.claude-plugin` or `.cursor-plugin` manifest exists, so the portable readers are never reached |
+
+The last one is recorded as an opportunity rather than a gap. This repository is the Codex-native
+adapter; adopting a portable manifest would be a packaging decision, not a 0.147 requirement.
+
+### The routing decision, recorded as reviewed
+
+The operator reviewed U10's inventory and kept both halves: the twenty-five default-implicit skills
+stay model-selectable, and saga's twenty-two plus Verified Workflows' three stay explicit-only. The
+saga 0.82.0 reasoning — explicit-only "so ordinary questions and narrow changes remain in the main
+session" — was re-examined against the measured behaviour and confirmed current. It is filed as
+`reviewed-and-accepted` so the next round finds a decision rather than an unexamined default.
+
+### Checks
+
+- Full suite excluding the plugin blocked by a missing imaging library: **2648 passed**.
+- Validator, legacy inventory `--check`, runtime proof and ruff all clean, re-run after the last
+  documentation edit — which caught a real drift this time. Editing `docs/portability/matrix.md`
+  moved its inventory entry; regenerating the inventory cleared it. The historical pin did not move,
+  because that file is classified `lineage-documentation` rather than `historical-evidence`.
+- No model calls.
+
 ## Next step
 
-U11 — stale-claim corrections and negative inventory, which now has three inputs waiting for it:
-U8's executor-backed finding, U10's implicit-injection inventory, and the `DECISIONS.md`
-classification question. U12 through U14 remain untouched.
+U12 — candidate packaging, freezing the bytes acceptance will install. U13 and U14 remain untouched.
