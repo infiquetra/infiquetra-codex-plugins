@@ -46,7 +46,7 @@ import subprocess
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Any, Iterable, Sequence
+from typing import Any, Iterable, Mapping, Sequence
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CAPABILITY_SNAPSHOT = (
@@ -626,7 +626,7 @@ def spawn_script(*, task_name: str, agent_type: str) -> tuple[list[str], str]:
     return [spawn, wait, done], done
 
 
-def capture_tool_specification(
+def record_offline_turn(
     *,
     codex_home: Path,
     workspace: Path,
@@ -634,19 +634,19 @@ def capture_tool_specification(
     child_profile: str | None = None,
     child_profile_config: Path | None = None,
     task_name: str = "probe_child",
+    where: str = "offline turn",
 ) -> list[dict[str, Any]]:
-    """Drive one offline Codex turn and return the reduced specification for every request.
+    """Drive one offline Codex turn and return every outbound request body, unreduced.
 
-    When ``child_profile`` is given, the root is scripted to spawn that profile, so the returned
-    list contains a child entry whose ``turn_is_spawned_child`` is true. That child entry is the
-    one worth having: a root's tool set says nothing about what a spawned profile is offered.
+    Split out so that callers asking different questions of the same turn share one driver. A
+    reduced projection answers "which tools were offered"; the raw body is what answers "what
+    text reached the model context", and reducing before both questions are asked would throw
+    away the evidence for the second.
     """
 
-    _assert_disposable_home(codex_home, "tool specification")  # fail early, before the stub
+    _assert_disposable_home(codex_home, where)  # fail early, before the stub
     if (child_profile is None) != (child_profile_config is None):
-        raise CapabilityProbeError(
-            "tool specification: a child profile needs both a name and a config file"
-        )
+        raise CapabilityProbeError(f"{where}: a child profile needs both a name and a config file")
     root_scripts, child_script = spawn_script(
         task_name=task_name, agent_type=child_profile or ""
     )
@@ -688,13 +688,74 @@ def capture_tool_specification(
             str(workspace),
             "Invoke the requested offline child probe.",
         ]
-        _run(argv, codex_home=codex_home, cwd=workspace, where="tool specification")
+        _run(argv, codex_home=codex_home, cwd=workspace, where=where)
         recorded = list(stub.requests)
     if not recorded:
-        raise CapabilityProbeError("tool specification: the probe recorded no outbound request")
+        raise CapabilityProbeError(f"{where}: the probe recorded no outbound request")
+    return recorded
+
+
+def capture_tool_specification(
+    *,
+    codex_home: Path,
+    workspace: Path,
+    root_model: str = "gpt-5.6-sol",
+    child_profile: str | None = None,
+    child_profile_config: Path | None = None,
+    task_name: str = "probe_child",
+) -> list[dict[str, Any]]:
+    """Drive one offline Codex turn and return the reduced specification for every request.
+
+    When ``child_profile`` is given, the root is scripted to spawn that profile, so the returned
+    list contains a child entry whose ``turn_is_spawned_child`` is true. That child entry is the
+    one worth having: a root's tool set says nothing about what a spawned profile is offered.
+    """
+
+    recorded = record_offline_turn(
+        codex_home=codex_home,
+        workspace=workspace,
+        root_model=root_model,
+        child_profile=child_profile,
+        child_profile_config=child_profile_config,
+        task_name=task_name,
+        where="tool specification",
+    )
     projections = [extract_tool_specification(body) for body in recorded]
     _require_requested_child(projections, child_requested=child_profile is not None)
     return projections
+
+
+def capture_context_injection(
+    *,
+    codex_home: Path,
+    workspace: Path,
+    markers: Mapping[str, str],
+    root_model: str = "gpt-5.6-sol",
+) -> dict[str, bool]:
+    """Report, per named marker, whether its text reached a real turn's model context.
+
+    Codex decides which skills to inject, so the only honest way to ask "is this skill offered
+    to the model?" is to assemble a turn and read what actually went out. Absence alone proves
+    nothing -- a marker missing from a request that carried no skills at all would look the same
+    as one deliberately withheld. What makes an absence evidence is a marker that DOES appear in
+    the same request (KTD7), which is why callers pass several at once and compare.
+    """
+
+    if not markers:
+        raise CapabilityProbeError("context injection: no markers to look for")
+    for name, text in markers.items():
+        if not isinstance(text, str) or not text:
+            raise CapabilityProbeError(f"context injection: marker {name!r} has no text")
+    recorded = record_offline_turn(
+        codex_home=codex_home,
+        workspace=workspace,
+        root_model=root_model,
+        where="context injection",
+    )
+    haystack = "\n".join(
+        json.dumps(body, sort_keys=True, ensure_ascii=False) for body in recorded
+    )
+    return {name: text in haystack for name, text in markers.items()}
 
 
 def _require_requested_child(

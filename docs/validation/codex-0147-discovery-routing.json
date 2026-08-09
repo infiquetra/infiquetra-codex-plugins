@@ -1,0 +1,284 @@
+{
+  "agent_profiles": {
+    "codex_home_agents_dir_after_installing_every_plugin": "absent",
+    "mechanism": "plugins/verified-workflows/scripts/sync_codex_agents.py",
+    "note": "Installing a plugin copies its agents/*.toml into the plugin cache and stops there. Codex reads custom agent profiles from $CODEX_HOME/agents, which no packaging path creates, so the profiles sit inert until the synchroniser runs.",
+    "profiles_present_inside_plugin_cache": true,
+    "separate_synchronisation_still_required": true
+  },
+  "claim": "codex-0147-discovery-and-routing",
+  "codex_cli_version_observed": "0.147.0",
+  "context_injection": {
+    "canaries": {
+      "u10-explicit-only": {
+        "injected": false,
+        "policy_file": "agents/openai.yaml with allow_implicit_invocation: false"
+      },
+      "u10-implicit-yes": {
+        "injected": true,
+        "policy_file": "agents/openai.yaml with allow_implicit_invocation: true"
+      },
+      "u10-no-policy-file": {
+        "injected": true,
+        "policy_file": null
+      }
+    },
+    "conclusion": "A skill with no agents/openai.yaml is injected into the model context. The absence of the explicit-only canary is evidence rather than a null result because two other canaries appear in the same recorded request.",
+    "documented_at": "plugin-creator skill reference shipped inside the codex 0.147.0 binary",
+    "documented_default": "true"
+  },
+  "criteria": {
+    "admin-scope-resolution": {
+      "measured": false,
+      "reason": "`admin` is in the 0.147 SkillScope enum but has no local origin on a developer machine: it needs a managed enterprise policy source, which is not configured here"
+    },
+    "agent-profile-packaging": {
+      "how": "checked for $CODEX_HOME/agents after installing all eleven plugins",
+      "measured": true
+    },
+    "context-injection-policy": {
+      "how": "three repo-scope canaries in one turn, read from the outbound request body",
+      "measured": true
+    },
+    "explicit-resolution-per-plugin": {
+      "how": "every skill directory in source compared against skills/list by qualified name",
+      "measured": true
+    },
+    "isolated-source-discovery": {
+      "how": "all eleven tracked plugins installed into a disposable home and listed back",
+      "measured": true
+    },
+    "removal-stops-resolution": {
+      "how": "one plugin removed and the listing re-read in the same home",
+      "measured": true
+    },
+    "search-scope-resolution": {
+      "how": "user, repo and system scopes each returned rows in one listing",
+      "measured": true
+    },
+    "skill-execution": {
+      "measured": false,
+      "reason": "executing a skill requires a model to choose it; this round is offline. Every row below states that a skill was OFFERED, never that it ran."
+    }
+  },
+  "findings": [
+    {
+      "id": "implicit-injection-unstated-for-eight-plugins",
+      "plugins": [
+        "deploy",
+        "discord-identity-assets",
+        "hermes-profile-evolution",
+        "home-lab-ops",
+        "mission-control",
+        "python-toolkit",
+        "test-suite",
+        "unifi"
+      ],
+      "severity": "operator-decision",
+      "skills": 25,
+      "statement": "Twenty-five skills across eight plugins carry no agents/openai.yaml, so they take the documented default and are injected into every model context. Only saga and verified-workflows declare explicit-only, and tests/test_explicit_skill_invocation.py asserts exactly those two plugins and is silent on the rest."
+    },
+    {
+      "id": "scope-vocabulary-is-not-global-workspace-personal",
+      "severity": "documentation",
+      "statement": "Skill scopes in 0.147 are user, repo, system and admin. Planning language that calls them Global, Workspace and Personal does not match the runtime enum."
+    }
+  ],
+  "isolated_discovery": {
+    "every_source_skill_resolved": true,
+    "listing_errors": [],
+    "marketplace_source": "local path to this worktree",
+    "per_plugin": {
+      "deploy": {
+        "all_resolved": true,
+        "explicit_only_declared": [],
+        "no_policy_file_so_implicit_by_default": [
+          "deploy",
+          "deploy-hotfix",
+          "deploy-notes",
+          "deploy-state",
+          "deploy-status"
+        ],
+        "skills_in_source": 5,
+        "skills_resolved": 5,
+        "unresolved": []
+      },
+      "discord-identity-assets": {
+        "all_resolved": true,
+        "explicit_only_declared": [],
+        "no_policy_file_so_implicit_by_default": [
+          "discord-identity-assets"
+        ],
+        "skills_in_source": 1,
+        "skills_resolved": 1,
+        "unresolved": []
+      },
+      "fleet-core": {
+        "all_resolved": true,
+        "explicit_only_declared": [],
+        "no_policy_file_so_implicit_by_default": [],
+        "skills_in_source": 0,
+        "skills_resolved": 0,
+        "unresolved": []
+      },
+      "hermes-profile-evolution": {
+        "all_resolved": true,
+        "explicit_only_declared": [],
+        "no_policy_file_so_implicit_by_default": [
+          "hermes-profile-evolution"
+        ],
+        "skills_in_source": 1,
+        "skills_resolved": 1,
+        "unresolved": []
+      },
+      "home-lab-ops": {
+        "all_resolved": true,
+        "explicit_only_declared": [],
+        "no_policy_file_so_implicit_by_default": [
+          "ansible-preflight",
+          "inventory-sync",
+          "monitoring-guard",
+          "proxmox-operations",
+          "vault-helper"
+        ],
+        "skills_in_source": 5,
+        "skills_resolved": 5,
+        "unresolved": []
+      },
+      "mission-control": {
+        "all_resolved": true,
+        "explicit_only_declared": [],
+        "no_policy_file_so_implicit_by_default": [
+          "board",
+          "flow",
+          "issues",
+          "labels",
+          "metrics",
+          "milestones",
+          "rollout"
+        ],
+        "skills_in_source": 7,
+        "skills_resolved": 7,
+        "unresolved": []
+      },
+      "python-toolkit": {
+        "all_resolved": true,
+        "explicit_only_declared": [],
+        "no_policy_file_so_implicit_by_default": [
+          "python-patterns",
+          "python-project-setup",
+          "python-testing-patterns"
+        ],
+        "skills_in_source": 3,
+        "skills_resolved": 3,
+        "unresolved": []
+      },
+      "saga": {
+        "all_resolved": true,
+        "explicit_only_declared": [
+          "brainstorm",
+          "ceo-review",
+          "code-review",
+          "doc-review",
+          "founder-review",
+          "handoff",
+          "ideate",
+          "implementation-spec",
+          "investigate",
+          "loop",
+          "office-hours",
+          "optimize",
+          "outcome",
+          "plan",
+          "product-review",
+          "promote",
+          "qa",
+          "resume",
+          "retro",
+          "spec",
+          "strategy",
+          "work"
+        ],
+        "no_policy_file_so_implicit_by_default": [],
+        "skills_in_source": 22,
+        "skills_resolved": 22,
+        "unresolved": []
+      },
+      "test-suite": {
+        "all_resolved": true,
+        "explicit_only_declared": [],
+        "no_policy_file_so_implicit_by_default": [
+          "run-quality-checks"
+        ],
+        "skills_in_source": 1,
+        "skills_resolved": 1,
+        "unresolved": []
+      },
+      "unifi": {
+        "all_resolved": true,
+        "explicit_only_declared": [],
+        "no_policy_file_so_implicit_by_default": [
+          "unifi-network",
+          "unifi-protect"
+        ],
+        "skills_in_source": 2,
+        "skills_resolved": 2,
+        "unresolved": []
+      },
+      "verified-workflows": {
+        "all_resolved": true,
+        "explicit_only_declared": [
+          "appsec-audit",
+          "review-workflow",
+          "run"
+        ],
+        "no_policy_file_so_implicit_by_default": [],
+        "skills_in_source": 3,
+        "skills_resolved": 3,
+        "unresolved": []
+      }
+    },
+    "plugins_installed": 11,
+    "qualified_name_form": "<plugin>:<skill>",
+    "skills_in_source": 50,
+    "skills_resolved": 50
+  },
+  "limitations": [
+    "Offered is not executed. Nothing here shows a model choosing or running a skill.",
+    "Skill discovery is not confined to CODEX_HOME. Even with a disposable home the listing included the operator's own ~/.agents/skills at user scope, so the user count is repository skills plus whatever that directory holds.",
+    "The admin scope was not exercised; no managed policy source exists on this machine."
+  ],
+  "method": {
+    "injection_instrument": "scripts/codex_capability_probe.py capture_context_injection",
+    "kind": "isolated plugin install plus offline turn capture",
+    "listing_instrument": "codex app-server, JSON-RPC skills/list over stdio",
+    "model_calls": 0,
+    "note": "Every plugin was installed from this worktree into a disposable CODEX_HOME through `codex plugin marketplace add` and `codex plugin add`, so discovery is measured against repository source rather than against whatever the operator already had installed. The injection rows come from a real turn assembled against a local Responses API stand-in, so the outbound request is read without any model call."
+  },
+  "removal": {
+    "plugin_removed": "deploy@infiquetra-codex-plugins",
+    "removed_plugin_rows_after": 0,
+    "rows_after": 59,
+    "rows_before": 63,
+    "stops_resolving": true,
+    "unrelated_plugin_rows_after": {
+      "saga": 22
+    }
+  },
+  "scopes": {
+    "admin": "not observed; see criteria.admin-scope-resolution",
+    "enum_in_0_147": [
+      "user",
+      "repo",
+      "system",
+      "admin"
+    ],
+    "observed_counts": {
+      "repo": 1,
+      "system": 6,
+      "user": 57
+    },
+    "plugin_skills_resolve_at": "user",
+    "repo_scope_origin": "<workspace>/.agents/skills/<name>/SKILL.md"
+  }
+}

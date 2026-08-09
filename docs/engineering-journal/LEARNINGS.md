@@ -1,5 +1,41 @@
 # Learnings
 
+## 2026-08-09: A Gate Run Before The Last Edit Is A Gate That Did Not Run
+
+The U9 commit (4c3e4a0) shipped a tree that fails `scripts/validate_codex_plugins.py`. The commit
+message says the validator was clean, and it had been — measured, honestly, and then invalidated by
+my own next action. The order was: regenerate the runtime proof, run the validator (passed), run the
+suite, run ruff, **then** append to `docs/engineering-journal/DECISIONS.md` and the work-session
+document, then commit. The documentation edit moved a digest the validator pins, and nothing re-ran
+it.
+
+**Evidence.** `git stash -u` on the following unit's working tree, leaving the committed U9 state
+alone, reproduces it directly:
+
+```
+Codex plugin validation failed (current):
+- docs/engineering-journal/DECISIONS.md: legacy workflow content digest drifted
+```
+
+**Mechanism.** `DECISIONS.md` is classified `historical-evidence` by the inventory classifier
+(`scripts/validate_codex_plugins.py:822-826` puts the whole `docs/engineering-journal/` tree in that
+class, with one hand-carved exception for `QUEUED.md`), and every historical-evidence entry feeds
+`LEGACY_WORKFLOW_HISTORICAL_INVENTORY_SHA256`. Appending to it is therefore *designed* to trip the
+validator, so that editing a file the repository treats as a historical record is a reviewed act
+rather than a silent one. The pin worked exactly as intended. What failed was the order I ran things
+in.
+
+This collides with the standing convention that a decision entry ships in the same commit as the
+change it explains: that convention guarantees `DECISIONS.md` moves constantly, while the classifier
+treats it as byte-stable evidence. Bumping the pin is the correct mechanical fix and is what this
+round does; whether `DECISIONS.md` belongs in `mutable-engineering-journal` alongside `QUEUED.md` is
+a real question, and it is recorded for the stale-claim unit rather than settled in passing.
+
+**Generalizable rule.** Verification is ordered, not merely present. Run every gate **after the last
+byte changes**, including documentation — a green result from before your final edit is evidence
+about a tree you did not commit. When a report says "validator clean", the honest question is not
+"did I run it?" but "did I run it on exactly these bytes?"
+
 ## 2026-08-09: An Adversarial Review Loop Without A Threat Model Never Terminates
 
 **Evidence:** the U5 runtime proof harness. Cross-review was run in adversarial register and went

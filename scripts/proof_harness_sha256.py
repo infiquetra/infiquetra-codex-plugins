@@ -19,6 +19,12 @@ from __future__ import annotations
 # read per profile from a canary receipt instead of one pair-wide boolean. Both the renderer and
 # the profile synchroniser changed, and the receipt adjudication moved out of the proof tool into
 # the renderer so one rule serves both. Receipts carrying the previous digest are invalid.
+#
+# Rotated again for U10: the offline turn driver was split out of `capture_tool_specification`
+# so a second caller can read the raw request bodies, and `capture_context_injection` was added
+# on top of it to measure which skills actually reach a turn's model context. The proof tool
+# gained `validate_discovery_routing`. Both are instrument changes, so receipts carrying
+# d79eba136ccd are invalid.
 RUNTIME_PROOF_HARNESS_SHA256 = (
-    "d79eba136ccd2cc4e94f9e4185fa4a8b74313c01ef67816ce2fac78f8bb4aa8f"
+    "a3a8ed57126bac533199144fd01f75e75ac79f9c722590fd6b634e37e318eff4"
 )

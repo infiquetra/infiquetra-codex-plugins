@@ -904,6 +904,88 @@ remove.
 - Zero model calls. Sync exercised as a dry run against a scratch target; `--allow-real-profile`
   withheld and `~/.codex` untouched.
 
+## Phase 10 — U10, discovery and routing
+
+### Measured against repository source, not against what happened to be installed
+
+Every one of the eleven tracked plugins was installed into a disposable `CODEX_HOME` from this
+worktree, registered as a local marketplace through `codex plugin marketplace add` and
+`codex plugin add`. Discovery is therefore a statement about the source in this branch. All fifty
+skills in source resolved, with zero listing errors, under the qualified form `<plugin>:<skill>`.
+
+Removing one plugin removes exactly its rows: sixty-three to fifty-nine, no `deploy:` entries left,
+saga's twenty-two untouched.
+
+### The scope vocabulary in the plan was wrong
+
+Skill scopes in 0.147 are `user`, `repo`, `system` and `admin` — not the Global, Workspace and
+Personal the planning language used. Three of the four were observed in one listing. `admin` was
+not: it needs a managed enterprise policy source, which a developer machine does not have, so it is
+recorded as unmeasured with that reason rather than quietly counted as passing.
+
+### The finding that matters: half the repository is implicitly injected
+
+Codex 0.147 reads `agents/openai.yaml` and its `policy.allow_implicit_invocation`. The reference
+shipped inside the binary states the rule plainly:
+
+> When false, the skill is not injected into the model context by default, but can still be invoked
+> explicitly via `$skill`. **Defaults to true.**
+
+That default was measured rather than taken on faith. Three repo-scope canaries in one offline turn,
+read out of the request body that Codex actually sent:
+
+| canary | `agents/openai.yaml` | injected into model context |
+| --- | --- | --- |
+| `u10-explicit-only` | `allow_implicit_invocation: false` | no |
+| `u10-implicit-yes` | `allow_implicit_invocation: true` | yes |
+| `u10-no-policy-file` | absent | **yes** |
+
+The absence in row one is evidence rather than a null result precisely because the other two markers
+appear in the same recorded request (KTD7).
+
+**Twenty-five skills across eight plugins ship no `agents/openai.yaml` at all** — deploy,
+mission-control, home-lab-ops, python-toolkit, unifi, test-suite, discord-identity-assets, and
+hermes-profile-evolution. Every one of them is injected into the model context by default. Only saga
+(22) and verified-workflows (3) declare explicit-only, and
+`tests/test_explicit_skill_invocation.py` asserts exactly those two plugins and is silent on the
+rest.
+
+This is recorded as an inventory, not corrected. Whether those skills should be implicitly routable
+is the operator's call; what U10 refuses to allow is for the answer to go unrecorded, which is how
+it stood before.
+
+### R21 answers negatively, and cleanly
+
+After installing all eleven plugins, `$CODEX_HOME/agents` **does not exist**. The `agents/*.toml`
+files are copied into the plugin cache and stop there. Codex reads custom agent profiles from
+`$CODEX_HOME/agents`, which no packaging path creates, so the profiles sit inert until
+`sync_codex_agents.py` runs. Custom agent profiles still require their own synchronisation.
+
+### A gate that had already failed
+
+`scripts/validate_codex_plugins.py` failed at the start of this unit — and the failure was inherited
+from the U9 commit, not caused by U10. I had run the validator before appending to
+`DECISIONS.md`, and the append moves a digest the validator pins. The U9 commit message says the
+validator was clean; it had been, on a tree that was not the one committed. Recorded in
+`LEARNINGS.md` with the general rule: run every gate after the last byte changes, documentation
+included.
+
+The mechanical fix is a deliberate rotation of `LEGACY_WORKFLOW_HISTORICAL_INVENTORY_SHA256`
+alongside the regenerated inventory. The deeper question — whether `DECISIONS.md` belongs in
+`mutable-engineering-journal` with `QUEUED.md` rather than in `historical-evidence`, given that the
+repository's own convention has it changing on every substantive commit — goes to U11.
+
+### Checks
+
+- Full suite excluding the plugin blocked by a missing imaging library: **2629 passed** (2609
+  before).
+- Validator, legacy inventory `--check`, runtime proof and ruff all clean, re-run after the last
+  documentation edit rather than before it.
+- Zero model calls. Every probe ran against a disposable `CODEX_HOME`; `~/.codex` was read but never
+  written.
+
 ## Next step
 
-U10 — discovery and routing proof. U11 through U14 remain untouched.
+U11 — stale-claim corrections and negative inventory, which now has three inputs waiting for it:
+U8's executor-backed finding, U10's implicit-injection inventory, and the `DECISIONS.md`
+classification question. U12 through U14 remain untouched.

@@ -1236,6 +1236,100 @@ def validate_skill_resources(payload: Mapping[str, Any], where: str = "skill res
             )
 
 
+DISCOVERY_ROUTING = REPO_ROOT / "docs" / "validation" / "codex-0147-discovery-routing.json"
+# The scopes Codex 0.147 defines. Pinned here so a receipt cannot quietly invent one, and so a
+# scope added upstream shows up as a refusal rather than as silence.
+SKILL_SCOPES = frozenset({"user", "repo", "system", "admin"})
+
+
+def validate_discovery_routing(
+    payload: Mapping[str, Any], where: str = "discovery routing"
+) -> None:
+    """Refuse a discovery receipt that reports a skill as run, or hides an unresolved skill.
+
+    Two conflations are worth refusing by construction. A skill being listed is not a skill being
+    executed, and a receipt that blurs them turns "the catalog offered this" into "this works".
+    And a per-plugin row claiming everything resolved while still naming unresolved skills is the
+    same overclaim in a smaller space.
+    """
+
+    for field in ("claim", "codex_cli_version_observed", "criteria", "isolated_discovery",
+                  "scopes", "removal", "context_injection", "agent_profiles"):
+        if field not in payload:
+            raise RuntimeProofError(f"{where} is missing {field}")
+    observed = payload["codex_cli_version_observed"]
+    if not isinstance(observed, str) or not CODEX_VERSION_RE.fullmatch(observed):
+        raise RuntimeProofError(f"{where} records no observed Codex version")
+
+    criteria = payload["criteria"]
+    if not isinstance(criteria, Mapping) or not criteria:
+        raise RuntimeProofError(f"{where} declares no criteria")
+    for name, entry in criteria.items():
+        if not isinstance(entry, Mapping) or not isinstance(entry.get("measured"), bool):
+            raise RuntimeProofError(f"{where} criterion {name!r} does not declare `measured`")
+        if not entry["measured"] and not entry.get("reason"):
+            raise RuntimeProofError(f"{where} criterion {name!r} is unmeasured with no reason")
+    # Execution is the one thing an offline round cannot show. Recording it as measured would be
+    # the offered-versus-executed conflation this receipt exists to keep straight.
+    if criteria.get("skill-execution", {}).get("measured"):
+        raise RuntimeProofError(
+            f"{where} claims skill execution was measured; listing a skill is not running one"
+        )
+
+    discovery = payload["isolated_discovery"]
+    if not isinstance(discovery, Mapping):
+        raise RuntimeProofError(f"{where} records no isolated discovery")
+    if discovery.get("listing_errors"):
+        raise RuntimeProofError(
+            f"{where} records listing errors: {discovery['listing_errors']}"
+        )
+    per_plugin = discovery.get("per_plugin")
+    if not isinstance(per_plugin, Mapping) or not per_plugin:
+        raise RuntimeProofError(f"{where} assesses no plugins")
+    for plugin, row in per_plugin.items():
+        if not isinstance(row, Mapping):
+            raise RuntimeProofError(f"{where} plugin {plugin!r} is not an object")
+        for field in ("skills_in_source", "skills_resolved", "all_resolved", "unresolved"):
+            if field not in row:
+                raise RuntimeProofError(f"{where} plugin {plugin!r} is missing {field}")
+        if row["all_resolved"] and row["unresolved"]:
+            raise RuntimeProofError(
+                f"{where} plugin {plugin!r} claims everything resolved while naming "
+                f"{row['unresolved']} as unresolved"
+            )
+        if row["all_resolved"] and row["skills_resolved"] != row["skills_in_source"]:
+            raise RuntimeProofError(
+                f"{where} plugin {plugin!r} claims everything resolved but resolved "
+                f"{row['skills_resolved']} of {row['skills_in_source']}"
+            )
+
+    scopes = payload["scopes"]
+    observed_scopes = set(scopes.get("observed_counts") or {})
+    unknown = sorted(observed_scopes - SKILL_SCOPES)
+    if unknown:
+        raise RuntimeProofError(f"{where} reports scopes Codex 0.147 does not define: {unknown}")
+    if not observed_scopes:
+        raise RuntimeProofError(f"{where} observed no scope at all")
+
+    injection = payload["context_injection"]
+    canaries = injection.get("canaries")
+    if not isinstance(canaries, Mapping) or len(canaries) < 2:
+        raise RuntimeProofError(
+            f"{where} needs at least two injection canaries; one absent marker on its own "
+            f"cannot distinguish a withheld skill from a request that carried none"
+        )
+    if not any(row.get("injected") for row in canaries.values()):
+        raise RuntimeProofError(
+            f"{where} records no injected canary, so the absent ones are a null result"
+        )
+
+    profiles = payload["agent_profiles"]
+    if profiles.get("separate_synchronisation_still_required") is not True:
+        raise RuntimeProofError(
+            f"{where} does not record that custom agent profiles still need their own sync"
+        )
+
+
 def build_proof(
     *,
     snapshot: dict[str, Any],
