@@ -1,5 +1,62 @@
 # Decisions
 
+## 2026-08-08: Model Eligibility Is One Catalog Fact Plus Two Derived Projections
+
+Codex 0.147.0 relaxed the MultiAgent V2 model gate from "the catalog must report `v2`" to "the catalog
+must not report `Disabled`" (`codex-rs/core/src/tools/handlers/multi_agents_common.rs`, function
+`model_supports_multi_agent_backend`). Luna is catalogued `v1`, so it moved from rejected to accepted as
+a V2 child.
+
+The repository had stored that runtime observation as a permanent property. `CatalogModel.selectable` at
+`plugins/fleet-core/scripts/fleet_commons/codex_model_catalog.py:55` never consulted
+`multi_agent_version`; the exclusion was frozen into policy data as `"preferred": {"model":
+"gpt-5.6-terra"}` on the `scan-low` and `monitor-low` execution classes in `models.json`, then restated
+in the renderer, the generated profiles, the validation matrix, and four prose documents. None of those
+restatements could notice the gate had changed.
+
+Only the catalog's `multi_agent_version` is an independent source fact. Both values the repository needs
+are derived from it by rules Codex owns: passing the V2 explicit-model override filter (true unless the
+catalog says `Disabled`), and receiving collaboration tools (a V2 root always; a V2 child only when its
+own model reports `v2`, per `codex-rs/core/src/tools/spec_plan.rs:533-543`). The projections carry
+versioned rule identifiers and Codex provenance so a future rule change is detected rather than silently
+mis-read.
+
+A Luna child is therefore a non-delegating leaf — correct for bounded scanning and allowlisted
+observation, which should not delegate. That is a derived runtime expectation of effective model plus
+session position, never a permanent property of a profile.
+
+Rejected: modelling the three values as independent facts, which repeats the original defect in a new
+shape; and treating this as a text correction, which leaves the conflation in the data model.
+
+Revisit when Codex changes either derivation rule, or when Luna's catalog entry reports `v2` — at which
+point the collaboration expectation inverts and the rule identifiers should surface it.
+
+Plan: `docs/plans/2026-08-08-codex-0147-alignment-plan.md`.
+
+## 2026-08-08: One Sourced Codex Version Constant Replaces Four Hard Pins
+
+The Codex version was hard-pinned as an exact string in four independent places: the proof runner
+(`scripts/prove_verified_workflows_runtime.py:139`), two test assertions
+(`tests/test_codex_runtime_capability_snapshot.py:81` at `0.146.0` and
+`tests/test_build_codex_v2_orchestration_matrix.py:28` at `0.145.0` — already drifted apart), and a JSON
+Schema `const` in `docs/validation/codex-runtime-capability-snapshot.schema-r3.json`. The proof runner
+raises on any other value, so the tooling could not run against a 0.147.0 snapshot at all.
+
+A single `CODEX_TARGET_VERSION` now feeds all four, with the schema file generated rather than
+hand-edited. The capability snapshot moves to a new revision (`schema-r4.json`, `schema_version` 3)
+because the repository already uses revision files as its idiom and an explicit revision makes outside
+breakage visible; `scripts/port_contract.py:379` widens from `{1, 2}` accordingly.
+
+Rejected: re-pinning the four literals to `0.147.0`, which is what every prior round did. It keeps each
+gate independently readable and the diff small, but rebuilds the same four-place restatement — the exact
+pattern that let the superseded Luna claim persist. The two assertions having already drifted to
+different versions is the evidence that restatement does not hold.
+
+Revisit when the generation step proves more costly than the drift it prevents, or if a consumer needs
+to pin a different version than the repository targets.
+
+Plan: `docs/plans/2026-08-08-codex-0147-alignment-plan.md`.
+
 ## 2026-08-02: Hermes Profile Evolution Remains A Thin Codex Adapter
 
 The Codex plugin calls Team Mimir's real classifier and canonical `hermes profile-request` instead
