@@ -1,5 +1,35 @@
 # Learnings
 
+## 2026-08-09: A Gate Whose Success Branch Has Never Executed Is Not A Gate
+
+**Evidence:** commit `4c3e4a0` (U9 of the Codex 0.147 alignment, pull request 78);
+`plugins/verified-workflows/scripts/render_codex_agents.py`, the Luna promotion branch of
+`resolve_profile`.
+
+The Luna promotion path had a command-line flag (`sync_codex_agents.py --luna-canary-receipt`), a
+receipt schema, documentation describing when promotion applies, and tests. It had never once run.
+The gate asked whether the catalog row reported `multi_agent_version == "v2"`, and no row in the
+native catalog reports `"v2"` — the field carries `v1` or `disabled`. Codex 0.147.0 gates model
+override on the row **not** reporting `disabled`, which is a different question with a different
+answer for exactly the rows we cared about.
+
+**Mechanism:** every test exercised the refusal branch, because the refusal branch is the one the
+condition could reach. A suite that is green on "the gate correctly refuses" says nothing about
+whether the gate can ever admit. The equality test read like a reasonable projection of the upstream
+rule, so review saw a plausible sentence rather than an unreachable one — the defect is invisible in
+a diff and invisible in a passing suite, and only appears when someone asks which inputs make the
+condition true and finds there are none.
+
+This is the shape the whole round was built around: a runtime observation ("Luna is V1, so it cannot
+be used") frozen into permanent policy, then restated across surfaces — a tier palette, a README, a
+matrix builder, a portability note — none of which can notice the upstream rule changed underneath
+them. The equality test was that frozen observation compiled into code.
+
+**Generalizable rule:** for any conditional guarding a privileged path, name the concrete input that
+makes it true before trusting it. If no such input exists in the data the condition reads, the path
+is documentation, not behavior — and add the test that exercises the admitting branch, not only the
+refusing one.
+
 ## 2026-08-09: A Gate Run Before The Last Edit Is A Gate That Did Not Run
 
 The U9 commit (4c3e4a0) shipped a tree that fails `scripts/validate_codex_plugins.py`. The commit
