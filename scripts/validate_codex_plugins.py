@@ -628,6 +628,7 @@ def validate_repository(root: Path, mode: str = "current") -> list[str]:
         "cutover" if mode == "cutover" else "unit",
         errors,
     )
+    validate_developer_instruction_contract(root, errors)
     validate_hermes_profile_evolution(root, errors)
     validate_saga_family_docs(root, errors)
     validate_deletion_migration_map(root, errors)
@@ -1729,6 +1730,86 @@ def validate_provenance(
             errors.append(f"provenance missing `{plugin_name}`")
     if "Proof-Port Recipe" not in text or "test-suite" not in text:
         errors.append("provenance missing test-suite proof-port recipe")
+
+
+# Every Codex configuration surface this repository ships. The developer-instruction contract is
+# a property of the whole set, not of one file, so the set is named here and the scan below fails
+# when a surface exists that is not listed -- adding a config file without coverage is the failure
+# mode this guards, not a missing key in the one file we happen to remember.
+CODEX_CONFIG_SURFACES = (Path(".codex/config.toml"),)
+SUBAGENT_DEVELOPER_INSTRUCTIONS_KEY = "subagent_developer_instructions"
+
+
+def _discover_codex_config_surfaces(root: Path) -> list[Path]:
+    """Every config.toml this repository ships, relative to root, excluding vendored caches."""
+    found: list[Path] = []
+    for path in sorted(root.rglob("config.toml")):
+        relative = path.relative_to(root)
+        parts = relative.parts
+        if ".git" in parts or "node_modules" in parts:
+            continue
+        # Installed Codex cache copies under a plugin are not maintained source.
+        if "plugins" in parts and ".codex" in parts:
+            continue
+        found.append(relative)
+    return found
+
+
+def validate_developer_instruction_contract(root: Path, errors: list[str]) -> None:
+    """Prove the subagent developer-instruction setting stays unset across every shipped surface.
+
+    Codex 0.147.0 added features.multi_agent_v2.subagent_developer_instructions. Leaving it unset
+    means a spawned child inherits the parent's developer instructions; setting it blank clears
+    them; a role-specific instruction on the profile wins either way. This repository deliberately
+    relies on the unset/inherit behavior and renders per-role instructions into each profile, so
+    the setting must stay absent and each managed profile must carry its own non-empty text.
+    """
+    discovered = _discover_codex_config_surfaces(root)
+    uncovered = [path for path in discovered if path not in CODEX_CONFIG_SURFACES]
+    for path in uncovered:
+        errors.append(
+            f"Codex configuration surface `{path}` is not covered by the "
+            "developer-instruction contract; add it to CODEX_CONFIG_SURFACES"
+        )
+
+    for relative in CODEX_CONFIG_SURFACES:
+        path = root / relative
+        if not path.is_file():
+            errors.append(f"Codex configuration surface `{relative}` is missing")
+            continue
+        try:
+            config = tomllib.loads(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, tomllib.TOMLDecodeError) as exc:
+            errors.append(f"Codex configuration surface `{relative}` is unreadable: {exc}")
+            continue
+        features = config.get("features")
+        if not isinstance(features, dict):
+            errors.append(f"`{relative}` must declare a [features] table")
+            continue
+        multi_agent_v2 = features.get("multi_agent_v2")
+        if multi_agent_v2 is not True:
+            errors.append(
+                f"`{relative}` must keep features.multi_agent_v2 as the boolean form `true`; "
+                f"found {multi_agent_v2!r}"
+            )
+        if isinstance(multi_agent_v2, dict) and SUBAGENT_DEVELOPER_INSTRUCTIONS_KEY in multi_agent_v2:
+            errors.append(
+                f"`{relative}` must leave "
+                f"features.multi_agent_v2.{SUBAGENT_DEVELOPER_INSTRUCTIONS_KEY} unset"
+            )
+
+    agents_dir = root / "plugins" / "verified-workflows" / "agents"
+    for profile in sorted(agents_dir.glob("*.toml")):
+        try:
+            rendered = tomllib.loads(profile.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, tomllib.TOMLDecodeError) as exc:
+            errors.append(f"managed profile `{profile.name}` is unreadable: {exc}")
+            continue
+        instructions = rendered.get("developer_instructions")
+        if not isinstance(instructions, str) or not instructions.strip():
+            errors.append(
+                f"managed profile `{profile.name}` must carry non-empty developer_instructions"
+            )
 
 
 def validate_hermes_profile_evolution(root: Path, errors: list[str]) -> None:

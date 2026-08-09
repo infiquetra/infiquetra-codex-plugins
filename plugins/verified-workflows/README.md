@@ -90,6 +90,25 @@ The plugin `agents/` directory is canonical. Repository-local `.codex/agents/` o
 maintained. Isolated synchronization remains available for source canaries; any current-user profile
 apply is a separate operator-approved release action.
 
+### Developer instructions for spawned children
+
+Codex 0.147.0 added `features.multi_agent_v2.subagent_developer_instructions`, which controls what a
+spawned child inherits. The three behaviors:
+
+| Setting | Effect on a spawned child |
+| --- | --- |
+| Unset | Inherits the parent turn's developer instructions |
+| Set to a blank string | Clears them, so the child starts with none |
+| Any value | A role-specific instruction rendered into the child's profile still wins |
+
+This plugin deliberately leaves the setting **unset** and renders per-role instructions into every
+managed profile instead, so a child's behavior is a property of the profile it runs under rather than
+of ambient configuration. `validate_developer_instruction_contract` enforces both halves: the setting
+stays absent from every shipped Codex configuration surface, and each of the seven managed profiles
+carries its own non-empty `developer_instructions`. Adding a new `config.toml` without registering it
+fails validation, because the contract is a property of the whole surface set rather than of one
+remembered file.
+
 ## Runtime And Result Proof
 
 Requested launch fields, profile bytes, prompts, and child self-report do not prove execution. Before

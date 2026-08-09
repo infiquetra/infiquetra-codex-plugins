@@ -935,3 +935,92 @@ def test_runtime_scratch_directories_are_excluded_from_the_legacy_token_scan(tmp
 
     assert "tracked.md" in facts
     assert not [path for path in facts if path.startswith(".saga/")]
+
+
+# --- U3: the developer-instruction contract -------------------------------------------------
+#
+# Codex 0.147.0 added features.multi_agent_v2.subagent_developer_instructions. Unset means a
+# spawned child inherits the parent's developer instructions, blank clears them, and a
+# role-specific instruction on the profile wins either way. This repository relies on the
+# unset/inherit behavior and renders per-role text into each managed profile, so the contract is
+# that the setting stays absent AND every profile carries its own non-empty instructions.
+
+
+def _developer_instruction_fixture(tmp_path: Path) -> Path:
+    """A minimal tree carrying only the surfaces the contract inspects."""
+    root = tmp_path / "repo"
+    shutil.copytree(REPO_ROOT / ".codex", root / ".codex")
+    shutil.copytree(
+        REPO_ROOT / "plugins" / "verified-workflows" / "agents",
+        root / "plugins" / "verified-workflows" / "agents",
+    )
+    return root
+
+
+def test_developer_instruction_contract_holds_on_the_current_repository() -> None:
+    errors: list[str] = []
+    validator.validate_developer_instruction_contract(REPO_ROOT, errors)
+
+    assert errors == []
+
+
+def test_developer_instruction_fixture_baseline_is_clean(tmp_path: Path) -> None:
+    """Guards the negative cases below: a dirty baseline would make them meaningless."""
+    errors: list[str] = []
+    validator.validate_developer_instruction_contract(
+        _developer_instruction_fixture(tmp_path), errors
+    )
+
+    assert errors == []
+
+
+def test_configuration_carrying_the_subagent_key_fails(tmp_path: Path) -> None:
+    """The key is a CONFIGURATION key, not a profile key, so the config surface is what fails."""
+    root = _developer_instruction_fixture(tmp_path)
+    (root / ".codex" / "config.toml").write_text(
+        'approval_policy = "never"\n\n[features]\nmulti_agent = true\n\n'
+        '[features.multi_agent_v2]\nsubagent_developer_instructions = "leaked"\n',
+        encoding="utf-8",
+    )
+    errors: list[str] = []
+    validator.validate_developer_instruction_contract(root, errors)
+
+    assert any(
+        validator.SUBAGENT_DEVELOPER_INSTRUCTIONS_KEY in error and "unset" in error
+        for error in errors
+    )
+
+
+def test_boolean_feature_form_must_survive(tmp_path: Path) -> None:
+    root = _developer_instruction_fixture(tmp_path)
+    (root / ".codex" / "config.toml").write_text(
+        "[features]\nmulti_agent = true\nmulti_agent_v2 = false\n", encoding="utf-8"
+    )
+    errors: list[str] = []
+    validator.validate_developer_instruction_contract(root, errors)
+
+    assert any("boolean form" in error for error in errors)
+
+
+def test_a_new_configuration_surface_without_coverage_fails(tmp_path: Path) -> None:
+    """The contract is a property of the whole surface set, not of one remembered file."""
+    root = _developer_instruction_fixture(tmp_path)
+    (root / "plugins" / "newthing").mkdir(parents=True)
+    (root / "plugins" / "newthing" / "config.toml").write_text("a = 1\n", encoding="utf-8")
+    errors: list[str] = []
+    validator.validate_developer_instruction_contract(root, errors)
+
+    assert any("not covered by the developer-instruction contract" in error for error in errors)
+
+
+def test_every_managed_profile_carries_non_empty_developer_instructions(tmp_path: Path) -> None:
+    root = _developer_instruction_fixture(tmp_path)
+    (root / "plugins" / "verified-workflows" / "agents" / "scan_low.toml").write_text(
+        'model = "gpt-5.6-terra"\n', encoding="utf-8"
+    )
+    errors: list[str] = []
+    validator.validate_developer_instruction_contract(root, errors)
+
+    assert any(
+        "scan_low.toml" in error and "developer_instructions" in error for error in errors
+    )

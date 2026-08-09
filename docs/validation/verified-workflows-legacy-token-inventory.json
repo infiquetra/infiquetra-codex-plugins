@@ -971,7 +971,7 @@
     {
       "classification": "lineage-documentation",
       "path": "plugins/verified-workflows/PORTABILITY.md",
-      "sha256": "435a84ab0429cc1c38425a7fa9d9f2b17c3f87a35245f6430da1b1fa9f9e40f7",
+      "sha256": "e76b16fcd7bfe4673b8df23544929dee0e0a0458b191640e18cb942f6201309d",
       "tokens": [
         "team-execution"
       ]
@@ -1149,7 +1149,7 @@
     {
       "classification": "migration-fixture",
       "path": "tests/test_validate_codex_plugins.py",
-      "sha256": "f713d4908944cd0d1d8f64cbe8ce5fbbc9caabfbe6a64627c9b4236b96cbe281",
+      "sha256": "63bc938402f0e3c807842add58aaf3878ec3476fef2d596912323cc9a86c1c24",
       "tokens": [
         ".codex/team-execution/",
         "team-execution",
