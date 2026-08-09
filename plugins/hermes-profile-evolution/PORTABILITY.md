@@ -16,3 +16,7 @@ This is a Codex-native behavior adaptation, not an upstream byte-parity claim.
 Imported files under `conformance/` and their provenance record are immutable producer bytes. The
 adapter derives closed response keys, field names, and bounds from those artifacts instead of
 copying classifier policy or inventing Hermes doctor fields.
+
+For exact host commands and failure behavior, see the [usage guide](docs/usage.md). The
+[architecture guide](docs/architecture.md) shows where the Codex advisory ends and producer
+authority begins.

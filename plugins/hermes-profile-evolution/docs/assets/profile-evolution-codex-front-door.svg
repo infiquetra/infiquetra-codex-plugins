@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Codex profile evolution front door</title>
+  <desc id="desc">A Codex skill sends proposed paths to Team Mimir classification, ordinary work returns locally, and a single governed target continues through Hermes dialogue. The advisory hook covers only selected edit tools.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M0,0 L12,6 L0,12 z" fill="#374151"/></marker>
+    <style>.title{font:700 38px system-ui;fill:#111827}.sub{font:400 21px system-ui;fill:#4b5563}.head{font:700 25px system-ui;fill:#111827}.body{font:400 20px system-ui;fill:#374151}.small{font:600 18px system-ui;fill:#7c2d12}.box{stroke:#374151;stroke-width:3;rx:22}.line{stroke:#374151;stroke-width:5;fill:none;marker-end:url(#arrow)}</style>
+  </defs>
+  <rect width="1600" height="900" fill="#f8fafc"/>
+  <text x="80" y="78" class="title">Codex profile evolution front door</text>
+  <text x="80" y="116" class="sub">A request crosses two producer-owned boundaries; the adapter never writes the target.</text>
+  <rect x="80" y="230" width="300" height="220" class="box" fill="#dbeafe"/>
+  <text x="110" y="280" class="head">Codex skill</text><text x="110" y="320" class="body">Intent + safe paths</text><text x="110" y="354" class="body">Claimed requester</text><text x="110" y="388" class="body">Bounded JSON input</text>
+  <rect x="500" y="230" width="330" height="220" class="box" fill="#dcfce7"/>
+  <text x="530" y="280" class="head">Team Mimir classifier</text><text x="530" y="320" class="body">Ordinary → normal work</text><text x="530" y="354" class="body">Governed → one target</text><text x="530" y="388" class="body">Other → stop</text>
+  <rect x="950" y="230" width="300" height="220" class="box" fill="#ede9fe"/>
+  <text x="980" y="280" class="head">Hermes producer</text><text x="980" y="320" class="body">Doctor + dialogue</text><text x="980" y="354" class="body">Validates responses</text><text x="980" y="388" class="body">Target stays sovereign</text>
+  <rect x="1290" y="230" width="230" height="220" class="box" fill="#fef3c7"/>
+  <text x="1320" y="280" class="head">Target profile</text><text x="1320" y="320" class="body">May accept</text><text x="1320" y="354" class="body">decline, defer,</text><text x="1320" y="388" class="body">or ask questions</text>
+  <path d="M380 340 H490" class="line"/><path d="M830 340 H940" class="line"/><path d="M1250 340 H1280" class="line"/>
+  <rect x="180" y="590" width="520" height="180" class="box" fill="#ffedd5"/>
+  <text x="215" y="640" class="head">Trusted PreToolUse advisory</text><text x="215" y="680" class="body">apply_patch · Edit · Write</text><text x="215" y="718" class="small">Not shell, external editor, or hard enforcement</text>
+  <rect x="900" y="590" width="520" height="180" class="box" fill="#fee2e2"/>
+  <text x="935" y="640" class="head">Authority that never crosses</text><text x="935" y="680" class="body">No profile mutation · no commit · no credentials</text><text x="935" y="718" class="body">No provider choice · no offline queue</text>
+  <path d="M250 450 V580" class="line"/>
+</svg>
