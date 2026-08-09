@@ -345,6 +345,19 @@ class RenderBundle:
     profiles: tuple[RenderedProfile, ...]
     roles: tuple[RoleResolution, ...]
 
+    def delegation_expectations(self) -> tuple[dict[str, Any], ...]:
+        """Derive, per profile, whether a child on it is offered collaboration tools.
+
+        Computed on call rather than stored, because the answer is a property of the effective
+        model and the session position, not of the profile: the same model is offered the
+        collaboration namespace as a root and denied it as a child. Freezing that into a profile
+        is exactly the defect this round exists to remove.
+        """
+
+        return tuple(
+            delegation_expectation(profile.resolution, self.catalog) for profile in self.profiles
+        )
+
 
 @dataclass(frozen=True, slots=True)
 class ProfileResolution:
@@ -996,24 +1009,174 @@ def profile_policy(profile_id: str) -> dict[str, str]:
     }
 
 
+LUNA_PROMOTION_MODEL = "gpt-5.6-luna"
+# Only these two profiles are ever promotion candidates, and the reason is a runtime observation
+# rather than a preference: Codex 0.147.0 offers a Luna child no collaboration namespace at all,
+# so a profile that spawns, messages, or waits on another agent cannot run on it. These two
+# return a typed result to their parent and never delegate.
+LUNA_PROMOTION_CANDIDATES = frozenset({"scan_low", "monitor_low"})
+LUNA_CANARY_CLAIM = "codex-0147-luna-per-profile-fitness"
+# The criterion promotion turns on. A receipt may measure more, but it may never promote on
+# less: the absence of the collaboration tools is the whole reason a delegating profile is out.
+LUNA_DECIDING_CRITERION = "collaboration-tools-offered"
+LUNA_ELIGIBLE_VERDICT = "eligible-on-measured-criteria"
+CANARY_VERDICTS = frozenset({LUNA_ELIGIBLE_VERDICT, "disqualified", "not-assessed"})
+CODEX_VERSION_RE = re.compile(r"\d+\.\d+\.\d+")
+MAX_CANARY_BYTES = 256 * 1024
+
+
+@dataclass(frozen=True, slots=True)
+class LunaCanaryReceipt:
+    """One canary receipt reduced to the single question rendering asks of it.
+
+    Promotion used to be one pair-wide boolean, which could only ever move both low profiles
+    together. A receipt decides per profile (KTD5), so `scan_low` can promote while
+    `monitor_low` stays on the model its execution class names.
+    """
+
+    claim: str
+    codex_cli_version_observed: str
+    measured_criteria: frozenset[str]
+    eligible_profiles: frozenset[str]
+    sha256: str
+
+    def promotes(self, profile_id: str) -> bool:
+        return profile_id in LUNA_PROMOTION_CANDIDATES and profile_id in self.eligible_profiles
+
+    def to_jsonable(self) -> dict[str, Any]:
+        return {
+            "claim": self.claim,
+            "codex_cli_version_observed": self.codex_cli_version_observed,
+            "measured_criteria": sorted(self.measured_criteria),
+            "eligible_profiles": sorted(self.eligible_profiles),
+            "sha256": self.sha256,
+        }
+
+
+def parse_luna_canary_receipt(payload: Any, *, sha256: str) -> LunaCanaryReceipt:
+    """Reduce a canary receipt to its promotion decision, refusing one that overclaims.
+
+    Every refusal below guards the same defect: a receipt that records "eligible" without
+    saying what it measured turns one runtime observation into standing policy. A profile is
+    promoted only on a criterion this receipt states it actually measured.
+    """
+
+    if not isinstance(payload, dict):
+        raise RoleRegistryError("Luna canary receipt must be an object")
+    if payload.get("claim") != LUNA_CANARY_CLAIM:
+        raise RoleRegistryError(
+            f"Luna canary receipt claims {payload.get('claim')!r}; expected {LUNA_CANARY_CLAIM!r}"
+        )
+    observed = payload.get("codex_cli_version_observed")
+    if not isinstance(observed, str) or CODEX_VERSION_RE.fullmatch(observed) is None:
+        raise RoleRegistryError("Luna canary receipt records no observed Codex version")
+
+    criteria = payload.get("criteria")
+    if not isinstance(criteria, dict) or not criteria:
+        raise RoleRegistryError("Luna canary receipt declares no criteria")
+    measured: set[str] = set()
+    for name, entry in criteria.items():
+        if not isinstance(entry, dict) or not isinstance(entry.get("measured"), bool):
+            raise RoleRegistryError(f"Luna canary criterion {name!r} does not declare `measured`")
+        if entry["measured"]:
+            measured.add(name)
+        elif not entry.get("reason"):
+            raise RoleRegistryError(f"Luna canary criterion {name!r} is unmeasured with no reason")
+    if LUNA_DECIDING_CRITERION not in measured:
+        raise RoleRegistryError(
+            f"Luna canary receipt did not measure {LUNA_DECIDING_CRITERION!r}, which is the "
+            f"criterion promotion turns on"
+        )
+
+    profiles = payload.get("profiles")
+    if not isinstance(profiles, dict) or not profiles:
+        raise RoleRegistryError("Luna canary receipt assesses no profiles")
+    eligible: set[str] = set()
+    for profile_id, record in profiles.items():
+        if not isinstance(record, dict):
+            raise RoleRegistryError(f"Luna canary profile {profile_id!r} is not an object")
+        verdict = record.get("verdict")
+        if verdict not in CANARY_VERDICTS:
+            raise RoleRegistryError(
+                f"Luna canary profile {profile_id!r} carries verdict {verdict!r}; "
+                f"expected one of {sorted(CANARY_VERDICTS)}"
+            )
+        claimed = {key for key, value in record.items() if value == "pass"}
+        unmeasured = sorted(claimed - measured)
+        if unmeasured:
+            raise RoleRegistryError(
+                f"Luna canary profile {profile_id!r} claims a pass on {unmeasured}, which this "
+                f"receipt does not record as measured"
+            )
+        if verdict != LUNA_ELIGIBLE_VERDICT:
+            continue
+        if profile_id not in LUNA_PROMOTION_CANDIDATES:
+            raise RoleRegistryError(
+                f"Luna canary receipt calls {profile_id!r} eligible, but only "
+                f"{sorted(LUNA_PROMOTION_CANDIDATES)} can run on Luna as non-delegating leaves"
+            )
+        if record.get(LUNA_DECIDING_CRITERION) != "pass":
+            raise RoleRegistryError(
+                f"Luna canary profile {profile_id!r} is called eligible without passing "
+                f"{LUNA_DECIDING_CRITERION!r}"
+            )
+        if record.get("needs_collaboration_tools") is not False:
+            raise RoleRegistryError(
+                f"Luna canary profile {profile_id!r} does not declare that it needs no "
+                f"collaboration tools, so its eligibility does not follow from the measurement"
+            )
+        eligible.add(profile_id)
+
+    return LunaCanaryReceipt(
+        claim=LUNA_CANARY_CLAIM,
+        codex_cli_version_observed=observed,
+        measured_criteria=frozenset(measured),
+        eligible_profiles=frozenset(eligible),
+        sha256=sha256,
+    )
+
+
+def load_luna_canary_receipt(path: Path) -> LunaCanaryReceipt:
+    """Read one canary receipt from disk and reduce it to its promotion decision."""
+
+    content = _regular_single_link(path, "Luna canary receipt", MAX_CANARY_BYTES)
+    try:
+        payload = json.loads(content)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RoleRegistryError(f"Luna canary receipt is invalid JSON: {exc}") from exc
+    return parse_luna_canary_receipt(payload, sha256=_sha256(content))
+
+
 def resolve_profile(
     profile_id: str,
     catalog_snapshot: Any,
     *,
-    luna_v2_canary_passed: bool = False,
+    luna_canary: LunaCanaryReceipt | None = None,
 ) -> ProfileResolution:
     """Resolve one exact V2 profile without a hidden model or effort fallback."""
 
     policy = profile_policy(profile_id)
     model_slug = policy["model"]
     policy_deviation: str | None = None
-    if luna_v2_canary_passed and profile_id in {"scan_low", "monitor_low"}:
-        luna = catalog_snapshot.model("gpt-5.6-luna")
-        if luna is None or not luna.selectable or luna.multi_agent_version != "v2":
+    if luna_canary is not None and luna_canary.promotes(profile_id):
+        luna = catalog_snapshot.model(LUNA_PROMOTION_MODEL)
+        if luna is None or not luna.selectable:
             raise RoleRegistryError(
-                "Luna low-profile promotion requires a selectable V2 catalog entry"
+                f"Luna low-profile promotion requires a selectable {LUNA_PROMOTION_MODEL} "
+                f"catalog entry"
             )
-        model_slug = "gpt-5.6-luna"
+        # Codex 0.147.0 relaxed the override gate from "the catalog reports v2" to "the catalog
+        # does not report disabled", so a v1 Luna is selectable by a V2 session. The predicate
+        # here previously tested the raw multi_agent_version for equality with "v2" and so
+        # refused the only Luna the catalog has ever shipped: it named a property that does not
+        # decide the question. A child's backend version derives from the parent thread and
+        # configuration, never from the child's own catalog row.
+        if not luna.passes_multi_agent_v2_override_filter:
+            raise RoleRegistryError(
+                f"{LUNA_PROMOTION_MODEL} does not pass the MultiAgent V2 override filter "
+                f"({CATALOG.MULTI_AGENT_OVERRIDE_FILTER_RULE})"
+            )
+        model_slug = LUNA_PROMOTION_MODEL
         policy_deviation = "luna-v2-canary"
     model = catalog_snapshot.model(model_slug)
     if model is None or not model.selectable:
@@ -1113,11 +1276,36 @@ def render_profile(resolution: ProfileResolution, registry: RoleRegistry) -> Ren
     )
 
 
+def delegation_expectation(resolution: ProfileResolution, catalog_snapshot: Any) -> dict[str, Any]:
+    """Derive one profile's runtime delegation expectation from its effective model.
+
+    A profile whose effective model is not offered the collaboration namespace as a child is a
+    non-delegating leaf: it can do its own work and return a typed result, but it cannot spawn,
+    message, or wait on another agent. That is a consequence of the model and the session
+    position, so it is derived here on every render rather than recorded on the profile.
+    """
+
+    model = catalog_snapshot.model(resolution.model)
+    if model is None:
+        raise RoleRegistryError(
+            f"profile {resolution.profile_id} model {resolution.model!r} left the catalog"
+        )
+    collaboration = model.multi_agent_v2_collaboration
+    return {
+        "profile_id": resolution.profile_id,
+        "model": resolution.model,
+        "rule": CATALOG.MULTI_AGENT_COLLABORATION_RULE,
+        "as_root": collaboration["as_root"],
+        "as_child": collaboration["as_child"],
+        "non_delegating_leaf": not collaboration["as_child"],
+    }
+
+
 def render_bundle(
     registry: RoleRegistry,
     catalog_snapshot: Any,
     *,
-    luna_v2_canary_passed: bool = False,
+    luna_canary: LunaCanaryReceipt | None = None,
 ) -> RenderBundle:
     """Resolve all managed profiles once and bind every logical role to a profile."""
 
@@ -1130,7 +1318,7 @@ def render_bundle(
             resolve_profile(
                 profile_id,
                 catalog_snapshot,
-                luna_v2_canary_passed=luna_v2_canary_passed,
+                luna_canary=luna_canary,
             ),
             registry,
         )

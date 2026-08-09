@@ -48,6 +48,61 @@ def _raw_model(
     }
 
 
+def _canary_receipt(*eligible: str, **overrides) -> dict:
+    """Build a well-formed per-profile canary receipt naming exactly `eligible` as promotable."""
+
+    payload = {
+        "claim": R.LUNA_CANARY_CLAIM,
+        "codex_cli_version_observed": "0.147.0",
+        "criteria": {R.LUNA_DECIDING_CRITERION: {"measured": True, "how": "fixture"}},
+        "profiles": {
+            profile_id: {
+                "verdict": (
+                    R.LUNA_ELIGIBLE_VERDICT if profile_id in eligible else "not-assessed"
+                ),
+                "needs_collaboration_tools": False,
+                **(
+                    {R.LUNA_DECIDING_CRITERION: "pass"}
+                    if profile_id in eligible
+                    else {}
+                ),
+            }
+            for profile_id in sorted(R.LUNA_PROMOTION_CANDIDATES)
+        },
+    }
+    payload.update(overrides)
+    return payload
+
+
+def _receipt(*eligible: str, **overrides) -> R.LunaCanaryReceipt:
+    return R.parse_luna_canary_receipt(
+        _canary_receipt(*eligible, **overrides), sha256="0" * 64
+    )
+
+
+def _catalog_with_luna(**luna_fields) -> object:
+    """A fixture catalog whose Luna row carries the given deviations from a healthy entry."""
+
+    luna = {
+        **_raw_model(
+            "gpt-5.6-luna",
+            luna_fields.pop("efforts", ("low", "medium", "high", "max")),
+            visibility=luna_fields.pop("visibility", "list"),
+            supported=luna_fields.pop("supported", True),
+        ),
+        **luna_fields,
+    }
+    payload = {
+        "models": [
+            _raw_model("gpt-5.6-sol", ("low", "medium", "high", "max")),
+            _raw_model("gpt-5.6-terra", ("low", "medium", "high", "max")),
+            _raw_model("gpt-5.5", ("low", "medium", "high")),
+            luna,
+        ]
+    }
+    return R.CATALOG.normalize_catalog(payload, source="fixture")
+
+
 def _class_policy_expectation() -> dict[str, tuple[str, str]]:
     """What each rendered profile must carry, read from Fleet Core rather than restated here."""
 
@@ -94,14 +149,150 @@ def test_scan_and_monitor_remain_distinct_at_the_same_model_effort() -> None:
     assert profiles["scan_low"].sha256 != profiles["monitor_low"].sha256
 
 
-def test_luna_promotion_requires_v2_catalog_and_explicit_canary() -> None:
+def test_a_v1_luna_promotes_because_the_override_filter_not_the_version_decides() -> None:
+    """The branch the old predicate made unreachable.
+
+    The shipped Luna row reports `v1`, and the old gate required the raw catalog field to equal
+    `"v2"`, so this path could never run against any catalog Codex has published. Codex 0.147.0
+    gates on "not disabled" instead, which the U2 projection exposes as
+    `passes_multi_agent_v2_override_filter`.
+    """
+
     catalog = R.load_catalog_snapshot()
-    with pytest.raises(R.RoleRegistryError, match="selectable V2"):
-        R.render_bundle(
-            R.load_role_registry(),
-            catalog,
-            luna_v2_canary_passed=True,
-        )
+    assert catalog.model("gpt-5.6-luna").multi_agent_version == "v1"
+    assert catalog.model("gpt-5.6-luna").passes_multi_agent_v2_override_filter
+
+    bundle = R.render_bundle(
+        R.load_role_registry(), catalog, luna_canary=_receipt("scan_low", "monitor_low")
+    )
+    resolutions = {profile.profile_id: profile.resolution for profile in bundle.profiles}
+    for profile_id in ("scan_low", "monitor_low"):
+        assert resolutions[profile_id].model == "gpt-5.6-luna"
+        assert resolutions[profile_id].policy_deviation == "luna-v2-canary"
+
+
+def test_without_a_receipt_both_low_profiles_stay_on_their_execution_class_model() -> None:
+    bundle = R.render_bundle(R.load_role_registry(), R.load_catalog_snapshot())
+    resolutions = {profile.profile_id: profile.resolution for profile in bundle.profiles}
+
+    for profile_id in ("scan_low", "monitor_low"):
+        assert resolutions[profile_id].model == "gpt-5.6-terra"
+        assert resolutions[profile_id].policy_deviation is None
+
+
+@pytest.mark.parametrize(
+    ("promoted", "held"),
+    [("scan_low", "monitor_low"), ("monitor_low", "scan_low")],
+)
+def test_an_asymmetric_receipt_promotes_exactly_one_low_profile(
+    promoted: str, held: str
+) -> None:
+    """The whole point of replacing the pair-wide boolean: the two can now disagree."""
+
+    bundle = R.render_bundle(
+        R.load_role_registry(), R.load_catalog_snapshot(), luna_canary=_receipt(promoted)
+    )
+    resolutions = {profile.profile_id: profile.resolution for profile in bundle.profiles}
+
+    assert resolutions[promoted].model == "gpt-5.6-luna"
+    assert resolutions[promoted].policy_deviation == "luna-v2-canary"
+    assert resolutions[held].model == "gpt-5.6-terra"
+    assert resolutions[held].policy_deviation is None
+
+
+def test_a_disabled_luna_entry_refuses_promotion() -> None:
+    catalog = _catalog_with_luna(multi_agent_version="disabled")
+    with pytest.raises(R.RoleRegistryError, match="override filter"):
+        R.render_bundle(R.load_role_registry(), catalog, luna_canary=_receipt("scan_low"))
+
+
+def test_a_non_selectable_luna_entry_refuses_promotion() -> None:
+    catalog = _catalog_with_luna(visibility="hide")
+    with pytest.raises(R.RoleRegistryError, match="selectable gpt-5.6-luna"):
+        R.render_bundle(R.load_role_registry(), catalog, luna_canary=_receipt("scan_low"))
+
+
+def test_a_luna_entry_missing_the_requested_effort_refuses_promotion() -> None:
+    catalog = _catalog_with_luna(efforts=("medium", "high"))
+    with pytest.raises(R.RoleRegistryError, match="effort 'low' is unsupported"):
+        R.render_bundle(R.load_role_registry(), catalog, luna_canary=_receipt("scan_low"))
+
+
+@pytest.mark.parametrize(
+    ("mutate", "expected"),
+    [
+        (lambda p: p.update(claim="something-else"), "claims 'something-else'"),
+        (lambda p: p.update(codex_cli_version_observed="unknown"), "no observed Codex version"),
+        (lambda p: p.update(criteria={}), "declares no criteria"),
+        (
+            lambda p: p.update(criteria={"quality": {"measured": False}}),
+            "unmeasured with no reason",
+        ),
+        (
+            lambda p: p.update(
+                criteria={"quality": {"measured": True}},
+            ),
+            "did not measure 'collaboration-tools-offered'",
+        ),
+        (
+            lambda p: p["profiles"]["scan_low"].update(verdict="looks-fine"),
+            "carries verdict 'looks-fine'",
+        ),
+        (
+            lambda p: p["profiles"]["scan_low"].update({"instruction-adherence": "pass"}),
+            "does not record as measured",
+        ),
+        (
+            lambda p: p["profiles"]["scan_low"].update(needs_collaboration_tools=True),
+            "needs no collaboration tools",
+        ),
+        (
+            lambda p: p["profiles"].update(
+                {
+                    "work_high": {
+                        "verdict": R.LUNA_ELIGIBLE_VERDICT,
+                        "needs_collaboration_tools": False,
+                        R.LUNA_DECIDING_CRITERION: "pass",
+                    }
+                }
+            ),
+            "only \\['monitor_low', 'scan_low'\\]",
+        ),
+    ],
+)
+def test_a_receipt_that_overclaims_is_refused(mutate, expected: str) -> None:
+    """A forged or overreaching receipt never reaches the gate.
+
+    Each case here is the round's central defect in miniature: a receipt asserting more than it
+    measured would turn one runtime observation into standing policy.
+    """
+
+    payload = _canary_receipt("scan_low")
+    mutate(payload)
+    with pytest.raises(R.RoleRegistryError, match=expected):
+        R.parse_luna_canary_receipt(payload, sha256="0" * 64)
+
+
+def test_promotion_makes_a_profile_a_non_delegating_leaf_by_derivation() -> None:
+    """Recorded as a consequence of the effective model, never stored on the profile."""
+
+    catalog = R.load_catalog_snapshot()
+    bundle = R.render_bundle(R.load_role_registry(), catalog, luna_canary=_receipt("scan_low"))
+    rows = {row["profile_id"]: row for row in bundle.delegation_expectations()}
+
+    assert rows["scan_low"]["model"] == "gpt-5.6-luna"
+    assert rows["scan_low"]["as_root"] is True
+    assert rows["scan_low"]["as_child"] is False
+    assert rows["scan_low"]["non_delegating_leaf"] is True
+    # An unpromoted sibling on the same run is not a leaf, so the property tracks the model.
+    assert rows["monitor_low"]["non_delegating_leaf"] is False
+    assert rows["work_high"]["non_delegating_leaf"] is False
+    # And nothing about it is written into the profile bytes.
+    scan = tomllib.loads(
+        next(p for p in bundle.profiles if p.profile_id == "scan_low").content.decode()
+    )
+    assert "non_delegating_leaf" not in scan
+    assert "delegation" not in scan["developer_instructions"]
 
 
 def test_missing_exact_profile_model_fails_without_hidden_fallback() -> None:
@@ -275,19 +466,10 @@ def test_a_hand_built_off_policy_resolution_is_refused(monkeypatch: pytest.Monke
 
 
 def test_the_luna_canary_is_a_declared_deviation_not_an_unexplained_one() -> None:
-    payload = {
-        "models": [
-            _raw_model("gpt-5.6-sol", ("low", "medium", "high", "max")),
-            _raw_model("gpt-5.6-terra", ("low", "medium", "high", "max")),
-            _raw_model("gpt-5.5", ("low", "medium", "high")),
-            {
-                **_raw_model("gpt-5.6-luna", ("low", "medium", "high", "max")),
-                "multi_agent_version": "v2",
-            },
-        ]
-    }
-    catalog = R.CATALOG.normalize_catalog(payload, source="fixture")
-    bundle = R.render_bundle(R.load_role_registry(), catalog, luna_v2_canary_passed=True)
+    catalog = _catalog_with_luna(multi_agent_version="v2")
+    bundle = R.render_bundle(
+        R.load_role_registry(), catalog, luna_canary=_receipt("scan_low", "monitor_low")
+    )
     resolutions = {profile.profile_id: profile.resolution for profile in bundle.profiles}
 
     for profile_id in ("scan_low", "monitor_low"):

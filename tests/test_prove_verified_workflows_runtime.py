@@ -668,12 +668,31 @@ def test_an_unmeasured_criterion_must_say_why() -> None:
         P.validate_luna_canary(payload)
 
 
-def test_eligible_requires_at_least_one_passing_criterion() -> None:
+def test_eligible_requires_a_pass_on_the_criterion_promotion_turns_on() -> None:
+    """Not merely "some criterion" -- the one the promotion gate actually reads.
+
+    U9 collapsed this adjudication onto the renderer, which is what acts on the verdict, so the
+    receipt must now name the deciding criterion rather than any passing one. A receipt that
+    satisfied a weaker rule here while the gate refused it would be two policies for one
+    question.
+    """
+
     payload = json.loads(json.dumps(LUNA_CANARY))
     payload["profiles"]["monitor_low"]["collaboration-tools-offered"] = "not-run"
 
-    with pytest.raises(P.RuntimeProofError, match="without passing any criterion"):
+    with pytest.raises(P.RuntimeProofError, match="without passing 'collaboration-tools-offered'"):
         P.validate_luna_canary(payload)
+
+
+def test_the_receipt_and_the_promotion_gate_are_one_adjudication() -> None:
+    """The committed receipt is accepted by the proof tool and by the renderer identically."""
+
+    P.validate_luna_canary(LUNA_CANARY)
+    receipt = P.renderer.load_luna_canary_receipt(
+        ROOT / "docs" / "validation" / "codex-0147-luna-canary.json"
+    )
+    assert receipt.eligible_profiles == {"scan_low", "monitor_low"}
+    assert receipt.measured_criteria == {"collaboration-tools-offered"}
 
 
 def test_an_unknown_verdict_is_refused() -> None:

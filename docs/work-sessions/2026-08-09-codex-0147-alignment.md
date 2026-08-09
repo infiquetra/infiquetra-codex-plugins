@@ -835,7 +835,75 @@ isolated home isolates skill discovery is wrong — it does not.
 - Validator, runtime proof, ruff — all clean. Harness digest re-pinned.
 - Zero model calls. Nothing was written outside a disposable home.
 
+## Phase 9 — U9, the Luna promotion gate
+
+### The defect, restated precisely
+
+The gate read:
+
+```python
+if luna is None or not luna.selectable or luna.multi_agent_version != "v2":
+    raise RoleRegistryError("Luna low-profile promotion requires a selectable V2 catalog entry")
+```
+
+The shipped Luna row reports `multi_agent_version = "v1"`, and has for every catalog Codex has
+published. So the branch below this test had never executed against any real catalog — the promotion
+path existed, was documented, had a command-line flag, and could not run.
+
+The field is also the wrong question. Codex 0.147.0 gates model override on
+`multi_agent_version != Some(Disabled)`, not on equality with `v2`; a child's backend version derives
+from the parent thread and configuration rather than from the child's own catalog row
+(`effective_multi_agent_version_for_spawn`, `codex-rs/core/src/thread_manager.rs:1314-1333` at tag
+`rust-v0.147.0`). U2 already exposes the correct rule as `passes_multi_agent_v2_override_filter`,
+which the gate now consults. The real Luna row passes it.
+
+### From one pair-wide boolean to a per-profile receipt
+
+`--luna-v2-canary-passed` was a single flag applied to both low profiles, so they could only ever
+move together. It is replaced by `--luna-canary-receipt PATH`, and a receipt decides per profile.
+`scan_low` can promote while `monitor_low` stays put, in either direction — both tested.
+
+The receipt adjudication now lives in the renderer, which is what acts on the verdict. It previously
+existed twice, once in the renderer's neighbourhood and once in `validate_luna_canary`; a receipt one
+accepted and the other refused would have been two policies for one question. The proof tool now
+delegates and keeps only the part the renderer has no reason to care about — a receipt published as
+evidence must also carry the observations it was read from.
+
+A receipt is refused when it names the wrong claim, records no observed Codex version, declares no
+criteria, leaves a criterion unmeasured with no reason, never measured the criterion promotion turns
+on, carries an unknown verdict, claims a pass on something it did not measure, or calls a profile
+eligible without that profile declaring it needs no collaboration tools. It is also refused when it
+tries to promote a profile that is not one of the two candidates — measured through the command line:
+
+```
+verified-workflows profile sync failed: Luna canary receipt calls 'review_high' eligible,
+but only ['monitor_low', 'scan_low'] can run on Luna as non-delegating leaves
+```
+
+### Where the deviation lives
+
+Committed profile bytes are the **unpromoted** rendering; promotion is applied at install. Recorded
+with its rejected alternatives in `docs/engineering-journal/DECISIONS.md`. The staleness check still
+runs on every sync, against a second unpromoted rendering, so it is never skipped on the runs that
+install a deviation. Re-running the renderer left `agents/*.toml` byte-identical, which is the
+intended outcome rather than a no-op.
+
+### The non-delegating leaf is derived, never stored
+
+`RenderBundle.delegation_expectations()` computes, per profile, whether a child on that profile's
+effective model is offered the collaboration namespace. A promoted `scan_low` comes back
+`as_root: true, as_child: false, non_delegating_leaf: true`; an unpromoted `monitor_low` on the same
+run does not. Nothing about it is written into the profile bytes — asserted in the tests, because
+freezing a runtime observation into a static artifact is the exact defect this round exists to
+remove.
+
+### Checks
+
+- Full suite excluding the plugin blocked by a missing imaging library: **2609 passed** (2592 before).
+- Validator, runtime proof, ruff — all clean. Harness digest re-pinned to `d79eba136ccd`.
+- Zero model calls. Sync exercised as a dry run against a scratch target; `--allow-real-profile`
+  withheld and `~/.codex` untouched.
+
 ## Next step
 
-U9 — repair the unreachable Luna promotion gate, which U6 showed refuses on a property that does
-not decide the question. U10 through U14 remain untouched.
+U10 — discovery and routing proof. U11 through U14 remain untouched.

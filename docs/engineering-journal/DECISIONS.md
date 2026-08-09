@@ -1,5 +1,34 @@
 # Decisions
 
+## 2026-08-09: Committed Profile Bytes Are The Unpromoted Rendering; A Deviation Is Applied At Install
+
+Promoting the two low-cost profiles onto the Luna model is a deviation from what their Fleet Core
+execution class states. It has to be recorded somewhere, and there were two places it could live:
+in the committed `plugins/verified-workflows/agents/*.toml` bytes, or in the install step that
+writes profiles into a Codex home.
+
+Putting it in the committed bytes was tempting, because the canary receipt is itself a committed,
+reviewed artifact — its presence in the repository is a deliberate decision, not an ambient file.
+It was rejected for two reasons. The receipt states plainly that quality was never measured
+(`eligible-on-measured-criteria` means one criterion passed and nothing else was tested), so making
+Luna the default byte set would ship an unmeasured model to every run of every scanner and monitor
+role. And it collides with the staleness check: `check_generated` requires committed source to equal
+the rendered bundle, so a promoted bundle would be reported as stale source.
+
+**Decision.** Committed profile bytes are by definition what the renderer produces with **no**
+receipt. Promotion is requested at sync time with `--luna-canary-receipt PATH`. The staleness check
+still runs on every sync, against a second, unpromoted rendering — not skipped whenever a receipt is
+supplied, which would have dropped the check on exactly the runs that install a deviation.
+
+**Rejected alternatives.** (1) Promote in committed source and let the receipt's presence drive it —
+rejected above. (2) Skip `check_generated` when a receipt is passed — this silently disables the
+staleness check on the highest-risk runs. (3) Give the renderer CLI its own receipt flag — this would
+let `--write` produce promoted bytes and destroy the invariant that makes (2) unnecessary.
+
+**Revisit when** the canary receipt records a measured quality criterion for a profile. At that point
+promotion stops being an unmeasured deviation, and defaulting the committed bytes to the promoted
+model becomes arguable on its merits.
+
 ## 2026-08-09: A Negative Finding Is Not Recorded Until Someone Competent Has Tried To Break It
 
 This session searched for the surface that renders Codex's model-visible tool specification, failed

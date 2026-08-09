@@ -14,6 +14,11 @@ To rotate deliberately, in the same commit as the harness change and with the re
 
 from __future__ import annotations
 
+# Rotated for U9: the Luna promotion gate no longer tests the raw catalog `multi_agent_version`
+# for equality with "v2" -- a property that does not decide the question -- and promotion is now
+# read per profile from a canary receipt instead of one pair-wide boolean. Both the renderer and
+# the profile synchroniser changed, and the receipt adjudication moved out of the proof tool into
+# the renderer so one rule serves both. Receipts carrying the previous digest are invalid.
 RUNTIME_PROOF_HARNESS_SHA256 = (
-    "2f53c1d7ca67090024713c25fe7de2b48215258e7b7ef1d04034858845a747a5"
+    "d79eba136ccd2cc4e94f9e4185fa4a8b74313c01ef67816ce2fac78f8bb4aa8f"
 )
