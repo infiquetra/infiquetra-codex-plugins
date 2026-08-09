@@ -15,3 +15,15 @@ conversation, select a provider, accept credentials, or mutate profile files its
 
 See [PORTABILITY.md](PORTABILITY.md) for supported and excluded surfaces. Hook execution requires
 the operator to review and trust the exact Codex hook definition.
+
+## Operator guide
+
+- [Install and use the plugin](docs/usage.md)
+- [Understand the trust boundaries](docs/architecture.md)
+- [Develop and release the adapter](docs/development.md)
+- [Troubleshoot requests](docs/troubleshooting.md)
+
+The [Team Mimir operator hub](https://github.com/infiquetra/team-mimir/tree/main/docs/team/profile-evolution)
+covers deployment and activation. The
+[Hermes producer documentation](https://github.com/infiquetra/infiquetra-hermes-plugins/tree/main/docs/profile-evolution)
+owns dialogue and compatibility semantics.
