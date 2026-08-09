@@ -298,7 +298,63 @@ Thirty files in one commit, which the plan intended: the normalized digest casca
 catalog, both normalizers, the renderer, the validator, the schema, the snapshot, the runtime proof,
 and all seven profiles. Splitting it yields a repository that does not validate at the split point.
 
+## Phase 3 — U3 complete (commit `7356ee5`)
+
+The setting was absent by luck rather than by contract, and nothing asserted the profiles still
+carried instructions of their own. `validate_developer_instruction_contract` now enforces both halves.
+
+The design choice worth naming: the check binds the **whole surface set**, not one remembered file. A
+`config.toml` that exists without being registered in `CODEX_CONFIG_SURFACES` fails. Guarding only
+`.codex/config.toml` would have passed forever while a new plugin shipped an unchecked surface, which
+is the failure mode actually worth catching. There is exactly one surface today.
+
+Each branch was probed against a mutated copy before any test was written, and the tests include an
+explicit clean-baseline assertion so a negative case cannot pass for the wrong reason. Six tests
+added; suite at 1899.
+
+## U4 is analysed but NOT started — one decision is owed first
+
+Nothing has been modified for U4. The pre-collapse profile digests are recorded as the byte-identity
+oracle KTD4 requires, so the collapse can be proven to change nothing:
+
+```
+review_max   3bb3abe289a7dbb8   review_high  86b2f2e0f6f1f347   work_high    8eb7257833aceb87
+work_medium  a7cd86f520fcb554   test_medium  9b80ca6f220dc685   scan_low     c5aec84ee0e8b3b0
+monitor_low  1ffcc126fef9a0f6
+```
+
+**The plan presupposed a mapping that does not exist.** U4 says to map each managed profile to its
+Fleet execution class, but there are seven profiles and only five classes:
+
+| Profile | Renderer literal | Fleet execution class |
+| --- | --- | --- |
+| `review_max` | `gpt-5.6-sol` / max | `review-max` (order 0) |
+| `review_high` | `gpt-5.6-sol` / high | `review-high` (order 1) |
+| `test_medium` | `gpt-5.6-terra` / medium | `test-medium` (order 2) |
+| `scan_low` | `gpt-5.6-terra` / low | `scan-low` (order 3) |
+| `monitor_low` | `gpt-5.6-terra` / low | `monitor-low` (order 4) |
+| `work_high` | `gpt-5.6-sol` / high | **none** |
+| `work_medium` | `gpt-5.6-terra` / medium | **none** |
+
+Collapsing to one source therefore requires *adding* `work-high` and `work-medium` to
+`execution_classes` in `plugins/fleet-core/scripts/fleet_commons/models.json`. That file describes
+itself as "Canonical Fleet Core policy", and `execution_classes` is read by `tier_resolver.py` and
+`tier_palette.py` — so this extends a shared vocabulary beyond Verified Workflows rather than
+refactoring within it.
+
+The open question is narrow but real: **`order` currently encodes 0–4 with no gaps and nothing pins
+the set to five.** Appending `work-high` and `work-medium` as 5 and 6 would place an expensive
+`gpt-5.6-sol` / high class *after* the cheap `monitor-low`, which contradicts the apparent
+cost-ordering semantic. Renumbering to insert them in cost order changes existing class orders, whose
+consumers were not audited. Which of those is correct depends on what `order` is actually for, and
+that is a call about shared Fleet policy rather than about this round.
+
+Everything else in U4 is settled and mechanical once that is decided: have the renderer consume class
+policy instead of its `PROFILE_POLICY` literals, replace the hardcoded expectation in
+`test_agent_tier_sync.py` with an assertion against the class policy, and prove all seven rendered
+profiles are byte-identical to the digests above.
+
 ## Next step
 
-U3 and U4 are both unblocked. U3 (developer-instruction contract) and U4 (policy source collapse) are
-Claude-owned with Codex reviewing.
+Decide the `order` semantics for the two new execution classes, then execute U4. U5 through U14 remain
+untouched.
