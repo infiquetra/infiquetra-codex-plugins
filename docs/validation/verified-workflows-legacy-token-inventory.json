@@ -1005,7 +1005,7 @@
     {
       "classification": "frozen-source-contract",
       "path": "scripts/port_contract.py",
-      "sha256": "9284c5a4ca6f6be677cba9f43285b8549f5d672de1c9db0adcb9e7abae72ff3c",
+      "sha256": "c996c80a116b76156682469682e723ed176a39d16b2c8a3758b16e001a9f1064",
       "tokens": [
         "team-execution"
       ]
@@ -1096,7 +1096,7 @@
     {
       "classification": "migration-fixture",
       "path": "tests/test_port_contract.py",
-      "sha256": "b75969b0658c2b629e0d1f66eff641bd0fe30bfe3b8975e64b9aef954a5f99ed",
+      "sha256": "4d878175cb55be99d197cd27ce908df54f6bbf3e340fbe63042160b49bb8c5e4",
       "tokens": [
         "team-execution"
       ]

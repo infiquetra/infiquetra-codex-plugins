@@ -1,0 +1,417 @@
+{
+  "authority": {
+    "capability_snapshot": {
+      "path": "docs/validation/codex-runtime-capability-snapshot.json",
+      "schema_path": "docs/validation/codex-runtime-capability-snapshot.schema-r3.json",
+      "schema_sha256": "548289fa766ca250549b2fc6647fa837fbea4c832e22251e42e348909c40f806",
+      "schema_version": 2,
+      "sha256": "c53a5878c180a595186fa145dc24f2c270644802681c49ec239f2968ece5e2e4"
+    },
+    "classification_path": "docs/portability/classifications/2026-08-08-codex-0147-alignment.md",
+    "plan": {
+      "path": "docs/plans/2026-08-08-codex-0147-alignment-plan.md",
+      "sha256": "c26999939d32b501f6ac1777dec54dc6993aa00353a54359efba97cf70e7e7c7"
+    },
+    "reviews": [
+      {
+        "path": "docs/reviews/2026-08-08-codex-0147-alignment-plan-doc-review.md",
+        "sha256": "1b779e25a1ed286a7ccf1400a49841a0631ae1d56ea3a956daaa256d953c1f3d"
+      }
+    ],
+    "runbook": {
+      "path": "docs/portability/claude-to-codex-plugin-port-runbook.md",
+      "sha256": "0d1f6e58624e179e7c99da85fdc10089eea84e0ac557761a192bb148a21c9afa",
+      "version": 5
+    }
+  },
+  "codex": {
+    "evidence_ref": "refs/tags/evidence/codex-0147-alignment-20260808",
+    "execution_base": "cd51a29be25b41923c0d3f9e7ade6f9b4baaf50e",
+    "expected_count": 0,
+    "historical_plan_base": "cd51a29be25b41923c0d3f9e7ade6f9b4baaf50e",
+    "inventory_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "observed_origin_main": "cd51a29be25b41923c0d3f9e7ade6f9b4baaf50e",
+    "repository_id": "infiquetra/infiquetra-codex-plugins",
+    "rows": []
+  },
+  "evidence": [],
+  "port_id": "codex-0147-alignment-2026-08-08",
+  "refresh_changes": [],
+  "release_evidence": {
+    "cutover": null,
+    "fresh_session": null,
+    "isolated_install": null,
+    "review": null,
+    "rollback": null
+  },
+  "schema_version": 1,
+  "source": {
+    "base_ref": "95637f7056835fea66bdd0044414af480fc0fd74",
+    "expected_count": 9,
+    "inventory_sha256": "2578b575e6b3eaf66cafac3f36ef243a5a68b405db483f02df03878f78f77725",
+    "observed_refs": {
+      "head": "be6e8eac029b183056b7e4402879f15d2c85f61b",
+      "local_main": null,
+      "origin_main": null
+    },
+    "pathspecs": [
+      "codex-rs/core/src/tools/handlers/multi_agents_common.rs",
+      "codex-rs/core/src/tools/spec_plan.rs",
+      "codex-rs/core/config.schema.json",
+      "codex-rs/core/src/agent/role.rs",
+      "codex-rs/core/src/agent/control/spawn.rs",
+      "codex-rs/ext/skills/src/tools/read.rs",
+      "codex-rs/ext/skills/src/provider/executor.rs",
+      "codex-rs/core-plugins/src/agent_plugin_manifest.rs",
+      "codex-rs/app-server-protocol/src/protocol/v2/plugin_search.rs",
+      "codex-rs/core-plugins/src/marketplace.rs",
+      "codex-rs/core/src/tools/handlers/multi_agents_spec.rs",
+      "codex-rs/protocol/src/protocol.rs"
+    ],
+    "repository_id": "openai/codex",
+    "rows": [
+      {
+        "capability_refs": [
+          "capability:plugin-search-scopes"
+        ],
+        "change": "A",
+        "codex_invariant_refs": [
+          "native-plugin-discovery",
+          "custom-agent-profiles-require-separate-synchronization"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "codex-rs/app-server-protocol/src/protocol/v2/plugin_search.rs",
+        "old_path": null,
+        "planned_targets": [
+          "docs/validation/codex-0147-discovery-routing.json"
+        ],
+        "planned_tests": [
+          "tests/test_discovery_and_routing.py"
+        ],
+        "rationale": "Adapt the native Global, Workspace, and Personal search scopes into explicit discovery and routing proofs without copying Codex search behavior into this repository.",
+        "row_id": "src-1169fb5c430e3252",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "other",
+        "treatment": "codex-adapt",
+        "units": [
+          "U10"
+        ]
+      },
+      {
+        "capability_refs": [
+          "capability:multi-agent-v2-config-schema"
+        ],
+        "change": "M",
+        "codex_invariant_refs": [
+          "subagent-developer-instructions-remain-unset",
+          "boolean-multi-agent-v2-feature-form"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "codex-rs/core/config.schema.json",
+        "old_path": null,
+        "planned_targets": [
+          "plugins/verified-workflows/PORTABILITY.md",
+          "plugins/verified-workflows/README.md",
+          "scripts/validate_codex_plugins.py"
+        ],
+        "planned_tests": [
+          "plugins/verified-workflows/tests/test_agent_tier_sync.py",
+          "tests/test_validate_codex_plugins.py"
+        ],
+        "rationale": "Keep the new host configuration key absent from every shipped configuration surface while documenting and testing the inheritance behavior Codex owns.",
+        "row_id": "src-8e0a361782823fa7",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "config",
+        "treatment": "codex-adapt",
+        "units": [
+          "U3"
+        ]
+      },
+      {
+        "capability_refs": [
+          "capability:cold-child-resume",
+          "capability:turn-permission-inheritance"
+        ],
+        "change": "M",
+        "codex_invariant_refs": [
+          "stored-model-provider-restoration",
+          "parent-turn-permission-boundary"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "codex-rs/core/src/agent/control/spawn.rs",
+        "old_path": null,
+        "planned_targets": [
+          "docs/validation/codex-0147-luna-canary.json",
+          "docs/validation/codex-0147-permission-inheritance.json",
+          "scripts/prove_verified_workflows_runtime.py"
+        ],
+        "planned_tests": [
+          "tests/test_prove_verified_workflows_runtime.py"
+        ],
+        "rationale": "Use Codex as the authority for cold child restoration and turn-scoped permissions, then prove the stored provider rejection and no-widening behavior in the frozen harness.",
+        "row_id": "src-dfa0e6b76fba2a49",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "other",
+        "treatment": "codex-adapt",
+        "units": [
+          "U5",
+          "U6",
+          "U7"
+        ]
+      },
+      {
+        "capability_refs": [
+          "capability:role-developer-instruction-inheritance",
+          "capability:role-permission-application"
+        ],
+        "change": "M",
+        "codex_invariant_refs": [
+          "role-specific-developer-instructions-win",
+          "permission-proof-after-role-application"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "codex-rs/core/src/agent/role.rs",
+        "old_path": null,
+        "planned_targets": [
+          "docs/validation/codex-0147-permission-inheritance.json",
+          "plugins/verified-workflows/PORTABILITY.md",
+          "plugins/verified-workflows/README.md"
+        ],
+        "planned_tests": [
+          "plugins/verified-workflows/tests/test_agent_tier_sync.py",
+          "tests/test_prove_verified_workflows_runtime.py"
+        ],
+        "rationale": "Preserve explicit role instructions and prove permission inheritance after Codex applies the role; do not copy native role application into plugin policy.",
+        "row_id": "src-96ff152242835130",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "other",
+        "treatment": "codex-adapt",
+        "units": [
+          "U3",
+          "U7"
+        ]
+      },
+      {
+        "capability_refs": [
+          "capability:multi-agent-model-override-filter"
+        ],
+        "change": "M",
+        "codex_invariant_refs": [
+          "catalog-derived-model-eligibility",
+          "per-profile-canary-gate"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "codex-rs/core/src/tools/handlers/multi_agents_common.rs",
+        "old_path": null,
+        "planned_targets": [
+          "docs/validation/codex-0147-luna-canary.json",
+          "plugins/fleet-core/scripts/fleet_commons/codex_model_catalog.py",
+          "plugins/fleet-core/scripts/fleet_commons/tier_resolver.py",
+          "plugins/verified-workflows/scripts/render_codex_agents.py"
+        ],
+        "planned_tests": [
+          "plugins/fleet-core/tests/test_codex_model_catalog.py",
+          "plugins/fleet-core/tests/test_tier_resolver.py",
+          "plugins/verified-workflows/tests/test_agent_tier_sync.py",
+          "tests/test_prove_verified_workflows_runtime.py"
+        ],
+        "rationale": "Derive model override eligibility from the catalog value and gate each Luna profile on its own receipt instead of retaining the superseded V2-only literal.",
+        "row_id": "src-cc6c5c92b1ef6b8d",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "other",
+        "treatment": "codex-adapt",
+        "units": [
+          "U2",
+          "U6",
+          "U9"
+        ]
+      },
+      {
+        "capability_refs": [
+          "capability:collaboration-tool-plan"
+        ],
+        "change": "M",
+        "codex_invariant_refs": [
+          "root-and-child-collaboration-projection",
+          "non-delegating-luna-leaf"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "codex-rs/core/src/tools/spec_plan.rs",
+        "old_path": null,
+        "planned_targets": [
+          "docs/validation/codex-0147-luna-canary.json",
+          "plugins/fleet-core/scripts/fleet_commons/codex_model_catalog.py",
+          "scripts/prove_verified_workflows_runtime.py"
+        ],
+        "planned_tests": [
+          "plugins/fleet-core/tests/test_codex_model_catalog.py",
+          "tests/test_prove_verified_workflows_runtime.py"
+        ],
+        "rationale": "Model the root and child collaboration-tool outcomes separately and prove Luna tool absence from the model-visible plan rather than inferring it from observed calls.",
+        "row_id": "src-b47f2e0e6a16322b",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "other",
+        "treatment": "codex-adapt",
+        "units": [
+          "U2",
+          "U5",
+          "U6"
+        ]
+      },
+      {
+        "capability_refs": [
+          "capability:executor-skill-sandbox-context"
+        ],
+        "change": "M",
+        "codex_invariant_refs": [
+          "executor-resource-fails-closed",
+          "host-and-executor-skill-resources-stay-distinct"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "codex-rs/ext/skills/src/provider/executor.rs",
+        "old_path": null,
+        "planned_targets": [
+          "docs/validation/codex-0147-skill-resources.json",
+          "scripts/prove_verified_workflows_runtime.py"
+        ],
+        "planned_tests": [
+          "tests/test_prove_verified_workflows_runtime.py"
+        ],
+        "rationale": "Exercise executor-backed skill resources through the native provider boundary and keep them distinct from ordinary host-installed plugin references.",
+        "row_id": "src-7e2ab6b465737969",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "other",
+        "treatment": "codex-adapt",
+        "units": [
+          "U5",
+          "U8"
+        ]
+      },
+      {
+        "capability_refs": [
+          "capability:executor-skill-read-boundary"
+        ],
+        "change": "M",
+        "codex_invariant_refs": [
+          "denied-resource-content-does-not-leak",
+          "turn-scoped-permission-recovery"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "codex-rs/ext/skills/src/tools/read.rs",
+        "old_path": null,
+        "planned_targets": [
+          "docs/validation/codex-0147-skill-resources.json",
+          "scripts/prove_verified_workflows_runtime.py"
+        ],
+        "planned_tests": [
+          "tests/test_prove_verified_workflows_runtime.py"
+        ],
+        "rationale": "Prove native executor reads fail closed without matching sandbox context, reveal no denied content, and recover only after an authorized turn-scoped permission grant.",
+        "row_id": "src-72245ea36696347c",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "other",
+        "treatment": "codex-adapt",
+        "units": [
+          "U5",
+          "U8"
+        ]
+      },
+      {
+        "capability_refs": [
+          "capability:multi-agent-version-wire-value",
+          "capability:turn-context-receipt"
+        ],
+        "change": "M",
+        "codex_invariant_refs": [
+          "disabled-wire-value-normalizes",
+          "durable-child-context-tuple"
+        ],
+        "evidence_refs": [],
+        "host_primitives": [],
+        "new_path": "codex-rs/protocol/src/protocol.rs",
+        "old_path": null,
+        "planned_targets": [
+          "docs/validation/codex-0147-permission-inheritance.json",
+          "plugins/fleet-core/scripts/fleet_commons/codex_model_catalog.py",
+          "scripts/prove_verified_workflows_runtime.py"
+        ],
+        "planned_tests": [
+          "plugins/fleet-core/tests/test_codex_model_catalog.py",
+          "tests/test_prove_verified_workflows_runtime.py"
+        ],
+        "rationale": "Accept Codex's lowercase disabled wire value and bind permission proof to the durable turn-context tuple without inventing an unavailable environment identifier.",
+        "row_id": "src-b9957440048c1d59",
+        "similarity": null,
+        "state": "classified",
+        "surface_kind": "other",
+        "treatment": "codex-adapt",
+        "units": [
+          "U2",
+          "U5",
+          "U7"
+        ]
+      }
+    ],
+    "target_reachable": true,
+    "target_ref": "be6e8eac029b183056b7e4402879f15d2c85f61b",
+    "topology": {
+      "common_base": "95637f7056835fea66bdd0044414af480fc0fd74",
+      "left": {
+        "peeled_commit": "79b4f03d35962b005b007a015113b38930711665",
+        "tag": "rust-v0.146.1"
+      },
+      "left_only_commits": [
+        {
+          "commit": "7558bede75dd7f9ed96c4ff00ccc6b28ded01159",
+          "disposition": "Behavior is present in rust-v0.147.0 through its mainline implementation; exclude this left-only backport commit from the focused diff."
+        },
+        {
+          "commit": "79b4f03d35962b005b007a015113b38930711665",
+          "disposition": "This commit records the rust-v0.146.1 release only; exclude it from the focused diff."
+        }
+      ],
+      "right": {
+        "peeled_commit": "be6e8eac029b183056b7e4402879f15d2c85f61b",
+        "tag": "rust-v0.147.0"
+      }
+    }
+  },
+  "version_policy": [
+    {
+      "current_codex_identity": "fleet-core",
+      "current_codex_version": "0.14.0+codex.20260729164721",
+      "policy": "codex-0147-alignment",
+      "release_unit": "U12",
+      "source_plugin": "codex-cli",
+      "source_version": "0.147.0",
+      "target_codex_identity": "fleet-core",
+      "target_codex_version": "0.15.0"
+    },
+    {
+      "current_codex_identity": "verified-workflows",
+      "current_codex_version": "3.0.0+codex.20260729164721",
+      "policy": "codex-0147-alignment",
+      "release_unit": "U12",
+      "source_plugin": "codex-cli",
+      "source_version": "0.147.0",
+      "target_codex_identity": "verified-workflows",
+      "target_codex_version": "3.1.0"
+    }
+  ]
+}

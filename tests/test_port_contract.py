@@ -169,6 +169,57 @@ def test_classification_rejects_unknown_schema_keys() -> None:
     assert any("manifest keys mismatch" in error and "unexpected" in error for error in errors)
 
 
+def test_divergent_source_topology_is_closed_and_requires_dispositions() -> None:
+    topology = {
+        "left": {"tag": "rust-v0.146.1", "peeled_commit": "1" * 40},
+        "right": {"tag": "rust-v0.147.0", "peeled_commit": "2" * 40},
+        "common_base": "3" * 40,
+        "left_only_commits": [
+            {"commit": "4" * 40, "disposition": "Behavior is present on the right."}
+        ],
+    }
+
+    assert contract._normalize_source_topology(topology) == topology
+
+    topology["left_only_commits"][0].pop("disposition")
+    errors = contract._source_topology_errors(topology)
+
+    assert any("missing=['disposition']" in error for error in errors)
+    assert any("disposition must be a non-empty printable string" in error for error in errors)
+
+
+def test_init_parser_accepts_a_complete_divergent_source_topology() -> None:
+    parser = contract.build_parser()
+    args = parser.parse_args(
+        [
+            "init",
+            "--source-repo",
+            "/tmp/source",
+            "--source-left-tag",
+            "rust-v0.146.1",
+            "--source-left-peeled-commit",
+            "1" * 40,
+            "--source-right-tag",
+            "rust-v0.147.0",
+            "--source-right-peeled-commit",
+            "2" * 40,
+            "--source-common-base",
+            "3" * 40,
+            "--source-left-only-commit",
+            f"{'4' * 40}=Behavior is present on the right.",
+        ]
+    )
+
+    assert contract._source_topology_from_args(args) == {
+        "left": {"tag": "rust-v0.146.1", "peeled_commit": "1" * 40},
+        "right": {"tag": "rust-v0.147.0", "peeled_commit": "2" * 40},
+        "common_base": "3" * 40,
+        "left_only_commits": [
+            {"commit": "4" * 40, "disposition": "Behavior is present on the right."}
+        ],
+    }
+
+
 def test_claude_only_surface_cannot_be_direct_port() -> None:
     manifest = load_manifest()
     row = manifest["source"]["rows"][0]
