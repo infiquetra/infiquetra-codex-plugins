@@ -943,6 +943,21 @@ read out of the request body that Codex actually sent:
 The absence in row one is evidence rather than a null result precisely because the other two markers
 appear in the same recorded request (KTD7).
 
+**"Injected" turned out to be three claims, and only two of them hold.** A follow-up capture gave
+each canary separate markers for its name, its frontmatter description and its instruction body:
+
+| | name | description | body |
+| --- | --- | --- | --- |
+| implicit | in context | in context | **not** in context |
+| explicit-only | absent | absent | absent |
+
+An implicit skill is a menu entry, not a loaded instruction set — the body is fetched on demand in
+both modes. For the twenty-five skills below that is about 4,561 characters, roughly 1,140 tokens,
+against 150,984 characters of body that never travels. So the consequence is **selectability, not
+context cost**: a listed skill is one the model may choose without being asked. The first version of
+this receipt said "injected into the model context", which overstates the cost around thirty-fold
+and understates the part that matters.
+
 **Twenty-five skills across eight plugins ship no `agents/openai.yaml` at all** — deploy,
 mission-control, home-lab-ops, python-toolkit, unifi, test-suite, discord-identity-assets, and
 hermes-profile-evolution. Every one of them is injected into the model context by default. Only saga

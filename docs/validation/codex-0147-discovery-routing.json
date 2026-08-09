@@ -23,9 +23,21 @@
         "policy_file": null
       }
     },
-    "conclusion": "A skill with no agents/openai.yaml is injected into the model context. The absence of the explicit-only canary is evidence rather than a null result because two other canaries appear in the same recorded request.",
+    "conclusion": "A skill with no agents/openai.yaml is listed to the model: its name and description reach every request while its body does not. The absence of the explicit-only canary is evidence rather than a null result because two other canaries appear in the same recorded request.",
     "documented_at": "plugin-creator skill reference shipped inside the codex 0.147.0 binary",
-    "documented_default": "true"
+    "documented_default": "true",
+    "what_is_injected": {
+      "body": false,
+      "cost_for_the_25_default_implicit_skills": {
+        "approx_tokens": 1140,
+        "name_and_description_chars": 4561,
+        "their_bodies_not_sent_chars": 150984
+      },
+      "description": true,
+      "measured": true,
+      "name": true,
+      "note": "Separately marked canaries: the skill name and its frontmatter description reach the request, the instruction body does not. An implicit skill is therefore a menu entry the model can choose, not a block of instructions loaded up front; the body is fetched on demand in both modes. An explicit-only skill contributes nothing at all, not even its name, so the model cannot know it exists."
+    }
   },
   "criteria": {
     "admin-scope-resolution": {
@@ -34,6 +46,10 @@
     },
     "agent-profile-packaging": {
       "how": "checked for $CODEX_HOME/agents after installing all eleven plugins",
+      "measured": true
+    },
+    "context-injection-depth": {
+      "how": "canaries with distinct name, description and body markers read from one request",
       "measured": true
     },
     "context-injection-policy": {
@@ -63,6 +79,7 @@
   },
   "findings": [
     {
+      "context_cost_approx_tokens": 1140,
       "id": "implicit-injection-unstated-for-eight-plugins",
       "plugins": [
         "deploy",
@@ -74,9 +91,10 @@
         "test-suite",
         "unifi"
       ],
+      "primary_consequence": "model-selectable without operator request",
       "severity": "operator-decision",
       "skills": 25,
-      "statement": "Twenty-five skills across eight plugins carry no agents/openai.yaml, so they take the documented default and are injected into every model context. Only saga and verified-workflows declare explicit-only, and tests/test_explicit_skill_invocation.py asserts exactly those two plugins and is silent on the rest."
+      "statement": "Twenty-five skills across eight plugins carry no agents/openai.yaml, so they take the documented default and are listed to the model in every request -- name and description, not body. The consequence is selectability rather than context cost: the model may choose them unprompted. Only saga and verified-workflows declare explicit-only, and tests/test_explicit_skill_invocation.py asserts exactly those two plugins and is silent on the rest."
     },
     {
       "id": "scope-vocabulary-is-not-global-workspace-personal",

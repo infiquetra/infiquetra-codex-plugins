@@ -157,6 +157,32 @@ def test_a_skill_with_no_policy_file_is_injected_by_default() -> None:
     assert canaries["u10-no-policy-file"]["injected"] is True
 
 
+def test_implicit_lists_the_skill_rather_than_loading_it() -> None:
+    """"Injected" is three different claims, and only two of them are true.
+
+    An implicit skill contributes its name and description to every request; its instruction body
+    does not travel. So the difference between the two modes is who may initiate -- a listed skill
+    is one the model can choose unprompted -- rather than how much context a skill costs. Stating
+    it as "the skill is loaded into context" overstates the cost by roughly thirty times and
+    understates the part that actually matters.
+    """
+
+    depth = RECEIPT["context_injection"]["what_is_injected"]
+    assert depth["measured"] is True
+    assert depth["name"] is True
+    assert depth["description"] is True
+    assert depth["body"] is False
+
+    cost = depth["cost_for_the_25_default_implicit_skills"]
+    assert cost["their_bodies_not_sent_chars"] > 10 * cost["name_and_description_chars"]
+
+    finding = next(
+        item for item in RECEIPT["findings"]
+        if item["id"] == "implicit-injection-unstated-for-eight-plugins"
+    )
+    assert finding["primary_consequence"] == "model-selectable without operator request"
+
+
 def test_the_declared_explicit_only_set_is_exactly_saga_and_verified_workflows() -> None:
     declared = {
         plugin
