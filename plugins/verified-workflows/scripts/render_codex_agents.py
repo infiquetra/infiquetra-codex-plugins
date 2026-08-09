@@ -28,6 +28,7 @@ import fleet_commons_shim  # noqa: E402
 
 CATALOG = fleet_commons_shim.load("codex_model_catalog")
 WORKFLOW_COMPAT = fleet_commons_shim.load("workflow_compat")
+TIER_PALETTE = fleet_commons_shim.load("tier_palette")
 
 PLUGIN_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -91,42 +92,31 @@ PROFILE_IDS = (
 RUNTIME_AGENT_NAMES = {profile_id: profile_id for profile_id in PROFILE_IDS}
 PROFILE_ID_BY_AGENT_NAME = dict(RUNTIME_AGENT_NAMES)
 RUNTIME_AGENT_NAME = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
-PROFILE_POLICY = {
-    "review_max": {
-        "description": "Maximum-effort independent review for exceptional risk.",
-        "model": "gpt-5.6-sol",
-        "effort": "max",
-    },
-    "review_high": {
-        "description": "High-effort independent review across maintained role lenses.",
-        "model": "gpt-5.6-sol",
-        "effort": "high",
-    },
-    "work_high": {
-        "description": "High-effort implementation for complex bounded workspace changes.",
-        "model": "gpt-5.6-sol",
-        "effort": "high",
-    },
-    "work_medium": {
-        "description": "Ordinary implementation, remediation, and Git integration for bounded changes.",
-        "model": "gpt-5.6-terra",
-        "effort": "medium",
-    },
-    "test_medium": {
-        "description": "Ordinary implementation and test execution for bounded workspace changes.",
-        "model": "gpt-5.6-terra",
-        "effort": "medium",
-    },
-    "scan_low": {
-        "description": "Low-cost read-only scanning with no external access.",
-        "model": "gpt-5.6-terra",
-        "effort": "low",
-    },
-    "monitor_low": {
-        "description": "Low-cost read-only monitoring through allowlisted external reads.",
-        "model": "gpt-5.6-terra",
-        "effort": "low",
-    },
+# Each managed profile names exactly one Fleet Core execution class, which is where its model
+# and effort live. Nothing here restates them: a profile whose class Fleet Core does not define,
+# or a profile with no class at all, fails loudly at render time rather than falling back.
+PROFILE_EXECUTION_CLASSES = {
+    "review_max": "review-max",
+    "review_high": "review-high",
+    "work_high": "work-high",
+    "work_medium": "work-medium",
+    "test_medium": "test-medium",
+    "scan_low": "scan-low",
+    "monitor_low": "monitor-low",
+}
+# The only reasons a resolved profile may carry a model its execution class did not state. Each
+# one is a deliberate, bounded runtime substitution; effort is never deviated from.
+PROFILE_POLICY_DEVIATIONS = frozenset({"luna-v2-canary"})
+# Profile-facing prose only. The execution class carries its own description written for Fleet
+# Core's policy reader; this is the text a Codex operator sees on the generated agent.
+PROFILE_DESCRIPTIONS = {
+    "review_max": "Maximum-effort independent review for exceptional risk.",
+    "review_high": "High-effort independent review across maintained role lenses.",
+    "work_high": "High-effort implementation for complex bounded workspace changes.",
+    "work_medium": "Ordinary implementation, remediation, and Git integration for bounded changes.",
+    "test_medium": "Ordinary implementation and test execution for bounded workspace changes.",
+    "scan_low": "Low-cost read-only scanning with no external access.",
+    "monitor_low": "Low-cost read-only monitoring through allowlisted external reads.",
 }
 # The set of valid role categories. This is a vocabulary check on the declared
 # category, not a capability policy: any role may request any managed profile.
@@ -362,6 +352,10 @@ class ProfileResolution:
     model: str
     effort: str
     catalog_sha256: str
+    # A resolution may only depart from its execution class for a reason named in
+    # PROFILE_POLICY_DEVIATIONS. Absent a declared reason, render_profile rejects a model or
+    # effort that Fleet Core did not state, so a hand-built resolution cannot smuggle one in.
+    policy_deviation: str | None = None
 
 
 def _sha256(content: bytes) -> str:
@@ -974,6 +968,34 @@ def _toml_string(value: str) -> str:
     return json.dumps(value, ensure_ascii=False)
 
 
+def profile_policy(profile_id: str) -> dict[str, str]:
+    """Read one managed profile's policy from its Fleet Core execution class.
+
+    The class is the single source of the model and effort. This is read per render rather
+    than frozen at import so a Fleet Core policy change moves the rendered profile without
+    an edit here.
+    """
+
+    try:
+        execution_class = PROFILE_EXECUTION_CLASSES[profile_id]
+        description = PROFILE_DESCRIPTIONS[profile_id]
+    except KeyError as exc:
+        raise RoleRegistryError(f"unknown profile {profile_id!r}") from exc
+    try:
+        policy = TIER_PALETTE.execution_class_policy(execution_class)
+    except ValueError as exc:
+        raise RoleRegistryError(
+            f"profile {profile_id} names execution class {execution_class!r}, "
+            f"which Fleet Core does not define"
+        ) from exc
+    return {
+        "description": description,
+        "execution_class": policy.name,
+        "model": policy.preferred.model,
+        "effort": policy.preferred.effort,
+    }
+
+
 def resolve_profile(
     profile_id: str,
     catalog_snapshot: Any,
@@ -982,11 +1004,9 @@ def resolve_profile(
 ) -> ProfileResolution:
     """Resolve one exact V2 profile without a hidden model or effort fallback."""
 
-    try:
-        policy = PROFILE_POLICY[profile_id]
-    except KeyError as exc:
-        raise RoleRegistryError(f"unknown profile {profile_id!r}") from exc
+    policy = profile_policy(profile_id)
     model_slug = policy["model"]
+    policy_deviation: str | None = None
     if luna_v2_canary_passed and profile_id in {"scan_low", "monitor_low"}:
         luna = catalog_snapshot.model("gpt-5.6-luna")
         if luna is None or not luna.selectable or luna.multi_agent_version != "v2":
@@ -994,6 +1014,7 @@ def resolve_profile(
                 "Luna low-profile promotion requires a selectable V2 catalog entry"
             )
         model_slug = "gpt-5.6-luna"
+        policy_deviation = "luna-v2-canary"
     model = catalog_snapshot.model(model_slug)
     if model is None or not model.selectable:
         raise RoleRegistryError(f"profile {profile_id} model {model_slug!r} is not selectable")
@@ -1006,13 +1027,43 @@ def resolve_profile(
         model=model_slug,
         effort=policy["effort"],
         catalog_sha256=catalog_snapshot.normalized_sha256,
+        policy_deviation=policy_deviation,
     )
+
+
+def _reject_off_policy_resolution(
+    resolution: ProfileResolution, policy: dict[str, str]
+) -> None:
+    """Refuse to render a resolution that departs from its execution class undeclared.
+
+    ``render_profile`` is public and takes a caller-supplied ``ProfileResolution``, so without
+    this the single-policy-source claim would hold only for resolutions this module built. A
+    deviation is allowed only when the resolution names a reason in PROFILE_POLICY_DEVIATIONS,
+    and even then the class still owns the effort.
+    """
+
+    deviation = resolution.policy_deviation
+    if deviation is not None and deviation not in PROFILE_POLICY_DEVIATIONS:
+        raise RoleRegistryError(
+            f"profile {resolution.profile_id} declares unknown policy deviation {deviation!r}"
+        )
+    if resolution.effort != policy["effort"]:
+        raise RoleRegistryError(
+            f"profile {resolution.profile_id} effort {resolution.effort!r} does not match "
+            f"execution class {policy['execution_class']!r} effort {policy['effort']!r}"
+        )
+    if resolution.model != policy["model"] and deviation is None:
+        raise RoleRegistryError(
+            f"profile {resolution.profile_id} model {resolution.model!r} does not match "
+            f"execution class {policy['execution_class']!r} model {policy['model']!r}"
+        )
 
 
 def render_profile(resolution: ProfileResolution, registry: RoleRegistry) -> RenderedProfile:
     """Render and parse-check one profile-bound custom-agent TOML."""
 
-    policy = PROFILE_POLICY[resolution.profile_id]
+    policy = profile_policy(resolution.profile_id)
+    _reject_off_policy_resolution(resolution, policy)
     runtime_agent_name = RUNTIME_AGENT_NAMES[resolution.profile_id]
     if RUNTIME_AGENT_NAME.fullmatch(runtime_agent_name) is None:
         raise RoleRegistryError("runtime agent name is not accepted by Codex")
@@ -1070,8 +1121,10 @@ def render_bundle(
 ) -> RenderBundle:
     """Resolve all managed profiles once and bind every logical role to a profile."""
 
-    if set(PROFILE_POLICY) != set(PROFILE_IDS):
-        raise RoleRegistryError("managed profile policy roster drifted")
+    if set(PROFILE_EXECUTION_CLASSES) != set(PROFILE_IDS):
+        raise RoleRegistryError("managed profile execution-class roster drifted")
+    if set(PROFILE_DESCRIPTIONS) != set(PROFILE_IDS):
+        raise RoleRegistryError("managed profile description roster drifted")
     profiles = tuple(
         render_profile(
             resolve_profile(

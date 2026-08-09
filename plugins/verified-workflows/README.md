@@ -62,15 +62,24 @@ external-action, or authority change requires a new preview and approval.
 Logical roles are separate from compute profiles. The role registry preserves 29 role lenses; the
 workflow selects one of seven generated profiles:
 
-| Profile | Model | Effort | Contract write intent | Purpose |
-|---|---|---|---|---|
-| `review_max` | `gpt-5.6-sol` | `max` | read-only | Exceptional-risk independent review |
-| `review_high` | `gpt-5.6-sol` | `high` | read-only | Normal independent review |
-| `work_medium` | `gpt-5.6-terra` | `medium` | declared write | Ordinary implementation, remediation, and Git integration |
-| `work_high` | `gpt-5.6-sol` | `high` | declared write | Complex bounded implementation |
-| `test_medium` | `gpt-5.6-terra` | `medium` | declared write | Ordinary testing and validation |
-| `scan_low` | `gpt-5.6-terra` | `low` | read-only | Low-cost repository scanning |
-| `monitor_low` | `gpt-5.6-terra` | `low` | read-only | Allowlisted external observation |
+| Profile | Execution class | Contract write intent | Purpose |
+|---|---|---|---|
+| `review_max` | `review-max` | read-only | Exceptional-risk independent review |
+| `review_high` | `review-high` | read-only | Normal independent review |
+| `work_medium` | `work-medium` | declared write | Ordinary implementation, remediation, and Git integration |
+| `work_high` | `work-high` | declared write | Complex bounded implementation |
+| `test_medium` | `test-medium` | declared write | Ordinary testing and validation |
+| `scan_low` | `scan-low` | read-only | Low-cost repository scanning |
+| `monitor_low` | `monitor-low` | read-only | Allowlisted external observation |
+
+**This table deliberately carries no model and no effort.** Those belong to the execution class, and
+listing them here would be a second copy that drifts the moment Fleet Core policy changes.
+`render_codex_agents.py` maps each profile to exactly one class and reads the model and effort from
+[`models.json`](../fleet-core/scripts/fleet_commons/models.json); the current pairs are tabulated
+once, in [the Fleet Core tier palette reference](../fleet-core/references/tier-palette.md). A
+profile with no mapped class, one naming a class Fleet Core does not define, or a resolution whose
+model or effort departs from its class without a declared reason all fail the render rather than
+falling back.
 
 Ultra is root-only. The write-intent column states what the approved contract expects an assignment
 to do. It is not a sandbox control. Codex 0.146.0 children inherit the parent turn's effective

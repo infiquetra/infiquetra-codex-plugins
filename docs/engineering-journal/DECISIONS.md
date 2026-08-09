@@ -1,5 +1,62 @@
 # Decisions
 
+## 2026-08-09: The Execution Class Is The Only Place A Managed Profile's Model And Effort Are Stated
+
+Each of the seven managed Verified Workflows profiles carried its own model and effort in a
+`PROFILE_POLICY` dictionary in `plugins/verified-workflows/scripts/render_codex_agents.py`, while
+Fleet Core's `execution_classes` in `plugins/fleet-core/scripts/fleet_commons/models.json` stated
+the same policy for its own consumers. Two sources, no binding between them: a Fleet Core policy
+change moved nothing in the rendered profiles, and nothing failed to say so. That is the same
+freeze-and-restate shape this alignment round exists to remove, one layer up from the catalog
+facts that motivated it.
+
+**Decision.** The execution class is the single source. `render_codex_agents.py` now maps each
+profile to exactly one class by name and reads the model and effort from that class at render
+time, through `fleet_commons_shim.load("tier_palette")`. The plugin keeps only two things of its
+own: the profile-to-class mapping, and the operator-facing description text rendered into the
+profile. The class carries its own description written for the Fleet Core policy reader; those
+two descriptions have different audiences and are deliberately not merged.
+
+**Scope of the freshness claim, stated exactly.** The renderer holds no copy of its own and asks
+`tier_palette` on every render. `tier_palette` itself reads `models.json` once per process and
+freezes the derived policies, so a policy edit takes effect on the **next run**, not mid-process.
+That per-process freeze is correct rather than a limitation: reloading between two profiles in one
+bundle would let a single render emit two different policies. The claim U4 earns is "no second copy
+in the plugin, and no plugin edit needed to adopt a policy change" — not live reload.
+
+**Three failure modes, all loud.** A profile with no mapped class fails the roster check. A profile
+naming a class Fleet Core does not define fails with the class name in the message. And a
+`ProfileResolution` whose model or effort departs from its class fails at render unless it names a
+reason in `PROFILE_POLICY_DEVIATIONS` — today only the Luna canary, which substitutes a model and
+never an effort. That last check exists because `render_profile` is public and takes a
+caller-supplied resolution: without it the single-source claim would have held only for resolutions
+this module built, which a cross-engine review demonstrated by rendering `work_high` as
+`gpt-5.4-mini` / `low` against a class that says `gpt-5.6-sol` / `high`.
+
+**Proved by byte identity, not by argument.** The seven rendered profile digests were captured
+before the change and pinned in `plugins/verified-workflows/tests/test_agent_tier_sync.py` as
+`PRE_COLLAPSE_PROFILE_SHA256`. All seven are byte-identical after it. A collapse that changed what
+gets rendered would be a model change wearing a refactor's clothes; this one is not.
+
+**Two classes had to be created.** Seven profiles mapped to five classes: `work-high` and
+`work-medium` had no Fleet Core class at all. Both were added to `models.json`, which extends
+shared Fleet Core vocabulary rather than a plugin-local list — the operator approved that
+explicitly.
+
+**Rejected alternative: renumber `order` into cost order.** Appending the two classes at ranks 5
+and 6 places an expensive `gpt-5.6-sol` / `high` class after the cheap `monitor-low`, which looks
+wrong if `order` is read as a cost ranking. It is not one. `order` exists so the derived class
+tuple is deterministic and so a duplicate or gap fails loudly; the only consumers are
+`_derive_ordered` and one pinned roster test. Renumbering would have changed ranks for five
+existing classes to encode a meaning nothing reads. Appending changes none of them. The semantic
+is now stated in `plugins/fleet-core/references/tier-palette.md` so the next reader does not have
+to re-derive it.
+
+**Revisit when.** Something starts reading `order` as a ranking — a cost report, a preference
+walk, a fallback ladder across classes. At that point the meaning has genuinely changed, ranks
+must be assigned deliberately, and the reference note above becomes wrong rather than merely
+incomplete.
+
 ## 2026-08-08: Model Eligibility Is One Catalog Fact Plus Two Derived Projections
 
 Codex 0.147.0 relaxed the MultiAgent V2 model gate from "the catalog must report `v2`" to "the catalog

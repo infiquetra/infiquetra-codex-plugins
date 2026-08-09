@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Fleet dispatch policy resolution.
 
-``resolve_execution_class`` is the authoritative Codex path: it resolves one of Fleet Core's
-five leaf classes against one immutable model-catalog snapshot. ``resolve_root_orchestration``
+``resolve_execution_class`` is the authoritative Codex path: it resolves one of the leaf classes
+``models.json`` defines against one immutable model-catalog snapshot. ``resolve_root_orchestration``
 is the only path that can select Ultra. The older work-shape ``resolve`` function remains as a
 temporary compatibility API for pre-cutover Saga and Team Execution consumers.
 

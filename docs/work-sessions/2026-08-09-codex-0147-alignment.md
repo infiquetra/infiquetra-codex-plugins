@@ -354,7 +354,152 @@ policy instead of its `PROFILE_POLICY` literals, replace the hardcoded expectati
 `test_agent_tier_sync.py` with an assertion against the class policy, and prove all seven rendered
 profiles are byte-identical to the digests above.
 
+## Phase 4 — U4 complete
+
+The operator answered the open question directly: extending Fleet Core is fine, and cost ordering of
+`order` is not a concern. Both new classes were therefore appended at the next free ranks, 5 and 6, so
+no existing class rank moved.
+
+### The base moved again first
+
+`origin/main` had advanced two commits (a fix binding the profile-evolution render receipts). Neither
+touched anything U4 works on — the change is confined to a docs asset and its test — so the branch was
+rebased onto it before any U4 edit. Five commits replayed cleanly.
+
+### What `order` actually means
+
+Audited before assuming. `order` has exactly two consumers: `_derive_ordered` in `tier_palette.py`,
+which requires the values be contiguous `0..n-1` and rejects a duplicate or a gap, and one roster
+assertion in `plugins/fleet-core/tests/test_tier_resolver.py`. Nothing reads it as a cost or
+capability ranking. Appending is therefore correct and renumbering would have changed five existing
+ranks to encode a meaning nothing consumes. The semantic is now written down in
+`plugins/fleet-core/references/tier-palette.md` so the next reader does not have to re-derive it, and
+the decision with its rejected alternative is in `docs/engineering-journal/DECISIONS.md`.
+
+### The collapse
+
+`render_codex_agents.py` no longer states a model or an effort anywhere. It keeps two plugin-local
+facts — `PROFILE_EXECUTION_CLASSES`, mapping each profile to exactly one Fleet Core class, and
+`PROFILE_DESCRIPTIONS`, the operator-facing text rendered into the profile — and reads the model and
+effort from the class through `fleet_commons_shim.load("tier_palette")`.
+
+The renderer asks the palette on every render rather than caching an answer of its own. What that
+earns is precise and worth stating exactly, because the first draft of this note overstated it:
+there is no second copy in the plugin, and no plugin edit is needed to adopt a Fleet Core policy
+change. It is **not** live reload. `tier_palette` reads `models.json` once per process and freezes
+the derived policies, so an edit takes effect on the next run. That freeze is correct rather than a
+shortcoming — reloading between two profiles of one bundle would let a single render emit two
+different policies.
+
+Three failure modes are loud. A profile absent from the mapping fails the roster check in
+`render_bundle`. A profile naming a class Fleet Core does not define fails in `profile_policy` with
+the class name in the message. And a `ProfileResolution` whose model or effort departs from its class
+fails at render unless it names a reason in `PROFILE_POLICY_DEVIATIONS`. None falls back.
+
+### Byte identity holds
+
+All seven rendered profiles are byte-identical to their pre-collapse digests, which are now pinned in
+`plugins/verified-workflows/tests/test_agent_tier_sync.py` as `PRE_COLLAPSE_PROFILE_SHA256`:
+
+```
+review_max   3bb3abe289a7dbb8   review_high  86b2f2e0f6f1f347   work_high    8eb7257833aceb87
+work_medium  a7cd86f520fcb554   test_medium  9b80ca6f220dc685   scan_low     c5aec84ee0e8b3b0
+monitor_low  1ffcc126fef9a0f6
+```
+
+The runtime proof at `docs/validation/verified-workflows-runtime-proof.json` needed no regeneration,
+which is itself the byte-identity claim restated: it records those same seven digests, and
+`prove_verified_workflows_runtime.py` still exits clean against them.
+
+### Tests changed, and why each claim moved
+
+- `test_full_catalog_renders_exact_model_pinned_profiles` became
+  `test_full_catalog_renders_profiles_bound_to_their_execution_class`. It no longer restates seven
+  model/effort pairs as literals; it reads them from the class policy and asserts the rendered TOML
+  agrees. Restating them in the test would have recreated the duplication one layer down.
+- `test_ultra_is_rejected_as_a_child_profile` used to force Ultra by editing the renderer's own
+  policy dictionary. Ultra can now only reach a leaf by way of Fleet Core policy, so the test provokes
+  it there instead, through a helper that repoints one class in place. That is a stronger claim than
+  the one it replaces.
+- Four tests are new: byte identity across all seven profiles; a repointed class moving its own
+  profile while the other six stay byte-identical; an unmapped profile failing loudly; and a profile
+  naming an undefined class failing loudly.
+- The two roster assertions in `plugins/fleet-core/tests/test_tier_resolver.py` were renamed rather
+  than edited in place, because their names encoded the now-false claim "exactly five".
+
+### Codex's review found the collapse was only half-enforced
+
+Third round in a row where the cross-engine pass caught something self-review had already signed off
+on. No byte-identity defect — Codex independently reconstructed the old literal policy and confirmed
+all seven profiles match, under both the normal catalog and a synthetic Luna canary — but three real
+gaps, all now closed.
+
+**The public render path escaped the policy.** `render_profile` re-read the class policy and then
+used it only for the description; it emitted the caller-supplied resolution's own model and effort
+and validated them against themselves. Codex demonstrated it by hand-building a resolution and
+rendering `work_high` as `gpt-5.4-mini` / `low` while its class says `gpt-5.6-sol` / `high`. The
+function is public, so "the class is the single policy source" was true only for resolutions this
+module happened to build. Closed by `_reject_off_policy_resolution`, which refuses any model or
+effort the class did not state.
+
+That forced a design question the round had not faced: the Luna canary legitimately substitutes a
+model. A blanket equality check would have broken it. So a deviation is now *declared* rather than
+merely permitted — `ProfileResolution` carries a `policy_deviation` field, `resolve_profile` sets it
+to `luna-v2-canary` when it substitutes, and only reasons named in `PROFILE_POLICY_DEVIATIONS` are
+accepted. Effort is never deviated from, canary or not. An undeclared substitution and an invented
+reason both fail loudly.
+
+**The freshness claim was stronger than the implementation.** Codex traced `tier_palette` reading
+`models.json` once at import and freezing the derived policies, which makes `execution_class_policy`
+a dictionary lookup. The movement test patches that lookup, so it proves the renderer consults the
+palette but not that a real file edit propagates. It offered two honest resolutions: narrow the
+claim, or implement reload. Narrowing is the correct one, and the reason is in the decision record —
+mid-process reload would let one bundle emit two policies. The claim, the test name, and the
+decision entry were all corrected, and a test now pins the other half of the chain: that
+`tier_palette`'s registry path is fleet-core's `models.json` and that a different registry file
+yields a different policy.
+
+**The README was still a second copy.** Its table listed all seven model and effort pairs directly
+above a sentence claiming the plugin does not state them, with nothing binding the two. That is the
+exact defect U4 removes from code, left standing in documentation. The model and effort columns are
+gone; the table now carries only what the plugin owns — profile, class, write intent, purpose — and
+points at the Fleet Core reference for the pairs.
+
+### Two stale counts fixed rather than updated
+
+`tier_resolver.py`'s module docstring and `plugins/fleet-core/PORTABILITY.md` both said "five leaf
+execution classes". Writing "seven" would have restated a fact that drifts on the next change, which
+is the defect this round exists to remove. Both now name `models.json` as the authority and state no
+count. The count that remains is the one pinned test, which fails loudly when it is wrong.
+
+### The engineering-journal classifier conflict fired a second time
+
+Appending the U4 decision to `docs/engineering-journal/DECISIONS.md` moved
+`historical_inventory_sha256` again, because the classifier still treats that file as
+`historical-evidence` and pins it byte-stable while the repository's standing rule requires appending
+a dated entry in the same commit as a decision. Verified the drift before bumping the pin: the
+historical set is unchanged at 47 entries, no path added or removed, no token set changed, and exactly
+one digest moved — the file appended to.
+
+This is the second bump in one round from the same cause, which strengthens the recommendation
+already recorded above: `DECISIONS.md` should carry the `mutable-engineering-journal` classification
+that `QUEUED.md` already has, for the same reason. That is a change to a guard rather than to this
+round's subject, so it stays an operator decision and was not made here.
+
+### Checks run
+
+- Full suite excluding the plugin blocked by a missing imaging library: **2508 passed**.
+- `python3 scripts/validate_codex_plugins.py` — passes.
+- `python3 plugins/verified-workflows/scripts/render_codex_agents.py --check --pretty` — passes.
+- `python3 scripts/prove_verified_workflows_runtime.py --pretty` — passes.
+- `python3 scripts/render_capability_schema.py --check` — capability schema current.
+- `ruff` clean on every touched Python file.
+
+One test, `test_orphan_evidence.py::test_two_process_successor_close_fences_stale_writer_and_preserves_bytes`,
+fails with `_queue.Empty` under some narrower selections and passes in the full run. Reproduced it
+with all U4 changes stashed, so it is pre-existing and load-sensitive rather than caused here.
+
 ## Next step
 
-Decide the `order` semantics for the two new execution classes, then execute U4. U5 through U14 remain
-untouched.
+U5 — build the proof harness, have it cross-reviewed, then freeze it before any receipt is collected.
+U6 through U14 remain untouched.

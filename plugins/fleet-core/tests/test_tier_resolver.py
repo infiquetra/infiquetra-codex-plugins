@@ -85,13 +85,17 @@ def test_legacy_ladder_and_work_shape_resolver_remain_available() -> None:
     assert resolver.resolve(None, "adversarial-review").model == "opus"
 
 
-def test_registry_has_exact_five_classes_and_no_role_policy() -> None:
+def test_registry_has_exact_seven_classes_and_no_role_policy() -> None:
+    # Ranked in registration order, which is what `order` means. A new class is appended at
+    # the next free rank, so adding one never renumbers an existing class.
     assert palette.EXECUTION_CLASSES == (
         "review-max",
         "review-high",
         "test-medium",
         "scan-low",
         "monitor-low",
+        "work-high",
+        "work-medium",
     )
     raw = json.loads(palette.MODELS_REGISTRY_PATH.read_text(encoding="utf-8"))
     forbidden = {"role", "logical_role", "default_role", "allowed_transitions"}
@@ -108,13 +112,15 @@ def test_registry_rejects_top_level_role_policy(tmp_path: Path) -> None:
         palette._load_registry(path)
 
 
-def test_full_catalog_resolves_exact_five_classes(full_snapshot) -> None:
+def test_full_catalog_resolves_exact_seven_classes(full_snapshot) -> None:
     expected = {
         "review-max": ("gpt-5.6-sol", "max"),
         "review-high": ("gpt-5.6-sol", "high"),
         "test-medium": ("gpt-5.6-terra", "medium"),
         "scan-low": ("gpt-5.6-terra", "low"),
         "monitor-low": ("gpt-5.6-terra", "low"),
+        "work-high": ("gpt-5.6-sol", "high"),
+        "work-medium": ("gpt-5.6-terra", "medium"),
     }
     for execution_class, pair in expected.items():
         result = resolver.resolve_execution_class(execution_class, full_snapshot)
