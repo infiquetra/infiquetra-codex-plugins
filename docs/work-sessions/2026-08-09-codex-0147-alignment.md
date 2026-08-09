@@ -757,7 +757,46 @@ rather than `eligible`.
 - Zero model calls, zero quota. Every probe ran against a disposable `CODEX_HOME` and a local
   Responses API stand-in.
 
+## Phase 7 — U7 permission inheritance, all seven rows, still no model calls
+
+The plan's blocking gate. Every row was captured offline: dropping `--ephemeral` makes Codex write
+rollouts, and a rollout's `turn_context` carries the whole tuple — `cwd`, `workspace_roots`,
+`approval_policy`, `approvals_reviewer`, `sandbox_policy` and `permission_profile` — for the root
+turn and the spawned child alike. Every value recorded is what Codex *did*, never what was asked
+for; a requested sandbox is an intention, a recorded one is the permission the turn ran under.
+
+### The row that matters
+
+`turn-permission-no-widening`: the child profile declares `sandbox_mode = "workspace-write"` under a
+read-only root, and the child ran **read-only**. A profile cannot raise its own ceiling. That is
+R12 confirmed by observation rather than by reading configuration, and `validate_permission_
+inheritance` re-derives it from the tuple rather than trusting the receipt's own summary.
+
+Two more findings fell out: `approvals_reviewer` is `user` on every row, root and child alike — a
+command-approval reviewer, never operator authority (R11), and the validator refuses any receipt
+presenting `auto_review` as authority. And workspace roots are inherited, not per-profile: the
+multiple-roots row records two roots on the root turn and the child runs under the same widened set.
+
+### Three defects in the harness itself, found by using it
+
+- **`_run` left stdin open.** Codex reads stdin when it is a terminal or an open pipe, so the same
+  probe hung from a script and succeeded from a heredoc — the heredoc happened to hand it EOF. The
+  symptom was a three-minute timeout with no diagnosis. Now `stdin=subprocess.DEVNULL`.
+- **`exec resume` takes neither `-C` nor `--skip-git-repo-check`.** Its signature is
+  `[OPTIONS] [SESSION_ID] [PROMPT]`, and the working directory comes from the session being
+  resumed, which must therefore be a real repository.
+- **A resumed session appends to the rollout it resumed** rather than writing a new one, so a
+  before/after diff finds nothing and the row would have had no evidence while reporting success.
+  Resume now reads every rollout and takes the last turn context in each, which is also the correct
+  reading for the later-update row.
+
+### Checks
+
+- Full suite excluding the plugin blocked by a missing imaging library: **2587 passed**.
+- Validator, runtime proof, ruff — all clean. Harness digest re-pinned.
+- Zero model calls, zero quota, across all seven rows.
+
 ## Next step
 
-U7 — the turn-environment permission proof, which the plan marks as a blocking gate. U8 through U14
-remain untouched.
+U8 — the skill-resource proof, which now has both fixtures and a schema-validated capability root
+from U5. U9 through U14 remain untouched.

@@ -177,6 +177,11 @@ def _run(argv: Sequence[str], *, codex_home: Path, cwd: Path, where: str) -> str
         result = subprocess.run(
             [_codex_executable(), *argv],
             check=False,
+            # Codex reads stdin when it is a terminal or an open pipe, so a probe launched from a
+            # script hangs until its timeout while the same probe launched from a heredoc
+            # succeeds -- the heredoc happens to hand it EOF. Closing stdin makes the probe behave
+            # the same way whoever runs it.
+            stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             timeout=PROBE_TIMEOUT_SECONDS,
@@ -714,6 +719,118 @@ def _require_requested_child(
             f"tool specification: a child capture was requested but all {len(projections)} "
             f"recorded turns are root turns; the child never spawned"
         )
+
+
+TURN_ENVIRONMENT_FIELDS = (
+    "cwd",
+    "workspace_roots",
+    "approval_policy",
+    "approvals_reviewer",
+    "sandbox_policy",
+    "permission_profile",
+)
+
+
+def capture_turn_environment(
+    *,
+    codex_home: Path,
+    workspace: Path,
+    sandbox: str = "read-only",
+    extra_roots: Sequence[Path] = (),
+    child_profile_config: Path | None = None,
+    config_overrides: Sequence[str] = (),
+    resume_last: bool = False,
+    task_name: str = "probe_child",
+) -> dict[str, Any]:
+    """Run one offline turn and return the effective permission tuple for root and child.
+
+    The turn is real -- Codex applies the sandbox, resolves workspace roots, and writes rollouts
+    -- but the model is a local stand-in, so nothing is called and no quota is spent. Rollouts are
+    what carry `turn_context`, so this deliberately does NOT pass `--ephemeral`.
+
+    The returned tuples come from what Codex recorded, never from what was requested. That
+    distinction is the whole point of the unit: a requested sandbox is an intention, and a
+    recorded one is the permission the turn actually ran under.
+    """
+
+    resolved_home = _assert_disposable_home(codex_home, "turn environment")
+    before = set((resolved_home / "sessions").glob("**/rollout-*.jsonl"))
+    # Always a spawning turn, even when only the root's tuple is wanted. A scripted turn that
+    # ends with a plain assistant message did not reliably terminate against this stand-in, and
+    # the root's permission tuple is unaffected by a child existing, so the spawn path -- which
+    # is exercised constantly and known to complete -- is used for every row.
+    if child_profile_config is None:
+        raise CapabilityProbeError("turn environment: a child profile config is required")
+    spawning = True
+    root_scripts, child_script = spawn_script(task_name=task_name, agent_type=task_name)
+    with _RecordingResponsesApi(root_scripts, child_script) as stub:
+        provider = {
+            "name": "offline",
+            "base_url": stub.base_url,
+            "wire_api": "responses",
+            "requires_openai_auth": False,
+        }
+        argv = [
+            "--ask-for-approval", "never",
+            "--sandbox", sandbox,
+            "--enable", "multi_agent",
+            "--enable", "multi_agent_v2",
+            "--model", "gpt-5.6-sol",
+            "-c", f"model_providers.offlineprobe={_toml_inline_table(provider)}",
+            "-c", 'model_provider="offlineprobe"',
+        ]
+        for override in config_overrides:
+            argv += ["-c", override]
+        if spawning:
+            agent = {"description": "Offline probe child", "config_file": str(child_profile_config)}
+            argv += ["-c", f"agents.{task_name}={_toml_inline_table(agent)}"]
+        if resume_last:
+            # A resumed session is the only way to observe what a LATER turn ran under, which is
+            # what the cold-resume and later-update rows are about. `exec resume` takes neither
+            # `-C` nor `--skip-git-repo-check`: its signature is [OPTIONS] [SESSION_ID] [PROMPT],
+            # and the working directory comes from the session being resumed.
+            argv += ["exec", "resume", "--last", "Invoke the requested offline child probe."]
+        else:
+            argv += ["exec", "--skip-git-repo-check", "-C", str(workspace)]
+            for root in extra_roots:
+                argv += ["--add-dir", str(root)]
+            argv += ["Invoke the requested offline child probe."]
+        _run(argv, codex_home=resolved_home, cwd=workspace, where="turn environment")
+
+    after = set((resolved_home / "sessions").glob("**/rollout-*.jsonl"))
+    # A resumed session APPENDS to the rollout it resumed rather than writing a new one, so a
+    # before/after diff finds nothing and the row silently has no evidence. Resume therefore
+    # reads every rollout and takes the LAST turn context in each -- which is the resumed turn.
+    considered = sorted(after) if resume_last else sorted(after - before)
+    if not considered:
+        raise CapabilityProbeError("turn environment: the probe wrote no rollout receipt")
+    turns: list[dict[str, Any]] = []
+    for path in considered:
+        meta: dict[str, Any] = {}
+        for line in path.read_text(encoding="utf-8").splitlines():
+            row = json.loads(line)
+            if row.get("type") == "session_meta":
+                payload = row.get("payload", {})
+                meta["agent_path"] = payload.get("agent_path")
+                meta["parent_thread_id"] = payload.get("parent_thread_id")
+            elif row.get("type") == "turn_context":
+                payload = row.get("payload", {})
+                # Last one wins: the final turn context is the permission the turn actually
+                # finished under, which is the whole question for the later-update row.
+                meta["environment"] = {
+                    field: payload.get(field) for field in TURN_ENVIRONMENT_FIELDS
+                }
+        if "environment" in meta:
+            turns.append(meta)
+    roots = [t for t in turns if t.get("parent_thread_id") is None]
+    children = [t for t in turns if t.get("parent_thread_id") is not None]
+    if not roots:
+        raise CapabilityProbeError("turn environment: no root turn was recorded")
+    if spawning and not children:
+        raise CapabilityProbeError(
+            "turn environment: a child was requested but no child turn was recorded"
+        )
+    return {"root": roots[0]["environment"], "child": children[0]["environment"] if children else None}
 
 
 def isolated_probe_home(parent: Path) -> Path:

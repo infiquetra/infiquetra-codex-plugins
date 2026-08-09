@@ -15,5 +15,5 @@ To rotate deliberately, in the same commit as the harness change and with the re
 from __future__ import annotations
 
 RUNTIME_PROOF_HARNESS_SHA256 = (
-    "c1c2905307b27302ad1c7704f5b25af544430e252346f858674b87ead5ac06b9"
+    "51960efac78242028270884b2ba03679ade54edcc13dae66240da6a1cbc218bb"
 )

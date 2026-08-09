@@ -1148,6 +1148,69 @@ def validate_luna_canary(payload: Mapping[str, Any], where: str = "luna canary")
             )
 
 
+PERMISSION_INHERITANCE = (
+    REPO_ROOT / "docs" / "validation" / "codex-0147-permission-inheritance.json"
+)
+PERMISSION_CASES = frozenset(
+    case for case in PROOF_CASES if case.startswith("turn-permission-")
+)
+
+
+def validate_permission_inheritance(
+    payload: Mapping[str, Any], where: str = "permission inheritance"
+) -> None:
+    """Refuse a permission receipt with a missing row, a widening child, or borrowed authority.
+
+    Any mismatch blocks source-ready, and a mismatch is never remediated by falling back to a
+    different model (KTD6): a permission that did not hold is a fact about the runtime, not a
+    reason to try a different one.
+    """
+
+    cases = payload.get("cases")
+    if not isinstance(cases, Mapping):
+        raise RuntimeProofError(f"{where} records no cases")
+    observed_cases = set(cases)
+    missing = sorted(PERMISSION_CASES - observed_cases)
+    extra = sorted(observed_cases - PERMISSION_CASES)
+    if missing:
+        raise RuntimeProofError(f"{where} is missing matrix rows {missing}")
+    if extra:
+        raise RuntimeProofError(f"{where} records rows the harness does not define: {extra}")
+
+    for case, record in cases.items():
+        if not isinstance(record, Mapping):
+            raise RuntimeProofError(f"{where} row {case!r} is not an object")
+        expected, observed = record.get("expected"), record.get("observed")
+        if not isinstance(expected, Mapping) or not isinstance(observed, Mapping):
+            raise RuntimeProofError(f"{where} row {case!r} carries no expected/observed pair")
+        if expected != observed:
+            raise RuntimeProofError(
+                f"{where} row {case!r} did not match its expected tuple; this blocks source-ready"
+            )
+        if record.get("matches") is not True:
+            raise RuntimeProofError(f"{where} row {case!r} is not recorded as matching")
+
+        # No widening, checked from the tuple rather than trusted from the summary.
+        root_sandbox = observed.get("root_sandbox")
+        child_sandbox = observed.get("child_sandbox")
+        if root_sandbox == "read-only" and child_sandbox != "read-only":
+            raise RuntimeProofError(
+                f"{where} row {case!r} shows a child widening beyond a read-only parent; "
+                f"this blocks source-ready"
+            )
+
+        # `auto_review` is a runtime approval reviewer and is never operator authority (R11).
+        reviewers = record.get("approvals_reviewer")
+        if not isinstance(reviewers, Mapping):
+            raise RuntimeProofError(f"{where} row {case!r} records no approvals reviewer")
+        for side, value in reviewers.items():
+            if value == "auto_review":
+                raise RuntimeProofError(
+                    f"{where} row {case!r} records auto_review as the {side} reviewer; "
+                    f"runtime approval is never operator approval"
+                )
+
+
 def build_proof(
     *,
     snapshot: dict[str, Any],

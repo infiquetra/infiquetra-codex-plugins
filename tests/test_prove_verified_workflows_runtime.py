@@ -682,3 +682,66 @@ def test_an_unknown_verdict_is_refused() -> None:
 
     with pytest.raises(P.RuntimeProofError, match="expected one of"):
         P.validate_luna_canary(payload)
+
+
+PERMISSIONS = json.loads(
+    (ROOT / "docs" / "validation" / "codex-0147-permission-inheritance.json").read_text(
+        encoding="utf-8"
+    )
+)
+
+
+def test_the_committed_permission_receipt_validates() -> None:
+    P.validate_permission_inheritance(PERMISSIONS)
+
+
+@pytest.mark.parametrize("case", sorted(P.PERMISSION_CASES))
+def test_each_matrix_row_matches_its_expected_tuple(case: str) -> None:
+    """One test per row, as the plan requires: a row that drifts fails on its own name."""
+
+    record = PERMISSIONS["cases"][case]
+    assert record["observed"] == record["expected"], case
+    assert record["matches"] is True
+
+
+def test_a_missing_matrix_row_fails() -> None:
+    payload = json.loads(json.dumps(PERMISSIONS))
+    payload["cases"].pop("turn-permission-cold-resume")
+
+    with pytest.raises(P.RuntimeProofError, match="missing matrix rows"):
+        P.validate_permission_inheritance(payload)
+
+
+def test_a_row_the_harness_does_not_define_fails() -> None:
+    """A duplicate identifier cannot exist in JSON, so an unknown one is the reachable case."""
+
+    payload = json.loads(json.dumps(PERMISSIONS))
+    payload["cases"]["turn-permission-invented"] = payload["cases"]["turn-permission-read-only"]
+
+    with pytest.raises(P.RuntimeProofError, match="does not define"):
+        P.validate_permission_inheritance(payload)
+
+
+def test_a_child_widening_beyond_its_parent_blocks_source_ready() -> None:
+    """The observation this row exists to make: a profile cannot raise its own ceiling."""
+
+    assert (
+        PERMISSIONS["cases"]["turn-permission-no-widening"]["observed"]["child_sandbox"]
+        == "read-only"
+    )
+
+    payload = json.loads(json.dumps(PERMISSIONS))
+    row = payload["cases"]["turn-permission-no-widening"]
+    row["observed"]["child_sandbox"] = "workspace-write"
+    row["expected"]["child_sandbox"] = "workspace-write"
+
+    with pytest.raises(P.RuntimeProofError, match="blocks source-ready"):
+        P.validate_permission_inheritance(payload)
+
+
+def test_auto_review_is_never_recorded_as_operator_authority() -> None:
+    payload = json.loads(json.dumps(PERMISSIONS))
+    payload["cases"]["turn-permission-read-only"]["approvals_reviewer"]["root"] = "auto_review"
+
+    with pytest.raises(P.RuntimeProofError, match="never operator approval"):
+        P.validate_permission_inheritance(payload)
