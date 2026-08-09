@@ -499,7 +499,221 @@ One test, `test_orphan_evidence.py::test_two_process_successor_close_fences_stal
 fails with `_queue.Empty` under some narrower selections and passes in the full run. Reproduced it
 with all U4 changes stashed, so it is pre-existing and load-sensitive rather than caused here.
 
+## Phase 5 — U5, and a negative finding that did not survive
+
+### I was wrong about the tool specification, and the cross-review proved it
+
+Having found no tool list anywhere I looked, I drafted a plan amendment saying Codex 0.147.0 exposes
+no model-visible tool specification, and dispatched the claim to be refuted rather than confirmed. It
+was refuted, decisively, with tagged source and a working capture.
+
+What I had checked, and why each check was looking in the wrong place:
+
+| Surface | What I concluded | Why it was the wrong place |
+| --- | --- | --- |
+| `codex debug prompt-input` | Renders messages, byte-invariant to the MultiAgent V2 flag | Correct as far as it goes; it renders prompt messages, and the specification is not one |
+| App-server v2 protocol, 246 surfaces | No `tools` property on any thread or turn response | The specification never travels through that protocol |
+| `Config.tools` | A configuration toggle set | True, and irrelevant |
+
+The specification is assembled by `router.model_visible_specs`
+(`codex-rs/core/src/session/turn.rs:1223-1239` at tag `rust-v0.147.0`) and, under Responses Lite,
+serialized as an `additional_tools` **developer input item** while the request's top-level `tools`
+property is left empty (`codex-rs/core/src/client.rs:820-848`). I had searched for a property named
+`tools`. It was in an input item the whole time.
+
+There is also a hidden installed subcommand, `codex responses-api-proxy --dump-dir`, which writes
+structured request dumps (`codex-rs/responses-api-proxy/src/lib.rs:181-194`). It does not appear in
+`codex --help`.
+
+**The cost of not checking would have been high.** A false absence written into a plan amendment is
+worse than the gap it claims to describe: six downstream units would have inherited a substitute for
+evidence, and nothing later in the round would have contradicted it.
+
+### What the capture actually shows
+
+The harness now stands up a local unauthenticated Responses API stand-in on `127.0.0.1`, points Codex
+at it through `model_providers.offlineprobe`, scripts the root to spawn a named child profile and
+wait, and records every outbound request body. No provider is reached, no model call is made, no
+quota is spent.
+
+Running it against `scan_low` captures the child turn directly: `gpt-5.6-terra` at `low` effort —
+exactly what the `scan-low` execution class says after U4 — offered nine tool definitions across two
+namespaces. `functions` carries `exec`, `wait`, `request_user_input`; `collaboration` carries
+`followup_task`, `interrupt_agent`, `list_agents`, `send_message`, `spawn_agent`, `wait_agent`. Each
+definition arrives with its description and parameter schema, which is what makes this a
+specification rather than a list of names.
+
+The digest over those canonical definitions is `88de1982…`. The cross-review engine's independent
+capture, taken with a different rig that shares no code with this one, produces the same digest. That
+agreement is the reason to trust the number.
+
+### Two candidates rejected on evidence
+
+`codex debug prompt-input` is not merely unused; it is rejected. Its collaboration prose is present
+even when the collaboration tools are not offered, so presenting it as a tool-plan substitute would
+mislead a later reader into thinking a capability was proven. It was deleted rather than left in the
+module for someone to reach for.
+
+`codex features list` is retained but scoped. It genuinely reports effective feature state — it is
+how this session learned that `multi_agent_v2` is `stable` yet **off by default**, and that
+`executor_capability_discovery` is still under development — but it is not evidence about tools, and
+its docstring now says so.
+
+### What U5 built
+
+- **Frozen harness identity.** A composite digest over a declared file set, binding each file's
+  repository-relative path to its bytes so a rename counts as a change. The pin lives in
+  `scripts/proof_harness_pin.py`, outside the files it hashes, because a constant stored inside a
+  hashed file cannot be updated without changing the value it pins. A receipt carrying no digest, or
+  one that is not the pin, is refused.
+- **A closed case registry.** Nine behavioural claims, each named. A receipt declares which one it is
+  evidence for; an absent or unknown case is refused rather than folded into whichever matrix row
+  came next.
+- **Observed version on every receipt.** `codex --version` from the installed binary, supplied by the
+  caller and validated as a version string. KTD2 forbids the target version standing in for an
+  observation, so the two never share a field and a test asserts they differ.
+- **Execution-environment fixtures** in `tests/conftest.py` for the two skill mechanisms this
+  repository has previously conflated: a host-installed plugin skill, and an executor-backed
+  `skill://` resource placed outside the Codex home so the permission boundary is observable.
+
+### The harness review: eight findings, three of them Priority 0
+
+The verdict was "not sound enough to freeze", which is the whole reason the plan sequences U5 as
+built, then cross-reviewed, then frozen. All eight are fixed.
+
+**Priority 0 — an allowlist is not sanitisation.** The reduced projection copied `model` and
+`reasoning.effort` through unexamined. Authorization-shaped objects injected into those two fields
+came out verbatim. They are the only request-body values a caller controls, so they were the only
+place to look. Both are now validated as identifier-shaped strings, and the whole projection passes a
+secret-shaped check before it is returned.
+
+**Priority 0 — any non-null object could become a supported live proof.** `build_proof(live=True,
+runtime_receipt={"not_a_receipt": True})` returned `capability_outcome: supported` with
+`live_invocation_performed: true`. The existing test only rejected `None`, so it masked the boundary
+rather than guarding it: "is not absent" was standing in for "is evidence". A live receipt is now
+shape-checked against every required field and then validated for harness, case and observed version.
+
+**Priority 0 — the disposable-home guard could be bypassed.** It derived "the real home" from
+`CODEX_HOME`, which is mutable, so anything that pointed that variable at a temporary directory could
+hand the operator's actual `~/.codex` to a probe. The default location is now protected
+unconditionally, the environment variable only adds to the protected set, and containment is checked
+in both directions rather than equality alone.
+
+**The honest path was dropping the identities it promised.** The parser stamps the case, the harness
+digest and the observed version onto a receipt; the projection `run_live_probe` returns was
+discarding all three, so the published proof promised fields no reader could find. They now travel.
+
+**The pin did not cover the harness contract.** The case registry lived un-hashed in the pin module,
+so a case's meaning could change without moving the digest, and the renderer, profile synchroniser
+and target-version module all influence proof output while being unbound. The digest constant now
+lives alone in `scripts/proof_harness_sha256.py` — a pin cannot sit inside the set of files it hashes
+— which frees `proof_harness_pin.py` and the four influencing modules to be hashed like any other
+part of the instrument.
+
+**The nine cases were the wrong granularity, not ceremony.** The plan asks for a stable identifier
+per matrix row and for missing or duplicate rows to be rejected; a single `turn-permission` case
+folded seven rows the plan enumerates by name, and one `skill-resource` case folded both mechanisms
+and five outcomes. The registry is now per row: seven permission cases and five skill cases.
+
+**The stub answered by arrival order.** Codex starts a child asynchronously after the scripted spawn,
+so a global request counter makes the reply a child receives depend on the scheduler. Fifty offline
+repetitions produced the expected order, so the race was never reproduced — but it was not prevented
+either. Dispatch is now by whether the request carries a parent thread in its client metadata, and a
+test drives the interleaving that an arrival-order stub gets wrong.
+
+### Executor-backed skills are real, and my fixture was fiction
+
+This is the second time in one unit that a "does it exist" question came back the other way. They do
+exist in 0.147.0. The client names one at thread start as a `SelectedCapabilityRoot` — `{id,
+location}` where the location is `{type: "environment", environmentId, path}` — and the model reaches
+it through `skills.list` and `skills.read` over the app server. Restricted filesystem discovery runs
+even with `executor_capability_discovery` off.
+
+My fixture wrote an ordinary file and invented a `skill://` address, which is not how the resource is
+addressed at all. The permission profile writer emitted `workspace_write` and `permitted_roots`, which
+are not fields in this version; a profile is `{fileSystem, network}` with `fileSystem` carrying
+`entries`, `read`, `write` and `globScanMaxDepth`. I verified both shapes against the protocol schema
+the installed binary generates rather than taking either account on trust. The fixtures are rewritten
+against the real shapes.
+
+The fixtures being unused is why nothing failed. That is worth stating plainly: an unused fixture
+modelling a mechanism incorrectly is a trap set for the unit that eventually picks it up.
+
+### Checks after the fixes
+
+- Full suite excluding the plugin blocked by a missing imaging library: **2534 passed**.
+- Validator, runtime proof, capability schema, ruff — all clean.
+- Harness digest recomputed and re-pinned; the pin and the files agree.
+
+### Checks run
+
+- Full suite excluding the plugin blocked by a missing imaging library: **2530 passed**.
+- Validator, renderer check, runtime proof, capability schema, ruff — all clean.
+
+## Phase 5 — six review rounds, and the correction that ended them
+
+The harness was cross-reviewed by Codex six times. Every round returned "do not freeze". The rounds
+that stayed on subject found real defects; the rounds after that did not, and the loop was stopped
+by the operator rather than by convergence.
+
+### What was kept
+
+- **A requested child capture could silently return root turns.** With an unreadable child profile,
+  `capture_tool_specification` returned three root turns and reported success. Any proof unit asking
+  about a child's tool specification would have been handed the root's and told it was fine. Split
+  out as `_require_requested_child` so it is testable without driving Codex into the failure.
+- **An inverted subset check.** `set(observed) < REQUIRED` is false for a disjoint list, so an
+  arbitrary operation list passed. Now `REQUIRED.issubset(observed)`, plus a closed-set check that
+  every observed operation is one the snapshot records.
+- **Three fixture shapes that do not exist in Codex 0.147**, each corrected against tagged source at
+  `rust-v0.147.0` rather than either engine's account:
+  - `deny` is canonical; `none` is a `#[serde(alias)]` marked *legacy, retained temporarily*
+    (`codex-rs/protocol/src/permissions.rs:110-118`). The fixture rejected the canonical spelling
+    and emitted the temporary one.
+  - The authority **is** the root identifier — `SkillAuthority::new(SkillSourceKind::Executor,
+    selected_root_id)` (`codex-rs/ext/skills/src/provider/executor.rs:189-225`). The fixture used
+    two different values, which cannot resolve.
+  - A capability root must be a plugin tree: `.codex-plugin/plugin.json` plus
+    `skills/<name>/SKILL.md` (`codex-rs/app-server/tests/suite/v2/executor_skills.rs:145-200`). The
+    fixture wrote one Markdown file that discovery would never find. The `skill://` handle also
+    embeds the environment path, so its segment count varies with depth — an earlier assertion that
+    it had exactly three segments was wrong in principle.
+- **The fixture is validated by the binary's own schema.** `codex app-server generate-json-schema`
+  emits `v2/ThreadStartParams.json` in 41ms with no model call, so `SelectedCapabilityRoot` is
+  checked against Codex's definition rather than against this repository's opinion of it.
+- **A fail-open fixture now fails.** An installed Codex that stops emitting its schema is protocol
+  drift, not a reason to skip.
+
+### What was removed, and why it should never have been built
+
+Four defences were added across rounds three to six and then stripped:
+
+| Removed | Threat it addressed |
+| --- | --- |
+| Ownership and mode-bit walk over every resolved path component | Another unprivileged user racing a rename |
+| Access control list inspection via `/bin/ls -lde` | A shared ancestor granting `everyone` rename authority |
+| `os.execv` re-exec into `python -I`, plus an isolation gate on live proofs | A hostile `sitecustomize.py` on PYTHONPATH |
+| Object-identity mint registry for projections | A caller assembling a projection by hand |
+
+None of those actors exists for a single-operator local plugin repository, and each made the harness
+worse for its actual job: the re-exec is surprising machinery in the import path, the identity gate
+made the validator untestable without a private seam, and the ACL check spawned a subprocess per
+probe. The reasoning is recorded in `docs/engineering-journal/LEARNINGS.md` under
+*An Adversarial Review Loop Without A Threat Model Never Terminates*.
+
+The `_assert_disposable_home` guard was kept and re-scoped in its own docstring as what it actually
+is: an accident guard that stops a probe writing into the operator's real Codex home through a wrong
+path or a stale environment variable. Not a security boundary — anything running as this user can
+reach that directory anyway.
+
+### Checks
+
+- Full suite excluding the plugin blocked by a missing imaging library: **2569 passed**. The count
+  is lower than the peak of 2580 because eleven tests covering the removed defences went with them.
+- Validator, runtime proof, ruff — all clean.
+- Harness digest recomputed and re-pinned after the removal; the pin and the files agree.
+
 ## Next step
 
-U5 — build the proof harness, have it cross-reviewed, then freeze it before any receipt is collected.
-U6 through U14 remain untouched.
+Land U5 once the harness review returns, then U6 — the Luna canary, per profile, with its oracle
+fixed before the run. U7 through U14 remain untouched.

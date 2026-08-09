@@ -277,7 +277,26 @@ resources, which is a different mechanism from a host-installed plugin reference
 Every receipt records the harness digest, the observed Codex version (KTD2), and a stable case
 identifier per matrix row.
 
-**Files:** `scripts/prove_verified_workflows_runtime.py`, `tests/conftest.py`.
+**Amendment, 2026-08-09, during execution.** The named route above was wrong about where the
+specification lives, and the correction came from the cross-review engine refuting a negative finding
+this session had drafted. The specification never travels through the app-server protocol at all:
+Codex assembles it through `router.model_visible_specs`
+(`codex-rs/core/src/session/turn.rs:1223-1239` at tag `rust-v0.147.0`) and, under Responses Lite,
+serializes it as an `additional_tools` **developer input item** while leaving the request's top-level
+`tools` property empty (`codex-rs/core/src/client.rs:820-848`). Capturing it therefore means reading
+an outbound request body. Two routes do that offline: a local unauthenticated Responses API
+stand-in that Codex is pointed at through `model_providers.<name>`, which is what this repository
+implements; and the hidden `codex responses-api-proxy --dump-dir` subcommand
+(`codex-rs/responses-api-proxy/src/lib.rs:181-194`), which writes structured request dumps.
+
+The **negative probe is withdrawn**, because the absence it would have probed for does not exist.
+`codex debug prompt-input` is rejected as evidence rather than merely unused: its collaboration
+prose is present even when the collaboration tools are not offered, so presenting it as a tool-plan
+substitute would mislead. `codex features list` is retained but scoped — it is evidence of effective
+feature state and not evidence about tools.
+
+**Files:** `scripts/prove_verified_workflows_runtime.py`, `scripts/proof_harness_pin.py`,
+`scripts/codex_capability_probe.py`, `tests/conftest.py`.
 
 **Test scenarios:** `tests/test_prove_verified_workflows_runtime.py` — a receipt without a harness
 digest is refused; a receipt whose harness digest differs from the frozen value is refused; the tool-plan

@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pytest
 
+from scripts import proof_harness_pin
 from scripts import validate_codex_plugins as validator
 from scripts.validate_codex_plugins import (
     CURRENT_EXPECTED_PLUGINS,
@@ -100,8 +101,19 @@ def copy_verified_workflows_runtime_target(tmp_path: Path) -> Path:
         root / "plugins" / "fleet-core",
     )
     (root / "scripts").mkdir(parents=True)
-    for name in ("codex_target_version.py", "prove_verified_workflows_runtime.py"):
-        shutil.copy2(REPO_ROOT / "scripts" / name, root / "scripts" / name)
+    # The harness declares which files it is made of, so this copies that declaration rather
+    # than a remembered list: adding a harness file must not silently break this fixture. The
+    # declaration is repository-relative, and some harness files live under plugins/, which the
+    # copytree calls above have already placed — copying them again by basename into scripts/
+    # would look for files that do not exist there.
+    extra = ("scripts/proof_harness_sha256.py",)
+    for relative in sorted({*proof_harness_pin.HARNESS_FILES, *extra}):
+        source = REPO_ROOT / relative
+        destination = root / relative
+        if destination.exists():
+            continue
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, destination)
     shutil.copy2(
         REPO_ROOT / "scripts" / "build_codex_v2_orchestration_matrix.py",
         root / "scripts" / "build_codex_v2_orchestration_matrix.py",

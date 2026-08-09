@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 from collections.abc import Callable, Mapping
@@ -226,3 +227,258 @@ def mock_subprocess_run(monkeypatch):
     mock.return_value.stderr = ""
     monkeypatch.setattr("subprocess.run", mock)
     return mock
+
+
+# --- Codex execution-environment fixtures -----------------------------------------------------
+#
+# Two skill mechanisms this repository has previously conflated. Both shapes below were settled
+# empirically against the installed 0.147.0 binary, after two rounds of cross-review found
+# earlier drafts modelling things that do not exist:
+#
+#   host-installed   a skill shipped inside a plugin, discovered from a SkillScope Codex already
+#                    knows about — `user`, `repo`, `system` or `admin`. Reading it needs no
+#                    additional permission.
+#   executor-backed  a resource owned by an execution environment. The client names the root at
+#                    thread start as a SelectedCapabilityRoot, and the resource is addressed by
+#                    handles resolved through `skills.list` and `skills.read` over the app server.
+#
+# The executor shape below is read from tagged source at `rust-v0.147.0`, after three rounds of
+# cross-review found three successive drafts modelling something that does not exist:
+#
+#   the root's `path` must be an execution-environment PLUGIN TREE, not a directory of documents:
+#     <path>/.codex-plugin/plugin.json     {"name": "<plugin name>"}
+#     <path>/skills/<name>/SKILL.md        with `name` and `description` frontmatter
+#   codex-rs/app-server/tests/suite/v2/executor_skills.rs:145-200
+#
+#   the AUTHORITY IS THE ROOT ID. `SkillAuthority::new(SkillSourceKind::Executor, selected_root_id)`
+#   and `handle_prefix = format!("skill://{selected_root_id}/")` — an earlier draft used separate
+#   values for the two, which cannot resolve.
+#   codex-rs/ext/skills/src/provider/executor.rs:189-225
+#
+#   a handle is `skill://<root id>/<environment path, leading slash trimmed>`, so it EMBEDS the
+#   path rather than hiding it, and its segment count varies with directory depth. An earlier
+#   draft invented a fixed `skill://authority/package/resource` triple and asserted three
+#   segments, which is wrong in both respects.
+#
+#   `skills.read` takes THREE SEPARATE arguments — `authority` (an object), `package` and
+#   `resource` — not one URI string. `skills.list` takes `{"authority": {"kind": "executor"}}`.
+#   codex-rs/app-server/tests/suite/v2/executor_skills.rs:269-311
+#
+# The permission shape is the one the binary actually accepts, not the app-server request schema
+# it resembles. Confirmed by feeding candidates to `codex --strict-config`:
+#
+#   [permissions.<id>.filesystem] with "path" = "access" mappings   ACCEPTED
+#   [permissions.<id>.filesystem] with read = [...] arrays          REJECTED, "data did not match
+#                                                                   any variant of untagged enum
+#                                                                   FilesystemPermissionToml"
+#   [permissions.<id>.fileSystem] (camelCase)                       silently ignored, which is
+#                                                                   worse than rejected
+#
+# `read`, `write` and `deny` are canonical; `read-write`, `read_write` and `full` are rejected.
+# `none` is accepted only as a LEGACY INPUT ALIAS for `deny`, marked in source as retained
+# temporarily for compatibility, so these fixtures write `deny` and accept `none` on input:
+#   codex-rs/protocol/src/permissions.rs:110-118
+# A profile table also requires a top-level `default_permissions`.
+#
+# These fixtures build shapes and assert nothing about behaviour: what the binary does with them
+# is what the proof units observe.
+
+FILESYSTEM_ACCESS_CANONICAL = ("read", "write", "deny")
+# Accepted on input and rewritten to the canonical spelling before anything is written to disk.
+FILESYSTEM_ACCESS_ALIASES = {"none": "deny"}
+
+
+@pytest.fixture
+def isolated_codex_home(tmp_path: Path) -> Path:
+    """An empty Codex home a probe may populate and discard, never the operator's real one."""
+
+    home = tmp_path / "codex-home"
+    home.mkdir(mode=0o700)
+    return home
+
+
+@pytest.fixture(scope="session")
+def app_server_thread_start_schema(tmp_path_factory) -> dict[str, Any]:
+    """The installed binary's OWN schema for `thread/start` parameters.
+
+    Cross-review's objection to the executor fixture was not that its shape was wrong -- by this
+    point the shape had been read out of tagged source -- but that nothing put the object through
+    Codex, leaving a hand-written assertion checking a hand-written fixture. This closes that
+    without a live session: `codex app-server generate-json-schema` makes the binary emit its own
+    definition, so the adjudicator is Codex rather than this repository's opinion of Codex.
+
+    Session-scoped because generating the bundle costs a subprocess and the result cannot vary
+    within a run. Requires no model, no network and no credentials.
+    """
+
+    home = tmp_path_factory.mktemp("schema-codex-home")
+    out = tmp_path_factory.mktemp("schema-bundle")
+    result = subprocess.run(
+        [
+            "codex",
+            "app-server",
+            "generate-json-schema",
+            "--experimental",
+            "--out",
+            str(out),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=180,
+        env={**os.environ, "CODEX_HOME": str(home)},
+    )
+    # Failing, not skipping. `needs_codex` already covers the only legitimate absence -- no
+    # binary installed. An installed Codex that stops emitting its schema, or emits no
+    # ThreadStartParams, is the protocol disappearing underneath U8, which is exactly the drift
+    # these tests exist to catch; skipping there would report success for a harness that can no
+    # longer check anything.
+    if result.returncode != 0:
+        raise AssertionError(
+            f"the installed codex could not generate its app-server schema "
+            f"(exit {result.returncode})"
+        )
+    document = out / "v2" / "ThreadStartParams.json"
+    if not document.is_file():
+        raise AssertionError("the generated schema bundle carries no v2 ThreadStartParams")
+    return json.loads(document.read_text(encoding="utf-8"))
+
+
+@pytest.fixture
+def host_installed_skill(isolated_codex_home: Path) -> dict[str, Any]:
+    """A plugin-shipped skill discovered from an ordinary scope, needing no extra permission."""
+
+    root = isolated_codex_home / "skills" / "verified-workflows-probe"
+    root.mkdir(parents=True)
+    document = root / "SKILL.md"
+    document.write_text(
+        "---\n"
+        "name: verified-workflows-probe\n"
+        "description: Host-installed probe skill for runtime proof fixtures.\n"
+        "---\n\n"
+        "Return the single token HOST_INSTALLED_SKILL_OK and nothing else.\n",
+        encoding="utf-8",
+    )
+    return {
+        "mechanism": "host-installed",
+        "name": "verified-workflows-probe",
+        "scope": "user",
+        "root": root,
+        "document": document,
+        "marker": "HOST_INSTALLED_SKILL_OK",
+    }
+
+
+@pytest.fixture
+def executor_capability_root(tmp_path: Path) -> Callable[..., dict[str, Any]]:
+    """Build a SelectedCapabilityRoot and the `skill://` handle that addresses its resource.
+
+    The backing directory sits outside the Codex home, because that separation is what makes the
+    permission boundary observable: a read that succeeds without the root being granted has
+    proved nothing about the executor-backed mechanism, since a host-installed read would have
+    succeeded too.
+    """
+
+    def _build(
+        root_id: str = "probe-plugin@1",
+        environment_id: str = "probe-env",
+        plugin_name: str = "probe-plugin",
+        skill_name: str = "executor_probe",
+    ) -> dict[str, Any]:
+        # A plugin tree, because that is what the executor's discovery walks. A directory holding
+        # one Markdown file — three earlier drafts of this fixture — is not discoverable at all.
+        plugin_dir = tmp_path / "executor-environment" / plugin_name
+        manifest = plugin_dir / ".codex-plugin" / "plugin.json"
+        skill_dir = plugin_dir / "skills" / skill_name
+        manifest.parent.mkdir(parents=True)
+        skill_dir.mkdir(parents=True)
+        manifest.write_text(json.dumps({"name": plugin_name}), encoding="utf-8")
+        document = skill_dir / "SKILL.md"
+        document.write_text(
+            f"---\n"
+            f"name: {skill_name}\n"
+            f"description: Executor-backed probe resource for runtime proof fixtures.\n"
+            f"---\n\n"
+            f"Return the single token EXECUTOR_BACKED_RESOURCE_OK and nothing else.\n",
+            encoding="utf-8",
+        )
+
+        # `skill://<root id>/<environment path with the leading slash trimmed>`. The authority is
+        # the root identifier itself, and the handle embeds the path rather than replacing it.
+        def handle(path: Path) -> str:
+            return f"skill://{root_id}/{path.as_posix().lstrip('/')}"
+
+        return {
+            "mechanism": "executor-backed",
+            "selected_capability_root": {
+                "id": root_id,
+                "location": {
+                    "type": "environment",
+                    "environmentId": environment_id,
+                    "path": str(plugin_dir),
+                },
+            },
+            "authority": {"kind": "executor", "id": root_id},
+            "package": handle(skill_dir),
+            "main_resource": handle(document),
+            # The two calls, with the arguments each actually takes. `skills.read` receives the
+            # authority, package and resource as three separate values.
+            "list_arguments": {"authority": {"kind": "executor"}},
+            "read_arguments": {
+                "authority": {"kind": "executor", "id": root_id},
+                "package": handle(skill_dir),
+                "resource": handle(document),
+            },
+            "resolution_route": ("skills.list", "skills.read"),
+            "plugin_root": plugin_dir,
+            "manifest": manifest,
+            "backing_path": skill_dir,
+            "document": document,
+            "marker": "EXECUTOR_BACKED_RESOURCE_OK",
+        }
+
+    return _build
+
+
+@pytest.fixture
+def permission_profile_writer(isolated_codex_home: Path) -> Callable[..., Path]:
+    """Write a named permission profile in the shape Codex 0.147.0 actually accepts.
+
+    Omitting a path is the negative case: the read must fail closed rather than return partial
+    or unsandboxed content. A path mapped to `none` is the explicit denial case, which is a
+    different thing from an absent entry and worth being able to express separately.
+    """
+
+    def _write(
+        profile_id: str,
+        *,
+        filesystem: Mapping[Path | str, str] | None = None,
+        network: bool = False,
+        make_default: bool = True,
+    ) -> Path:
+        entries = dict(filesystem or {})
+        allowed = set(FILESYSTEM_ACCESS_CANONICAL) | set(FILESYSTEM_ACCESS_ALIASES)
+        unknown = sorted(set(entries.values()) - allowed)
+        if unknown:
+            raise ValueError(
+                f"Codex 0.147.0 accepts only {FILESYSTEM_ACCESS_CANONICAL} as filesystem access "
+                f"(with {sorted(FILESYSTEM_ACCESS_ALIASES)} as a legacy alias), got {unknown}"
+            )
+        lines: list[str] = []
+        if make_default:
+            lines.append(f'default_permissions = "{profile_id}"')
+        lines.append(f"[permissions.{profile_id}.filesystem]")
+        for path, access in entries.items():
+            # Written canonically even when the caller passed the legacy alias. A fixture that
+            # emits a spelling source marks as temporary is a trap with a delayed fuse.
+            canonical = FILESYSTEM_ACCESS_ALIASES.get(access, access)
+            lines.append(f'"{Path(path).as_posix()}" = "{canonical}"')
+        lines.append(f"[permissions.{profile_id}.network]")
+        lines.append(f"enabled = {'true' if network else 'false'}")
+
+        config = isolated_codex_home / "config.toml"
+        existing = config.read_text(encoding="utf-8") if config.is_file() else ""
+        config.write_text(existing + "\n".join(lines) + "\n", encoding="utf-8")
+        return config
+
+    return _write

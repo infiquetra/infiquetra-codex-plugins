@@ -1,5 +1,42 @@
 # Decisions
 
+## 2026-08-09: A Negative Finding Is Not Recorded Until Someone Competent Has Tried To Break It
+
+This session searched for the surface that renders Codex's model-visible tool specification, failed
+to find one, and drafted a plan amendment saying no such surface exists in 0.147.0. The evidence
+looked good: `codex debug prompt-input` returns prompt messages and is byte-invariant to the
+MultiAgent V2 feature flag; a scan of all 246 app-server v2 protocol surfaces found no tool list on
+any thread or turn response; `TurnStartParams` accepts thirteen fields and none of them is tools.
+
+The claim was dispatched to the cross-review engine with instructions to refute rather than confirm
+it, and it was refuted. The specification is assembled by `router.model_visible_specs`
+(`codex-rs/core/src/session/turn.rs:1223-1239` at tag `rust-v0.147.0`) and, under Responses Lite,
+serialized as an `additional_tools` **developer input item** while the request's top-level `tools`
+property stays empty (`codex-rs/core/src/client.rs:820-848`). Every search had been for a property
+named `tools`. It was in an input item.
+
+**Decision.** A negative finding about runtime capability is not recorded until an independent
+reviewer has been asked to break it, and the request says *refute*, not *check*. Confirmation-shaped
+review of a negative finding produces agreement, because absence is exactly what a confirming search
+finds. This is not a general rule about all findings: a positive claim carries its own evidence and
+fails visibly when wrong. A false absence does not fail at all. It quietly authorises a substitute.
+
+**What it would have cost.** The amendment would have withdrawn a capture route that works, replaced
+it with a substitute, and handed six downstream proof units an inference where a measurement was
+available. Nothing later in the round would have contradicted it, because nothing later looks for a
+surface the plan says is absent.
+
+**Second-order.** The same review rejected two candidates this session had been ready to record as
+supporting evidence. `codex debug prompt-input` is worse than useless as a tool-plan substitute
+because its collaboration prose survives when the collaboration tools are not offered — it would read
+as a capability being present. It was deleted rather than left available. `codex features list` is
+real evidence of effective feature state and was kept, but its docstring now says explicitly that it
+is not evidence about tools.
+
+**Revisit when.** Never, as far as the rule goes. The narrower operational part — which command
+captures the specification — is version-bound and re-derived by the harness rather than remembered,
+which is the point.
+
 ## 2026-08-09: The Execution Class Is The Only Place A Managed Profile's Model And Effort Are Stated
 
 Each of the seven managed Verified Workflows profiles carried its own model and effort in a
