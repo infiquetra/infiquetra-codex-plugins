@@ -1089,6 +1089,65 @@ def run_live_probe(
     }
 
 
+LUNA_CANARY = REPO_ROOT / "docs" / "validation" / "codex-0147-luna-canary.json"
+CANARY_VERDICTS = frozenset({"eligible-on-measured-criteria", "disqualified", "not-assessed"})
+
+
+def validate_luna_canary(payload: Mapping[str, Any], where: str = "luna canary") -> None:
+    """Refuse a canary receipt that claims more than it measured.
+
+    The round exists because a runtime observation was stored as permanent policy. A canary that
+    records "eligible" without saying which criteria were actually tested is the same defect in a
+    new file, so every criterion declares `measured` explicitly and a profile may only be called
+    eligible on criteria this receipt says it measured.
+    """
+
+    for field in ("claim", "codex_cli_version_observed", "criteria", "observations", "profiles"):
+        if field not in payload:
+            raise RuntimeProofError(f"{where} is missing {field}")
+    observed = payload["codex_cli_version_observed"]
+    if not isinstance(observed, str) or not CODEX_VERSION_RE.fullmatch(observed):
+        raise RuntimeProofError(f"{where} records no observed Codex version")
+
+    criteria = payload["criteria"]
+    if not isinstance(criteria, Mapping) or not criteria:
+        raise RuntimeProofError(f"{where} declares no criteria")
+    measured: set[str] = set()
+    for name, entry in criteria.items():
+        if not isinstance(entry, Mapping) or not isinstance(entry.get("measured"), bool):
+            raise RuntimeProofError(f"{where} criterion {name!r} does not declare `measured`")
+        if entry["measured"]:
+            measured.add(name)
+        elif not entry.get("reason"):
+            # An unmeasured criterion with no reason reads as an oversight later, which is how
+            # "we did not test this" becomes "this passed".
+            raise RuntimeProofError(f"{where} criterion {name!r} is unmeasured with no reason")
+
+    profiles = payload["profiles"]
+    if not isinstance(profiles, Mapping) or not profiles:
+        raise RuntimeProofError(f"{where} assesses no profiles")
+    for profile, record in profiles.items():
+        if not isinstance(record, Mapping):
+            raise RuntimeProofError(f"{where} profile {profile!r} is not an object")
+        verdict = record.get("verdict")
+        if verdict not in CANARY_VERDICTS:
+            raise RuntimeProofError(
+                f"{where} profile {profile!r} carries verdict {verdict!r}; "
+                f"expected one of {sorted(CANARY_VERDICTS)}"
+            )
+        claimed = {key for key, value in record.items() if value == "pass"}
+        unmeasured = sorted(claimed - measured)
+        if unmeasured:
+            raise RuntimeProofError(
+                f"{where} profile {profile!r} claims a pass on {unmeasured}, which this receipt "
+                f"does not record as measured"
+            )
+        if verdict == "eligible-on-measured-criteria" and not claimed:
+            raise RuntimeProofError(
+                f"{where} profile {profile!r} is called eligible without passing any criterion"
+            )
+
+
 def build_proof(
     *,
     snapshot: dict[str, Any],

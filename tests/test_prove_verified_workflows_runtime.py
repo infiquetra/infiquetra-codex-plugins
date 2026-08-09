@@ -619,3 +619,66 @@ def test_an_empty_model_cache_cannot_satisfy_the_catalog_binding(
     with pytest.raises(P.RuntimeProofError, match="lacks model rows"):
         P.validate_live_projection(projection, "projection")
 
+
+
+LUNA_CANARY = json.loads(
+    (ROOT / "docs" / "validation" / "codex-0147-luna-canary.json").read_text(encoding="utf-8")
+)
+
+
+def test_the_committed_luna_canary_validates() -> None:
+    P.validate_luna_canary(LUNA_CANARY)
+
+
+def test_the_canary_records_tool_absence_from_the_tool_plan_not_from_behaviour() -> None:
+    """KTD7: absence inferred from behaviour is not evidence of absence.
+
+    Luna is offered no collaboration namespace as a spawned child; Terra, captured in the same
+    run by the same instrument, is offered all six operations. That comparison is what makes the
+    absence a finding rather than a null result.
+    """
+
+    luna = LUNA_CANARY["observations"]["gpt-5.6-luna"]
+    terra = LUNA_CANARY["observations"]["gpt-5.6-terra"]
+
+    assert LUNA_CANARY["method"]["model_calls"] == 0
+    assert luna["spawned_as_child"] is True
+    assert luna["collaboration_offered"] is False
+    assert "collaboration" not in luna["namespaces_offered"]
+    assert terra["collaboration_offered"] is True
+    assert len(terra["namespaces_offered"]["collaboration"]) == 6
+    assert luna["definitions_sha256"] != terra["definitions_sha256"]
+
+
+def test_a_profile_cannot_pass_a_criterion_the_canary_never_measured() -> None:
+    """The plan's gate: a pass recorded for something no run covered must fail."""
+
+    payload = json.loads(json.dumps(LUNA_CANARY))
+    payload["profiles"]["scan_low"]["instruction-adherence"] = "pass"
+
+    with pytest.raises(P.RuntimeProofError, match="does not record as measured"):
+        P.validate_luna_canary(payload)
+
+
+def test_an_unmeasured_criterion_must_say_why() -> None:
+    payload = json.loads(json.dumps(LUNA_CANARY))
+    payload["criteria"]["instruction-adherence"].pop("reason")
+
+    with pytest.raises(P.RuntimeProofError, match="unmeasured with no reason"):
+        P.validate_luna_canary(payload)
+
+
+def test_eligible_requires_at_least_one_passing_criterion() -> None:
+    payload = json.loads(json.dumps(LUNA_CANARY))
+    payload["profiles"]["monitor_low"]["collaboration-tools-offered"] = "not-run"
+
+    with pytest.raises(P.RuntimeProofError, match="without passing any criterion"):
+        P.validate_luna_canary(payload)
+
+
+def test_an_unknown_verdict_is_refused() -> None:
+    payload = json.loads(json.dumps(LUNA_CANARY))
+    payload["profiles"]["scan_low"]["verdict"] = "fine probably"
+
+    with pytest.raises(P.RuntimeProofError, match="expected one of"):
+        P.validate_luna_canary(payload)

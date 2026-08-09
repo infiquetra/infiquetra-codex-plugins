@@ -713,7 +713,51 @@ reach that directory anyway.
 - Validator, runtime proof, ruff — all clean.
 - Harness digest recomputed and re-pinned after the removal; the pin and the files agree.
 
+## Phase 6 — U6 Luna canary, answered without spending a model call
+
+The decisive evidence came from the U5 harness rather than from a live run, and it cost nothing.
+
+**Codex 0.147.0 spawns `gpt-5.6-luna` as a child and honours the requested model and effort, but
+offers that child no collaboration namespace at all** — only `exec`, `request_user_input` and
+`wait`. `gpt-5.6-terra`, captured by the same instrument in the same run, is offered all six
+collaboration operations. That side-by-side is what makes the absence a finding rather than a null
+result, and it satisfies KTD7 directly: the absence comes from the tool plan, not from behaviour.
+
+### The catalog field everyone was reading is not the one that governs
+
+Luna's catalog row says `multi_agent_version: "v1"`, and the renderer's promotion gate refuses on
+exactly that (`render_codex_agents.py:1012`). But a child's backend version is derived from the
+parent thread and configuration, never from the child's model row —
+`effective_multi_agent_version_for_spawn` at `codex-rs/core/src/thread_manager.rs:1314-1333`,
+tag `rust-v0.147.0`. So the gate refuses on a property that does not decide the question. What
+actually decides it is whether the child is offered collaboration tools, which is observable and
+now observed. This is the round's own thesis appearing again: a field read once and frozen as
+policy on a surface that cannot notice it was never the right field. U9 repairs the gate.
+
+### Per-profile answer
+
+Both promotion targets are leaf profiles — their developer instructions say to follow the bounded
+role from the root thread and return a typed result, and neither spawns, messages, nor waits on
+another agent. The missing collaboration namespace therefore does not disqualify them. Any profile
+that *does* collaborate is disqualified outright by the observation above, with no run needed.
+
+### What was deliberately not measured
+
+Instruction adherence, typed-result schema validity, and cold-resume identity all need live model
+calls. The operator scoped them out of this round. The receipt records each as
+`measured: false` with a reason, and `validate_luna_canary` refuses any profile that claims a pass
+on a criterion the receipt does not record as measured — so "we did not test this" cannot later be
+read as "this passed". The verdict wording carries the same caution: `eligible-on-measured-criteria`
+rather than `eligible`.
+
+### Checks
+
+- Full suite excluding the plugin blocked by a missing imaging library: **2575 passed**.
+- Validator, runtime proof, ruff — all clean. Harness digest re-pinned after the validator was added.
+- Zero model calls, zero quota. Every probe ran against a disposable `CODEX_HOME` and a local
+  Responses API stand-in.
+
 ## Next step
 
-Land U5 once the harness review returns, then U6 — the Luna canary, per profile, with its oracle
-fixed before the run. U7 through U14 remain untouched.
+U7 — the turn-environment permission proof, which the plan marks as a blocking gate. U8 through U14
+remain untouched.

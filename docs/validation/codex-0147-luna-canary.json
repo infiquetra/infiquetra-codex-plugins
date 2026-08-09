@@ -1,0 +1,90 @@
+{
+  "capability_snapshot_sha256": "a9576e791c53242f215429ca1c3153e870b188f53cd2315cb0a841653be4a6bc",
+  "claim": "codex-0147-luna-per-profile-fitness",
+  "codex_cli_version_observed": "0.147.0",
+  "criteria": {
+    "cold-resume-identity": {
+      "measured": false,
+      "reason": "needs live model calls; the operator scoped them out of this round"
+    },
+    "collaboration-tools-offered": {
+      "how": "offline tool-specification capture, this receipt's observations section",
+      "measured": true
+    },
+    "instruction-adherence": {
+      "measured": false,
+      "reason": "needs live model calls; the operator scoped them out of this round"
+    },
+    "typed-result-schema-validity": {
+      "measured": false,
+      "reason": "needs live model calls; the operator scoped them out of this round"
+    }
+  },
+  "finding": "Codex 0.147.0 spawns gpt-5.6-luna as a child and honours the requested model and effort, but offers that child no collaboration namespace at all -- only the three function tools. gpt-5.6-terra, captured the same way in the same run, is offered all six collaboration operations. The catalog's multi_agent_version field does not govern this: effective_multi_agent_version_for_spawn derives a child's backend from the parent thread and configuration, never from the child's model row (codex-rs/core/src/thread_manager.rs:1314-1333 at tag rust-v0.147.0).",
+  "limitations": [
+    "Quality was not measured. `eligible-on-measured-criteria` means the collaboration criterion passed and nothing else was tested; it is not a statement that Luna produces good output.",
+    "Only the two leaf profiles are assessed. Any profile that spawns, messages, or waits on another agent is disqualified outright by the observation above, without needing a run.",
+    "The capture is per model, not per profile: two profiles sharing a model share its tool plan."
+  ],
+  "method": {
+    "instrument": "scripts/codex_capability_probe.py capture_tool_specification",
+    "kind": "offline tool-specification capture",
+    "model_calls": 0,
+    "note": "Codex is pointed at a local Responses API stand-in, so a real child turn is assembled and its model-visible tool specification is read from the outbound request without any model being called. Tool ABSENCE is therefore evidence from the tool plan rather than inferred from behaviour."
+  },
+  "observations": {
+    "gpt-5.6-luna": {
+      "collaboration_offered": false,
+      "definitions_sha256": "4868358a5a085e5cd18b012d847e369073434a16c253f42961fe933bf93fb59b",
+      "model_readback": "gpt-5.6-luna",
+      "namespaces_offered": {
+        "functions": [
+          "exec",
+          "request_user_input",
+          "wait"
+        ]
+      },
+      "reasoning_effort_readback": "low",
+      "spawned_as_child": true
+    },
+    "gpt-5.6-terra": {
+      "collaboration_offered": true,
+      "definitions_sha256": "e1a7c6216f5ec696760b92b38ec932deb1402559bce15c35a28b764ac4448c93",
+      "model_readback": "gpt-5.6-terra",
+      "namespaces_offered": {
+        "collaboration": [
+          "followup_task",
+          "interrupt_agent",
+          "list_agents",
+          "send_message",
+          "spawn_agent",
+          "wait_agent"
+        ],
+        "functions": [
+          "exec",
+          "request_user_input",
+          "wait"
+        ]
+      },
+      "reasoning_effort_readback": "low",
+      "spawned_as_child": true
+    }
+  },
+  "profiles": {
+    "monitor_low": {
+      "candidate": true,
+      "collaboration-tools-offered": "pass",
+      "needs_collaboration_tools": false,
+      "shape": "returns a typed result to its parent and never spawns, messages, or waits on another agent",
+      "verdict": "eligible-on-measured-criteria"
+    },
+    "scan_low": {
+      "candidate": true,
+      "collaboration-tools-offered": "pass",
+      "needs_collaboration_tools": false,
+      "shape": "returns a typed result to its parent and never spawns, messages, or waits on another agent",
+      "verdict": "eligible-on-measured-criteria"
+    }
+  },
+  "schema_version": 1
+}
