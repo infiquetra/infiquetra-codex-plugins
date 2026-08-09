@@ -1,0 +1,905 @@
+{
+  "cases": {
+    "turn-permission-after-role": {
+      "approval_policy": {
+        "child": "never",
+        "root": "never"
+      },
+      "approvals_reviewer": {
+        "child": "user",
+        "root": "user"
+      },
+      "child_environment": {
+        "approval_policy": "never",
+        "approvals_reviewer": "user",
+        "cwd": "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpg87d7wy1/ws",
+        "permission_profile": {
+          "file_system": {
+            "entries": [
+              {
+                "access": "read",
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "root"
+                  }
+                }
+              }
+            ],
+            "type": "restricted"
+          },
+          "network": "restricted",
+          "type": "managed"
+        },
+        "sandbox_policy": {
+          "type": "read-only"
+        },
+        "workspace_roots": [
+          "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpg87d7wy1/ws"
+        ]
+      },
+      "expected": {
+        "child_sandbox": "read-only",
+        "root_roots": 1,
+        "root_sandbox": "read-only"
+      },
+      "matches": true,
+      "observed": {
+        "child_sandbox": "read-only",
+        "root_roots": 1,
+        "root_sandbox": "read-only"
+      },
+      "root_environment": {
+        "approval_policy": "never",
+        "approvals_reviewer": "user",
+        "cwd": "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpg87d7wy1/ws",
+        "permission_profile": {
+          "file_system": {
+            "entries": [
+              {
+                "access": "read",
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "root"
+                  }
+                }
+              }
+            ],
+            "type": "restricted"
+          },
+          "network": "restricted",
+          "type": "managed"
+        },
+        "sandbox_policy": {
+          "type": "read-only"
+        },
+        "workspace_roots": [
+          "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpg87d7wy1/ws"
+        ]
+      }
+    },
+    "turn-permission-cold-resume": {
+      "approval_policy": {
+        "child": "never",
+        "root": "never"
+      },
+      "approvals_reviewer": {
+        "child": "user",
+        "root": "user"
+      },
+      "child_environment": {
+        "approval_policy": "never",
+        "approvals_reviewer": "user",
+        "cwd": "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpwb1nkhxr/ws",
+        "permission_profile": {
+          "file_system": {
+            "entries": [
+              {
+                "access": "read",
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "root"
+                  }
+                }
+              }
+            ],
+            "type": "restricted"
+          },
+          "network": "restricted",
+          "type": "managed"
+        },
+        "sandbox_policy": {
+          "type": "read-only"
+        },
+        "workspace_roots": [
+          "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpwb1nkhxr/ws"
+        ]
+      },
+      "expected": {
+        "child_sandbox": "read-only",
+        "root_roots": 1,
+        "root_sandbox": "read-only"
+      },
+      "matches": true,
+      "observed": {
+        "child_sandbox": "read-only",
+        "root_roots": 1,
+        "root_sandbox": "read-only"
+      },
+      "root_environment": {
+        "approval_policy": "never",
+        "approvals_reviewer": "user",
+        "cwd": "/private/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpwb1nkhxr/ws",
+        "permission_profile": {
+          "file_system": {
+            "entries": [
+              {
+                "access": "read",
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "root"
+                  }
+                }
+              }
+            ],
+            "type": "restricted"
+          },
+          "network": "restricted",
+          "type": "managed"
+        },
+        "sandbox_policy": {
+          "type": "read-only"
+        },
+        "workspace_roots": [
+          "/private/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpwb1nkhxr/ws"
+        ]
+      }
+    },
+    "turn-permission-later-update": {
+      "approval_policy": {
+        "child": "never",
+        "root": "never"
+      },
+      "approvals_reviewer": {
+        "child": "user",
+        "root": "user"
+      },
+      "child_environment": {
+        "approval_policy": "never",
+        "approvals_reviewer": "user",
+        "cwd": "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmph4snvxcg/ws",
+        "permission_profile": {
+          "file_system": {
+            "entries": [
+              {
+                "access": "read",
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "root"
+                  }
+                }
+              }
+            ],
+            "type": "restricted"
+          },
+          "network": "restricted",
+          "type": "managed"
+        },
+        "sandbox_policy": {
+          "type": "read-only"
+        },
+        "workspace_roots": [
+          "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmph4snvxcg/ws"
+        ]
+      },
+      "expected": {
+        "child_sandbox": "read-only",
+        "root_roots": 1,
+        "root_sandbox": "workspace-write"
+      },
+      "matches": true,
+      "observed": {
+        "child_sandbox": "read-only",
+        "root_roots": 1,
+        "root_sandbox": "workspace-write"
+      },
+      "root_environment": {
+        "approval_policy": "never",
+        "approvals_reviewer": "user",
+        "cwd": "/private/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmph4snvxcg/ws",
+        "permission_profile": {
+          "file_system": {
+            "entries": [
+              {
+                "access": "read",
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "root"
+                  }
+                }
+              },
+              {
+                "access": "write",
+                "path": {
+                  "path": "/private/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmph4snvxcg/ws",
+                  "type": "path"
+                }
+              },
+              {
+                "access": "write",
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "slash_tmp"
+                  }
+                }
+              },
+              {
+                "access": "write",
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "tmpdir"
+                  }
+                }
+              },
+              {
+                "access": "read",
+                "missing_path_behavior": "skip",
+                "path": {
+                  "path": "/private/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmph4snvxcg/ws/.git",
+                  "type": "path"
+                }
+              },
+              {
+                "access": "read",
+                "missing_path_behavior": "skip",
+                "path": {
+                  "path": "/private/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmph4snvxcg/ws/.agents",
+                  "type": "path"
+                }
+              },
+              {
+                "access": "read",
+                "missing_path_behavior": "skip",
+                "path": {
+                  "path": "/private/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmph4snvxcg/ws/.codex",
+                  "type": "path"
+                }
+              }
+            ],
+            "type": "restricted"
+          },
+          "network": "restricted",
+          "type": "managed"
+        },
+        "sandbox_policy": {
+          "exclude_slash_tmp": false,
+          "exclude_tmpdir_env_var": false,
+          "network_access": false,
+          "type": "workspace-write"
+        },
+        "workspace_roots": [
+          "/private/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmph4snvxcg/ws"
+        ]
+      }
+    },
+    "turn-permission-multiple-roots": {
+      "approval_policy": {
+        "child": "never",
+        "root": "never"
+      },
+      "approvals_reviewer": {
+        "child": "user",
+        "root": "user"
+      },
+      "child_environment": {
+        "approval_policy": "never",
+        "approvals_reviewer": "user",
+        "cwd": "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpotey06al/ws",
+        "permission_profile": {
+          "file_system": {
+            "entries": [
+              {
+                "access": "read",
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "root"
+                  }
+                }
+              },
+              {
+                "access": "write",
+                "path": {
+                  "path": "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpotey06al/ws",
+                  "type": "path"
+                }
+              },
+              {
+                "access": "write",
+                "path": {
+                  "path": "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpotey06al/second",
+                  "type": "path"
+                }
+              },
+              {
+                "access": "write",
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "slash_tmp"
+                  }
+                }
+              },
+              {
+                "access": "write",
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "tmpdir"
+                  }
+                }
+              },
+              {
+                "access": "read",
+                "missing_path_behavior": "skip",
+                "path": {
+                  "path": "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpotey06al/ws/.git",
+                  "type": "path"
+                }
+              },
+              {
+                "access": "read",
+                "missing_path_behavior": "skip",
+                "path": {
+                  "path": "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpotey06al/second/.git",
+                  "type": "path"
+                }
+              },
+              {
+                "access": "read",
+                "missing_path_behavior": "skip",
+                "path": {
+                  "path": "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpotey06al/ws/.agents",
+                  "type": "path"
+                }
+              },
+              {
+                "access": "read",
+                "missing_path_behavior": "skip",
+                "path": {
+                  "path": "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpotey06al/second/.agents",
+                  "type": "path"
+                }
+              },
+              {
+                "access": "read",
+                "missing_path_behavior": "skip",
+                "path": {
+                  "path": "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpotey06al/ws/.codex",
+                  "type": "path"
+                }
+              },
+              {
+                "access": "read",
+                "missing_path_behavior": "skip",
+                "path": {
+                  "path": "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpotey06al/second/.codex",
+                  "type": "path"
+                }
+              }
+            ],
+            "type": "restricted"
+          },
+          "network": "restricted",
+          "type": "managed"
+        },
+        "sandbox_policy": {
+          "exclude_slash_tmp": false,
+          "exclude_tmpdir_env_var": false,
+          "network_access": false,
+          "type": "workspace-write",
+          "writable_roots": [
+            "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpotey06al/second"
+          ]
+        },
+        "workspace_roots": [
+          "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpotey06al/ws",
+          "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpotey06al/second"
+        ]
+      },
+      "expected": {
+        "child_sandbox": "workspace-write",
+        "root_roots": 2,
+        "root_sandbox": "workspace-write"
+      },
+      "matches": true,
+      "observed": {
+        "child_sandbox": "workspace-write",
+        "root_roots": 2,
+        "root_sandbox": "workspace-write"
+      },
+      "root_environment": {
+        "approval_policy": "never",
+        "approvals_reviewer": "user",
+        "cwd": "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpotey06al/ws",
+        "permission_profile": {
+          "file_system": {
+            "entries": [
+              {
+                "access": "read",
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "root"
+                  }
+                }
+              },
+              {
+                "access": "write",
+                "path": {
+                  "path": "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpotey06al/ws",
+                  "type": "path"
+                }
+              },
+              {
+                "access": "write",
+                "path": {
+                  "path": "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpotey06al/second",
+                  "type": "path"
+                }
+              },
+              {
+                "access": "write",
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "slash_tmp"
+                  }
+                }
+              },
+              {
+                "access": "write",
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "tmpdir"
+                  }
+                }
+              },
+              {
+                "access": "read",
+                "missing_path_behavior": "skip",
+                "path": {
+                  "path": "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpotey06al/ws/.git",
+                  "type": "path"
+                }
+              },
+              {
+                "access": "read",
+                "missing_path_behavior": "skip",
+                "path": {
+                  "path": "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpotey06al/second/.git",
+                  "type": "path"
+                }
+              },
+              {
+                "access": "read",
+                "missing_path_behavior": "skip",
+                "path": {
+                  "path": "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpotey06al/ws/.agents",
+                  "type": "path"
+                }
+              },
+              {
+                "access": "read",
+                "missing_path_behavior": "skip",
+                "path": {
+                  "path": "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpotey06al/second/.agents",
+                  "type": "path"
+                }
+              },
+              {
+                "access": "read",
+                "missing_path_behavior": "skip",
+                "path": {
+                  "path": "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpotey06al/ws/.codex",
+                  "type": "path"
+                }
+              },
+              {
+                "access": "read",
+                "missing_path_behavior": "skip",
+                "path": {
+                  "path": "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpotey06al/second/.codex",
+                  "type": "path"
+                }
+              }
+            ],
+            "type": "restricted"
+          },
+          "network": "restricted",
+          "type": "managed"
+        },
+        "sandbox_policy": {
+          "exclude_slash_tmp": false,
+          "exclude_tmpdir_env_var": false,
+          "network_access": false,
+          "type": "workspace-write",
+          "writable_roots": [
+            "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpotey06al/second"
+          ]
+        },
+        "workspace_roots": [
+          "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpotey06al/ws",
+          "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpotey06al/second"
+        ]
+      }
+    },
+    "turn-permission-no-widening": {
+      "approval_policy": {
+        "child": "never",
+        "root": "never"
+      },
+      "approvals_reviewer": {
+        "child": "user",
+        "root": "user"
+      },
+      "child_environment": {
+        "approval_policy": "never",
+        "approvals_reviewer": "user",
+        "cwd": "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmptlzg93yi/ws",
+        "permission_profile": {
+          "file_system": {
+            "entries": [
+              {
+                "access": "read",
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "root"
+                  }
+                }
+              }
+            ],
+            "type": "restricted"
+          },
+          "network": "restricted",
+          "type": "managed"
+        },
+        "sandbox_policy": {
+          "type": "read-only"
+        },
+        "workspace_roots": [
+          "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmptlzg93yi/ws"
+        ]
+      },
+      "expected": {
+        "child_sandbox": "read-only",
+        "root_roots": 1,
+        "root_sandbox": "read-only"
+      },
+      "matches": true,
+      "observed": {
+        "child_sandbox": "read-only",
+        "root_roots": 1,
+        "root_sandbox": "read-only"
+      },
+      "root_environment": {
+        "approval_policy": "never",
+        "approvals_reviewer": "user",
+        "cwd": "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmptlzg93yi/ws",
+        "permission_profile": {
+          "file_system": {
+            "entries": [
+              {
+                "access": "read",
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "root"
+                  }
+                }
+              }
+            ],
+            "type": "restricted"
+          },
+          "network": "restricted",
+          "type": "managed"
+        },
+        "sandbox_policy": {
+          "type": "read-only"
+        },
+        "workspace_roots": [
+          "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmptlzg93yi/ws"
+        ]
+      }
+    },
+    "turn-permission-read-only": {
+      "approval_policy": {
+        "child": "never",
+        "root": "never"
+      },
+      "approvals_reviewer": {
+        "child": "user",
+        "root": "user"
+      },
+      "child_environment": {
+        "approval_policy": "never",
+        "approvals_reviewer": "user",
+        "cwd": "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmp1l9ikrvj/ws",
+        "permission_profile": {
+          "file_system": {
+            "entries": [
+              {
+                "access": "read",
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "root"
+                  }
+                }
+              }
+            ],
+            "type": "restricted"
+          },
+          "network": "restricted",
+          "type": "managed"
+        },
+        "sandbox_policy": {
+          "type": "read-only"
+        },
+        "workspace_roots": [
+          "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmp1l9ikrvj/ws"
+        ]
+      },
+      "expected": {
+        "child_sandbox": "read-only",
+        "root_roots": 1,
+        "root_sandbox": "read-only"
+      },
+      "matches": true,
+      "observed": {
+        "child_sandbox": "read-only",
+        "root_roots": 1,
+        "root_sandbox": "read-only"
+      },
+      "root_environment": {
+        "approval_policy": "never",
+        "approvals_reviewer": "user",
+        "cwd": "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmp1l9ikrvj/ws",
+        "permission_profile": {
+          "file_system": {
+            "entries": [
+              {
+                "access": "read",
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "root"
+                  }
+                }
+              }
+            ],
+            "type": "restricted"
+          },
+          "network": "restricted",
+          "type": "managed"
+        },
+        "sandbox_policy": {
+          "type": "read-only"
+        },
+        "workspace_roots": [
+          "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmp1l9ikrvj/ws"
+        ]
+      }
+    },
+    "turn-permission-workspace-write": {
+      "approval_policy": {
+        "child": "never",
+        "root": "never"
+      },
+      "approvals_reviewer": {
+        "child": "user",
+        "root": "user"
+      },
+      "child_environment": {
+        "approval_policy": "never",
+        "approvals_reviewer": "user",
+        "cwd": "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpcjlp7q17/ws",
+        "permission_profile": {
+          "file_system": {
+            "entries": [
+              {
+                "access": "read",
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "root"
+                  }
+                }
+              },
+              {
+                "access": "write",
+                "path": {
+                  "path": "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpcjlp7q17/ws",
+                  "type": "path"
+                }
+              },
+              {
+                "access": "write",
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "slash_tmp"
+                  }
+                }
+              },
+              {
+                "access": "write",
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "tmpdir"
+                  }
+                }
+              },
+              {
+                "access": "read",
+                "missing_path_behavior": "skip",
+                "path": {
+                  "path": "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpcjlp7q17/ws/.git",
+                  "type": "path"
+                }
+              },
+              {
+                "access": "read",
+                "missing_path_behavior": "skip",
+                "path": {
+                  "path": "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpcjlp7q17/ws/.agents",
+                  "type": "path"
+                }
+              },
+              {
+                "access": "read",
+                "missing_path_behavior": "skip",
+                "path": {
+                  "path": "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpcjlp7q17/ws/.codex",
+                  "type": "path"
+                }
+              }
+            ],
+            "type": "restricted"
+          },
+          "network": "restricted",
+          "type": "managed"
+        },
+        "sandbox_policy": {
+          "exclude_slash_tmp": false,
+          "exclude_tmpdir_env_var": false,
+          "network_access": false,
+          "type": "workspace-write"
+        },
+        "workspace_roots": [
+          "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpcjlp7q17/ws"
+        ]
+      },
+      "expected": {
+        "child_sandbox": "workspace-write",
+        "root_roots": 1,
+        "root_sandbox": "workspace-write"
+      },
+      "matches": true,
+      "observed": {
+        "child_sandbox": "workspace-write",
+        "root_roots": 1,
+        "root_sandbox": "workspace-write"
+      },
+      "root_environment": {
+        "approval_policy": "never",
+        "approvals_reviewer": "user",
+        "cwd": "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpcjlp7q17/ws",
+        "permission_profile": {
+          "file_system": {
+            "entries": [
+              {
+                "access": "read",
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "root"
+                  }
+                }
+              },
+              {
+                "access": "write",
+                "path": {
+                  "path": "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpcjlp7q17/ws",
+                  "type": "path"
+                }
+              },
+              {
+                "access": "write",
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "slash_tmp"
+                  }
+                }
+              },
+              {
+                "access": "write",
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "tmpdir"
+                  }
+                }
+              },
+              {
+                "access": "read",
+                "missing_path_behavior": "skip",
+                "path": {
+                  "path": "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpcjlp7q17/ws/.git",
+                  "type": "path"
+                }
+              },
+              {
+                "access": "read",
+                "missing_path_behavior": "skip",
+                "path": {
+                  "path": "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpcjlp7q17/ws/.agents",
+                  "type": "path"
+                }
+              },
+              {
+                "access": "read",
+                "missing_path_behavior": "skip",
+                "path": {
+                  "path": "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpcjlp7q17/ws/.codex",
+                  "type": "path"
+                }
+              }
+            ],
+            "type": "restricted"
+          },
+          "network": "restricted",
+          "type": "managed"
+        },
+        "sandbox_policy": {
+          "exclude_slash_tmp": false,
+          "exclude_tmpdir_env_var": false,
+          "network_access": false,
+          "type": "workspace-write"
+        },
+        "workspace_roots": [
+          "/var/folders/ky/n5fq5mgd5rl4321kxfy3jtvw0000gn/T/tmpcjlp7q17/ws"
+        ]
+      }
+    }
+  },
+  "claim": "codex-0147-turn-permission-inheritance",
+  "codex_cli_version_observed": "0.147.0",
+  "findings": [
+    "A child never widens beyond its parent turn. The no-widening row's child profile declares sandbox_mode = \"workspace-write\" under a read-only root and the child ran read-only, so a profile cannot raise its own ceiling.",
+    "approvals_reviewer is `user` on every row, root and child alike. That is the value Codex records for a command-approval reviewer; it is necessary where command approval applies and is never operator authority (R11).",
+    "Workspace roots are inherited: the multiple-roots row records two roots on the root turn and the child runs under the same widened set, so roots follow the turn rather than the profile."
+  ],
+  "limitations": [
+    "Environment identity is not captured. TurnContextItem does not persist an environment identifier, so the durable tuple above is the default, as the plan anticipated.",
+    "`auto_review` is not exercised. No row records it, and validate_permission_inheritance refuses any receipt that presents it as operator authority."
+  ],
+  "method": {
+    "instrument": "scripts/codex_capability_probe.py capture_turn_environment",
+    "kind": "offline turn capture; permissions read from the rollout's turn_context",
+    "model_calls": 0,
+    "note": "Every tuple is what Codex RECORDED, never what was requested. A requested sandbox is an intention; a recorded one is the permission the turn actually ran under."
+  },
+  "schema_version": 1
+}

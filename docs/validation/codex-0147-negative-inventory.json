@@ -1,0 +1,128 @@
+{
+  "builder_is_unrunnable": {
+    "consequence": "The committed matrix cannot be regenerated, so it is treated as frozen historical evidence. This is recorded rather than repaired: reviving the builder would mean deciding what a 0.145.0 attestation means when rebuilt from 0.147-era inputs, which is a larger question than a claim correction.",
+    "reason": "It digests repository-local profiles at .codex/agents/*.toml, which the 0.146 alignment deliberately removed. Running it now fails with 'project profile review_max is unreadable', and tests/test_build_codex_v2_orchestration_matrix.py asserts those files stay absent.",
+    "script": "scripts/build_codex_v2_orchestration_matrix.py",
+    "verified_on": "0.147.0"
+  },
+  "claim": "codex-0147-claim-and-negative-inventory",
+  "codex_cli_version_observed": "0.147.0",
+  "dispositions": {
+    "frozen": "historical evidence, left byte-unchanged with no edit at all",
+    "superseded-note": "a dated historical record, left byte-unchanged with a dated note appended beside it",
+    "updated": "a current operational claim, corrected in place"
+  },
+  "no_change": [
+    {
+      "affects_this_repo": false,
+      "evidence": [
+        "`codex exec --full-auto` on 0.147.0 exits with \"error: unexpected argument '--full-auto' found\"",
+        "the flag appears zero times in this repository outside planning prose"
+      ],
+      "id": "exec-full-auto-flag-removed",
+      "replacement_if_needed": "--sandbox with --ask-for-approval, or --dangerously-bypass-approvals-and-sandbox",
+      "upstream_change": "`codex exec --full-auto` was removed"
+    },
+    {
+      "affects_this_repo": false,
+      "evidence": [
+        "no plugin manifest in this repository declares an MCP server",
+        "the union of keys across all eleven .codex-plugin/plugin.json files contains no mcp key"
+      ],
+      "id": "mcp-2026-07-28-protocol-opt-in",
+      "upstream_change": "the 2026-07-28 MCP protocol revision is opt-in"
+    },
+    {
+      "affects_this_repo": false,
+      "evidence": [
+        "no plugin declares an app id; the packaging keys in use are author, description, homepage, hooks, interface, keywords, license, name, repository, skills, version"
+      ],
+      "id": "apps",
+      "upstream_change": "Apps as a plugin surface"
+    },
+    {
+      "affects_this_repo": false,
+      "evidence": [
+        "no plugin uses tool_registry, omit_tools_from, disabled_tools, or enabled_tools",
+        "the repository ships no MCP server, which is where a name collision would arise"
+      ],
+      "id": "tool-registry-collision-policy",
+      "upstream_change": "tool-registry collision policy"
+    },
+    {
+      "affects_this_repo": false,
+      "evidence": [
+        "`find plugins -type l` returns zero entries, so nothing this repository installs is a symlink"
+      ],
+      "id": "symlink-handling-during-plugin-installation",
+      "upstream_change": "symlink handling changed during plugin installation"
+    },
+    {
+      "affects_this_repo": false,
+      "evidence": [
+        "all eleven plugins ship .codex-plugin/plugin.json and none ships a .claude-plugin or .cursor-plugin manifest, so the portable readers are never reached"
+      ],
+      "id": "portable-agent-plugin-packaging",
+      "note": "Recorded as an opportunity rather than a gap: this repository is the Codex-native adapter, and adopting a portable manifest would be a packaging decision, not a 0.147 compatibility requirement.",
+      "upstream_change": "0.147.0 reads .claude-plugin/plugin.json and .cursor-plugin/plugin.json alongside the native .codex-plugin/plugin.json"
+    }
+  ],
+  "operator_decisions": [
+    {
+      "decided_on": "2026-08-09",
+      "decision": "The twenty-five skills across eight plugins that ship no agents/openai.yaml stay model-selectable, and saga's twenty-two plus Verified Workflows' three stay explicit-only.",
+      "evidence": "docs/validation/codex-0147-discovery-routing.json",
+      "id": "implicit-skill-routing-reviewed",
+      "measured_consequence": "An implicit skill contributes its name and description to every request, about 1,140 tokens for the twenty-five, and not its body. The consequence is that the model may select them unprompted, not that context is consumed.",
+      "reasoning_confirmed_current": "saga 0.82.0 made its skills explicit-only so ordinary questions and narrow changes remain in the main session. That reason was re-examined on 2026-08-09 against the measured behaviour and kept.",
+      "status": "reviewed-and-accepted"
+    }
+  ],
+  "purpose": "Two lists that are easy to conflate and must not be. `superseded_claims` names every place the pre-0.147 Luna conclusion was written down and states what was done with each. `no_change` names upstream 0.147 changes that were checked against this repository and found not to touch it, each with the evidence that makes 'no change' a measurement rather than an assumption.",
+  "superseded_claims": [
+    {
+      "disposition": "updated",
+      "field": "luna_decision.reason",
+      "location": "scripts/build_codex_v2_orchestration_matrix.py",
+      "now": "Luna passes the MultiAgent V2 override filter on 0.147.0; the committed profiles stay on Terra because promotion is an opt-in install-time deviation",
+      "was": "Luna is unavailable to MultiAgent V2",
+      "why": "Source that would emit a false claim if it ever ran again. Corrected even though it cannot currently run -- see builder_is_unrunnable below."
+    },
+    {
+      "disposition": "frozen",
+      "field": "luna_decision.reason",
+      "location": "docs/validation/codex-v2-orchestration-matrix.json",
+      "sha256": "3aef495ec62c6939ef33a1ca88ad16e6c92aec0f49d03706f95cb0e3694ca1f0",
+      "superseded_by": "docs/validation/codex-0147-luna-canary.json",
+      "was": "Luna is unavailable to MultiAgent V2",
+      "why": "A generated artifact attesting a 0.145.0 run. Hand-editing it would break the 'generated content comes from its builder' rule, and regenerating it from present-day inputs would produce a document claiming to be the 0.145.0 proof while being derived from 0.147-era bytes. Superseded by docs/validation/codex-0147-luna-canary.json, which this row points at."
+    },
+    {
+      "disposition": "updated",
+      "location": "plugins/fleet-core/references/tier-palette.md",
+      "now": "Terra/low is a policy choice; Luna passes the 0.147.0 override filter and promotion is available per profile at install time",
+      "was": "Codex 0.145.0 exposes Luna only through MultiAgent V1, so the V2-only cutover selects Terra/low for both profiles.",
+      "why": "A reference describing current policy, not a dated record."
+    },
+    {
+      "also_corrected": "the same paragraph asserted permission inheritance for Codex 0.146.0; it now names 0.147.0 and cites the seven-row permission receipt that proved it",
+      "disposition": "updated",
+      "location": "plugins/verified-workflows/README.md",
+      "now": "The low profiles use Terra/low by policy, not because Luna is unavailable",
+      "was": "Luna remains V1 in the 0.146 catalog, so the V2-only low profiles use Terra/low."
+    },
+    {
+      "disposition": "frozen",
+      "line_text": "- Keep Luna fallback on Terra because the 0.146 catalog still reports Luna as V1.",
+      "location": "plugins/verified-workflows/CHANGELOG.md",
+      "why": "A dated changelog entry recording what was decided in that release. It was true then and editing it would rewrite history rather than correct a claim."
+    },
+    {
+      "dated_note_sha256": "feb15c8bf117f9e6e56fbb0fe0de73c800c9b7ad259ecbd92f1e3fe0f367b777",
+      "disposition": "superseded-note",
+      "line_text": "Seven minimal profiles remain; Luna is still V1 so low V2 profiles stay on Terra.",
+      "location": "docs/portability/matrix.md",
+      "why": "The clause sits inside a dated 2026-07-29 note. It states a true fact and a false inference: Luna is still catalogued v1, but v1 no longer excludes it. The note is left byte-unchanged and a dated 2026-08-09 entry above it records the supersession."
+    }
+  ]
+}

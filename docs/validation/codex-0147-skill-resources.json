@@ -1,0 +1,63 @@
+{
+  "cases": {
+    "skill-executor-denied-read": {
+      "mechanism": "executor-backed",
+      "status": "blocked"
+    },
+    "skill-executor-discovery-denial": {
+      "mechanism": "executor-backed",
+      "status": "blocked"
+    },
+    "skill-executor-grant-recovery": {
+      "mechanism": "executor-backed",
+      "status": "blocked"
+    },
+    "skill-executor-multiple-roots": {
+      "mechanism": "executor-backed",
+      "status": "blocked"
+    },
+    "skill-executor-permitted-read": {
+      "mechanism": "executor-backed",
+      "status": "blocked"
+    },
+    "skill-host-installed-read": {
+      "mechanism": "host-installed",
+      "status": "proven"
+    }
+  },
+  "claim": "codex-0147-skill-resource-mechanisms",
+  "codex_cli_version_observed": "0.147.0",
+  "findings": [
+    "The executor-backed skill mechanism is not usable at Codex 0.147.0 on an ordinary developer machine: the feature is under development and off, and the transport it needs does not exist locally. Any plugin surface written against it today would be written against something that cannot run.",
+    "Skill discovery is NOT confined to CODEX_HOME. With a disposable CODEX_HOME, skills/list still returned entries from the operator's ~/.agents/skills at user scope. A probe that assumes an isolated home isolates skill discovery is wrong."
+  ],
+  "limitations": [
+    "The five executor rows have no observations. They are recorded as blocked with reasons, and validate_skill_resources refuses any receipt that reports one as proven."
+  ],
+  "mechanisms": {
+    "executor-backed": {
+      "evidence": "A thread started with selectedCapabilityRoots (experimentalApi declared) is accepted, but the model-visible tool specification is byte-identical with and without the capability root: ['collaboration', 'functions'] both times, with no skills namespace. A scripted skills.list call is refused by Codex as `unsupported call: skillslist`. Enabling features.executor_capability_discovery=true does not change the offered namespaces.",
+      "proven": false,
+      "reasons": [
+        {
+          "detail": "`codex features list` reports executor_capability_discovery as stage 'under development' with effective state false.",
+          "kind": "feature-disabled",
+          "observed_row": "executor_capability_discovery under development false"
+        },
+        {
+          "detail": "An executor-backed capability root is resolved through an execution environment, and environment/add requires an execServerUrl -- a WebSocket to an exec server. No exec server exists on this machine and none is reachable.",
+          "kind": "infrastructure-absent"
+        }
+      ]
+    },
+    "host-installed": {
+      "how": "skills/list over the app server returns entries carrying name, description, path, scope and enabled. Reading one needs no capability grant, which is what makes it a different mechanism from an executor-backed resource.",
+      "proven": true
+    }
+  },
+  "method": {
+    "instrument": "app-server JSON-RPC driver over stdio, plus scripts/codex_capability_probe.py",
+    "model_calls": 0
+  },
+  "schema_version": 1
+}

@@ -60,7 +60,7 @@ def test_current_marketplace_and_target_fixture_expose_exactly_one_workflow_iden
     assert active & {"team-execution", "verified-workflows"} == {"verified-workflows"}
     assert set(targets) & {"team-execution", "verified-workflows"} == {"verified-workflows"}
     target = targets["verified-workflows"]
-    assert target["version"] == "3.0.0+codex.20260729164721"
+    assert target["version"] == "3.1.0"
     assert target["publication_status"] == "released"
     assert set(target["skills"]) == {"run", "review-workflow", "appsec-audit"}
     assert fixture["unpublished_plugins"] == []
@@ -114,7 +114,7 @@ def test_target_manifest_skills_and_native_v2_runtime_surfaces_are_complete() ->
     )
 
     assert manifest["name"] == "verified-workflows"
-    assert manifest["version"] == "3.0.0+codex.20260729164721"
+    assert manifest["version"] == "3.1.0"
     assert manifest["author"]["name"] == "Infiquetra"
     assert manifest["skills"] == "./skills/"
     assert set(path.name for path in (TARGET_ROOT / "skills").iterdir() if path.is_dir()) == {

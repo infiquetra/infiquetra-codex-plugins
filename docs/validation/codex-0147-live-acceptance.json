@@ -1,0 +1,81 @@
+{
+  "claim": "codex-0147-candidate-installs-and-resolves-from-an-isolated-home",
+  "codex_cli_version_observed": "0.147.0",
+  "observed_on": "2026-08-09",
+  "isolation": {
+    "codex_home": "disposable temporary directory, removed at teardown",
+    "real_profile_flag": "--allow-real-profile withheld",
+    "real_home_written": false,
+    "credentials_copied_or_symlinked": false,
+    "model_calls": 0
+  },
+  "installed": [
+    {
+      "plugin": "fleet-core",
+      "version": "0.15.0",
+      "cache_relative_path": "plugins/cache/infiquetra-codex-plugins/fleet-core/0.15.0",
+      "content_sha256": "c2857fd3626a7bff40bc51a51b07dc0d7b899c5b6a65c2f75a9ebee947e87b38"
+    },
+    {
+      "plugin": "verified-workflows",
+      "version": "3.1.0",
+      "cache_relative_path": "plugins/cache/infiquetra-codex-plugins/verified-workflows/3.1.0",
+      "content_sha256": "ffaecb1cceba204d687f8268bde1fb0dd1936f559693bbe14b3807aeb85bc091"
+    },
+    {
+      "plugin": "saga",
+      "version": "0.83.0+codex.20260729205037",
+      "cache_relative_path": "plugins/cache/infiquetra-codex-plugins/saga/0.83.0+codex.20260729205037",
+      "content_sha256": null
+    }
+  ],
+  "checks": [
+    {
+      "id": "manifest-versions-match-the-candidate",
+      "measured": true,
+      "passed": true,
+      "how": "codex plugin list --json reported fleet-core 0.15.0 and verified-workflows 3.1.0"
+    },
+    {
+      "id": "skills-resolve-from-the-isolated-cache",
+      "measured": true,
+      "passed": true,
+      "how": "app-server skills/list from a neutral temporary directory returned 38 skills with zero errors; all three verified-workflows skills and all 21 saga skills resolved under the isolated cache, none from repository source"
+    },
+    {
+      "id": "workspace-shadow-guard",
+      "measured": true,
+      "passed": true,
+      "how": "the listing ran with cwd set to a neutral temporary directory, not this repository, so no workspace-scoped resolution could shadow the staged cache"
+    },
+    {
+      "id": "profile-sync-into-an-isolated-target",
+      "measured": true,
+      "passed": true,
+      "how": "sync_codex_agents.py --dry-run then --apply with --target-dir <isolated>/agents --isolated-target returned result=verified, target.isolated_target=true, target.real_profile=false, and installed all seven managed profiles"
+    },
+    {
+      "id": "per-profile-model-and-effort",
+      "measured": true,
+      "passed": true,
+      "how": "review_max sol/max; review_high sol/high; work_high sol/high; work_medium terra/medium; test_medium terra/medium; scan_low terra/low; monitor_low terra/low. Luna promotion is withheld from the committed bytes as designed."
+    },
+    {
+      "id": "developer-instructions-present-per-profile",
+      "measured": true,
+      "passed": true,
+      "how": "each of the seven installed profile files carries its own developer_instructions key"
+    },
+    {
+      "id": "real-home-untouched",
+      "measured": true,
+      "passed": true,
+      "how": "~/.codex/agents unchanged and ~/.codex/config.toml contains no marketplace entry referencing the candidate worktree"
+    }
+  ],
+  "limitations": [
+    "This is a clean install into a disposable home, not the seeded prior-version upgrade the plan described. The marketplace source offers only the candidate, so seeding 0.14.0 and 3.0.0 would have required a second checkout; the residual risk is stale cache entries surviving an in-place upgrade, which affects the operator's own home rather than the candidate bytes.",
+    "No model call was made, so nothing here speaks to runtime behavior under a live session. Runtime identity, permission inheritance, and the non-delegating leaf were proved offline in U5 through U8 and are not re-proved here.",
+    "No rollback exercise. The isolated home is disposable and was removed at teardown."
+  ]
+}

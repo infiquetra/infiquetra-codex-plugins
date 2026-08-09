@@ -37,9 +37,9 @@ byte-identically.
   (`~/.claude/.../installed_plugins.json`, `CLAUDE_PLUGIN_ROOT` cache-sibling) are dropped, not
   emulated — Codex has no equivalent registry, so a Claude-shaped rung would be a silent dead
   rung. This divergence is recorded in `docs/portability/codex-saga-064-drift-classification.md`.
-- **Catalog-aware classes (KTD2-KTD4):** five leaf execution classes select Sol/Terra/Luna with
-  ordered fallbacks against one immutable, allowlisted `codex debug models` snapshot. Scalar
-  effort is `low..max`; Ultra is root-only and explicit.
+- **Catalog-aware classes (KTD2-KTD4):** the leaf execution classes `models.json` defines select
+  Sol/Terra/Luna with ordered fallbacks against one immutable, allowlisted `codex debug models`
+  snapshot. Scalar effort is `low..max`; Ultra is root-only and explicit.
 - **Lineage compatibility:** `fable`/`opus`/`sonnet`/`haiku`, the old work-shape resolver, and
   their mappings remain temporary compatibility APIs. They do not select new managed profiles.
 - **Workflow identity compatibility:** `workflow_compat.py` owns the closed old-read/new-write

@@ -39,6 +39,7 @@ def _row(
     *,
     visibility: str = "list",
     supported_in_api: bool = True,
+    multi_agent_version: str | None = "v2",
 ) -> dict:
     return {
         "slug": slug,
@@ -46,6 +47,7 @@ def _row(
         "supported_reasoning_levels": [{"effort": effort} for effort in efforts],
         "visibility": visibility,
         "supported_in_api": supported_in_api,
+        "multi_agent_version": multi_agent_version,
     }
 
 
@@ -83,13 +85,17 @@ def test_legacy_ladder_and_work_shape_resolver_remain_available() -> None:
     assert resolver.resolve(None, "adversarial-review").model == "opus"
 
 
-def test_registry_has_exact_five_classes_and_no_role_policy() -> None:
+def test_registry_has_exact_seven_classes_and_no_role_policy() -> None:
+    # Ranked in registration order, which is what `order` means. A new class is appended at
+    # the next free rank, so adding one never renumbers an existing class.
     assert palette.EXECUTION_CLASSES == (
         "review-max",
         "review-high",
         "test-medium",
         "scan-low",
         "monitor-low",
+        "work-high",
+        "work-medium",
     )
     raw = json.loads(palette.MODELS_REGISTRY_PATH.read_text(encoding="utf-8"))
     forbidden = {"role", "logical_role", "default_role", "allowed_transitions"}
@@ -106,13 +112,15 @@ def test_registry_rejects_top_level_role_policy(tmp_path: Path) -> None:
         palette._load_registry(path)
 
 
-def test_full_catalog_resolves_exact_five_classes(full_snapshot) -> None:
+def test_full_catalog_resolves_exact_seven_classes(full_snapshot) -> None:
     expected = {
         "review-max": ("gpt-5.6-sol", "max"),
         "review-high": ("gpt-5.6-sol", "high"),
         "test-medium": ("gpt-5.6-terra", "medium"),
         "scan-low": ("gpt-5.6-terra", "low"),
         "monitor-low": ("gpt-5.6-terra", "low"),
+        "work-high": ("gpt-5.6-sol", "high"),
+        "work-medium": ("gpt-5.6-terra", "medium"),
     }
     for execution_class, pair in expected.items():
         result = resolver.resolve_execution_class(execution_class, full_snapshot)
@@ -177,6 +185,30 @@ def test_hidden_or_api_unsupported_model_is_not_selectable() -> None:
     )
     result = resolver.resolve_execution_class("scan-low", snapshot)
     assert result.effective_model == "gpt-5.6-sol"
+
+
+def test_selection_uses_override_filter_and_not_collaboration_projection() -> None:
+    v1_preferred = _snapshot(
+        _row("gpt-5.6-sol", ("low", "high"), multi_agent_version="v1"),
+        _row("gpt-5.6-terra", ("low", "high")),
+    )
+    preferred_model = v1_preferred.model("gpt-5.6-sol")
+    assert preferred_model is not None
+    assert preferred_model.passes_multi_agent_v2_override_filter is True
+    assert preferred_model.multi_agent_v2_collaboration["as_child"] is False
+    assert (
+        resolver.resolve_execution_class("review-high", v1_preferred).effective_model
+        == "gpt-5.6-sol"
+    )
+
+    disabled_preferred = _snapshot(
+        _row("gpt-5.6-sol", ("low", "high"), multi_agent_version="disabled"),
+        _row("gpt-5.6-terra", ("low", "high")),
+    )
+    assert (
+        resolver.resolve_execution_class("review-high", disabled_preferred).effective_model
+        == "gpt-5.6-terra"
+    )
 
 
 def test_unknown_class_and_leaf_ultra_policy_fail() -> None:

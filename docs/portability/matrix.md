@@ -40,6 +40,16 @@ tool-specific orchestration.
 
 ## Notes
 
+- 2026-08-09: Codex 0.147 alignment supersedes one clause of the dated 2026-07-29 note below.
+  "Luna is still V1 so low V2 profiles stay on Terra" states a true fact and a false inference:
+  Luna is still catalogued `v1`, but 0.147.0 gates model override on the catalog not reporting
+  `disabled` rather than on it reporting `v2`, so a `v1` Luna is selectable by a V2 session. The
+  low profiles stay on Terra by policy — promotion is an opt-in install-time deviation whose
+  canary measured collaboration-tool eligibility and not output quality. The 2026-07-29 note is
+  left byte-unchanged as the dated record of what was believed then. Also in this round: skill
+  scopes are `user`/`repo`/`system`/`admin`; executor-backed skill resources cannot run on a
+  developer machine at 0.147.0; custom agent profiles still require their own synchronisation.
+
 - 2026-08-02: `hermes-profile-evolution` `0.1.0` consumes pinned producer conformance
   artifacts. It exposes one Codex skill and one native advisory `PreToolUse` hook. Credentials,
   profile mutation, offline queuing, and absolute same-user enforcement remain outside the plugin.
@@ -58,7 +68,7 @@ tool-specific orchestration.
 
 - Count differences are intentional. The active Codex marketplace has 10 plugins, not the full portability catalog.
 - The prior SDLC and document-review plugin roots are superseded by `saga`, `verified-workflows`, and `mission-control`.
-- `verified-workflows` `3.0.0+codex.20260729164721` is the V2-only release candidate.
+- `verified-workflows` `3.1.0` is the V2-only release candidate.
   `team-execution` remains only as frozen lineage and legacy-readable state vocabulary.
 - The target fixture exposes `verified-workflows:run`, `verified-workflows:review-workflow`, and
   `verified-workflows:appsec-audit`; direct launches use native `agent_type`. The Claude catalog

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Fleet dispatch policy resolution.
 
-``resolve_execution_class`` is the authoritative Codex path: it resolves one of Fleet Core's
-five leaf classes against one immutable model-catalog snapshot. ``resolve_root_orchestration``
+``resolve_execution_class`` is the authoritative Codex path: it resolves one of the leaf classes
+``models.json`` defines against one immutable model-catalog snapshot. ``resolve_root_orchestration``
 is the only path that can select Ultra. The older work-shape ``resolve`` function remains as a
 temporary compatibility API for pre-cutover Saga and Team Execution consumers.
 
@@ -124,8 +124,18 @@ class RootResolution:
 
 
 def _catalog_model(snapshot: Any, slug: str) -> Any | None:
+    """Return the catalog entry for ``slug`` when it is eligible for selection.
+
+    Eligibility is catalog visibility and API support, plus the MultiAgent V2 explicit-model
+    override filter: Codex rejects a model whose catalog entry reports ``disabled``, so offering
+    one would resolve to a model the runtime refuses. The collaboration projection is deliberately
+    not consulted — whether a session receives subagent tools depends on its position in the
+    spawn tree, not on which model to select.
+    """
     model = snapshot.model(slug)
     if model is None or not model.selectable:
+        return None
+    if not model.passes_multi_agent_v2_override_filter:
         return None
     return model
 

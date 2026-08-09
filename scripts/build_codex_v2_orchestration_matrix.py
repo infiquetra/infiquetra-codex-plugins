@@ -63,6 +63,20 @@ EXPECTED_PARENTS = {
     "no_history_root": None,
     "no_history_child": "no_history_root",
 }
+# Which Codex version each matrix row's evidence actually came from. Every row not named here is
+# inherited from the 0.145.0 receipt set in the header; a row named here was reproved later and
+# carries the artifact that reproved it. Without this, a single reproved row would either be
+# invisible or would tempt someone to relabel the whole header, which falsifies the rest.
+ROW_PROVENANCE = {
+    "luna_decision": {
+        "observed_on": "0.147.0",
+        "evidence": "docs/validation/codex-0147-luna-canary.json",
+        "note": (
+            "Reproved from the model-visible tool plan rather than from behaviour; the receipt "
+            "measures collaboration-tool eligibility and explicitly does not measure quality"
+        ),
+    },
+}
 EXPECTED_PROFILES = {
     "review_max": ("gpt-5.6-sol", "max", "read-only"),
     "review_high": ("gpt-5.6-sol", "high", "read-only"),
@@ -506,7 +520,13 @@ def build_matrix(receipt_payload: object) -> dict[str, Any]:
         "schema_version": 2,
         "claim": "codex-v2-orchestration-matrix",
         "capability_outcome": "supported",
+        # The version the receipt set was OBSERVED on. It is not relabelled when a later round
+        # reproves one row: relabelling the header without rerunning every row would claim
+        # evidence that was never taken (KTD2). Rows reproved since then say so individually in
+        # `row_provenance` below, which is what makes an inherited row distinguishable from a
+        # reproved one.
         "codex_cli_version": "0.145.0",
+        "row_provenance": ROW_PROVENANCE,
         "authentication_mode": "current-codex-home-reused",
         "generated_from": {
             "receipt_artifact": "docs/validation/codex-v2-orchestration-receipts.json",
@@ -516,8 +536,15 @@ def build_matrix(receipt_payload: object) -> dict[str, Any]:
         },
         "catalog": payload["catalog"],
         "luna_decision": {
-            "outcome": "fallback-selected",
-            "reason": "Luna is unavailable to MultiAgent V2",
+            "outcome": "eligible-not-promoted",
+            "reason": (
+                "Luna passes the MultiAgent V2 override filter on 0.147.0, so the earlier "
+                "'unavailable to MultiAgent V2' conclusion no longer holds. The committed "
+                "profiles stay on Terra because promotion is an opt-in install-time deviation "
+                "and the canary measured eligibility without measuring output quality"
+            ),
+            "superseded_reason": "Luna is unavailable to MultiAgent V2",
+            "superseded_on": "0.147.0",
             "scan_low_model": "gpt-5.6-terra",
             "monitor_low_model": "gpt-5.6-terra",
             "effort": "low",

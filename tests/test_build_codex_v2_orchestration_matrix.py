@@ -33,6 +33,33 @@ def test_committed_matrix_is_receipt_derived() -> None:
     assert not any((ROOT / ".codex" / "agents").glob("*.toml"))
 
 
+def test_the_observed_version_is_captured_rather_than_asserted_from_the_target() -> None:
+    """KTD2: a target version and an observed version never share a field.
+
+    The header records the version the receipt set was taken on. It is a literal, deliberately
+    not read from `CODEX_TARGET_VERSION`: if the two were wired together, bumping the target
+    would silently restamp evidence that was never retaken. A row reproved on a later version
+    says so in `ROW_PROVENANCE` instead.
+    """
+
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "u11_codex_target_version", ROOT / "scripts" / "codex_target_version.py"
+    )
+    assert spec is not None and spec.loader is not None
+    target = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(target)
+
+    matrix = json.loads(M.DEFAULT_MATRIX.read_text())
+    assert matrix["codex_cli_version"] != target.CODEX_TARGET_VERSION
+    assert "CODEX_TARGET_VERSION" not in SCRIPT.read_text(encoding="utf-8")
+
+    reproved = M.ROW_PROVENANCE["luna_decision"]
+    assert reproved["observed_on"] == target.CODEX_TARGET_VERSION
+    assert reproved["observed_on"] != matrix["codex_cli_version"]
+
+
 def test_dropped_receipt_fails_closed() -> None:
     payload = receipts()
     payload["receipts"] = payload["receipts"][:-1]

@@ -1,0 +1,22 @@
+[
+  {
+    "source_plugin": "codex-cli",
+    "source_version": "0.147.0",
+    "current_codex_identity": "fleet-core",
+    "current_codex_version": "0.14.0+codex.20260729164721",
+    "target_codex_identity": "fleet-core",
+    "target_codex_version": "0.15.0",
+    "policy": "codex-0147-alignment",
+    "release_unit": "U12"
+  },
+  {
+    "source_plugin": "codex-cli",
+    "source_version": "0.147.0",
+    "current_codex_identity": "verified-workflows",
+    "current_codex_version": "3.0.0+codex.20260729164721",
+    "target_codex_identity": "verified-workflows",
+    "target_codex_version": "3.1.0",
+    "policy": "codex-0147-alignment",
+    "release_unit": "U12"
+  }
+]

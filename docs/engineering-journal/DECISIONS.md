@@ -1,5 +1,185 @@
 # Decisions
 
+## 2026-08-09: Committed Profile Bytes Are The Unpromoted Rendering; A Deviation Is Applied At Install
+
+Promoting the two low-cost profiles onto the Luna model is a deviation from what their Fleet Core
+execution class states. It has to be recorded somewhere, and there were two places it could live:
+in the committed `plugins/verified-workflows/agents/*.toml` bytes, or in the install step that
+writes profiles into a Codex home.
+
+Putting it in the committed bytes was tempting, because the canary receipt is itself a committed,
+reviewed artifact — its presence in the repository is a deliberate decision, not an ambient file.
+It was rejected for two reasons. The receipt states plainly that quality was never measured
+(`eligible-on-measured-criteria` means one criterion passed and nothing else was tested), so making
+Luna the default byte set would ship an unmeasured model to every run of every scanner and monitor
+role. And it collides with the staleness check: `check_generated` requires committed source to equal
+the rendered bundle, so a promoted bundle would be reported as stale source.
+
+**Decision.** Committed profile bytes are by definition what the renderer produces with **no**
+receipt. Promotion is requested at sync time with `--luna-canary-receipt PATH`. The staleness check
+still runs on every sync, against a second, unpromoted rendering — not skipped whenever a receipt is
+supplied, which would have dropped the check on exactly the runs that install a deviation.
+
+**Rejected alternatives.** (1) Promote in committed source and let the receipt's presence drive it —
+rejected above. (2) Skip `check_generated` when a receipt is passed — this silently disables the
+staleness check on the highest-risk runs. (3) Give the renderer CLI its own receipt flag — this would
+let `--write` produce promoted bytes and destroy the invariant that makes (2) unnecessary.
+
+**Revisit when** the canary receipt records a measured quality criterion for a profile. At that point
+promotion stops being an unmeasured deviation, and defaulting the committed bytes to the promoted
+model becomes arguable on its merits.
+
+## 2026-08-09: A Negative Finding Is Not Recorded Until Someone Competent Has Tried To Break It
+
+This session searched for the surface that renders Codex's model-visible tool specification, failed
+to find one, and drafted a plan amendment saying no such surface exists in 0.147.0. The evidence
+looked good: `codex debug prompt-input` returns prompt messages and is byte-invariant to the
+MultiAgent V2 feature flag; a scan of all 246 app-server v2 protocol surfaces found no tool list on
+any thread or turn response; `TurnStartParams` accepts thirteen fields and none of them is tools.
+
+The claim was dispatched to the cross-review engine with instructions to refute rather than confirm
+it, and it was refuted. The specification is assembled by `router.model_visible_specs`
+(`codex-rs/core/src/session/turn.rs:1223-1239` at tag `rust-v0.147.0`) and, under Responses Lite,
+serialized as an `additional_tools` **developer input item** while the request's top-level `tools`
+property stays empty (`codex-rs/core/src/client.rs:820-848`). Every search had been for a property
+named `tools`. It was in an input item.
+
+**Decision.** A negative finding about runtime capability is not recorded until an independent
+reviewer has been asked to break it, and the request says *refute*, not *check*. Confirmation-shaped
+review of a negative finding produces agreement, because absence is exactly what a confirming search
+finds. This is not a general rule about all findings: a positive claim carries its own evidence and
+fails visibly when wrong. A false absence does not fail at all. It quietly authorises a substitute.
+
+**What it would have cost.** The amendment would have withdrawn a capture route that works, replaced
+it with a substitute, and handed six downstream proof units an inference where a measurement was
+available. Nothing later in the round would have contradicted it, because nothing later looks for a
+surface the plan says is absent.
+
+**Second-order.** The same review rejected two candidates this session had been ready to record as
+supporting evidence. `codex debug prompt-input` is worse than useless as a tool-plan substitute
+because its collaboration prose survives when the collaboration tools are not offered — it would read
+as a capability being present. It was deleted rather than left available. `codex features list` is
+real evidence of effective feature state and was kept, but its docstring now says explicitly that it
+is not evidence about tools.
+
+**Revisit when.** Never, as far as the rule goes. The narrower operational part — which command
+captures the specification — is version-bound and re-derived by the harness rather than remembered,
+which is the point.
+
+## 2026-08-09: The Execution Class Is The Only Place A Managed Profile's Model And Effort Are Stated
+
+Each of the seven managed Verified Workflows profiles carried its own model and effort in a
+`PROFILE_POLICY` dictionary in `plugins/verified-workflows/scripts/render_codex_agents.py`, while
+Fleet Core's `execution_classes` in `plugins/fleet-core/scripts/fleet_commons/models.json` stated
+the same policy for its own consumers. Two sources, no binding between them: a Fleet Core policy
+change moved nothing in the rendered profiles, and nothing failed to say so. That is the same
+freeze-and-restate shape this alignment round exists to remove, one layer up from the catalog
+facts that motivated it.
+
+**Decision.** The execution class is the single source. `render_codex_agents.py` now maps each
+profile to exactly one class by name and reads the model and effort from that class at render
+time, through `fleet_commons_shim.load("tier_palette")`. The plugin keeps only two things of its
+own: the profile-to-class mapping, and the operator-facing description text rendered into the
+profile. The class carries its own description written for the Fleet Core policy reader; those
+two descriptions have different audiences and are deliberately not merged.
+
+**Scope of the freshness claim, stated exactly.** The renderer holds no copy of its own and asks
+`tier_palette` on every render. `tier_palette` itself reads `models.json` once per process and
+freezes the derived policies, so a policy edit takes effect on the **next run**, not mid-process.
+That per-process freeze is correct rather than a limitation: reloading between two profiles in one
+bundle would let a single render emit two different policies. The claim U4 earns is "no second copy
+in the plugin, and no plugin edit needed to adopt a policy change" — not live reload.
+
+**Three failure modes, all loud.** A profile with no mapped class fails the roster check. A profile
+naming a class Fleet Core does not define fails with the class name in the message. And a
+`ProfileResolution` whose model or effort departs from its class fails at render unless it names a
+reason in `PROFILE_POLICY_DEVIATIONS` — today only the Luna canary, which substitutes a model and
+never an effort. That last check exists because `render_profile` is public and takes a
+caller-supplied resolution: without it the single-source claim would have held only for resolutions
+this module built, which a cross-engine review demonstrated by rendering `work_high` as
+`gpt-5.4-mini` / `low` against a class that says `gpt-5.6-sol` / `high`.
+
+**Proved by byte identity, not by argument.** The seven rendered profile digests were captured
+before the change and pinned in `plugins/verified-workflows/tests/test_agent_tier_sync.py` as
+`PRE_COLLAPSE_PROFILE_SHA256`. All seven are byte-identical after it. A collapse that changed what
+gets rendered would be a model change wearing a refactor's clothes; this one is not.
+
+**Two classes had to be created.** Seven profiles mapped to five classes: `work-high` and
+`work-medium` had no Fleet Core class at all. Both were added to `models.json`, which extends
+shared Fleet Core vocabulary rather than a plugin-local list — the operator approved that
+explicitly.
+
+**Rejected alternative: renumber `order` into cost order.** Appending the two classes at ranks 5
+and 6 places an expensive `gpt-5.6-sol` / `high` class after the cheap `monitor-low`, which looks
+wrong if `order` is read as a cost ranking. It is not one. `order` exists so the derived class
+tuple is deterministic and so a duplicate or gap fails loudly; the only consumers are
+`_derive_ordered` and one pinned roster test. Renumbering would have changed ranks for five
+existing classes to encode a meaning nothing reads. Appending changes none of them. The semantic
+is now stated in `plugins/fleet-core/references/tier-palette.md` so the next reader does not have
+to re-derive it.
+
+**Revisit when.** Something starts reading `order` as a ranking — a cost report, a preference
+walk, a fallback ladder across classes. At that point the meaning has genuinely changed, ranks
+must be assigned deliberately, and the reference note above becomes wrong rather than merely
+incomplete.
+
+## 2026-08-08: Model Eligibility Is One Catalog Fact Plus Two Derived Projections
+
+Codex 0.147.0 relaxed the MultiAgent V2 model gate from "the catalog must report `v2`" to "the catalog
+must not report `Disabled`" (`codex-rs/core/src/tools/handlers/multi_agents_common.rs`, function
+`model_supports_multi_agent_backend`). Luna is catalogued `v1`, so it moved from rejected to accepted as
+a V2 child.
+
+The repository had stored that runtime observation as a permanent property. `CatalogModel.selectable` at
+`plugins/fleet-core/scripts/fleet_commons/codex_model_catalog.py:55` never consulted
+`multi_agent_version`; the exclusion was frozen into policy data as `"preferred": {"model":
+"gpt-5.6-terra"}` on the `scan-low` and `monitor-low` execution classes in `models.json`, then restated
+in the renderer, the generated profiles, the validation matrix, and four prose documents. None of those
+restatements could notice the gate had changed.
+
+Only the catalog's `multi_agent_version` is an independent source fact. Both values the repository needs
+are derived from it by rules Codex owns: passing the V2 explicit-model override filter (true unless the
+catalog says `Disabled`), and receiving collaboration tools (a V2 root always; a V2 child only when its
+own model reports `v2`, per `codex-rs/core/src/tools/spec_plan.rs:533-543`). The projections carry
+versioned rule identifiers and Codex provenance so a future rule change is detected rather than silently
+mis-read.
+
+A Luna child is therefore a non-delegating leaf — correct for bounded scanning and allowlisted
+observation, which should not delegate. That is a derived runtime expectation of effective model plus
+session position, never a permanent property of a profile.
+
+Rejected: modelling the three values as independent facts, which repeats the original defect in a new
+shape; and treating this as a text correction, which leaves the conflation in the data model.
+
+Revisit when Codex changes either derivation rule, or when Luna's catalog entry reports `v2` — at which
+point the collaboration expectation inverts and the rule identifiers should surface it.
+
+Plan: `docs/plans/2026-08-08-codex-0147-alignment-plan.md`.
+
+## 2026-08-08: One Sourced Codex Version Constant Replaces Four Hard Pins
+
+The Codex version was hard-pinned as an exact string in four independent places: the proof runner
+(`scripts/prove_verified_workflows_runtime.py:139`), two test assertions
+(`tests/test_codex_runtime_capability_snapshot.py:81` at `0.146.0` and
+`tests/test_build_codex_v2_orchestration_matrix.py:28` at `0.145.0` — already drifted apart), and a JSON
+Schema `const` in `docs/validation/codex-runtime-capability-snapshot.schema-r3.json`. The proof runner
+raises on any other value, so the tooling could not run against a 0.147.0 snapshot at all.
+
+A single `CODEX_TARGET_VERSION` now feeds all four, with the schema file generated rather than
+hand-edited. The capability snapshot moves to a new revision (`schema-r4.json`, `schema_version` 3)
+because the repository already uses revision files as its idiom and an explicit revision makes outside
+breakage visible; `scripts/port_contract.py:379` widens from `{1, 2}` accordingly.
+
+Rejected: re-pinning the four literals to `0.147.0`, which is what every prior round did. It keeps each
+gate independently readable and the diff small, but rebuilds the same four-place restatement — the exact
+pattern that let the superseded Luna claim persist. The two assertions having already drifted to
+different versions is the evidence that restatement does not hold.
+
+Revisit when the generation step proves more costly than the drift it prevents, or if a consumer needs
+to pin a different version than the repository targets.
+
+Plan: `docs/plans/2026-08-08-codex-0147-alignment-plan.md`.
+
 ## 2026-08-02: Hermes Profile Evolution Remains A Thin Codex Adapter
 
 The Codex plugin calls Team Mimir's real classifier and canonical `hermes profile-request` instead

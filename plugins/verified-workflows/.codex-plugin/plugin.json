@@ -1,6 +1,6 @@
 {
   "name": "verified-workflows",
-  "version": "3.0.0+codex.20260729164721",
+  "version": "3.1.0",
   "description": "Thin root-owned Codex V2 workflow policy with approved contracts, runtime readback, typed results, and bounded gates.",
   "author": {
     "name": "Infiquetra",

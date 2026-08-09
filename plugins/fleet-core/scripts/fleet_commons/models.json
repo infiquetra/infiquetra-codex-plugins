@@ -73,6 +73,28 @@
       "fallbacks": [
         { "model": "gpt-5.6-sol", "effort": "low" }
       ]
+    },
+    "work-high": {
+      "order": 5,
+      "description": "Complex bounded implementation with declared workspace writes.",
+      "workspace_boundary": "declared-write",
+      "external_boundary": "none",
+      "preferred": { "model": "gpt-5.6-sol", "effort": "high" },
+      "fallbacks": [
+        { "model": "gpt-5.6-terra", "effort": "high" },
+        { "model": "gpt-5.5", "effort": "high" }
+      ]
+    },
+    "work-medium": {
+      "order": 6,
+      "description": "Ordinary implementation, remediation, and Git integration.",
+      "workspace_boundary": "declared-write",
+      "external_boundary": "none",
+      "preferred": { "model": "gpt-5.6-terra", "effort": "medium" },
+      "fallbacks": [
+        { "model": "gpt-5.6-sol", "effort": "medium" },
+        { "model": "gpt-5.5", "effort": "medium" }
+      ]
     }
   },
   "root_orchestration_profiles": {

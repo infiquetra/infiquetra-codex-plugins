@@ -23,8 +23,15 @@ COMMAND_TIMEOUT_SECONDS = 15.0
 MAX_OUTPUT_BYTES = 16 * 1024 * 1024
 CATALOG_EFFORTS = frozenset({"none", "minimal", "low", "medium", "high", "xhigh", "max", "ultra"})
 CATALOG_VISIBILITIES = frozenset({"list", "hide"})
-MULTI_AGENT_VERSIONS = frozenset({None, "v1", "v2"})
+MULTI_AGENT_VERSIONS = frozenset({None, "v1", "v2", "disabled"})
 MODEL_SLUG_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
+
+# Codex serializes `MultiAgentVersion` with `rename_all = "snake_case"`, so the `Disabled` variant
+# reaches us as the wire value "disabled". Both projections below are derived from that one raw
+# catalog fact by rules Codex owns; the identifiers are versioned so a later upstream gate change
+# lands as a new rule rather than a silent edit to what these values mean.
+MULTI_AGENT_OVERRIDE_FILTER_RULE = "codex-0.147.0/model-supports-multi-agent-backend"
+MULTI_AGENT_COLLABORATION_RULE = "codex-0.147.0/collab-tools-enabled"
 
 
 class CatalogError(RuntimeError):
@@ -55,6 +62,28 @@ class CatalogModel:
     def selectable(self) -> bool:
         return self.visibility == "list" and self.supported_in_api
 
+    @property
+    def passes_multi_agent_v2_override_filter(self) -> bool:
+        """Whether a MultiAgent V2 session may select this model as an explicit override.
+
+        Codex 0.147.0 relaxed this gate from "the catalog reports v2" to "the catalog does not
+        report Disabled" (``multi_agent_version != Some(Disabled)`` in
+        ``model_supports_multi_agent_backend``). A ``v1`` model therefore passes, where it was
+        rejected under 0.146.
+        """
+        return self.multi_agent_version != "disabled"
+
+    @property
+    def multi_agent_v2_collaboration(self) -> dict[str, bool]:
+        """Whether a V2 session running this model is given collaboration (subagent) tools.
+
+        The answer depends on session position, not on the model alone, so both outcomes are
+        carried explicitly rather than collapsing to one position-dependent value. A V2 root
+        always receives the tools; a V2 child receives them only when its own catalog entry
+        reports ``v2``. A ``v1`` model spawned as a child is therefore a non-delegating leaf.
+        """
+        return {"as_root": True, "as_child": self.multi_agent_version == "v2"}
+
     def to_jsonable(self) -> dict[str, Any]:
         return {
             "slug": self.slug,
@@ -63,6 +92,14 @@ class CatalogModel:
             "visibility": self.visibility,
             "supported_in_api": self.supported_in_api,
             "multi_agent_version": self.multi_agent_version,
+            "multi_agent_v2_override_filter": {
+                "rule": MULTI_AGENT_OVERRIDE_FILTER_RULE,
+                "passes": self.passes_multi_agent_v2_override_filter,
+            },
+            "multi_agent_v2_collaboration": {
+                "rule": MULTI_AGENT_COLLABORATION_RULE,
+                **self.multi_agent_v2_collaboration,
+            },
         }
 
 

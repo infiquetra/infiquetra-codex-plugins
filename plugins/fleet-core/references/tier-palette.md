@@ -34,6 +34,8 @@ hooks do not observe reasoning effort.
 | `test-medium` | General workers, testers, and interpretation of ambiguous validator output. | workspace=declared-write; external=none | `gpt-5.6-terra` / `medium` | `gpt-5.6-sol` / `medium` -> `gpt-5.5` / `medium` |
 | `scan-low` | Bounded extraction and scanner-result reduction. | workspace=read-only; external=none | `gpt-5.6-terra` / `low` | `gpt-5.6-sol` / `low` |
 | `monitor-low` | Network-aware CI, deploy, and runtime observation. | workspace=read-only; external=allowlisted-read | `gpt-5.6-terra` / `low` | `gpt-5.6-sol` / `low` |
+| `work-high` | Complex bounded implementation with declared workspace writes. | workspace=declared-write; external=none | `gpt-5.6-sol` / `high` | `gpt-5.6-terra` / `high` -> `gpt-5.5` / `high` |
+| `work-medium` | Ordinary implementation, remediation, and Git integration. | workspace=declared-write; external=none | `gpt-5.6-terra` / `medium` | `gpt-5.6-sol` / `medium` -> `gpt-5.5` / `medium` |
 <!-- END EXECUTION CLASS TABLE -->
 
 Resolution first searches the ordered candidates for the requested effort. Only when no candidate
@@ -42,8 +44,15 @@ clamping, a hidden or API-ineligible model, an absent compatible fallback, and U
 fail loud.
 
 `scan-low` and `monitor-low` intentionally share model policy but remain distinct because their
-external-read boundaries differ. Codex 0.145.0 exposes Luna only through MultiAgent V1, so the
-V2-only cutover selects Terra/low for both profiles.
+external-read boundaries differ. Both select Terra/low.
+
+Luna is no longer excluded. Codex 0.147.0 gates model override on "the catalog does not report
+`disabled`" rather than on the catalog reporting `v2`, so the `v1` Luna row passes and a V2 session
+may select it. What keeps these two profiles on Terra is a policy choice rather than a capability
+limit: promotion runs per profile from a canary receipt passed at install time
+(`sync_codex_agents.py --luna-canary-receipt`), and the committed bytes stay unpromoted because that
+receipt measured collaboration-tool eligibility and deliberately did not measure output quality. A
+Luna child is offered no collaboration namespace, so only non-delegating leaves are ever candidates.
 
 ## Effort and Ultra
 
@@ -68,3 +77,8 @@ Edit only `models.json`. Keep ranks contiguous, class keys closed, model candida
 Ultra out of `scalar_efforts` and every leaf row. Then update this reference table and run the
 catalog and resolver tests. Role defaults and allowed class transitions belong in Verified
 Workflows; adding them to Fleet Core is a schema error.
+
+`order` is registration order, not a cost or capability ranking. It exists so the derived class
+tuple is deterministic and so a duplicate or gap fails loudly. Nothing in Fleet Core or its
+consumers reads it as a ranking, so a new class is appended at the next free rank rather than
+inserted, which leaves every existing class rank untouched.

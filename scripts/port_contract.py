@@ -37,9 +37,11 @@ DEFAULT_SOURCE_BASE = "38742ece89880a6b140be237edad6d3f13c97b54"
 DEFAULT_SOURCE_TARGET = "675712b1d6a55ead11f3e971ed0e119354621bf2"
 DEFAULT_CODEX_PLAN_BASE = "39f0a2f466cb6f58e203ce3e586a959ff853a342"
 ACTIVE_PORT_ID = "external-advisory-execution-2026-07-11"
+# Each Codex alignment round rotates this set to its own port and lets its predecessors go stale;
+# the 0146 round did the same to the 0145-era ports, which still carry errors on main today. Only
+# purpose-scoped ports archive a private snapshot, so only the alignment lineage rotates.
 CURRENT_PORT_IDS = {
-    "codex-0146-native-harness-2026-07-29",
-    "codex-0146-cross-plugin-alignment-2026-07-29",
+    "codex-0147-alignment-2026-08-08",
 }
 APPROVED_CODEX_EXECUTION_BASE = "d8f5d165ad0e859af9c7d7f1ba7461b00ec1ae95"
 CODEX_EVIDENCE_REF = "refs/tags/evidence/external-advisory-execution-20260711"
@@ -86,7 +88,7 @@ EVIDENCE_KINDS = {
     "rollback",
     "cutover",
 }
-UNIT_IDS = {f"U{number}" for number in range(1, 11)}
+UNIT_IDS = {f"U{number}" for number in range(1, 15)}
 HEX40_RE = re.compile(r"^[0-9a-f]{40}$")
 HEX64_RE = re.compile(r"^[0-9a-f]{64}$")
 CONTROL_RE = re.compile(r"[\x00-\x1f\x7f]")
@@ -340,6 +342,133 @@ def _authority_entry(root: Path, path: Path) -> dict[str, str]:
     return {"path": safe, "sha256": sha256_file(target)}
 
 
+def _source_topology_errors(value: Any, label: str = "source.topology") -> list[str]:
+    errors: list[str] = []
+    if not isinstance(value, dict):
+        return [f"{label} must be an object"]
+    expected_keys = {"left", "right", "common_base", "left_only_commits"}
+    if set(value) != expected_keys:
+        errors.append(
+            f"{label} keys mismatch: missing={sorted(expected_keys - set(value))} "
+            f"unexpected={sorted(set(value) - expected_keys)}"
+        )
+    for side_name in ("left", "right"):
+        side = value.get(side_name)
+        side_label = f"{label}.{side_name}"
+        if not isinstance(side, dict):
+            errors.append(f"{side_label} must be an object")
+            continue
+        side_keys = {"tag", "peeled_commit"}
+        if set(side) != side_keys:
+            errors.append(
+                f"{side_label} keys mismatch: missing={sorted(side_keys - set(side))} "
+                f"unexpected={sorted(set(side) - side_keys)}"
+            )
+        tag = side.get("tag")
+        if (
+            not isinstance(tag, str)
+            or not tag.strip()
+            or tag != tag.strip()
+            or CONTROL_RE.search(tag)
+        ):
+            errors.append(f"{side_label}.tag must be a non-empty printable string")
+        peeled_commit = side.get("peeled_commit")
+        if not isinstance(peeled_commit, str) or not HEX40_RE.fullmatch(peeled_commit):
+            errors.append(f"{side_label}.peeled_commit must be a full 40-character commit")
+    common_base = value.get("common_base")
+    if not isinstance(common_base, str) or not HEX40_RE.fullmatch(common_base):
+        errors.append(f"{label}.common_base must be a full 40-character commit")
+    left_only = value.get("left_only_commits")
+    if not isinstance(left_only, list):
+        errors.append(f"{label}.left_only_commits must be a list")
+        return errors
+    seen: set[str] = set()
+    for index, row in enumerate(left_only):
+        row_label = f"{label}.left_only_commits[{index}]"
+        if not isinstance(row, dict):
+            errors.append(f"{row_label} must be an object")
+            continue
+        row_keys = {"commit", "disposition"}
+        if set(row) != row_keys:
+            errors.append(
+                f"{row_label} keys mismatch: missing={sorted(row_keys - set(row))} "
+                f"unexpected={sorted(set(row) - row_keys)}"
+            )
+        commit = row.get("commit")
+        if not isinstance(commit, str) or not HEX40_RE.fullmatch(commit):
+            errors.append(f"{row_label}.commit must be a full 40-character commit")
+        elif commit in seen:
+            errors.append(f"{row_label}.commit must be unique")
+        else:
+            seen.add(commit)
+        disposition = row.get("disposition")
+        if (
+            not isinstance(disposition, str)
+            or not disposition.strip()
+            or CONTROL_RE.search(disposition)
+        ):
+            errors.append(f"{row_label}.disposition must be a non-empty printable string")
+    return errors
+
+
+def _normalize_source_topology(value: Any) -> dict[str, Any]:
+    errors = _source_topology_errors(value)
+    if errors:
+        raise ContractError("; ".join(errors))
+    return {
+        "left": dict(value["left"]),
+        "right": dict(value["right"]),
+        "common_base": value["common_base"],
+        "left_only_commits": [dict(row) for row in value["left_only_commits"]],
+    }
+
+
+def _verify_source_topology(source_repo: Path, topology: Mapping[str, Any]) -> dict[str, Any]:
+    left = topology["left"]
+    right = topology["right"]
+    left_commit = resolve_ref(source_repo, str(left["tag"]))
+    right_commit = resolve_ref(source_repo, str(right["tag"]))
+    if left_commit != left["peeled_commit"]:
+        raise ContractError(
+            f"source topology left tag `{left['tag']}` peeled to {left_commit}, "
+            f"not {left['peeled_commit']}"
+        )
+    if right_commit != right["peeled_commit"]:
+        raise ContractError(
+            f"source topology right tag `{right['tag']}` peeled to {right_commit}, "
+            f"not {right['peeled_commit']}"
+        )
+    merge_base = _run_git(
+        source_repo, ["merge-base", left_commit, right_commit]
+    ).decode().strip()
+    if not HEX40_RE.fullmatch(merge_base):
+        raise ContractError("source topology merge base did not resolve to one full commit")
+    if merge_base != topology["common_base"]:
+        raise ContractError(
+            f"source topology common base is {merge_base}, not {topology['common_base']}"
+        )
+    left_only_output = _run_git(
+        source_repo,
+        ["rev-list", "--left-only", f"{left_commit}...{right_commit}"],
+    ).decode()
+    left_only_commits = [line for line in left_only_output.splitlines() if line]
+    if not all(HEX40_RE.fullmatch(commit) for commit in left_only_commits):
+        raise ContractError("source topology left-only history contained an invalid commit")
+    recorded_left_only = [str(row["commit"]) for row in topology["left_only_commits"]]
+    if set(left_only_commits) != set(recorded_left_only):
+        raise ContractError(
+            "source topology left-only commits do not match the recorded dispositions"
+        )
+    return {
+        "left_tag": left["tag"],
+        "left_peeled_commit": left_commit,
+        "right_tag": right["tag"],
+        "right_peeled_commit": right_commit,
+        "common_base": merge_base,
+        "left_only_commits": left_only_commits,
+    }
+
+
 def build_manifest(
     root: Path,
     source_repo: Path,
@@ -360,13 +489,22 @@ def build_manifest(
     codex_repository_id: str = "infiquetra/infiquetra-codex-plugins",
     codex_evidence_ref: str = CODEX_EVIDENCE_REF,
     version_policy: Sequence[Mapping[str, str]] | None = None,
+    source_topology: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     source_base = resolve_ref(source_repo, source_base)
     source_target = resolve_ref(source_repo, source_target)
     codex_plan_base = resolve_ref(root, codex_plan_base)
     codex_execution_base = resolve_ref(root, codex_execution_base)
+    normalized_topology: dict[str, Any] | None = None
+    if source_topology is not None:
+        normalized_topology = _normalize_source_topology(source_topology)
+        if source_base != normalized_topology["common_base"]:
+            raise ContractError("source base must equal source topology common base")
+        if source_target != normalized_topology["right"]["peeled_commit"]:
+            raise ContractError("source target must equal source topology right peeled commit")
+        _verify_source_topology(source_repo, normalized_topology)
     if not is_ancestor(source_repo, source_base, source_target):
-        raise ContractError("frozen Claude base is not an ancestor of the frozen target")
+        raise ContractError("frozen source base is not an ancestor of the frozen target")
     if not is_ancestor(root, codex_plan_base, codex_execution_base):
         raise ContractError("Codex historical plan base is not an ancestor of the execution base")
 
@@ -376,7 +514,7 @@ def build_manifest(
         ).get("schema_version")
     except (AttributeError, json.JSONDecodeError, OSError) as exc:
         raise ContractError("capability snapshot lacks a readable schema version") from exc
-    if capability_schema_version not in {1, 2}:
+    if capability_schema_version not in {1, 2, 3}:
         raise ContractError("capability snapshot schema version is unsupported")
 
     source_rows = git_inventory(source_repo, source_base, source_target, source_pathspecs)
@@ -440,6 +578,7 @@ def build_manifest(
             "classification_path": validate_repo_path(classification_path.as_posix()),
         },
         "source": {
+            **({"topology": normalized_topology} if normalized_topology is not None else {}),
             "repository_id": source_repository_id,
             "base_ref": source_base,
             "target_ref": source_target,
@@ -864,6 +1003,14 @@ def _validate_capability_snapshot(
     include_multi_agent_version = bool(models) and all(
         isinstance(model, dict) and "multi_agent_version" in model for model in models
     )
+    # Same presence-inference rule as above, so an r3 snapshot keeps reproducing its recorded
+    # digest while an r4 one includes the two derived projections. This projection has to mirror
+    # CatalogModel.to_jsonable exactly or the digest comparison below is a false negative.
+    derived_projection_keys = ("multi_agent_v2_override_filter", "multi_agent_v2_collaboration")
+    include_derived_projections = bool(models) and all(
+        isinstance(model, dict) and all(key in model for key in derived_projection_keys)
+        for model in models
+    )
     projection = []
     for model in models:
         if not isinstance(model, dict):
@@ -877,6 +1024,9 @@ def _validate_capability_snapshot(
         }
         if include_multi_agent_version:
             row["multi_agent_version"] = model.get("multi_agent_version")
+        if include_derived_projections:
+            for key in derived_projection_keys:
+                row[key] = model.get(key)
         projection.append(row)
     expected_digest = snapshot.get("catalog", {}).get("normalized_sha256")
     if sha256_bytes(canonical_json_bytes(projection)) != expected_digest:
@@ -1044,8 +1194,8 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
                 "authority.capability_snapshot",
                 errors,
             )
-            if capability.get("schema_version") not in {1, 2}:
-                errors.append("authority.capability_snapshot.schema_version must be 1 or 2")
+            if capability.get("schema_version") not in {1, 2, 3}:
+                errors.append("authority.capability_snapshot.schema_version must be 1, 2, or 3")
             historical_snapshot: bytes | None = None
             historical_schema: bytes | None = None
             if not current_contract:
@@ -1101,9 +1251,26 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
     if not isinstance(source, dict):
         errors.append("source must be an object")
     else:
-        _exact_keys(source, {"repository_id", "base_ref", "target_ref", "observed_refs", "target_reachable", "pathspecs", "expected_count", "inventory_sha256", "rows"}, "source", errors)
+        source_keys = {
+            "repository_id", "base_ref", "target_ref", "observed_refs", "target_reachable",
+            "pathspecs", "expected_count", "inventory_sha256", "rows",
+        }
+        if "topology" in source:
+            source_keys.add("topology")
+        _exact_keys(source, source_keys, "source", errors)
         _check_commit(source.get("base_ref"), "source.base_ref", errors)
         _check_commit(source.get("target_ref"), "source.target_ref", errors)
+        topology = source.get("topology")
+        if "topology" in source:
+            topology_errors = _source_topology_errors(topology)
+            errors.extend(topology_errors)
+            if not topology_errors:
+                if source.get("base_ref") != topology["common_base"]:
+                    errors.append("source.base_ref must equal source.topology.common_base")
+                if source.get("target_ref") != topology["right"]["peeled_commit"]:
+                    errors.append(
+                        "source.target_ref must equal source.topology.right.peeled_commit"
+                    )
         observed = source.get("observed_refs")
         if isinstance(observed, dict):
             _exact_keys(observed, {"head", "local_main", "origin_main"}, "source.observed_refs", errors)
@@ -1209,7 +1376,20 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
                 snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
         except (ContractError, OSError, json.JSONDecodeError):
             snapshot = None
-        if isinstance(snapshot, dict) and isinstance(source, dict) and isinstance(codex, dict):
+        staged_topology = (
+            isinstance(source, dict)
+            and "topology" in source
+            and not current_contract
+        )
+        if (
+            isinstance(snapshot, dict)
+            and isinstance(source, dict)
+            and isinstance(codex, dict)
+            and not staged_topology
+        ):
+            # A staged divergent refresh pins source authority in its topology while the next
+            # unit re-baselines the capability snapshot. Once promoted into CURRENT_PORT_IDS,
+            # exact snapshot-to-manifest reference binding applies again.
             snapshot_refs = snapshot.get("refs", {})
             snapshot_codex = snapshot_refs.get("codex", {})
             snapshot_claude = snapshot_refs.get("claude", {})
@@ -1536,6 +1716,8 @@ def write_json(path: Path, value: Any) -> None:
 def render_manifest(manifest: Mapping[str, Any]) -> str:
     source = manifest["source"]
     codex = manifest["codex"]
+    topology = source.get("topology")
+    range_label = "Source range" if isinstance(topology, Mapping) else "Claude range"
     lines = [
         f"# Port Classification: {manifest['port_id']}",
         "",
@@ -1544,20 +1726,38 @@ def render_manifest(manifest: Mapping[str, Any]) -> str:
         "## Frozen Contract",
         "",
         f"- Port: `{manifest['port_id']}`",
-        f"- Claude range: `{source['base_ref']}..{source['target_ref']}`",
-        f"- Claude focused rows: **{len(source['rows'])}** (`{source['inventory_sha256']}`)",
-        f"- Codex execution preservation: `{codex['historical_plan_base']}..{codex['execution_base']}`",
-        f"- Codex evidence retention: `{codex['evidence_ref']}`",
-        f"- Codex drift rows: **{len(codex['rows'])}** (`{codex['inventory_sha256']}`)",
-        f"- Runbook: `{manifest['authority']['runbook']['path']}` v{manifest['authority']['runbook']['version']} (`{manifest['authority']['runbook']['sha256']}`)",
-        f"- Capability snapshot: `{manifest['authority']['capability_snapshot']['path']}` (`{manifest['authority']['capability_snapshot']['sha256']}`)",
-        f"- Capability schema: `{manifest['authority']['capability_snapshot']['schema_path']}` (`{manifest['authority']['capability_snapshot']['schema_sha256']}`)",
-        "",
-        "## Source Rows",
-        "",
-        "| ID | Change | Source path | Surface | Treatment | State | Unit |",
-        "|---|---|---|---|---|---|---|",
+        f"- {range_label}: `{source['base_ref']}..{source['target_ref']}`",
     ]
+    if isinstance(topology, Mapping):
+        lines.extend(
+            [
+                f"- Source left tag: `{topology['left']['tag']}` peeled to "
+                f"`{topology['left']['peeled_commit']}`",
+                f"- Source right tag: `{topology['right']['tag']}` peeled to "
+                f"`{topology['right']['peeled_commit']}`",
+                f"- Source common base: `{topology['common_base']}`",
+            ]
+        )
+        for row in topology["left_only_commits"]:
+            lines.append(
+                f"- Source left-only commit: `{row['commit']}` — {row['disposition']}"
+            )
+    lines.extend(
+        [
+            f"- Claude focused rows: **{len(source['rows'])}** (`{source['inventory_sha256']}`)",
+            f"- Codex execution preservation: `{codex['historical_plan_base']}..{codex['execution_base']}`",
+            f"- Codex evidence retention: `{codex['evidence_ref']}`",
+            f"- Codex drift rows: **{len(codex['rows'])}** (`{codex['inventory_sha256']}`)",
+            f"- Runbook: `{manifest['authority']['runbook']['path']}` v{manifest['authority']['runbook']['version']} (`{manifest['authority']['runbook']['sha256']}`)",
+            f"- Capability snapshot: `{manifest['authority']['capability_snapshot']['path']}` (`{manifest['authority']['capability_snapshot']['sha256']}`)",
+            f"- Capability schema: `{manifest['authority']['capability_snapshot']['schema_path']}` (`{manifest['authority']['capability_snapshot']['schema_sha256']}`)",
+            "",
+            "## Source Rows",
+            "",
+            "| ID | Change | Source path | Surface | Treatment | State | Unit |",
+            "|---|---|---|---|---|---|---|",
+        ]
+    )
     for row in source["rows"]:
         path = row.get("new_path") or row.get("old_path") or ""
         lines.append(
@@ -1628,6 +1828,14 @@ def verify_source(source_repo: Path, manifest: Mapping[str, Any]) -> dict[str, A
     source = manifest["source"]
     base = resolve_ref(source_repo, source["base_ref"])
     target = resolve_ref(source_repo, source["target_ref"])
+    topology_observation: dict[str, Any] | None = None
+    if "topology" in source:
+        topology = _normalize_source_topology(source["topology"])
+        if base != topology["common_base"]:
+            raise ContractError("source base does not match the topology common base")
+        if target != topology["right"]["peeled_commit"]:
+            raise ContractError("source target does not match the topology right peeled commit")
+        topology_observation = _verify_source_topology(source_repo, topology)
     if not is_ancestor(source_repo, base, target):
         raise ContractError("source base is not an ancestor of target")
     inventory = git_inventory(source_repo, base, target, source["pathspecs"])
@@ -1638,7 +1846,7 @@ def verify_source(source_repo: Path, manifest: Mapping[str, Any]) -> dict[str, A
     if digest != source["inventory_sha256"]:
         raise ContractError("frozen source inventory digest does not match the manifest")
     head = resolve_ref(source_repo, "HEAD")
-    return {
+    result = {
         "verified": True,
         "base_ref": base,
         "target_ref": target,
@@ -1648,6 +1856,9 @@ def verify_source(source_repo: Path, manifest: Mapping[str, Any]) -> dict[str, A
         "target_reachable_from_head": is_ancestor(source_repo, target, head),
         "upstream_ahead_is_drift_only": head != target,
     }
+    if topology_observation is not None:
+        result["topology"] = topology_observation
+    return result
 
 
 def _resolve_path(root: Path, value: str | Path) -> Path:
@@ -1660,6 +1871,48 @@ def _manifest_path(root: Path, value: str | Path) -> Path:
     if not path.resolve(strict=False).is_relative_to(root.resolve()):
         raise ContractError(f"manifest/output path escapes the repository: {path}")
     return path
+
+
+def _source_topology_from_args(args: argparse.Namespace) -> dict[str, Any] | None:
+    values = {
+        "left_tag": getattr(args, "source_left_tag", None),
+        "left_peeled_commit": getattr(args, "source_left_peeled_commit", None),
+        "right_tag": getattr(args, "source_right_tag", None),
+        "right_peeled_commit": getattr(args, "source_right_peeled_commit", None),
+        "common_base": getattr(args, "source_common_base", None),
+    }
+    left_only_values = getattr(args, "source_left_only_commit", None)
+    if not any(value is not None for value in values.values()) and left_only_values is None:
+        return None
+    missing = [name for name, value in values.items() if value is None]
+    if missing:
+        raise ContractError(
+            f"source topology arguments are incomplete: missing {', '.join(sorted(missing))}"
+        )
+    left_only_commits: list[dict[str, str]] = []
+    for raw_value in left_only_values or []:
+        commit, separator, disposition = raw_value.partition("=")
+        if not separator or not disposition.strip():
+            raise ContractError(
+                "--source-left-only-commit must use COMMIT=DISPOSITION"
+            )
+        left_only_commits.append(
+            {"commit": commit, "disposition": disposition.strip()}
+        )
+    return _normalize_source_topology(
+        {
+            "left": {
+                "tag": values["left_tag"],
+                "peeled_commit": values["left_peeled_commit"],
+            },
+            "right": {
+                "tag": values["right_tag"],
+                "peeled_commit": values["right_peeled_commit"],
+            },
+            "common_base": values["common_base"],
+            "left_only_commits": left_only_commits,
+        }
+    )
 
 
 def command_init(args: argparse.Namespace) -> int:
@@ -1694,6 +1947,7 @@ def command_init(args: argparse.Namespace) -> int:
         codex_repository_id=args.codex_repository_id,
         codex_evidence_ref=args.codex_evidence_ref,
         version_policy=version_policy,
+        source_topology=_source_topology_from_args(args),
     )
     write_json(manifest_path, manifest)
     print(f"initialized {manifest_path.relative_to(root)} with {len(manifest['source']['rows'])} source rows and {len(manifest['codex']['rows'])} Codex rows")
@@ -1766,6 +2020,16 @@ def build_parser() -> argparse.ArgumentParser:
     init.add_argument("--source-base", default=DEFAULT_SOURCE_BASE)
     init.add_argument("--source-target", default=DEFAULT_SOURCE_TARGET)
     init.add_argument("--source-pathspec", action="append")
+    init.add_argument("--source-left-tag")
+    init.add_argument("--source-left-peeled-commit")
+    init.add_argument("--source-right-tag")
+    init.add_argument("--source-right-peeled-commit")
+    init.add_argument("--source-common-base")
+    init.add_argument(
+        "--source-left-only-commit",
+        action="append",
+        metavar="COMMIT=DISPOSITION",
+    )
     init.add_argument("--codex-plan-base", default=DEFAULT_CODEX_PLAN_BASE)
     init.add_argument("--codex-execution-base")
     init.add_argument("--runbook", default=str(DEFAULT_RUNBOOK))

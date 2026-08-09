@@ -10,8 +10,8 @@ Codex-ready plugin surface, currently:
 | `saga` | 0.83.0+codex.20260729205037 | active |
 | `deploy` | 0.1.1 | active |
 | `mission-control` | 2.4.2 | active |
-| `verified-workflows` | 3.0.0+codex.20260729164721 | active |
-| `fleet-core` | 0.14.0+codex.20260729164721 | active (library) |
+| `verified-workflows` | 3.1.0 | active |
+| `fleet-core` | 0.15.0 | active (library) |
 | `discord-identity-assets` | 0.2.0 | proof port |
 | `home-lab-ops` | 1.0.0 | baseline |
 | `python-toolkit` | 1.0.0 | baseline |

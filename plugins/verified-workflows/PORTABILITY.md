@@ -60,6 +60,20 @@ Historical requirements, plans, reviews, classifications, proof JSON, changelog 
 fixtures retain their original vocabulary as non-current evidence. They do not authorize a new run
 or establish current runtime truth.
 
+## Developer-Instruction Contract
+
+Codex 0.147.0 added `features.multi_agent_v2.subagent_developer_instructions`. Unset, a spawned child
+inherits the parent turn's developer instructions; set blank, it starts with none; either way a
+role-specific instruction rendered into the child's profile wins.
+
+This plugin leaves the setting unset and carries per-role text in every managed profile, so child
+behavior is a property of the profile rather than of ambient configuration. A port that adopts these
+profiles inherits that requirement: the setting must stay absent from every Codex configuration
+surface the port ships, and each managed profile must carry non-empty `developer_instructions`.
+`validate_developer_instruction_contract` in `scripts/validate_codex_plugins.py` enforces both, and
+fails when a `config.toml` exists that is not registered in `CODEX_CONFIG_SURFACES` — the contract
+binds the whole surface set, not one named file.
+
 ## Compatibility Boundary
 
 `plugins/fleet-core/scripts/fleet_commons/workflow_compat.py` is the closed reader registry for old

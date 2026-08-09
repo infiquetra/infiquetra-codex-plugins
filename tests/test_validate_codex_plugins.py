@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pytest
 
+from scripts import proof_harness_pin
 from scripts import validate_codex_plugins as validator
 from scripts.validate_codex_plugins import (
     CURRENT_EXPECTED_PLUGINS,
@@ -100,10 +101,19 @@ def copy_verified_workflows_runtime_target(tmp_path: Path) -> Path:
         root / "plugins" / "fleet-core",
     )
     (root / "scripts").mkdir(parents=True)
-    shutil.copy2(
-        REPO_ROOT / "scripts" / "prove_verified_workflows_runtime.py",
-        root / "scripts" / "prove_verified_workflows_runtime.py",
-    )
+    # The harness declares which files it is made of, so this copies that declaration rather
+    # than a remembered list: adding a harness file must not silently break this fixture. The
+    # declaration is repository-relative, and some harness files live under plugins/, which the
+    # copytree calls above have already placed — copying them again by basename into scripts/
+    # would look for files that do not exist there.
+    extra = ("scripts/proof_harness_sha256.py",)
+    for relative in sorted({*proof_harness_pin.HARNESS_FILES, *extra}):
+        source = REPO_ROOT / relative
+        destination = root / relative
+        if destination.exists():
+            continue
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, destination)
     shutil.copy2(
         REPO_ROOT / "scripts" / "build_codex_v2_orchestration_matrix.py",
         root / "scripts" / "build_codex_v2_orchestration_matrix.py",
@@ -230,7 +240,7 @@ def test_target_plugin_set_describes_saga_family_cutover():
         "discord-identity-assets",
     )
     assert TARGET_EXPECTED_PLUGINS["verified-workflows"] == {
-        "version": "3.0.0+codex.20260729164721",
+        "version": "3.1.0",
         "skills": ("run", "review-workflow", "appsec-audit"),
     }
     assert "team-execution" not in TARGET_EXPECTED_PLUGINS
@@ -400,14 +410,14 @@ def test_target_fixture_rejects_duplicate_plugin_entries():
         "plugins": [
             {
                 "name": "verified-workflows",
-                "version": "3.0.0+codex.20260729164721",
+                "version": "3.1.0",
                 "publication_status": "released",
                 "skills": ["run", "review-workflow", "appsec-audit"],
                 "forbidden_active_dirs": [".claude-plugin", "commands"],
             },
             {
                 "name": "verified-workflows",
-                "version": "3.0.0+codex.20260729164721",
+                "version": "3.1.0",
                 "publication_status": "released",
                 "skills": ["run", "review-workflow", "appsec-audit"],
                 "forbidden_active_dirs": [".claude-plugin", "commands"],
@@ -537,6 +547,12 @@ def test_verified_workflows_runtime_rejects_retired_evidence_surface(tmp_path: P
 
 def test_verified_workflows_runtime_rejects_stale_proof(tmp_path: Path) -> None:
     root = copy_verified_workflows_runtime_target(tmp_path)
+    baseline_errors: list[str] = []
+
+    validate_verified_workflows_runtime(root, baseline_errors)
+
+    assert baseline_errors == []
+
     proof_path = root / "docs" / "validation" / "verified-workflows-runtime-proof.json"
     payload = json.loads(proof_path.read_text())
     payload["reason"] = "stale"
@@ -545,7 +561,9 @@ def test_verified_workflows_runtime_rejects_stale_proof(tmp_path: Path) -> None:
 
     validate_verified_workflows_runtime(root, errors)
 
-    assert any("tracked runtime proof is stale" in error for error in errors)
+    assert errors == [
+        "verified-workflows: U4 runtime proof validation failed: tracked runtime proof is stale"
+    ]
 
 
 def test_verified_workflows_validation_pins_fleet_core_to_supplied_root(
@@ -929,3 +947,92 @@ def test_runtime_scratch_directories_are_excluded_from_the_legacy_token_scan(tmp
 
     assert "tracked.md" in facts
     assert not [path for path in facts if path.startswith(".saga/")]
+
+
+# --- U3: the developer-instruction contract -------------------------------------------------
+#
+# Codex 0.147.0 added features.multi_agent_v2.subagent_developer_instructions. Unset means a
+# spawned child inherits the parent's developer instructions, blank clears them, and a
+# role-specific instruction on the profile wins either way. This repository relies on the
+# unset/inherit behavior and renders per-role text into each managed profile, so the contract is
+# that the setting stays absent AND every profile carries its own non-empty instructions.
+
+
+def _developer_instruction_fixture(tmp_path: Path) -> Path:
+    """A minimal tree carrying only the surfaces the contract inspects."""
+    root = tmp_path / "repo"
+    shutil.copytree(REPO_ROOT / ".codex", root / ".codex")
+    shutil.copytree(
+        REPO_ROOT / "plugins" / "verified-workflows" / "agents",
+        root / "plugins" / "verified-workflows" / "agents",
+    )
+    return root
+
+
+def test_developer_instruction_contract_holds_on_the_current_repository() -> None:
+    errors: list[str] = []
+    validator.validate_developer_instruction_contract(REPO_ROOT, errors)
+
+    assert errors == []
+
+
+def test_developer_instruction_fixture_baseline_is_clean(tmp_path: Path) -> None:
+    """Guards the negative cases below: a dirty baseline would make them meaningless."""
+    errors: list[str] = []
+    validator.validate_developer_instruction_contract(
+        _developer_instruction_fixture(tmp_path), errors
+    )
+
+    assert errors == []
+
+
+def test_configuration_carrying_the_subagent_key_fails(tmp_path: Path) -> None:
+    """The key is a CONFIGURATION key, not a profile key, so the config surface is what fails."""
+    root = _developer_instruction_fixture(tmp_path)
+    (root / ".codex" / "config.toml").write_text(
+        'approval_policy = "never"\n\n[features]\nmulti_agent = true\n\n'
+        '[features.multi_agent_v2]\nsubagent_developer_instructions = "leaked"\n',
+        encoding="utf-8",
+    )
+    errors: list[str] = []
+    validator.validate_developer_instruction_contract(root, errors)
+
+    assert any(
+        validator.SUBAGENT_DEVELOPER_INSTRUCTIONS_KEY in error and "unset" in error
+        for error in errors
+    )
+
+
+def test_boolean_feature_form_must_survive(tmp_path: Path) -> None:
+    root = _developer_instruction_fixture(tmp_path)
+    (root / ".codex" / "config.toml").write_text(
+        "[features]\nmulti_agent = true\nmulti_agent_v2 = false\n", encoding="utf-8"
+    )
+    errors: list[str] = []
+    validator.validate_developer_instruction_contract(root, errors)
+
+    assert any("boolean form" in error for error in errors)
+
+
+def test_a_new_configuration_surface_without_coverage_fails(tmp_path: Path) -> None:
+    """The contract is a property of the whole surface set, not of one remembered file."""
+    root = _developer_instruction_fixture(tmp_path)
+    (root / "plugins" / "newthing").mkdir(parents=True)
+    (root / "plugins" / "newthing" / "config.toml").write_text("a = 1\n", encoding="utf-8")
+    errors: list[str] = []
+    validator.validate_developer_instruction_contract(root, errors)
+
+    assert any("not covered by the developer-instruction contract" in error for error in errors)
+
+
+def test_every_managed_profile_carries_non_empty_developer_instructions(tmp_path: Path) -> None:
+    root = _developer_instruction_fixture(tmp_path)
+    (root / "plugins" / "verified-workflows" / "agents" / "scan_low.toml").write_text(
+        'model = "gpt-5.6-terra"\n', encoding="utf-8"
+    )
+    errors: list[str] = []
+    validator.validate_developer_instruction_contract(root, errors)
+
+    assert any(
+        "scan_low.toml" in error and "developer_instructions" in error for error in errors
+    )

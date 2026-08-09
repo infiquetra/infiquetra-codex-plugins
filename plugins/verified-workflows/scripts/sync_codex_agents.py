@@ -1684,7 +1684,7 @@ def build_plan(
     catalog_snapshot: Path | None = None,
     migrate_legacy: bool = False,
     remove_stale: bool = False,
-    luna_v2_canary_passed: bool = False,
+    luna_canary: Any | None = None,
 ) -> SyncPlan:
     """Read one catalog snapshot, prove generated source, snapshot target, and plan."""
 
@@ -1693,13 +1693,14 @@ def build_plan(
         catalog = renderer.CATALOG.read_catalog()
     else:
         catalog = renderer.load_catalog_snapshot(catalog_snapshot)
-    bundle = renderer.render_bundle(
-        registry,
-        catalog,
-        luna_v2_canary_passed=luna_v2_canary_passed,
-    )
+    bundle = renderer.render_bundle(registry, catalog, luna_canary=luna_canary)
     if catalog_snapshot is not None:
-        renderer.check_generated(bundle)
+        # The staleness check always runs against the unpromoted rendering. Committed source is
+        # by definition what the renderer produces with no receipt, so checking the promoted
+        # bundle against it would report a promotion as staleness -- and skipping the check
+        # whenever a receipt is supplied would quietly drop it on exactly the runs that install
+        # a deviation.
+        renderer.check_generated(renderer.render_bundle(registry, catalog))
     pre_state = snapshot_target(target)
     return plan_sync(
         bundle,
@@ -1723,9 +1724,12 @@ def main() -> int:
     parser.add_argument("--remove-stale", action="store_true")
     parser.add_argument("--allow-real-profile", action="store_true")
     parser.add_argument(
-        "--luna-v2-canary-passed",
-        action="store_true",
-        help="promote low profiles to Luna only when the live catalog reports V2 and an isolated canary passed",
+        "--luna-canary-receipt",
+        type=Path,
+        help=(
+            "path to a per-profile Luna canary receipt; each profile the receipt records as "
+            "eligible on a measured criterion is installed on Luna, the rest are untouched"
+        ),
     )
     parser.add_argument("--expected-pre-state-sha256")
     parser.add_argument("--pretty", action="store_true")
@@ -1740,7 +1744,7 @@ def main() -> int:
                 args.migrate_legacy
                 or args.remove_stale
                 or args.catalog_snapshot is not None
-                or args.luna_v2_canary_passed
+                or args.luna_canary_receipt is not None
             ):
                 raise SyncError("--recover does not accept planning or catalog options")
             payload = recover_sync(
@@ -1754,7 +1758,11 @@ def main() -> int:
                 catalog_snapshot=args.catalog_snapshot,
                 migrate_legacy=args.migrate_legacy,
                 remove_stale=args.remove_stale,
-                luna_v2_canary_passed=args.luna_v2_canary_passed,
+                luna_canary=(
+                    renderer.load_luna_canary_receipt(args.luna_canary_receipt)
+                    if args.luna_canary_receipt is not None
+                    else None
+                ),
             )
             if args.apply:
                 payload = apply_sync(

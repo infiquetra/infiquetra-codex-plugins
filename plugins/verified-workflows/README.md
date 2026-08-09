@@ -7,7 +7,7 @@ evidence. Codex V2 owns the live agent hierarchy, liveness, messaging, waiting, 
 restoration. This plugin compiles an operator-approved contract, validates runtime identity and
 typed results, audits writable attempts, evaluates gates, and writes one concise run record.
 
-Release candidate: `3.0.0+codex.20260729164721` is the explicit, root-orchestrated V2-only package. Historical Team
+Release candidate: `3.1.0` is the explicit, root-orchestrated V2-only package. Historical Team
 Execution names and earlier V1 or hook-based proof artifacts are lineage only; they are not active
 execution paths.
 
@@ -62,22 +62,38 @@ external-action, or authority change requires a new preview and approval.
 Logical roles are separate from compute profiles. The role registry preserves 29 role lenses; the
 workflow selects one of seven generated profiles:
 
-| Profile | Model | Effort | Contract write intent | Purpose |
-|---|---|---|---|---|
-| `review_max` | `gpt-5.6-sol` | `max` | read-only | Exceptional-risk independent review |
-| `review_high` | `gpt-5.6-sol` | `high` | read-only | Normal independent review |
-| `work_medium` | `gpt-5.6-terra` | `medium` | declared write | Ordinary implementation, remediation, and Git integration |
-| `work_high` | `gpt-5.6-sol` | `high` | declared write | Complex bounded implementation |
-| `test_medium` | `gpt-5.6-terra` | `medium` | declared write | Ordinary testing and validation |
-| `scan_low` | `gpt-5.6-terra` | `low` | read-only | Low-cost repository scanning |
-| `monitor_low` | `gpt-5.6-terra` | `low` | read-only | Allowlisted external observation |
+| Profile | Execution class | Contract write intent | Purpose |
+|---|---|---|---|
+| `review_max` | `review-max` | read-only | Exceptional-risk independent review |
+| `review_high` | `review-high` | read-only | Normal independent review |
+| `work_medium` | `work-medium` | declared write | Ordinary implementation, remediation, and Git integration |
+| `work_high` | `work-high` | declared write | Complex bounded implementation |
+| `test_medium` | `test-medium` | declared write | Ordinary testing and validation |
+| `scan_low` | `scan-low` | read-only | Low-cost repository scanning |
+| `monitor_low` | `monitor-low` | read-only | Allowlisted external observation |
+
+**This table deliberately carries no model and no effort.** Those belong to the execution class, and
+listing them here would be a second copy that drifts the moment Fleet Core policy changes.
+`render_codex_agents.py` maps each profile to exactly one class and reads the model and effort from
+[`models.json`](../fleet-core/scripts/fleet_commons/models.json); the current pairs are tabulated
+once, in [the Fleet Core tier palette reference](../fleet-core/references/tier-palette.md). A
+profile with no mapped class, one naming a class Fleet Core does not define, or a resolution whose
+model or effort departs from its class without a declared reason all fail the render rather than
+falling back.
 
 Ultra is root-only. The write-intent column states what the approved contract expects an assignment
-to do. It is not a sandbox control. Codex 0.146.0 children inherit the parent turn's effective
-permission profile. A generated profile carries a model, an effort, and instruction text, and no key
-that could constrain a filesystem or a network. Scope comes from the operator-approved plan and
-contract; runtime readback reports the permission that actually applied. Luna remains V1 in the
-0.146 catalog, so the V2-only low profiles use Terra/low.
+to do. It is not a sandbox control. Codex 0.147.0 children inherit the parent turn's effective
+permission profile, and a child cannot widen beyond its parent: a child declaring
+`workspace-write` under a read-only root runs read-only, measured across all seven rows of
+[the permission receipt](../../docs/validation/codex-0147-permission-inheritance.json). A generated
+profile carries a model, an effort, and instruction text, and no key that could constrain a
+filesystem or a network. Scope comes from the operator-approved plan and contract; runtime readback
+reports the permission that actually applied.
+
+The low profiles use Terra/low by policy, not because Luna is unavailable. Luna passes the 0.147.0
+MultiAgent V2 override filter; promotion is available per profile through
+`sync_codex_agents.py --luna-canary-receipt` and is withheld from the committed bytes because the
+canary measured eligibility without measuring output quality.
 
 Generate and verify the maintained source profiles:
 
@@ -89,6 +105,25 @@ python3 plugins/verified-workflows/scripts/sync_codex_agents.py --dry-run --pret
 The plugin `agents/` directory is canonical. Repository-local `.codex/agents/` overrides are not
 maintained. Isolated synchronization remains available for source canaries; any current-user profile
 apply is a separate operator-approved release action.
+
+### Developer instructions for spawned children
+
+Codex 0.147.0 added `features.multi_agent_v2.subagent_developer_instructions`, which controls what a
+spawned child inherits. The three behaviors:
+
+| Setting | Effect on a spawned child |
+| --- | --- |
+| Unset | Inherits the parent turn's developer instructions |
+| Set to a blank string | Clears them, so the child starts with none |
+| Any value | A role-specific instruction rendered into the child's profile still wins |
+
+This plugin deliberately leaves the setting **unset** and renders per-role instructions into every
+managed profile instead, so a child's behavior is a property of the profile it runs under rather than
+of ambient configuration. `validate_developer_instruction_contract` enforces both halves: the setting
+stays absent from every shipped Codex configuration surface, and each of the seven managed profiles
+carries its own non-empty `developer_instructions`. Adding a new `config.toml` without registering it
+fails validation, because the contract is a property of the whole surface set rather than of one
+remembered file.
 
 ## Runtime And Result Proof
 
