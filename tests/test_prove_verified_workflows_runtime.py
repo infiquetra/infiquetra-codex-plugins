@@ -745,3 +745,49 @@ def test_auto_review_is_never_recorded_as_operator_authority() -> None:
 
     with pytest.raises(P.RuntimeProofError, match="never operator approval"):
         P.validate_permission_inheritance(payload)
+
+
+SKILLS = json.loads(
+    (ROOT / "docs" / "validation" / "codex-0147-skill-resources.json").read_text(encoding="utf-8")
+)
+
+
+def test_the_committed_skill_receipt_validates() -> None:
+    P.validate_skill_resources(SKILLS)
+
+
+def test_the_executor_mechanism_is_recorded_as_blocked_with_reasons() -> None:
+    """Not usable at 0.147.0 on an ordinary machine, and the receipt has to say why."""
+
+    executor = SKILLS["mechanisms"]["executor-backed"]
+
+    assert executor["proven"] is False
+    kinds = {reason["kind"] for reason in executor["reasons"]}
+    assert kinds == {"feature-disabled", "infrastructure-absent"}
+    assert SKILLS["mechanisms"]["host-installed"]["proven"] is True
+
+
+def test_a_blocked_mechanism_cannot_carry_a_proven_row() -> None:
+    payload = json.loads(json.dumps(SKILLS))
+    payload["cases"]["skill-executor-permitted-read"]["status"] = "proven"
+
+    with pytest.raises(P.RuntimeProofError, match="records as unproven"):
+        P.validate_skill_resources(payload)
+
+
+def test_an_executor_row_cannot_borrow_the_host_mechanism() -> None:
+    """Conflating the two mechanisms is the repeat finding this receipt exists to prevent."""
+
+    payload = json.loads(json.dumps(SKILLS))
+    payload["cases"]["skill-executor-denied-read"]["mechanism"] = "host-installed"
+
+    with pytest.raises(P.RuntimeProofError, match="different mechanisms"):
+        P.validate_skill_resources(payload)
+
+
+def test_an_unproven_mechanism_must_give_reasons() -> None:
+    payload = json.loads(json.dumps(SKILLS))
+    payload["mechanisms"]["executor-backed"].pop("reasons")
+
+    with pytest.raises(P.RuntimeProofError, match="unproven with no reasons"):
+        P.validate_skill_resources(payload)

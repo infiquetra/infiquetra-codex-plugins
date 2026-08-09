@@ -796,7 +796,46 @@ multiple-roots row records two roots on the root turn and the child runs under t
 - Validator, runtime proof, ruff — all clean. Harness digest re-pinned.
 - Zero model calls, zero quota, across all seven rows.
 
+## Phase 8 — U8 skill resources: one mechanism proved, the other cannot run here
+
+Built the app-server driver: JSON-RPC over stdio, `initialize` declaring `experimentalApi`,
+`thread/start` carrying `selectedCapabilityRoots`. The thread starts and the capability root is
+accepted. The skills namespace never appears.
+
+**The tool specification is byte-identical with and without the capability root** — `['collaboration',
+'functions']` both times. A scripted `skills.list` call is refused by Codex as
+`unsupported call: skillslist`, and enabling `features.executor_capability_discovery=true` changes
+nothing.
+
+Two verified reasons, either sufficient on its own:
+
+| Blocker | Evidence |
+| --- | --- |
+| The feature is unfinished and off | `codex features list` reports `executor_capability_discovery` at stage *under development*, effective state `false` |
+| The transport does not exist locally | An executor root resolves through an execution environment, and `environment/add` requires an `execServerUrl` — a WebSocket to an exec server this machine cannot run |
+
+The operator's call was to prove the host row, record the executor rows as blocked, and move on.
+`validate_skill_resources` refuses any receipt that reports a blocked row as proven, refuses an
+unproven mechanism with no reasons, and refuses an executor row recorded against the host
+mechanism — the conflation that is a repeat finding in this repository.
+
+**This negative result is the more useful half of U8.** A plugin surface written against the
+executor mechanism today would be written against something that cannot run on a developer machine.
+That belongs in U11's inventory whatever happens to U8.
+
+### A scoping fact worth keeping
+
+Skill discovery is not confined to `CODEX_HOME`. With a disposable home, `skills/list` still
+returned entries from the operator's `~/.agents/skills` at user scope. Any probe assuming an
+isolated home isolates skill discovery is wrong — it does not.
+
+### Checks
+
+- Full suite excluding the plugin blocked by a missing imaging library: **2592 passed**.
+- Validator, runtime proof, ruff — all clean. Harness digest re-pinned.
+- Zero model calls. Nothing was written outside a disposable home.
+
 ## Next step
 
-U8 — the skill-resource proof, which now has both fixtures and a schema-validated capability root
-from U5. U9 through U14 remain untouched.
+U9 — repair the unreachable Luna promotion gate, which U6 showed refuses on a property that does
+not decide the question. U10 through U14 remain untouched.

@@ -1211,6 +1211,65 @@ def validate_permission_inheritance(
                 )
 
 
+SKILL_RESOURCES = REPO_ROOT / "docs" / "validation" / "codex-0147-skill-resources.json"
+SKILL_CASES = frozenset(case for case in PROOF_CASES if case.startswith("skill-"))
+SKILL_STATUSES = frozenset({"proven", "blocked"})
+
+
+def validate_skill_resources(payload: Mapping[str, Any], where: str = "skill resources") -> None:
+    """Refuse a skill receipt that conflates the two mechanisms or overstates what it proved.
+
+    Treating a host-installed reference as executor-backed is a repeat finding in this repository,
+    so the mechanism is recorded per case and cross-checked against the mechanism block. A case
+    cannot be `proven` while its mechanism is not.
+    """
+
+    mechanisms = payload.get("mechanisms")
+    cases = payload.get("cases")
+    if not isinstance(mechanisms, Mapping) or not isinstance(cases, Mapping):
+        raise RuntimeProofError(f"{where} records no mechanisms or no cases")
+
+    missing = sorted(SKILL_CASES - set(cases))
+    extra = sorted(set(cases) - SKILL_CASES)
+    if missing:
+        raise RuntimeProofError(f"{where} is missing skill rows {missing}")
+    if extra:
+        raise RuntimeProofError(f"{where} records rows the harness does not define: {extra}")
+
+    for name, block in mechanisms.items():
+        if not isinstance(block, Mapping) or not isinstance(block.get("proven"), bool):
+            raise RuntimeProofError(f"{where} mechanism {name!r} does not declare `proven`")
+        if not block["proven"] and not block.get("reasons"):
+            raise RuntimeProofError(
+                f"{where} mechanism {name!r} is unproven with no reasons; an absent proof must "
+                f"say what stopped it, or it reads as an oversight later"
+            )
+
+    for case, record in cases.items():
+        if not isinstance(record, Mapping):
+            raise RuntimeProofError(f"{where} row {case!r} is not an object")
+        status, mechanism = record.get("status"), record.get("mechanism")
+        if status not in SKILL_STATUSES:
+            raise RuntimeProofError(
+                f"{where} row {case!r} carries status {status!r}; expected one of "
+                f"{sorted(SKILL_STATUSES)}"
+            )
+        if mechanism not in mechanisms:
+            raise RuntimeProofError(f"{where} row {case!r} names unknown mechanism {mechanism!r}")
+        # The conflation guard: a row cannot be proven through a mechanism that was not.
+        if status == "proven" and not mechanisms[mechanism]["proven"]:
+            raise RuntimeProofError(
+                f"{where} row {case!r} is proven through {mechanism!r}, which this receipt "
+                f"records as unproven"
+            )
+        # And an executor row may not borrow the host mechanism's proof.
+        if case.startswith("skill-executor-") and mechanism != "executor-backed":
+            raise RuntimeProofError(
+                f"{where} row {case!r} is an executor row recorded against {mechanism!r}; "
+                f"host-installed and executor-backed are different mechanisms"
+            )
+
+
 def build_proof(
     *,
     snapshot: dict[str, Any],
