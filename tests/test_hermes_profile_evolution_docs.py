@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import subprocess
@@ -11,6 +12,10 @@ ROOT = Path(__file__).resolve().parents[1]
 PLUGIN = ROOT / "plugins/hermes-profile-evolution"
 DOCS = PLUGIN / "docs"
 SCRIPT = PLUGIN / "scripts/profile_request.py"
+
+
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def test_documentation_package_is_complete_and_uses_rendered_art() -> None:
@@ -33,12 +38,23 @@ def test_documentation_package_is_complete_and_uses_rendered_art() -> None:
     assert "Hermes producer" in combined
 
 
+def test_renderer_receipt_binds_the_committed_source_and_render() -> None:
+    assets = DOCS / "assets"
+    receipt = (assets / "renderer-receipt.md").read_text()
+    assert re.search(r"rsvg-convert version \d+\.\d+\.\d+", receipt)
+    for suffix in ("svg", "png"):
+        path = assets / f"profile-evolution-codex-front-door.{suffix}"
+        assert _sha256(path) in receipt
+
+
 def test_usage_documents_every_public_action_and_exact_request_shape() -> None:
     usage = (DOCS / "usage.md").read_text()
     for action in ("suggest", "reply", "resume", "status", "doctor"):
         assert re.search(rf"profile_request\.py.*{action}|\$PROFILE_ADAPTER\" {action}", usage)
 
-    request_match = re.search(r"printf '%s' '(\{[^\n]+\})' \\\n+  \| python3 \"\$PROFILE_ADAPTER\" suggest brokkr", usage)
+    request_match = re.search(
+        r"printf '%s' '(\{[^\n]+\})' \\\n+  \| python3 \"\$PROFILE_ADAPTER\" suggest brokkr", usage
+    )
     assert request_match is not None
     request = json.loads(request_match.group(1))
     assert set(request) == {"schema_version", "intent", "paths", "evidence_references"}
