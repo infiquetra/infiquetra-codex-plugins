@@ -2,6 +2,16 @@
 
 All notable changes to the Codex `fleet-core` plugin are documented here.
 
+## 0.15.0 — 2026-08-09
+
+### Changed
+
+- Model eligibility is one catalog fact with two derived projections. `multi_agent_version` is read
+  from the native catalog and never restated per profile; `passes_multi_agent_v2_override_filter`
+  projects the 0.147.0 override rule, replacing an equality test that no catalog row could satisfy.
+- Execution class owns model and effort. A profile names its class; no second copy of the pair
+  survives in the profile table, the renderer, or the documentation.
+
 ## 0.14.0 — 2026-07-29
 
 ### Changed

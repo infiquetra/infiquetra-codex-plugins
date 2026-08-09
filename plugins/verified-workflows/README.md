@@ -7,7 +7,7 @@ evidence. Codex V2 owns the live agent hierarchy, liveness, messaging, waiting, 
 restoration. This plugin compiles an operator-approved contract, validates runtime identity and
 typed results, audits writable attempts, evaluates gates, and writes one concise run record.
 
-Release candidate: `3.0.0+codex.20260729164721` is the explicit, root-orchestrated V2-only package. Historical Team
+Release candidate: `3.1.0` is the explicit, root-orchestrated V2-only package. Historical Team
 Execution names and earlier V1 or hook-based proof artifacts are lineage only; they are not active
 execution paths.
 

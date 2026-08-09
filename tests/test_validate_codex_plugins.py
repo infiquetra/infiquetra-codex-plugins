@@ -240,7 +240,7 @@ def test_target_plugin_set_describes_saga_family_cutover():
         "discord-identity-assets",
     )
     assert TARGET_EXPECTED_PLUGINS["verified-workflows"] == {
-        "version": "3.0.0+codex.20260729164721",
+        "version": "3.1.0",
         "skills": ("run", "review-workflow", "appsec-audit"),
     }
     assert "team-execution" not in TARGET_EXPECTED_PLUGINS
@@ -410,14 +410,14 @@ def test_target_fixture_rejects_duplicate_plugin_entries():
         "plugins": [
             {
                 "name": "verified-workflows",
-                "version": "3.0.0+codex.20260729164721",
+                "version": "3.1.0",
                 "publication_status": "released",
                 "skills": ["run", "review-workflow", "appsec-audit"],
                 "forbidden_active_dirs": [".claude-plugin", "commands"],
             },
             {
                 "name": "verified-workflows",
-                "version": "3.0.0+codex.20260729164721",
+                "version": "3.1.0",
                 "publication_status": "released",
                 "skills": ["run", "review-workflow", "appsec-audit"],
                 "forbidden_active_dirs": [".claude-plugin", "commands"],

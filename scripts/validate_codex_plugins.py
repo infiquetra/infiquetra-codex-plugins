@@ -150,14 +150,14 @@ TARGET_EXPECTED_PLUGINS: dict[str, dict[str, Any]] = {
 }
 TARGET_EXPECTED_PLUGINS["fleet-core"] = {
     **TARGET_EXPECTED_PLUGINS["fleet-core"],
-    "version": "0.14.0+codex.20260729164721",
+    "version": "0.15.0",
 }
 TARGET_EXPECTED_PLUGINS["saga"] = {
     **TARGET_EXPECTED_PLUGINS["saga"],
     "version": "0.83.0+codex.20260729205037",
 }
 TARGET_EXPECTED_PLUGINS["verified-workflows"] = {
-    "version": "3.0.0+codex.20260729164721",
+    "version": "3.1.0",
     "skills": ("run", "review-workflow", "appsec-audit"),
 }
 HERMES_PROFILE_EVOLUTION_SPEC = {

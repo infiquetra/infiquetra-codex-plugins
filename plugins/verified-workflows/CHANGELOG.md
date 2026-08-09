@@ -2,6 +2,21 @@
 
 All notable changes to this plugin are documented here.
 
+## [3.1.0] - 2026-08-09
+
+### Fixed
+
+- Luna promotion is reachable. The per-profile gate tested `multi_agent_version == "v2"`, which no
+  catalog row satisfies; 0.147.0 gates model override on the row not reporting `disabled`, so the
+  test now uses `passes_multi_agent_v2_override_filter`. Promotion stays opt-in at install through
+  `sync_codex_agents.py --luna-canary-receipt`; committed profile bytes remain unpromoted.
+
+### Changed
+
+- Permission inheritance is stated for 0.147.0, measured across all seven managed profiles.
+- Skill scopes are `user`, `repo`, `system`, `admin`; implicit invocation lists a skill's name and
+  description rather than loading its body.
+
 ## [3.0.0] - 2026-07-29
 
 ### Changed
