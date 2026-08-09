@@ -166,6 +166,139 @@ control and the staged test are mutually validating — a vacuous fixture would 
   'PIL'`. That is a pre-existing missing optional dependency, out of scope, and excluded from the
   round's green bar.
 
+## Phase 2 — U2 in progress (Claude owns; Codex reviews)
+
+### The round's thesis is now confirmed from the live runtime, not from source
+
+Codex CLI 0.147.0 is installed locally, so the capability snapshot was re-baselined from a real
+capture rather than relabelled. Every claim below is a live observation.
+
+**`gpt-5.6-luna` raw catalog facts are byte-identical between 0.146 and 0.147** — still
+`multi_agent_version: "v1"`, `visibility: "list"`, `supported_in_api: true`. Luna did not change; the
+gate did. That is the whole round in one line, and it is now evidence rather than inference.
+
+### Two genuine 0.147.0 catalog changes nobody had flagged
+
+Neither appears in the brainstorm, the requirements, or the plan. Both were found by diffing the live
+capture against the committed snapshot.
+
+1. **`gpt-5.6-sol-wm` is new.** `multi_agent_version: "v2"`, but `visibility: "hide"` and
+   `supported_in_api: false`, so `selectable` is false and no execution class can resolve to it. It
+   enters the snapshot as a catalog row and changes the normalized digest; it does not change policy.
+2. **`codex-auto-review.visibility` moved `list` → `hide`.** It was selectable in 0.146 and is not in
+   0.147. `supported_in_api` stays true, so only visibility withdrew it. Nothing in this repository
+   resolves to it today, but the change is real and is recorded rather than absorbed silently.
+
+### Everything else in the runtime section is unchanged
+
+Verified field by field against the live capture: `configured_max_threads` (6), its source and key,
+`configured_v2_total_threads` (7), `configured_max_depth` (1), both depth/thread sources, and the
+whole `multi_agent_v2_config` object. No drift. The 0.147 upgrade did not move the threading or depth
+contract.
+
+### What U2 has changed so far
+
+- `MULTI_AGENT_VERSIONS` now accepts `"disabled"` in **both** independent normalizers —
+  `codex_model_catalog.py` and `capture_codex_runtime_capabilities.py`. The plan named only the first.
+  Codex serializes `MultiAgentVersion` with `rename_all = "snake_case"`, so `Disabled` arrives as
+  `"disabled"` and both normalizers rejected the exact value the new projection must test.
+- Two derived projections on `CatalogModel`, with versioned rule identifiers so a later upstream gate
+  change lands as a new rule rather than a silent redefinition:
+  `passes_multi_agent_v2_override_filter` (a property of the model) and `multi_agent_v2_collaboration`
+  (carrying `as_root` and `as_child` explicitly, because the answer depends on session position).
+- `tier_resolver._catalog_model` consults the override filter and deliberately not the collaboration
+  projection — the single chokepoint both selection paths already used.
+- `scripts/codex_target_version.py`: `CODEX_TARGET_VERSION`, import-free, an expectation and never an
+  observation.
+- `scripts/render_capability_schema.py` generates the r4 schema so its `const` cannot drift from that
+  constant. The r3 revision stays on disk unmodified, so artifacts already validated against it keep
+  validating.
+- `port_contract.py`: capability schema versions widened to `{1, 2, 3}`, and `UNIT_IDS` widened from
+  `U1..U10` to `U1..U14` — the gap Codex found during U1 review, routed here as planned.
+
+### A mistake worth recording
+
+The first attempt added the two projection keys to the renderer's closed-key set as **required**,
+which broke 135 tests: every hand-written catalog fixture lacks them, because they are derived. The
+correct layer is to drop derived keys before the closed check and let `normalize_catalog` recompute
+them. Forwarding a stored copy would let a stale projection outlive the rule that produced it.
+
+### The snapshot re-baseline forces a port rotation the plan did not anticipate
+
+Re-baselining `docs/validation/codex-runtime-capability-snapshot.json` breaks both shipped 0146 port
+manifests, which pin it by digest under `authority.capability_snapshot`. That digest check is
+**unconditional** — it is an authority-entry check, not gated on `CURRENT_PORT_IDS` — so a port cannot
+be exempted from it by retiring.
+
+This looked like a structural defect until the precedent settled it. Two facts, both verified:
+
+1. **Purpose-scoped ports archive their own snapshot.** `mission-control-2100`, `mission-control-2101`,
+   `lease-safe-substrate`, `outcome-cross-runtime-parity`, `codex-627-seam-refreeze`, and
+   `lease-registry-forward-compat` each pin a distinctly named snapshot file. Only the Codex
+   *alignment* lineage shares the live one.
+2. **Retired alignment ports are already stale on `origin/main`, and that is accepted.** Validating
+   the pristine base directly: `2026-07-10-saga-07517` carries 3 errors and
+   `2026-07-24-codex-v2-orchestration` carries 1, while both 0146 ports — the two in
+   `CURRENT_PORT_IDS` — carry none. The 0146 round did not repair its predecessors; commit `45890ae`
+   touched no earlier manifest.
+
+So the established convention is that each alignment round rotates `CURRENT_PORT_IDS` to its own port
+and lets its predecessors go stale. This round follows it: promote `codex-0147-alignment-2026-08-08`,
+retire the two 0146 identifiers.
+
+Promotion also closes U1's exemption exactly as designed. The staged manifest was exempt from
+capability-snapshot reference binding while the snapshot still described 0146; U2 re-pointed the
+snapshot's `refs` at the manifest, so when the port becomes current the binding applies **and holds**.
+The three tests Codex added in U1 review are what prove that transition rather than assuming it.
+
+One consequence, recorded rather than hidden: `test_pre_extension_contracts_still_validate` asserted
+the 0146 manifests validate cleanly. That claim was true of the *contract extension* — U1 broke
+nothing — but is not true after the *snapshot re-baseline*. The test is being narrowed to the claim it
+was actually written to make, not deleted.
+
+### Codex found a real defect in the implementation and refused to hide it
+
+The most valuable return of the round so far. Handed the failing tests to update, Codex instead
+stopped with zero edits and reported that `capture_codex_runtime_capabilities.py` accepted
+`"disabled"` but still **emitted** the old six-field catalog row — so the capture path could never
+reproduce the committed r4 snapshot. Its digest was `98fa01ee…` against the committed `7a8eaa7f…`.
+
+Its sharpest observation: *the existing capture test still expects six fields, so it passes while
+masking this defect.* A green test standing guard over a broken contract.
+
+The fix derives both projections **through** `CatalogModel.to_jsonable` using the `fleet_commons`
+shim, mirroring `scripts/validate_codex_plugins.py:30`. Writing a second copy of the derivation rule
+in the capture script would have been precisely the defect this round exists to remove. The capture
+path now reproduces `7a8eaa7fc65492c2c0e0689304972eea17fec2ba4f39d06fa5d8a905f3e40868` exactly.
+
+This is the second time in two units that cross-engine review caught something self-review did not.
+KTD8's independence requirement is earning its cost.
+
+### A false failure from the Codex sandbox, and its shared root cause
+
+Codex reported `test_advance_persist_commits_the_spec_on_the_outcome_branch` failing with
+`UnsafeAuthorityError` on reopening `registry.lock`. It does not reproduce: the test passes in
+isolation in this worktree **and** on pristine `origin/main`, and it sits in `tests/`, which the
+scoped run covers with zero failures. U2 modifies nothing under `plugins/saga`.
+
+The cause is the same one that blocks Codex from committing: its sandbox root cannot reopen certain
+files outside the working directory. Treat lock-file and git-metadata failures reported by a
+worktree-hosted Codex as environmental until reproduced independently.
+
+### U2 landed
+
+Gates, all verified independently rather than taken on report:
+
+- `pytest plugins/fleet-core/tests plugins/verified-workflows/tests tests/` — **1893 passed**.
+- `scripts/validate_codex_plugins.py` — passed.
+- `scripts/render_capability_schema.py --check` — current.
+- `ruff check scripts/ plugins/fleet-core/scripts/ plugins/verified-workflows/scripts/` — passed.
+
+Thirty files in one commit, which the plan intended: the normalized digest cascades through the
+catalog, both normalizers, the renderer, the validator, the schema, the snapshot, the runtime proof,
+and all seven profiles. Splitting it yields a repository that does not validate at the split point.
+
 ## Next step
 
-U2 and U3 both unblock on U1. Claude owns both.
+U3 and U4 are both unblocked. U3 (developer-instruction contract) and U4 (policy source collapse) are
+Claude-owned with Codex reviewing.

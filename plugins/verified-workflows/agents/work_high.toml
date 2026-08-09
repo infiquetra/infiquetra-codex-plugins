@@ -3,7 +3,7 @@
 # profile_id = "work_high"
 # runtime_agent_name = "work_high"
 # registry_sha256 = "d9143f578d4253e158d6550af66226ef3fde7eaacc1e84cc0a17caa8a062c78d"
-# catalog_sha256 = "2073a7fa39f925046eff99945515ca856571e3656352f48920b90aa7baa00b15"
+# catalog_sha256 = "7a8eaa7fc65492c2c0e0689304972eea17fec2ba4f39d06fa5d8a905f3e40868"
 name = "work_high"
 description = "High-effort implementation for complex bounded workspace changes."
 model = "gpt-5.6-sol"

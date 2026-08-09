@@ -27,15 +27,12 @@ def load_manifest() -> dict:
     return json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
 
 
-def test_current_contract_set_includes_both_codex_0146_cycles() -> None:
-    assert contract.CURRENT_PORT_IDS == {
-        "codex-0146-native-harness-2026-07-29",
-        "codex-0146-cross-plugin-alignment-2026-07-29",
-    }
+def test_current_contract_set_selects_the_codex_0147_alignment_cycle() -> None:
+    assert contract.CURRENT_PORT_IDS == {"codex-0147-alignment-2026-08-08"}
 
 
-def test_port_contract_accepts_evidence_units_through_u10() -> None:
-    assert contract.UNIT_IDS == {f"U{number}" for number in range(1, 11)}
+def test_port_contract_accepts_evidence_units_through_u14() -> None:
+    assert contract.UNIT_IDS == {f"U{number}" for number in range(1, 15)}
 
 
 def test_current_manifest_passes_classification_gate() -> None:

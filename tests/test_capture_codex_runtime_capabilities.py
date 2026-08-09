@@ -40,17 +40,40 @@ def raw_model(slug: str = "gpt-5.6-sol") -> dict:
 def test_normalizer_projects_only_allowlisted_model_fields() -> None:
     models = capture.normalize_catalog([raw_model()])
 
-    assert models == [
-        {
-            "slug": "gpt-5.6-sol",
-            "default_effort": "low",
-            "supported_efforts": ["low", "max"],
-            "visibility": "list",
-            "supported_in_api": True,
-            "multi_agent_version": "v2",
-        }
-    ]
+    expected = {
+        "slug": "gpt-5.6-sol",
+        "default_effort": "low",
+        "supported_efforts": ["low", "max"],
+        "visibility": "list",
+        "supported_in_api": True,
+        "multi_agent_version": "v2",
+        "multi_agent_v2_override_filter": {
+            "rule": "codex-0.147.0/model-supports-multi-agent-backend",
+            "passes": True,
+        },
+        "multi_agent_v2_collaboration": {
+            "rule": "codex-0.147.0/collab-tools-enabled",
+            "as_root": True,
+            "as_child": True,
+        },
+    }
+    assert set(models[0]) == set(expected)
+    assert models == [expected]
     assert "instructions" not in json.dumps(models).lower()
+
+
+def test_normalizer_accepts_disabled_and_uses_the_catalog_projection() -> None:
+    row = raw_model()
+    row["multi_agent_version"] = "disabled"
+
+    model = capture.normalize_catalog([row])[0]
+
+    assert model["multi_agent_v2_override_filter"]["passes"] is False
+    assert model["multi_agent_v2_collaboration"] == {
+        "rule": "codex-0.147.0/collab-tools-enabled",
+        "as_root": True,
+        "as_child": False,
+    }
 
 
 def test_capture_catalog_uses_bundled_only_after_refreshed_failure() -> None:

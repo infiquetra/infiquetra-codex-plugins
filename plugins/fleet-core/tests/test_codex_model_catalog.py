@@ -59,7 +59,7 @@ def _result(payload: object, returncode: int = 0, stderr: bytes = b""):
 
 
 def test_normalization_allowlists_fields_and_accepts_both_shapes() -> None:
-    for payload in ([ _raw_row() ], {"models": [_raw_row()]}):
+    for payload in ([_raw_row()], {"models": [_raw_row()]}):
         snapshot = catalog.normalize_catalog(payload, source="fixture")
         assert len(snapshot.models) == 1
         projected = snapshot.models[0].to_jsonable()
@@ -70,11 +70,53 @@ def test_normalization_allowlists_fields_and_accepts_both_shapes() -> None:
             "visibility",
             "supported_in_api",
             "multi_agent_version",
+            "multi_agent_v2_override_filter",
+            "multi_agent_v2_collaboration",
+        }
+        assert projected["multi_agent_v2_override_filter"] == {
+            "rule": "codex-0.147.0/model-supports-multi-agent-backend",
+            "passes": True,
+        }
+        assert projected["multi_agent_v2_collaboration"] == {
+            "rule": "codex-0.147.0/collab-tools-enabled",
+            "as_root": True,
+            "as_child": True,
         }
         rendered = json.dumps(snapshot.to_jsonable())
         assert "base_instructions" not in rendered
         assert "must never survive" not in rendered
         assert "unknown" not in rendered
+
+
+@pytest.mark.parametrize(
+    ("multi_agent_version", "passes_override_filter", "collaborates_as_child"),
+    [
+        ("v1", True, False),
+        ("v2", True, True),
+        ("disabled", False, False),
+        (None, True, False),
+    ],
+)
+def test_multi_agent_v2_projections_cover_every_catalog_wire_value(
+    multi_agent_version: str | None,
+    passes_override_filter: bool,
+    collaborates_as_child: bool,
+) -> None:
+    snapshot = catalog.normalize_catalog(
+        {"models": [_raw_row(multi_agent_version=multi_agent_version)]},
+        source="fixture",
+    )
+    projected = snapshot.models[0].to_jsonable()
+
+    assert projected["multi_agent_v2_override_filter"] == {
+        "rule": "codex-0.147.0/model-supports-multi-agent-backend",
+        "passes": passes_override_filter,
+    }
+    assert projected["multi_agent_v2_collaboration"] == {
+        "rule": "codex-0.147.0/collab-tools-enabled",
+        "as_root": True,
+        "as_child": collaborates_as_child,
+    }
 
 
 def test_normalized_digest_matches_committed_capability_snapshot() -> None:

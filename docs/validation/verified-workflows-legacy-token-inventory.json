@@ -742,7 +742,7 @@
     {
       "classification": "legacy-parser",
       "path": "plugins/fleet-core/scripts/fleet_commons/tier_resolver.py",
-      "sha256": "5af46585ee333310d5012d7c0c7d421752ed88ee13c60dee486c8f108fd40c66",
+      "sha256": "cbca9eb36cb86f9c272941870049f33f33fb3f5577018399fe648722adac2041",
       "tokens": [
         "Team Execution",
         "team-execution"
@@ -1005,7 +1005,7 @@
     {
       "classification": "frozen-source-contract",
       "path": "scripts/port_contract.py",
-      "sha256": "c996c80a116b76156682469682e723ed176a39d16b2c8a3758b16e001a9f1064",
+      "sha256": "fccbf0b186a581ff15ba1fe1cb397926d35d3a2e4df780da94bd75ad5aebe814",
       "tokens": [
         "team-execution"
       ]
@@ -1096,7 +1096,7 @@
     {
       "classification": "migration-fixture",
       "path": "tests/test_port_contract.py",
-      "sha256": "4d878175cb55be99d197cd27ce908df54f6bbf3e340fbe63042160b49bb8c5e4",
+      "sha256": "26b19837b942cd0f58e255010f7f542697fcba3c68f6bd6c31a116f7ac6aafde",
       "tokens": [
         "team-execution"
       ]
@@ -1149,7 +1149,7 @@
     {
       "classification": "migration-fixture",
       "path": "tests/test_validate_codex_plugins.py",
-      "sha256": "0ab24cd927a36cd0bd0e4d1c9805eff9d158509a87529ff1f5fd3cc5fb22f7b3",
+      "sha256": "f713d4908944cd0d1d8f64cbe8ce5fbbc9caabfbe6a64627c9b4236b96cbe281",
       "tokens": [
         ".codex/team-execution/",
         "team-execution",

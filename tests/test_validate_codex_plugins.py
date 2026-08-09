@@ -100,10 +100,8 @@ def copy_verified_workflows_runtime_target(tmp_path: Path) -> Path:
         root / "plugins" / "fleet-core",
     )
     (root / "scripts").mkdir(parents=True)
-    shutil.copy2(
-        REPO_ROOT / "scripts" / "prove_verified_workflows_runtime.py",
-        root / "scripts" / "prove_verified_workflows_runtime.py",
-    )
+    for name in ("codex_target_version.py", "prove_verified_workflows_runtime.py"):
+        shutil.copy2(REPO_ROOT / "scripts" / name, root / "scripts" / name)
     shutil.copy2(
         REPO_ROOT / "scripts" / "build_codex_v2_orchestration_matrix.py",
         root / "scripts" / "build_codex_v2_orchestration_matrix.py",
@@ -537,6 +535,12 @@ def test_verified_workflows_runtime_rejects_retired_evidence_surface(tmp_path: P
 
 def test_verified_workflows_runtime_rejects_stale_proof(tmp_path: Path) -> None:
     root = copy_verified_workflows_runtime_target(tmp_path)
+    baseline_errors: list[str] = []
+
+    validate_verified_workflows_runtime(root, baseline_errors)
+
+    assert baseline_errors == []
+
     proof_path = root / "docs" / "validation" / "verified-workflows-runtime-proof.json"
     payload = json.loads(proof_path.read_text())
     payload["reason"] = "stale"
@@ -545,7 +549,9 @@ def test_verified_workflows_runtime_rejects_stale_proof(tmp_path: Path) -> None:
 
     validate_verified_workflows_runtime(root, errors)
 
-    assert any("tracked runtime proof is stale" in error for error in errors)
+    assert errors == [
+        "verified-workflows: U4 runtime proof validation failed: tracked runtime proof is stale"
+    ]
 
 
 def test_verified_workflows_validation_pins_fleet_core_to_supplied_root(

@@ -1,23 +1,23 @@
 {
-  "schema_version": 2,
-  "captured_at": "2026-07-29T16:47:21Z",
+  "schema_version": 3,
+  "captured_at": "2026-08-09T12:34:39Z",
   "refs": {
     "codex": {
-      "historical_plan_base": "0713be75ff96cf07d7a5e90d6f1c1673a994eb58",
-      "execution_base": "0713be75ff96cf07d7a5e90d6f1c1673a994eb58",
-      "observed_origin_main": "0713be75ff96cf07d7a5e90d6f1c1673a994eb58"
+      "historical_plan_base": "cd51a29be25b41923c0d3f9e7ade6f9b4baaf50e",
+      "execution_base": "cd51a29be25b41923c0d3f9e7ade6f9b4baaf50e",
+      "observed_origin_main": "cd51a29be25b41923c0d3f9e7ade6f9b4baaf50e"
     },
     "claude": {
-      "source_base": "99efeef6506cd7f6512404d0ad8755a87ff5a011",
-      "source_target": "e363b08c9175ac1cbe5893615dd2cb9ddf95043b",
-      "observed_head": "e363b08c9175ac1cbe5893615dd2cb9ddf95043b",
-      "observed_main": "e363b08c9175ac1cbe5893615dd2cb9ddf95043b",
-      "observed_origin_main": "e363b08c9175ac1cbe5893615dd2cb9ddf95043b",
+      "source_base": "95637f7056835fea66bdd0044414af480fc0fd74",
+      "source_target": "be6e8eac029b183056b7e4402879f15d2c85f61b",
+      "observed_head": "be6e8eac029b183056b7e4402879f15d2c85f61b",
+      "observed_main": "be6e8eac029b183056b7e4402879f15d2c85f61b",
+      "observed_origin_main": "be6e8eac029b183056b7e4402879f15d2c85f61b",
       "target_reachable": true
     }
   },
   "runtime": {
-    "codex_cli_version": "0.146.0",
+    "codex_cli_version": "0.147.0",
     "effective_parent_permission_mode": {
       "sandbox_mode": "danger-full-access",
       "approval_policy": "never"
@@ -32,7 +32,7 @@
     "host_total_slots": 7,
     "effective_total_slots": 6,
     "effective_max_children": 5,
-    "session_fact_source": "current-0.146-live-tool-contract",
+    "session_fact_source": "current-0.147-live-tool-contract",
     "multi_agent_v2_config": {
       "enabled": true,
       "tool_namespace": "collaboration",
@@ -47,84 +47,249 @@
   },
   "catalog": {
     "source": "refreshed",
-    "normalized_sha256": "2073a7fa39f925046eff99945515ca856571e3656352f48920b90aa7baa00b15",
+    "normalized_sha256": "7a8eaa7fc65492c2c0e0689304972eea17fec2ba4f39d06fa5d8a905f3e40868",
     "models": [
       {
         "slug": "gpt-5.6-sol",
         "default_effort": "low",
-        "supported_efforts": ["low", "medium", "high", "xhigh", "max", "ultra"],
+        "supported_efforts": [
+          "low",
+          "medium",
+          "high",
+          "xhigh",
+          "max",
+          "ultra"
+        ],
         "visibility": "list",
         "supported_in_api": true,
-        "multi_agent_version": "v2"
+        "multi_agent_version": "v2",
+        "multi_agent_v2_override_filter": {
+          "rule": "codex-0.147.0/model-supports-multi-agent-backend",
+          "passes": true
+        },
+        "multi_agent_v2_collaboration": {
+          "rule": "codex-0.147.0/collab-tools-enabled",
+          "as_root": true,
+          "as_child": true
+        }
+      },
+      {
+        "slug": "gpt-5.6-sol-wm",
+        "default_effort": "low",
+        "supported_efforts": [
+          "low",
+          "medium",
+          "high",
+          "xhigh",
+          "max",
+          "ultra"
+        ],
+        "visibility": "hide",
+        "supported_in_api": false,
+        "multi_agent_version": "v2",
+        "multi_agent_v2_override_filter": {
+          "rule": "codex-0.147.0/model-supports-multi-agent-backend",
+          "passes": true
+        },
+        "multi_agent_v2_collaboration": {
+          "rule": "codex-0.147.0/collab-tools-enabled",
+          "as_root": true,
+          "as_child": true
+        }
       },
       {
         "slug": "gpt-5.6-terra",
         "default_effort": "medium",
-        "supported_efforts": ["low", "medium", "high", "xhigh", "max", "ultra"],
+        "supported_efforts": [
+          "low",
+          "medium",
+          "high",
+          "xhigh",
+          "max",
+          "ultra"
+        ],
         "visibility": "list",
         "supported_in_api": true,
-        "multi_agent_version": "v2"
-      },
-      {
-        "slug": "codex-auto-review",
-        "default_effort": "medium",
-        "supported_efforts": ["low", "medium", "high", "xhigh", "max"],
-        "visibility": "list",
-        "supported_in_api": true,
-        "multi_agent_version": "v1"
+        "multi_agent_version": "v2",
+        "multi_agent_v2_override_filter": {
+          "rule": "codex-0.147.0/model-supports-multi-agent-backend",
+          "passes": true
+        },
+        "multi_agent_v2_collaboration": {
+          "rule": "codex-0.147.0/collab-tools-enabled",
+          "as_root": true,
+          "as_child": true
+        }
       },
       {
         "slug": "gpt-5.6-luna",
         "default_effort": "medium",
-        "supported_efforts": ["low", "medium", "high", "xhigh", "max"],
+        "supported_efforts": [
+          "low",
+          "medium",
+          "high",
+          "xhigh",
+          "max"
+        ],
         "visibility": "list",
         "supported_in_api": true,
-        "multi_agent_version": "v1"
+        "multi_agent_version": "v1",
+        "multi_agent_v2_override_filter": {
+          "rule": "codex-0.147.0/model-supports-multi-agent-backend",
+          "passes": true
+        },
+        "multi_agent_v2_collaboration": {
+          "rule": "codex-0.147.0/collab-tools-enabled",
+          "as_root": true,
+          "as_child": false
+        }
       },
       {
         "slug": "gpt-5.5",
         "default_effort": "medium",
-        "supported_efforts": ["low", "medium", "high", "xhigh"],
+        "supported_efforts": [
+          "low",
+          "medium",
+          "high",
+          "xhigh"
+        ],
         "visibility": "list",
         "supported_in_api": true,
-        "multi_agent_version": null
+        "multi_agent_version": null,
+        "multi_agent_v2_override_filter": {
+          "rule": "codex-0.147.0/model-supports-multi-agent-backend",
+          "passes": true
+        },
+        "multi_agent_v2_collaboration": {
+          "rule": "codex-0.147.0/collab-tools-enabled",
+          "as_root": true,
+          "as_child": false
+        }
       },
       {
         "slug": "gpt-5.4",
         "default_effort": "medium",
-        "supported_efforts": ["low", "medium", "high", "xhigh"],
+        "supported_efforts": [
+          "low",
+          "medium",
+          "high",
+          "xhigh"
+        ],
         "visibility": "list",
         "supported_in_api": true,
-        "multi_agent_version": null
+        "multi_agent_version": null,
+        "multi_agent_v2_override_filter": {
+          "rule": "codex-0.147.0/model-supports-multi-agent-backend",
+          "passes": true
+        },
+        "multi_agent_v2_collaboration": {
+          "rule": "codex-0.147.0/collab-tools-enabled",
+          "as_root": true,
+          "as_child": false
+        }
       },
       {
         "slug": "gpt-5.4-mini",
         "default_effort": "medium",
-        "supported_efforts": ["low", "medium", "high", "xhigh"],
+        "supported_efforts": [
+          "low",
+          "medium",
+          "high",
+          "xhigh"
+        ],
         "visibility": "list",
         "supported_in_api": true,
-        "multi_agent_version": null
+        "multi_agent_version": null,
+        "multi_agent_v2_override_filter": {
+          "rule": "codex-0.147.0/model-supports-multi-agent-backend",
+          "passes": true
+        },
+        "multi_agent_v2_collaboration": {
+          "rule": "codex-0.147.0/collab-tools-enabled",
+          "as_root": true,
+          "as_child": false
+        }
       },
       {
         "slug": "gpt-5.3-codex-spark",
         "default_effort": "high",
-        "supported_efforts": ["low", "medium", "high", "xhigh"],
+        "supported_efforts": [
+          "low",
+          "medium",
+          "high",
+          "xhigh"
+        ],
         "visibility": "list",
         "supported_in_api": false,
-        "multi_agent_version": null
+        "multi_agent_version": null,
+        "multi_agent_v2_override_filter": {
+          "rule": "codex-0.147.0/model-supports-multi-agent-backend",
+          "passes": true
+        },
+        "multi_agent_v2_collaboration": {
+          "rule": "codex-0.147.0/collab-tools-enabled",
+          "as_root": true,
+          "as_child": false
+        }
+      },
+      {
+        "slug": "codex-auto-review",
+        "default_effort": "medium",
+        "supported_efforts": [
+          "low",
+          "medium",
+          "high",
+          "xhigh",
+          "max"
+        ],
+        "visibility": "hide",
+        "supported_in_api": true,
+        "multi_agent_version": "v1",
+        "multi_agent_v2_override_filter": {
+          "rule": "codex-0.147.0/model-supports-multi-agent-backend",
+          "passes": true
+        },
+        "multi_agent_v2_collaboration": {
+          "rule": "codex-0.147.0/collab-tools-enabled",
+          "as_root": true,
+          "as_child": false
+        }
       }
     ]
   },
   "features": {
-    "multi_agent": {"stage": "stable", "enabled": true},
-    "multi_agent_v2": {"stage": "stable", "enabled": true},
-    "hooks": {"stage": "stable", "enabled": true},
-    "goals": {"stage": "stable", "enabled": true},
-    "plugins": {"stage": "stable", "enabled": true}
+    "multi_agent": {
+      "stage": "stable",
+      "enabled": true
+    },
+    "multi_agent_v2": {
+      "stage": "stable",
+      "enabled": true
+    },
+    "hooks": {
+      "stage": "stable",
+      "enabled": true
+    },
+    "goals": {
+      "stage": "stable",
+      "enabled": true
+    },
+    "plugins": {
+      "stage": "stable",
+      "enabled": true
+    }
   },
   "custom_agents": {
-    "builtins": ["default", "worker", "explorer"],
-    "required_fields": ["name", "description", "developer_instructions"],
+    "builtins": [
+      "default",
+      "worker",
+      "explorer"
+    ],
+    "required_fields": [
+      "name",
+      "description",
+      "developer_instructions"
+    ],
     "optional_config_fields": [
       "nickname_candidates",
       "model",
@@ -143,15 +308,32 @@
       "contract_version": "v2",
       "tool_namespace": "collaboration",
       "hide_spawn_agent_metadata": false,
-      "request_fields": ["agent_type", "fork_turns", "message", "model", "reasoning_effort", "task_name"],
-      "response_fields": ["agent_id", "nickname", "task_name"],
+      "request_fields": [
+        "agent_type",
+        "fork_turns",
+        "message",
+        "model",
+        "reasoning_effort",
+        "task_name"
+      ],
+      "response_fields": [
+        "agent_id",
+        "nickname",
+        "task_name"
+      ],
       "default_fork_turns": "all",
-      "profile_selection_fork_turns": ["none", "positive-integer"],
+      "profile_selection_fork_turns": [
+        "none",
+        "positive-integer"
+      ],
       "per_child_agent_type": true,
       "per_child_model": true,
       "per_child_effort": true,
       "per_child_sandbox": false,
-      "runtime_receipt_sources": ["session_meta", "turn_context"],
+      "runtime_receipt_sources": [
+        "session_meta",
+        "turn_context"
+      ],
       "selection_readback_fields": [
         "agent_path",
         "agent_role",
@@ -164,9 +346,20 @@
         "multi_agent_version"
       ]
     },
-    "operations": ["followup_task", "interrupt_agent", "list_agents", "send_message", "spawn_agent", "wait_agent"],
+    "operations": [
+      "followup_task",
+      "interrupt_agent",
+      "list_agents",
+      "send_message",
+      "spawn_agent",
+      "wait_agent"
+    ],
     "context": {
-      "fork_turns": ["none", "all", "positive-integer"],
+      "fork_turns": [
+        "none",
+        "all",
+        "positive-integer"
+      ],
       "full_history_profile_override": false,
       "child_permissions_inherit_parent_turn": true
     },
@@ -175,13 +368,23 @@
       "trigger_turn": "followup_task"
     },
     "wait": {
-      "request_fields": ["timeout_ms"],
-      "response_fields": ["message", "timed_out"],
+      "request_fields": [
+        "timeout_ms"
+      ],
+      "response_fields": [
+        "message",
+        "timed_out"
+      ],
       "content_delivered_out_of_band": true
     },
     "list": {
-      "request_fields": ["path_prefix"],
-      "response_fields": ["agent_name", "agent_status"]
+      "request_fields": [
+        "path_prefix"
+      ],
+      "response_fields": [
+        "agent_name",
+        "agent_status"
+      ]
     },
     "interruption": {
       "operation": "interrupt_agent",
@@ -193,27 +396,72 @@
     },
     "child_result_delivery": "mailbox-and-final-status",
     "required_capabilities": [
-      {"name": "configured-agent-selection", "status": "supported"},
-      {"name": "model-effort-readback", "status": "supported"},
-      {"name": "provider-readback", "status": "supported"},
-      {"name": "effective-permission-readback", "status": "supported"},
-      {"name": "bounded-context", "status": "supported"},
-      {"name": "nested-delegation", "status": "supported"},
-      {"name": "typed-results", "status": "supported"},
-      {"name": "messaging", "status": "supported"},
-      {"name": "follow-up", "status": "supported"},
-      {"name": "wait-list", "status": "supported"},
-      {"name": "interruption", "status": "supported"},
-      {"name": "restoration", "status": "supported"},
-      {"name": "luna-leaf", "status": "unavailable"},
-      {"name": "ultra-root-only", "status": "supported"}
+      {
+        "name": "configured-agent-selection",
+        "status": "supported"
+      },
+      {
+        "name": "model-effort-readback",
+        "status": "supported"
+      },
+      {
+        "name": "provider-readback",
+        "status": "supported"
+      },
+      {
+        "name": "effective-permission-readback",
+        "status": "supported"
+      },
+      {
+        "name": "bounded-context",
+        "status": "supported"
+      },
+      {
+        "name": "nested-delegation",
+        "status": "supported"
+      },
+      {
+        "name": "typed-results",
+        "status": "supported"
+      },
+      {
+        "name": "messaging",
+        "status": "supported"
+      },
+      {
+        "name": "follow-up",
+        "status": "supported"
+      },
+      {
+        "name": "wait-list",
+        "status": "supported"
+      },
+      {
+        "name": "interruption",
+        "status": "supported"
+      },
+      {
+        "name": "restoration",
+        "status": "supported"
+      },
+      {
+        "name": "luna-leaf",
+        "status": "unavailable"
+      },
+      {
+        "name": "ultra-root-only",
+        "status": "supported"
+      }
     ]
   },
   "hook_capabilities": {
     "plugin_hooks_supported": true,
     "trust_required": true,
     "writable_data_environment": "PLUGIN_DATA",
-    "subagent_event_allowlist": ["SubagentStart", "SubagentStop"],
+    "subagent_event_allowlist": [
+      "SubagentStart",
+      "SubagentStop"
+    ],
     "observes_active_model": true,
     "observes_agent_type": true,
     "observes_reasoning_effort": false,
@@ -221,39 +469,96 @@
   },
   "capability_dimensions": {
     "lifecycle_owner": [
-      {"name": "saga", "status": "available"}
+      {
+        "name": "saga",
+        "status": "available"
+      }
     ],
     "continuation": [
-      {"name": "turn", "status": "available"},
-      {"name": "goal", "status": "explicit-only"}
+      {
+        "name": "turn",
+        "status": "available"
+      },
+      {
+        "name": "goal",
+        "status": "explicit-only"
+      }
     ],
     "workflow_modes": [
-      {"name": "inline", "status": "available"},
-      {"name": "manual", "status": "available"},
-      {"name": "verified-workflow", "status": "available"},
-      {"name": "source-workflow", "status": "unsupported"}
+      {
+        "name": "inline",
+        "status": "available"
+      },
+      {
+        "name": "manual",
+        "status": "available"
+      },
+      {
+        "name": "verified-workflow",
+        "status": "available"
+      },
+      {
+        "name": "source-workflow",
+        "status": "unsupported"
+      }
     ],
     "step_vehicles": [
-      {"name": "inline", "status": "available"},
-      {"name": "deterministic-tool", "status": "available"},
-      {"name": "v2-configured-agent", "status": "available"}
+      {
+        "name": "inline",
+        "status": "available"
+      },
+      {
+        "name": "deterministic-tool",
+        "status": "available"
+      },
+      {
+        "name": "v2-configured-agent",
+        "status": "available"
+      }
     ],
     "role_identities": [
-      {"name": "logical-role", "status": "available"},
-      {"name": "runtime-agent-role", "status": "available"}
+      {
+        "name": "logical-role",
+        "status": "available"
+      },
+      {
+        "name": "runtime-agent-role",
+        "status": "available"
+      }
     ],
     "execution_class_controls": [
-      {"name": "configured-agent-file", "status": "available"},
-      {"name": "per-spawn-model-effort", "status": "available"},
-      {"name": "per-child-permission", "status": "unavailable"}
+      {
+        "name": "configured-agent-file",
+        "status": "available"
+      },
+      {
+        "name": "per-spawn-model-effort",
+        "status": "available"
+      },
+      {
+        "name": "per-child-permission",
+        "status": "unavailable"
+      }
     ],
     "hook_roles": [
-      {"name": "historical-observation", "status": "legacy-current"},
-      {"name": "runtime-authority", "status": "rejected"}
+      {
+        "name": "historical-observation",
+        "status": "legacy-current"
+      },
+      {
+        "name": "runtime-authority",
+        "status": "rejected"
+      }
     ]
   },
   "official_sources": [
-    {"title": "Codex subagents", "url": "https://developers.openai.com/codex/subagents"},
-    {"title": "Codex 0.146.0 source", "url": "https://github.com/openai/codex/tree/rust-v0.146.0"}
+    {
+      "title": "Codex subagents",
+      "url": "https://developers.openai.com/codex/subagents"
+    },
+    {
+      "title": "Codex 0.146.0 source",
+      "url": "https://github.com/openai/codex/tree/rust-v0.146.0"
+    }
   ]
 }

@@ -2,10 +2,10 @@
   "authority": {
     "capability_snapshot": {
       "path": "docs/validation/codex-runtime-capability-snapshot.json",
-      "schema_path": "docs/validation/codex-runtime-capability-snapshot.schema-r3.json",
-      "schema_sha256": "548289fa766ca250549b2fc6647fa837fbea4c832e22251e42e348909c40f806",
-      "schema_version": 2,
-      "sha256": "c53a5878c180a595186fa145dc24f2c270644802681c49ec239f2968ece5e2e4"
+      "schema_path": "docs/validation/codex-runtime-capability-snapshot.schema-r4.json",
+      "schema_sha256": "2bc576e9c8a08dce4cb25773a1b8379ed9aa5778fb12feba7f1d563c578d94bf",
+      "schema_version": 3,
+      "sha256": "a9576e791c53242f215429ca1c3153e870b188f53cd2315cb0a841653be4a6bc"
     },
     "classification_path": "docs/portability/classifications/2026-08-08-codex-0147-alignment.md",
     "plan": {

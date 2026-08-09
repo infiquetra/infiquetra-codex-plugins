@@ -37,9 +37,11 @@ DEFAULT_SOURCE_BASE = "38742ece89880a6b140be237edad6d3f13c97b54"
 DEFAULT_SOURCE_TARGET = "675712b1d6a55ead11f3e971ed0e119354621bf2"
 DEFAULT_CODEX_PLAN_BASE = "39f0a2f466cb6f58e203ce3e586a959ff853a342"
 ACTIVE_PORT_ID = "external-advisory-execution-2026-07-11"
+# Each Codex alignment round rotates this set to its own port and lets its predecessors go stale;
+# the 0146 round did the same to the 0145-era ports, which still carry errors on main today. Only
+# purpose-scoped ports archive a private snapshot, so only the alignment lineage rotates.
 CURRENT_PORT_IDS = {
-    "codex-0146-native-harness-2026-07-29",
-    "codex-0146-cross-plugin-alignment-2026-07-29",
+    "codex-0147-alignment-2026-08-08",
 }
 APPROVED_CODEX_EXECUTION_BASE = "d8f5d165ad0e859af9c7d7f1ba7461b00ec1ae95"
 CODEX_EVIDENCE_REF = "refs/tags/evidence/external-advisory-execution-20260711"
@@ -86,7 +88,7 @@ EVIDENCE_KINDS = {
     "rollback",
     "cutover",
 }
-UNIT_IDS = {f"U{number}" for number in range(1, 11)}
+UNIT_IDS = {f"U{number}" for number in range(1, 15)}
 HEX40_RE = re.compile(r"^[0-9a-f]{40}$")
 HEX64_RE = re.compile(r"^[0-9a-f]{64}$")
 CONTROL_RE = re.compile(r"[\x00-\x1f\x7f]")
@@ -512,7 +514,7 @@ def build_manifest(
         ).get("schema_version")
     except (AttributeError, json.JSONDecodeError, OSError) as exc:
         raise ContractError("capability snapshot lacks a readable schema version") from exc
-    if capability_schema_version not in {1, 2}:
+    if capability_schema_version not in {1, 2, 3}:
         raise ContractError("capability snapshot schema version is unsupported")
 
     source_rows = git_inventory(source_repo, source_base, source_target, source_pathspecs)
@@ -1001,6 +1003,14 @@ def _validate_capability_snapshot(
     include_multi_agent_version = bool(models) and all(
         isinstance(model, dict) and "multi_agent_version" in model for model in models
     )
+    # Same presence-inference rule as above, so an r3 snapshot keeps reproducing its recorded
+    # digest while an r4 one includes the two derived projections. This projection has to mirror
+    # CatalogModel.to_jsonable exactly or the digest comparison below is a false negative.
+    derived_projection_keys = ("multi_agent_v2_override_filter", "multi_agent_v2_collaboration")
+    include_derived_projections = bool(models) and all(
+        isinstance(model, dict) and all(key in model for key in derived_projection_keys)
+        for model in models
+    )
     projection = []
     for model in models:
         if not isinstance(model, dict):
@@ -1014,6 +1024,9 @@ def _validate_capability_snapshot(
         }
         if include_multi_agent_version:
             row["multi_agent_version"] = model.get("multi_agent_version")
+        if include_derived_projections:
+            for key in derived_projection_keys:
+                row[key] = model.get(key)
         projection.append(row)
     expected_digest = snapshot.get("catalog", {}).get("normalized_sha256")
     if sha256_bytes(canonical_json_bytes(projection)) != expected_digest:
@@ -1181,8 +1194,8 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
                 "authority.capability_snapshot",
                 errors,
             )
-            if capability.get("schema_version") not in {1, 2}:
-                errors.append("authority.capability_snapshot.schema_version must be 1 or 2")
+            if capability.get("schema_version") not in {1, 2, 3}:
+                errors.append("authority.capability_snapshot.schema_version must be 1, 2, or 3")
             historical_snapshot: bytes | None = None
             historical_schema: bytes | None = None
             if not current_contract:

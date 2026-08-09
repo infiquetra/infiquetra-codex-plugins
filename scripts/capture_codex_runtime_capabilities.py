@@ -79,20 +79,51 @@ def normalize_catalog(payload: Any) -> list[dict[str, Any]]:
             efforts.append(effort)
         if visibility not in {"list", "hide"} or not isinstance(supported_in_api, bool):
             raise CaptureError(f"model `{slug}` has malformed visibility/API support")
-        if multi_agent_version not in {None, "v1", "v2"}:
+        # "disabled" is the snake_case wire value of MultiAgentVersion::Disabled. This normalizer
+        # is independent of fleet_commons.codex_model_catalog and carried the same rejection.
+        if multi_agent_version not in {None, "v1", "v2", "disabled"}:
             raise CaptureError(f"model `{slug}` has an unsupported multi-agent version")
         seen.add(slug)
-        models.append(
-            {
-                "slug": slug,
-                "default_effort": default,
-                "supported_efforts": efforts,
-                "visibility": visibility,
-                "supported_in_api": supported_in_api,
-                "multi_agent_version": multi_agent_version,
-            }
-        )
+        row = {
+            "slug": slug,
+            "default_effort": default,
+            "supported_efforts": efforts,
+            "visibility": visibility,
+            "supported_in_api": supported_in_api,
+            "multi_agent_version": multi_agent_version,
+        }
+        row.update(_derived_projections(multi_agent_version))
+        models.append(row)
     return models
+
+
+def _derived_projections(multi_agent_version: str | None) -> dict[str, Any]:
+    """Derive the two MultiAgent V2 projections through the catalog module's single rule.
+
+    This script normalizes raw catalog rows independently of fleet_commons on purpose, but the
+    *derivation* must not be restated here: a second copy of the rule is exactly the
+    freeze-and-restate defect this alignment round exists to remove. The shim import mirrors
+    scripts/validate_codex_plugins.py, which loads fleet modules the same way.
+    """
+    fleet_scripts = Path(__file__).resolve().parent.parent / "plugins" / "fleet-core" / "scripts"
+    if str(fleet_scripts) not in sys.path:
+        sys.path.insert(0, str(fleet_scripts))
+    import fleet_commons_shim  # noqa: PLC0415
+
+    catalog = fleet_commons_shim.load("codex_model_catalog")
+    model = catalog.CatalogModel(
+        slug="_projection_probe",
+        default_effort="low",
+        supported_efforts=("low",),
+        visibility="list",
+        supported_in_api=True,
+        multi_agent_version=multi_agent_version,
+    )
+    serialized = model.to_jsonable()
+    return {
+        "multi_agent_v2_override_filter": serialized["multi_agent_v2_override_filter"],
+        "multi_agent_v2_collaboration": serialized["multi_agent_v2_collaboration"],
+    }
 
 
 def _parse_catalog_result(result: subprocess.CompletedProcess[bytes], label: str) -> list[dict[str, Any]]:

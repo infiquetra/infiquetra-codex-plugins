@@ -39,6 +39,7 @@ def _row(
     *,
     visibility: str = "list",
     supported_in_api: bool = True,
+    multi_agent_version: str | None = "v2",
 ) -> dict:
     return {
         "slug": slug,
@@ -46,6 +47,7 @@ def _row(
         "supported_reasoning_levels": [{"effort": effort} for effort in efforts],
         "visibility": visibility,
         "supported_in_api": supported_in_api,
+        "multi_agent_version": multi_agent_version,
     }
 
 
@@ -177,6 +179,30 @@ def test_hidden_or_api_unsupported_model_is_not_selectable() -> None:
     )
     result = resolver.resolve_execution_class("scan-low", snapshot)
     assert result.effective_model == "gpt-5.6-sol"
+
+
+def test_selection_uses_override_filter_and_not_collaboration_projection() -> None:
+    v1_preferred = _snapshot(
+        _row("gpt-5.6-sol", ("low", "high"), multi_agent_version="v1"),
+        _row("gpt-5.6-terra", ("low", "high")),
+    )
+    preferred_model = v1_preferred.model("gpt-5.6-sol")
+    assert preferred_model is not None
+    assert preferred_model.passes_multi_agent_v2_override_filter is True
+    assert preferred_model.multi_agent_v2_collaboration["as_child"] is False
+    assert (
+        resolver.resolve_execution_class("review-high", v1_preferred).effective_model
+        == "gpt-5.6-sol"
+    )
+
+    disabled_preferred = _snapshot(
+        _row("gpt-5.6-sol", ("low", "high"), multi_agent_version="disabled"),
+        _row("gpt-5.6-terra", ("low", "high")),
+    )
+    assert (
+        resolver.resolve_execution_class("review-high", disabled_preferred).effective_model
+        == "gpt-5.6-terra"
+    )
 
 
 def test_unknown_class_and_leaf_ultra_policy_fail() -> None:

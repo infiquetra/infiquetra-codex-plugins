@@ -67,6 +67,10 @@ def test_full_catalog_renders_exact_model_pinned_profiles() -> None:
         assert profile.filename == f"{payload['name']}.toml"
         assert payload["model"] == model
         assert payload["model_reasoning_effort"] == effort
+        assert (
+            f'# catalog_sha256 = "{bundle.catalog.normalized_sha256}"'
+            in profile.content.decode("utf-8")
+        )
         assert "logical-role identity" in payload["developer_instructions"]
         assert "Runtime identity and permissions come from Codex" in payload["developer_instructions"]
         assert "sandbox_mode" not in payload

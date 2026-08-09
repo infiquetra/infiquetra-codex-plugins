@@ -368,6 +368,13 @@ def _sha256(content: bytes) -> str:
     return hashlib.sha256(content).hexdigest()
 
 
+# Derived from multi_agent_version by rules Codex owns; recomputed on every normalization,
+# so they are accepted on input and never forwarded from a stored copy.
+DERIVED_CATALOG_KEYS = frozenset(
+    {"multi_agent_v2_override_filter", "multi_agent_v2_collaboration"}
+)
+
+
 def _closed_keys(value: object, expected: set[str], where: str) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise RoleRegistryError(f"{where} must be an object")
@@ -904,6 +911,13 @@ def load_catalog_snapshot(path: Path = DEFAULT_CATALOG_SNAPSHOT) -> Any:
     source = raw.get("source")
     projected_rows: list[dict[str, Any]] = []
     for index, row in enumerate(rows):
+        # Both projections are derived from multi_agent_version and are recomputed by
+        # normalize_catalog below, so a catalog written by CatalogModel.to_jsonable may carry
+        # them and a hand-written fixture may not. Drop them before the closed-key check rather
+        # than forwarding a stored copy, which would let a stale projection outlive the rule
+        # that produced it.
+        if isinstance(row, dict):
+            row = {key: value for key, value in row.items() if key not in DERIVED_CATALOG_KEYS}
         row = _closed_keys(
             row,
             {

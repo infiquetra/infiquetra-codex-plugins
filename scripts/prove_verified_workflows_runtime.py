@@ -26,6 +26,11 @@ if str(PLUGIN_SCRIPTS) not in sys.path:
 import render_codex_agents as renderer  # noqa: E402
 import sync_codex_agents as profile_sync  # noqa: E402
 
+if str(REPO_ROOT / "scripts") not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT / "scripts"))
+
+from codex_target_version import CODEX_TARGET_VERSION  # noqa: E402
+
 DEFAULT_SNAPSHOT = REPO_ROOT / "docs" / "validation" / "codex-runtime-capability-snapshot.json"
 MAX_BYTES = 4 * 1024 * 1024
 MAX_NEW_ROLLOUTS = 16
@@ -136,8 +141,10 @@ def _snapshot_projection(snapshot: Mapping[str, Any]) -> dict[str, Any]:
     if not isinstance(runtime, dict) or not isinstance(collaboration, dict):
         raise RuntimeProofError("capability snapshot lacks required closed sections")
     version = runtime.get("codex_cli_version")
-    if version != "0.146.0":
-        raise RuntimeProofError("capability snapshot must target Codex 0.146.0")
+    if version != CODEX_TARGET_VERSION:
+        raise RuntimeProofError(
+            f"capability snapshot must target Codex {CODEX_TARGET_VERSION}, not {version!r}"
+        )
     spawn = collaboration.get("spawn")
     expected_spawn_fields = {
         "available",
@@ -199,7 +206,9 @@ def _snapshot_projection(snapshot: Mapping[str, Any]) -> dict[str, Any]:
         if spawn[field] is not True:
             raise RuntimeProofError(f"capability snapshot must enable {field}")
     if spawn["per_child_sandbox"] is not False:
-        raise RuntimeProofError("Codex 0.146.0 does not support per-child sandbox override")
+        raise RuntimeProofError(
+            f"Codex {CODEX_TARGET_VERSION} does not support per-child sandbox override"
+        )
     operations = collaboration.get("operations")
     if operations != [
         "followup_task",
@@ -611,7 +620,8 @@ def build_proof(
         "live_invocation_performed": runtime_receipt is not None,
         "runtime_receipt": runtime_receipt,
         "limitations": [
-            "Codex 0.146.0 child permissions inherit the parent turn after profile loading",
+            f"Codex {CODEX_TARGET_VERSION} child permissions inherit the parent turn "
+            "after profile loading",
             "this candidate canary covers one disposable read-only child",
             "requested spawn fields are never accepted as runtime identity without session_meta and turn_context",
         ],

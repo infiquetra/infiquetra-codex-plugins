@@ -47,6 +47,7 @@ MISMATCHED_SNAPSHOT_REFS = {
     "source_base": "3" * 40,
     "source_target": "4" * 40,
 }
+STAGED_PORT_ID = "codex-0147-alignment-staged-test-fixture"
 
 
 def _manifest() -> dict:
@@ -58,7 +59,20 @@ def manifest_with_mismatched_snapshot_refs(
     monkeypatch: pytest.MonkeyPatch,
 ) -> dict:
     manifest = _manifest()
+    manifest["port_id"] = STAGED_PORT_ID
     real_loads = port_contract.json.loads
+    real_historical_file = port_contract._historical_file_by_sha256
+    classification = CLASSIFICATION_PATH.read_text(encoding="utf-8")
+
+    def current_or_historical_file(
+        root: Path,
+        raw_path: str | Path,
+        expected_sha256: str,
+    ) -> bytes:
+        candidate = port_contract.contained_file(root, str(raw_path))
+        if candidate.is_file() and port_contract.sha256_file(candidate) == expected_sha256:
+            return candidate.read_bytes()
+        return real_historical_file(root, raw_path, expected_sha256)
 
     def loads_with_mismatched_snapshot_refs(
         payload: str | bytes | bytearray,
@@ -87,6 +101,12 @@ def manifest_with_mismatched_snapshot_refs(
         return snapshot
 
     monkeypatch.setattr(port_contract.json, "loads", loads_with_mismatched_snapshot_refs)
+    monkeypatch.setattr(
+        port_contract,
+        "_historical_file_by_sha256",
+        current_or_historical_file,
+    )
+    monkeypatch.setattr(port_contract, "render_manifest", lambda _manifest: classification)
     return manifest
 
 

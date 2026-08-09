@@ -1,4 +1,4 @@
-"""Tests for the sanitized Codex 0.146.0 V2 capability snapshot."""
+"""Tests for the sanitized Codex 0.147.0 V2 capability snapshot."""
 
 from __future__ import annotations
 
@@ -7,31 +7,85 @@ import json
 import re
 from pathlib import Path
 
-from scripts.port_contract import canonical_json_bytes, validate_json_schema_instance
+from scripts import port_contract, render_capability_schema
+from scripts.codex_target_version import (
+    CAPABILITY_SNAPSHOT_SCHEMA_VERSION,
+    CODEX_TARGET_VERSION,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
 SNAPSHOT_PATH = ROOT / "docs/validation/codex-runtime-capability-snapshot.json"
-SCHEMA_PATH = ROOT / "docs/validation/codex-runtime-capability-snapshot.schema-r3.json"
+R3_SCHEMA_PATH = ROOT / "docs/validation/codex-runtime-capability-snapshot.schema-r3.json"
+R4_SCHEMA_PATH = ROOT / "docs/validation/codex-runtime-capability-snapshot.schema-r4.json"
+R3_MANIFEST_PATH = (
+    ROOT / "docs/portability/ports/2026-07-29-codex-0146-native-harness.json"
+)
+ALIGNMENT_MANIFEST_PATH = (
+    ROOT / "docs/portability/ports/2026-08-08-codex-0147-alignment.json"
+)
 
 
 def load_snapshot() -> dict:
     return json.loads(SNAPSHOT_PATH.read_text(encoding="utf-8"))
 
 
-def test_snapshot_matches_closed_r3_schema() -> None:
+def test_snapshot_matches_closed_r4_schema() -> None:
     snapshot = load_snapshot()
-    schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+    schema = json.loads(R4_SCHEMA_PATH.read_text(encoding="utf-8"))
 
-    assert validate_json_schema_instance(snapshot, schema, label="snapshot") == []
+    assert port_contract.validate_json_schema_instance(snapshot, schema, label="snapshot") == []
     assert schema["additionalProperties"] is False
     assert set(snapshot) == set(schema["required"]) == set(schema["properties"])
-    assert snapshot["schema_version"] == 2
+    assert snapshot["schema_version"] == CAPABILITY_SNAPSHOT_SCHEMA_VERSION
     assert re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", snapshot["captured_at"])
 
 
-def test_every_declared_object_schema_is_closed() -> None:
-    schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+def test_r3_artifact_still_validates_against_unchanged_r3_schema() -> None:
+    manifest = port_contract.load_manifest(R3_MANIFEST_PATH)
+    capability = manifest["authority"]["capability_snapshot"]
+    snapshot = json.loads(
+        port_contract._historical_file_by_sha256(
+            ROOT,
+            capability["path"],
+            capability["sha256"],
+        )
+    )
+    schema = json.loads(
+        port_contract._historical_file_by_sha256(
+            ROOT,
+            capability["schema_path"],
+            capability["schema_sha256"],
+        )
+    )
+
+    assert capability["schema_version"] == snapshot["schema_version"] == 2
+    assert capability["schema_path"] == R3_SCHEMA_PATH.relative_to(ROOT).as_posix()
+    assert schema["properties"]["runtime"]["properties"]["codex_cli_version"] == {
+        "const": "0.146.0"
+    }
+    assert port_contract.validate_json_schema_instance(snapshot, schema, label="snapshot") == []
+
+
+def test_r4_schema_matches_its_generator() -> None:
+    assert R4_SCHEMA_PATH.read_text(encoding="utf-8") == render_capability_schema.dumps(
+        render_capability_schema.build_schema()
+    )
+
+
+def test_port_contract_accepts_schema_version_three_and_rejects_four() -> None:
+    manifest = port_contract.load_manifest(ALIGNMENT_MANIFEST_PATH)
+
+    assert port_contract.validate_manifest(ROOT, manifest, stage="classification") == []
+
+    manifest["authority"]["capability_snapshot"]["schema_version"] = 4
+    errors = port_contract.validate_manifest(ROOT, manifest, stage="classification")
+
+    assert "authority.capability_snapshot.schema_version must be 1, 2, or 3" in errors
+
+
+def test_every_declared_r4_object_schema_is_closed() -> None:
+    schema = json.loads(R4_SCHEMA_PATH.read_text(encoding="utf-8"))
 
     def walk(value: object) -> None:
         if isinstance(value, dict):
@@ -55,16 +109,20 @@ def test_refs_are_full_commits_and_frozen_target_is_reachable() -> None:
                 continue
             assert re.fullmatch(r"[0-9a-f]{40}", value), (key, value)
     assert refs["claude"]["target_reachable"] is True
-    assert refs["claude"]["source_base"] == "99efeef6506cd7f6512404d0ad8755a87ff5a011"
-    assert refs["claude"]["source_target"] == "e363b08c9175ac1cbe5893615dd2cb9ddf95043b"
+    assert refs["claude"]["source_base"] == "95637f7056835fea66bdd0044414af480fc0fd74"
+    assert refs["claude"]["source_target"] == "be6e8eac029b183056b7e4402879f15d2c85f61b"
 
 
 def test_catalog_projection_reproduces_digest() -> None:
     catalog = load_snapshot()["catalog"]
     models = catalog["models"]
 
-    assert len(models) == len({model["slug"] for model in models}) == 8
-    assert hashlib.sha256(canonical_json_bytes(models)).hexdigest() == catalog["normalized_sha256"]
+    assert len(models) == len({model["slug"] for model in models}) == 9
+    assert (
+        hashlib.sha256(port_contract.canonical_json_bytes(models)).hexdigest()
+        == catalog["normalized_sha256"]
+        == "7a8eaa7fc65492c2c0e0689304972eea17fec2ba4f39d06fa5d8a905f3e40868"
+    )
     by_slug = {model["slug"]: model for model in models}
     assert by_slug["gpt-5.6-sol"]["supported_efforts"][-1] == "ultra"
     assert by_slug["gpt-5.6-terra"]["supported_efforts"][-1] == "ultra"
@@ -72,13 +130,22 @@ def test_catalog_projection_reproduces_digest() -> None:
     assert by_slug["gpt-5.6-sol"]["multi_agent_version"] == "v2"
     assert by_slug["gpt-5.6-terra"]["multi_agent_version"] == "v2"
     assert by_slug["gpt-5.6-luna"]["multi_agent_version"] == "v1"
+    assert by_slug["gpt-5.6-sol-wm"]["visibility"] == "hide"
+    assert by_slug["codex-auto-review"]["visibility"] == "hide"
+    assert by_slug["gpt-5.6-luna"]["multi_agent_v2_override_filter"]["passes"] is True
+    assert by_slug["gpt-5.6-luna"]["multi_agent_v2_collaboration"] == {
+        "rule": "codex-0.147.0/collab-tools-enabled",
+        "as_root": True,
+        "as_child": False,
+    }
 
 
 def test_active_host_and_v2_contract_are_separate_truths() -> None:
     snapshot = load_snapshot()
     runtime = snapshot["runtime"]
 
-    assert runtime["codex_cli_version"] == "0.146.0"
+    assert runtime["codex_cli_version"] == CODEX_TARGET_VERSION
+    assert runtime["session_fact_source"] == render_capability_schema.SESSION_FACT_SOURCE
     assert snapshot["features"]["multi_agent_v2"] == {"stage": "stable", "enabled": True}
     assert runtime["multi_agent_v2_config"]["enabled"] is True
     assert runtime["configured_max_threads"] == 6
