@@ -41,6 +41,12 @@ advisory guardrail for supported file-edit tools, not complete enforcement.
 Classification or hook parsing failure returns a deny-shaped message so the
 operator can stop safely, while the hook itself exits zero.
 
+A repository opts into profile-evolution governance by carrying the producer
+contract at `profile-governance/conformance/profile-change-classifier.v1.json`.
+Generic `profiles/`, `constitution.md`, and `deploy/team_profiles.yml` files do
+not activate the hook without that contract. After opt-in, a missing or failing
+classifier remains a deny condition.
+
 The [portability note](../PORTABILITY.md) lists supported and excluded surfaces.
 The [Hermes producer documentation](https://github.com/infiquetra/infiquetra-hermes-plugins/tree/main/docs/profile-evolution)
 is authoritative for proposal and response semantics.

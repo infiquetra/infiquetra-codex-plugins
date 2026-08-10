@@ -161,7 +161,7 @@ TARGET_EXPECTED_PLUGINS["verified-workflows"] = {
     "skills": ("run", "review-workflow", "appsec-audit"),
 }
 HERMES_PROFILE_EVOLUTION_SPEC = {
-    "version": "0.1.2",
+    "version": "0.1.3",
     "skills": ("hermes-profile-evolution",),
 }
 HERMES_PROFILE_EVOLUTION_PRODUCER_PINS = (
@@ -1797,7 +1797,10 @@ def validate_developer_instruction_contract(root: Path, errors: list[str]) -> No
                 f"`{relative}` must keep features.multi_agent_v2 as the boolean form `true`; "
                 f"found {multi_agent_v2!r}"
             )
-        if isinstance(multi_agent_v2, dict) and SUBAGENT_DEVELOPER_INSTRUCTIONS_KEY in multi_agent_v2:
+        if (
+            isinstance(multi_agent_v2, dict)
+            and SUBAGENT_DEVELOPER_INSTRUCTIONS_KEY in multi_agent_v2
+        ):
             errors.append(
                 f"`{relative}` must leave "
                 f"features.multi_agent_v2.{SUBAGENT_DEVELOPER_INSTRUCTIONS_KEY} unset"

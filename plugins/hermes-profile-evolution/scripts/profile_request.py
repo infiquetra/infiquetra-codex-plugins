@@ -17,6 +17,7 @@ from typing import Any
 PLUGIN_ROOT = Path(__file__).resolve().parents[1]
 CLASSIFIER_CONFORMANCE = PLUGIN_ROOT / "conformance/profile-change-classifier.v1.json"
 COMMAND_CONFORMANCE = PLUGIN_ROOT / "conformance/profile-request-cli.v1.json"
+PROFILE_EVOLUTION_OPT_IN = Path("profile-governance/conformance/profile-change-classifier.v1.json")
 MAX_INPUT_BYTES = 32_768
 MAX_PATHS = 128
 MAX_PATH_BYTES = 512
@@ -230,6 +231,7 @@ def resolve_team_mimir_root(cwd: str) -> Path:
             (root / "profiles").is_dir()
             and (root / "constitution.md").is_file()
             and (root / "deploy/team_profiles.yml").is_file()
+            and (root / PROFILE_EVOLUTION_OPT_IN).is_file()
         ):
             return root
     raise AdapterError("working directory is not a recognized Team Mimir repository")

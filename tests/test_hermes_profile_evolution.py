@@ -82,7 +82,7 @@ def test_native_plugin_skill_and_hook_surfaces_are_discoverable() -> None:
 def test_installed_skill_path_resolves_bundled_adapter_without_plugin_root(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    installed = tmp_path / "cache/infiquetra/hermes-profile-evolution/0.1.2"
+    installed = tmp_path / "cache/infiquetra/hermes-profile-evolution/0.1.3"
     shutil.copytree(PLUGIN, installed)
     skill = installed / "skills/hermes-profile-evolution/SKILL.md"
     monkeypatch.delenv("PLUGIN_ROOT", raising=False)
@@ -546,11 +546,17 @@ def test_malformed_hook_input_stops_without_leaking_input(
     assert json.loads(output)["hookSpecificOutput"]["permissionDecision"] == "deny"
 
 
-def make_team_mimir_root(root: Path) -> None:
+def make_generic_team_root(root: Path) -> None:
     (root / "profiles").mkdir(parents=True)
     (root / "deploy").mkdir()
     (root / "constitution.md").write_text("# Constitution\n", encoding="utf-8")
     (root / "deploy/team_profiles.yml").write_text("profiles: []\n", encoding="utf-8")
+
+
+def opt_in_profile_evolution(root: Path) -> None:
+    contract = root / "profile-governance/conformance/profile-change-classifier.v1.json"
+    contract.parent.mkdir(parents=True)
+    contract.write_bytes((FIXTURES / "profile-change-classifier.v1.json").read_bytes())
 
 
 def test_hook_allows_unrelated_repository_when_classifier_is_absent(
@@ -568,14 +574,34 @@ def test_hook_allows_unrelated_repository_when_classifier_is_absent(
     assert capsys.readouterr().out == ""
 
 
+def test_hook_ignores_generic_team_root_without_profile_evolution_opt_in(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    make_generic_team_root(tmp_path)
+    payload = hook_payload("profiles/brokkr/SOUL.md")
+    payload["cwd"] = str(tmp_path)
+    monkeypatch.delenv("HERMES_TEAM_MIMIR_ROOT", raising=False)
+    monkeypatch.setattr(advisory, "_adapter", lambda: request)
+    monkeypatch.setattr(
+        request, "classify_paths", lambda *_: pytest.fail("classifier must not run")
+    )
+    monkeypatch.setattr(
+        advisory.sys, "stdin", io.TextIOWrapper(io.BytesIO(json.dumps(payload).encode()))
+    )
+
+    assert advisory.main() == 0
+    assert capsys.readouterr().out == ""
+
+
 @pytest.mark.parametrize("failure", ["missing", "failing"])
-def test_hook_denies_recognized_team_mimir_when_classifier_is_unavailable(
+def test_hook_denies_opted_in_team_mimir_when_classifier_is_unavailable(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
     failure: str,
 ) -> None:
-    make_team_mimir_root(tmp_path)
+    make_generic_team_root(tmp_path)
+    opt_in_profile_evolution(tmp_path)
     payload = hook_payload("profiles/brokkr/SOUL.md")
     payload["cwd"] = str(tmp_path)
     monkeypatch.delenv("HERMES_TEAM_MIMIR_ROOT", raising=False)
