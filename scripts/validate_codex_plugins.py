@@ -161,7 +161,7 @@ TARGET_EXPECTED_PLUGINS["verified-workflows"] = {
     "skills": ("run", "review-workflow", "appsec-audit"),
 }
 HERMES_PROFILE_EVOLUTION_SPEC = {
-    "version": "0.1.0",
+    "version": "0.1.1",
     "skills": ("hermes-profile-evolution",),
 }
 HERMES_PROFILE_EVOLUTION_PRODUCER_PINS = (
