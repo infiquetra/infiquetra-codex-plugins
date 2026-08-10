@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.3 - 2026-08-10
+
+- Require the producer's profile-change classifier contract as an explicit repository opt-in.
+- Ignore generic team repositories without the contract while denying classifier failures after opt-in.
+
 ## 0.1.2 - 2026-08-09
 
 - Project standard chat-completion responses onto the producer-declared public fields.
