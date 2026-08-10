@@ -10,6 +10,7 @@ true route, credential, and service fields.
 | Exit `2` and a target mismatch | The caller target differs from the profile owner found by Team Mimir. | Correct the target or split the request; do not override classification. |
 | `non_dialogue_disposition` | The paths include unsupported custody, unknown, prohibited, or external state. | Follow the returned classification and use the owning operational path. |
 | Doctor reports unavailable or incompatible | Hermes route, credentials, service, or response contract is not ready. | Repair the external Hermes setup, then rerun doctor. |
+| A dialogue reaches the adapter timeout | Hermes did not return its bounded producer result. | Check the target gateway's model-provider health, then rerun the same explicit command. The adapter allows the producer's 30-second network timeout to finish. |
 | Hook shows a deny message | A supported edit is governed or could not be classified. | Use the skill and submit a bounded request. |
 | Hook did not intercept an edit | The tool is outside `apply_patch`, `Edit`, and `Write`, or the hook is not trusted/enabled. | Treat the hook as advisory and run the skill explicitly. |
 | Status rejects identifiers | The proposal identifier or 64-character revision digest is malformed. | Copy both values from the canonical response without editing them. |

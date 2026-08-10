@@ -20,7 +20,10 @@ COMMAND_CONFORMANCE = PLUGIN_ROOT / "conformance/profile-request-cli.v1.json"
 MAX_INPUT_BYTES = 32_768
 MAX_PATHS = 128
 MAX_PATH_BYTES = 512
-COMMAND_TIMEOUT_SECONDS = 20
+# The producer's loopback transport allows 30 seconds. Leave enough room for
+# process startup and error serialization so this adapter never preempts that
+# bounded producer result.
+COMMAND_TIMEOUT_SECONDS = 45
 CLASSIFIER_TIMEOUT_SECONDS = 5
 PROFILE_RE = re.compile(r"^[a-z][a-z0-9-]+$")
 SECRET_RE = re.compile(

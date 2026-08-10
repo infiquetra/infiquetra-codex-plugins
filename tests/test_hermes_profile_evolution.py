@@ -82,7 +82,7 @@ def test_native_plugin_skill_and_hook_surfaces_are_discoverable() -> None:
 def test_installed_skill_path_resolves_bundled_adapter_without_plugin_root(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    installed = tmp_path / "cache/infiquetra/hermes-profile-evolution/0.1.0"
+    installed = tmp_path / "cache/infiquetra/hermes-profile-evolution/0.1.1"
     shutil.copytree(PLUGIN, installed)
     skill = installed / "skills/hermes-profile-evolution/SKILL.md"
     monkeypatch.delenv("PLUGIN_ROOT", raising=False)
@@ -336,6 +336,23 @@ def test_service_failure_and_unexpected_output_are_bounded(monkeypatch: pytest.M
         request._validated_output("suggest", request._run_hermes([]))
     with pytest.raises(request.AdapterError, match="unexpected output"):
         request._validated_output("suggest", CompletedProcess([], 0, b'{"invented":true}', b""))
+
+
+def test_adapter_timeout_does_not_preempt_the_producer_transport(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    observed: dict[str, object] = {}
+
+    def fake_run(*args, **kwargs):
+        observed.update(kwargs)
+        return CompletedProcess(args[0], 0, b"", b"")
+
+    monkeypatch.setattr(request.subprocess, "run", fake_run)
+
+    request._run_hermes(["doctor", "--target", "brokkr"])
+
+    assert observed["timeout"] == 45
+    assert request.COMMAND_TIMEOUT_SECONDS > 30
 
 
 def test_reply_resume_and_status_follow_producer_command_shapes(
