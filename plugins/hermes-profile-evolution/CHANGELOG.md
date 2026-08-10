@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.2 - 2026-08-09
+
+- Project standard chat-completion responses onto the producer-declared public fields.
+- Remove provider-specific response metadata instead of rejecting otherwise compatible dialogue.
+
 ## 0.1.1 - 2026-08-09
 
 - Allow the producer's bounded 30-second network request to finish before the Codex adapter exits.

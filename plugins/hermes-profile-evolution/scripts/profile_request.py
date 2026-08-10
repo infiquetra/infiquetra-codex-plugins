@@ -367,26 +367,24 @@ def _parse_json_sequence(raw: bytes) -> list[Any]:
     return values
 
 
-def _same_shape(value: object, example: object) -> bool:
+def _project_shape(value: object, example: object) -> object:
     if isinstance(example, dict):
-        return (
-            isinstance(value, dict)
-            and set(value) == set(example)
-            and all(_same_shape(value[key], child) for key, child in example.items())
-        )
+        if not isinstance(value, dict) or not set(example) <= set(value):
+            raise AdapterError("Hermes profile-request returned unexpected output")
+        return {key: _project_shape(value[key], child) for key, child in example.items()}
     if isinstance(example, list):
-        return (
-            isinstance(value, list)
-            and len(value) == len(example)
-            and all(
-                _same_shape(child, sample) for child, sample in zip(value, example, strict=True)
-            )
-        )
+        if not isinstance(value, list) or len(value) != len(example):
+            raise AdapterError("Hermes profile-request returned unexpected output")
+        return [_project_shape(child, sample) for child, sample in zip(value, example, strict=True)]
     if isinstance(example, bool):
-        return isinstance(value, bool)
-    if isinstance(example, int):
-        return isinstance(value, int) and not isinstance(value, bool)
-    return isinstance(value, type(example))
+        matches = isinstance(value, bool)
+    elif isinstance(example, int):
+        matches = isinstance(value, int) and not isinstance(value, bool)
+    else:
+        matches = isinstance(value, type(example))
+    if not matches:
+        raise AdapterError("Hermes profile-request returned unexpected output")
+    return value
 
 
 def _validated_output(
@@ -401,8 +399,12 @@ def _validated_output(
         raise AdapterError("Hermes profile-request did not complete")
     values = _parse_json_sequence(result.stdout)
     expected = _case(case_id).get("expected", {}).get("stdout_json")
-    if not isinstance(expected, list) or not _same_shape(values, expected):
+    if not isinstance(expected, list):
         raise AdapterError("Hermes profile-request returned unexpected output")
+    projected = _project_shape(values, expected)
+    if not isinstance(projected, list):
+        raise AdapterError("Hermes profile-request returned unexpected output")
+    values = projected
     summary = values[-1]
     if target is not None and (not isinstance(summary, dict) or summary.get("target") != target):
         raise AdapterError("Hermes profile-request returned a mismatched target")
