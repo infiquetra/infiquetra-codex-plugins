@@ -16,8 +16,10 @@ true route, credential, and service fields.
 | Status rejects identifiers | The proposal identifier or 64-character revision digest is malformed. | Copy both values from the canonical response without editing them. |
 
 The adapter prints a generic error rather than request contents. It does not
-store a retry queue. After correcting a local input error or restoring the
-producer boundary, rerun the same explicit command.
+store a retry queue. Provider-specific chat metadata is removed from successful
+responses; Codex receives only the fields declared by the producer conformance
+fixture. After correcting a local input error or restoring the producer boundary,
+rerun the same explicit command.
 
 For custody and activation failures, use the
 [Team Mimir operator hub](https://github.com/infiquetra/team-mimir/tree/main/docs/team/profile-evolution).

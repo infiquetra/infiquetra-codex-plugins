@@ -79,7 +79,7 @@ def test_cli_help_and_invalid_examples_have_documented_exit_contract() -> None:
     assert "default" not in invalid.stderr
 
 
-def test_released_contract_surfaces_remain_version_011() -> None:
+def test_released_contract_surfaces_remain_version_012() -> None:
     manifest = json.loads((PLUGIN / ".codex-plugin/plugin.json").read_text())
-    assert manifest["version"] == "0.1.1"
+    assert manifest["version"] == "0.1.2"
     assert (PLUGIN / "CHANGELOG.md").is_file()

@@ -82,7 +82,7 @@ def test_native_plugin_skill_and_hook_surfaces_are_discoverable() -> None:
 def test_installed_skill_path_resolves_bundled_adapter_without_plugin_root(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    installed = tmp_path / "cache/infiquetra/hermes-profile-evolution/0.1.1"
+    installed = tmp_path / "cache/infiquetra/hermes-profile-evolution/0.1.2"
     shutil.copytree(PLUGIN, installed)
     skill = installed / "skills/hermes-profile-evolution/SKILL.md"
     monkeypatch.delenv("PLUGIN_ROOT", raising=False)
@@ -353,6 +353,29 @@ def test_adapter_timeout_does_not_preempt_the_producer_transport(
 
     assert observed["timeout"] == 45
     assert request.COMMAND_TIMEOUT_SECONDS > 30
+
+
+def test_standard_chat_metadata_is_removed_to_the_producer_projection() -> None:
+    values = request._parse_json_sequence(completed("suggest").stdout)
+    values[0].update(
+        {
+            "created": 1,
+            "id": "chatcmpl-public",
+            "model": "provider-model",
+            "object": "chat.completion",
+            "usage": {"total_tokens": 3},
+        }
+    )
+    values[0]["choices"][0].update({"finish_reason": "stop", "index": 0})
+    values[0]["choices"][0]["message"]["role"] = "assistant"
+
+    projected = request._validated_output(
+        "suggest",
+        CompletedProcess([], 0, b"\n".join(request._canonical(value) for value in values), b""),
+    )
+
+    assert projected[0] == {"choices": [{"message": {"content": "considered"}}]}
+    assert projected[1] == values[1]
 
 
 def test_reply_resume_and_status_follow_producer_command_shapes(
