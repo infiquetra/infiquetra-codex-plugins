@@ -13,6 +13,8 @@ origin: docs/brainstorms/2026-07-26-codex-plugin-lifecycle-simplification-requir
 
 Make the existing cycle JSON port manifest account for every behavior-bearing path in its active branch diff, freeze finalized history to one immutable evidence tag, and let evidence select the manifest's one declared source repository when its acceptance harness lives there. Give issue #63 its own schema-r4 runtime-capability snapshot while preserving the accepted shared Codex 0.147 snapshot and runtime proof. Keep focused capability proof and the full repository result separate and visible without adding another manifest, evidence format, attribution subsystem, or control plane.
 
+Before U3 resumes, prospectively correct its reviewed authority so the runbook content change advances the complete version contract from 5 to 6, rebinds only the two live-authority contracts, and receives fresh independent document and code review.
+
 ---
 
 ## Problem Frame
@@ -28,6 +30,8 @@ Issue #54 already shipped and proved lease-registry unknown-field compatibility.
 Two lifecycle gaps compound the omission. A manifest permanently validated against `HEAD` becomes stale when unrelated work later lands, while an evidence tag cannot anchor the final candidate until that candidate is committed. The new gate also cannot classify its own first implementation.
 
 This plan therefore permits one reviewed Codex-local substrate commit, immediately self-hosts an active version 2 cycle, and changes to tag-bound finalized validation only after evidence is complete.
+
+A reviewed-authority contradiction was confirmed before U3 edits: the canonical runbook requires every content change to advance its version and every active contract, but U3 named a runbook content change without naming the version-contract code, test, or Codex 0.147 live-authority binding. The prospective pre-U3 correction gate fixes that omission without changing completed U1, U2, or repair-review authority.
 
 ---
 
@@ -65,7 +69,7 @@ R7. After the self-host gate passes, one issue #63 evidence entry may select the
 
 The issue #63 live proof uses a disposable exact-target checkout and never updates the ordinary source checkout. This revalidation supersedes only the old unresolved command-location claim; it neither finalizes nor rewrites issue #57 history.
 
-R8. The evidence ref `refs/tags/evidence/issue-63-port-manifest-reconciliation-20260810` begins absent and must be refused if it already exists at any commit. U1 must not create it. After the independent re-review and code-review fixes and focused, plugin, and full checks pass, the final manifest records the new issue #63 `repository: "source"` evidence with every evidence `repo_head` set to the prior final code commit.
+R8. The evidence ref `refs/tags/evidence/issue-63-port-manifest-reconciliation-20260810` begins absent and must be refused if it already exists at any commit. U1 must not create it. After the corrected U3 implementation candidate receives a fresh independent Saga code review with every P0-P3 finding closed and every active-state gate passes again, the final manifest records the new issue #63 `repository: "source"` evidence with every evidence `repo_head` set exactly to `e40688b263996dda4170a2cae0ac8be51544b2b3`.
 
 The absent tag is then created exactly once at that finalized candidate and must retain the execution base and every evidence commit in its history. After local finalized validation passes and before any PR is created, push only that exact tag ref to `origin` without force, read back that exact remote ref and require it to resolve to the frozen candidate, fetch only that exact ref into a disposable clean checkout, and run finalized-manifest validation there with `CODEX_PORT_SOURCE_REPO` explicitly set to the disposable exact-target Claude checkout.
 
@@ -75,11 +79,23 @@ R9. Immediately before merge, the GitHub PR merge ref must have the same normali
 
 A changed behavior path, merge result, or candidate returns to candidate review and uses a new attempt-suffixed tag rather than moving the old tag. Integration is serialized so issue #63 merges before issue #61 or #62 behavior branches. No stored behavior-tree digest or new evidence format is added.
 
-R10. Focused port-contract proof, `python3 scripts/validate_codex_plugins.py`, and the full `python3 -m pytest -q` result remain separate and truthful. A nonzero result blocks merge. Restoring the shared snapshot preserves the existing verified-workflows runtime proof; only legacy-inventory drift remains assigned to U3, where the full suite must become green.
+R10. Focused port-contract and runbook-version proof, both rendered live-authority classifications, `python3 scripts/validate_codex_plugins.py`, and the full `python3 -m pytest -q` result remain separate and truthful. Every active-state result must be green before source-harness evidence runs, the issue #63 manifest finalizes, or the first local evidence tag is created. A nonzero result blocks progression.
+
+Restoring the shared snapshot preserves the existing verified-workflows runtime proof; U3 does not regenerate or edit that proof. Only legacy-inventory drift remains assigned to U3, where the full suite must become green.
 
 No checked-in suppression baseline, validation-attribution subsystem, second manifest, compatibility database, evidence-chain format, repository registry, or port control plane is added. The unchanged issue #54 version-1 manifest and test, and the unchanged issue #57 version-1 manifest and `tests/test_codex_627_seam_refreeze_port_contract.py`, remain historical regression evidence only.
 
-R11. The final documentation unit updates the runbook and decision journal for the bootstrap exception, active/finalized lifecycle, absent-then-immutable tag, PR merge-ref proof, and integration serialization. After the final journal edit, it regenerates `docs/validation/verified-workflows-legacy-token-inventory.json`, rotates only `LEGACY_WORKFLOW_HISTORICAL_INVENTORY_SHA256` and its adjacent reason comment, and requires inventory `--check` and full plugin validation.
+R11. The final documentation unit updates the runbook and decision journal for the bootstrap exception, active/finalized lifecycle, absent-then-immutable tag, PR merge-ref proof, and integration serialization. Because that changes canonical runbook content, U3 bumps its metadata from version 5 to version 6.
+
+In `scripts/port_contract.py`, U3 sets `RUNBOOK_VERSION = 6` and `SUPPORTED_RUNBOOK_VERSIONS = {3, 4, 5, RUNBOOK_VERSION}` without changing any other port-contract behavior. In `tests/test_port_runbook.py`, it changes the exact runbook-version expectation to 6 and asserts current version 6 plus historical support `{3, 4, 5, 6}`; it adds neither the optional generic cross-file drift assertion nor other hardening.
+
+U3 rebinds only `docs/portability/ports/2026-08-10-issue-63-port-manifest-reconciliation.json` and `docs/portability/ports/2026-08-08-codex-0147-alignment.json` to runbook version 6 and the new runbook SHA-256, then renders `docs/portability/classifications/2026-08-10-issue-63-port-manifest-reconciliation.md` and `docs/portability/classifications/2026-08-08-codex-0147-alignment.md`. Every finalized or historical version-5 contract and `docs/validation/verified-workflows-runtime-proof.json` remains unchanged.
+
+After the final journal edit, U3 regenerates `docs/validation/verified-workflows-legacy-token-inventory.json`, rotates only `LEGACY_WORKFLOW_HISTORICAL_INVENTORY_SHA256` and its adjacent reason comment, and requires inventory `--check` and full plugin validation.
+
+R12. This corrected plan is prospective authority only for U3. Root first updates the live issue #63 expected-files and acceptance language, then an independent reviewer writes `docs/reviews/2026-08-11-issue-63-u3-runbook-version-plan-correction-review.md` through the Saga document-review workflow.
+
+After that issue readback and document review are complete, the active issue #63 manifest prospectively binds the corrected plan digest and appends the new review path and digest exactly once before U3 resumes. Its document-review authority then contains exactly four entries, while the completed U2 code-review artifact and the fresh U3 code-review artifact remain review provenance and never enter `authority.reviews`.
 
 ---
 
@@ -109,13 +125,17 @@ KTD6. Reuse `source.repository_id` as the sole companion declaration after self-
 
 `repo_head` remains Codex-local, and the new issue #63 evidence uses a disposable checkout without altering the ordinary source repository. The missing issue #57 evidence tag rules out a schema migration, so that version-1 historical record remains immutable.
 
-KTD7. Freeze and publish final evidence once. The base evidence tag starts absent, is created only after final code review and all checks, and points at the committed finalized manifest/evidence candidate whose evidence rows name the prior final code commit. After local validation, push only the exact tag ref to `origin` without force, require exact remote readback, and prove finalized validation from that exact ref in a disposable clean checkout before opening a PR.
+KTD7. Freeze and publish final evidence once. The base evidence tag starts absent, is created only after the fresh independent Saga code review closes every P0-P3 finding and all active-state checks pass again, and points at the committed finalized manifest/evidence candidate whose evidence rows name `e40688b263996dda4170a2cae0ac8be51544b2b3`. After local validation, push only the exact tag ref to `origin` without force, require exact remote readback, and prove finalized validation from that exact ref in a disposable clean checkout before opening a PR.
 
 PR merge-ref and post-merge readback must preserve both the normalized inventory and each selected behavior path's presence, mode, and blob content; documentation-only differences are allowed. Any changed attempt gets a reviewed suffixed tag, never a moved or deleted published tag.
 
 KTD8. Serialize integration and preserve validation truth. Issue #63 merges before issue #61 or #62 behavior work; focused, plugin-validator, and full-suite results remain separate.
 
 The code-review repair restores the shared Codex 0.147 snapshot and leaves its verified-workflows runtime proof unchanged, while U3 alone regenerates the legacy inventory and rotates only its validator digest binding.
+
+KTD9. Advance the entire runbook version contract with its content. U3 changes only the runbook metadata, the two version constants in `scripts/port_contract.py`, the exact expectations in `tests/test_port_runbook.py`, and the two live-authority manifest/classification pairs needed for version 6.
+
+Historical version-5 contracts and the existing Codex 0.147 runtime proof remain immutable. The new prospective document review becomes the fourth issue #63 document-review authority entry, while code-review artifacts remain provenance outside that authority list.
 
 ---
 
@@ -207,7 +227,7 @@ Apply this correction after completed U2 and before any code-review repair work.
 
 Render the classification and pass explicit classification validation before any code fix. Do not append the blocked code-review artifact to `authority.reviews`.
 
-**Verification:** Before repair work begins, the active issue #63 manifest has the amended plan digest and exactly three document-review authority entries: the original review, the first re-review, and the new code-review plan-correction review, each once. The blocked code-review artifact is committed provenance only, no classification input is stale, and explicit classification validation exits zero.
+**Verification:** Before repair work begins, the active issue #63 manifest has the amended plan digest and the original review, first re-review, and code-review plan-correction review each once. The blocked code-review artifact is committed provenance only, no classification input is stale, and explicit classification validation exits zero.
 
 ### Post-U2 code-review repairs
 
@@ -243,35 +263,65 @@ At this boundary, legacy-inventory drift alone may remain; U3 owns that regenera
 
 The post-repair active manifest/classification reconciliation is rendered and validates before an independent code re-review. No Codex 0.147 manifest/test/proof or issue #54/#57 historical record changes. The repair review sees no formatter-only churn in unchanged definitions.
 
+### Pre-U3 runbook-version correction gate
+
+Correct the reviewed U3 authority prospectively before any U3 file changes.
+
+**Goal:** Bind the corrected U3 file, version, review, and acceptance contract without changing completed U1, U2, repair work, or the completed repair review.
+
+**Requirements:** R8, R10, R11, R12
+
+**Dependencies:** The post-U2 repair is complete at code commit `e40688b263996dda4170a2cae0ac8be51544b2b3`, and its completed independent code review remains provenance at `docs/reviews/2026-08-11-issue-63-port-manifest-reconciliation-code-review.md`. Root must update the live issue #63 expected-files and acceptance language for runbook version 6, the exact contract/test changes, both live-authority bindings, the four-review authority count, the all-green pre-evidence gate, the fresh U3 code review, and the fixed evidence `repo_head` before the manifest rebind.
+
+**Files:** `docs/plans/2026-08-10-issue-63-port-manifest-reconciliation-plan.md`, `docs/reviews/2026-08-11-issue-63-u3-runbook-version-plan-correction-review.md` (new independent Saga document review; reviewer-owned input; do not create or edit in implementation), `docs/portability/ports/2026-08-10-issue-63-port-manifest-reconciliation.json`, and `docs/portability/classifications/2026-08-10-issue-63-port-manifest-reconciliation.md`; live GitHub issue #63 (Root-owned external authority; Root performs this mutation separately)
+
+**Approach:** This plan-only correction does not alter the authority that governed U1, U2, the post-U2 repair, or its completed code review. After Root updates and reads back the live issue, an independent reviewer must review this corrected plan through the Saga document-review workflow and write `docs/reviews/2026-08-11-issue-63-u3-runbook-version-plan-correction-review.md`.
+
+Only after both gates pass may the active issue #63 manifest replace its plan digest with this corrected plan digest and append the new document-review path and digest exactly once. Render the issue #63 classification and pass explicit active classification validation before U3 resumes.
+
+The four document-review authority entries are the original review, the first plan re-review, the post-U2 code-review plan-correction review, and the new U3 runbook-version plan-correction review. Preserve each exactly once, and keep both the completed U2 code-review artifact and the future U3 code-review artifact out of `authority.reviews`.
+
+**Verification:** Live issue #63 readback contains the corrected expected files and acceptance language before the authority rebind. The active issue #63 manifest binds the corrected plan digest, contains exactly four document-review authority entries at their exact digests, and produces a current classification that passes explicit active classification validation before U3 begins.
+
 ### U3. Document, finalize, and prove the frozen candidate
 
 Finish the contract change with durable procedure, immutable evidence, and merge-time proof.
 
-**Goal:** Document the bootstrap and lifecycle, produce the reviewed final candidate, create and narrowly publish its evidence tag exactly once, prove finalized validation from a clean checkout, and prove the PR merge ref and actual merge retain the frozen behavior inventory.
+**Goal:** Advance the complete runbook version contract, document the bootstrap and lifecycle, produce the reviewed final candidate, create and narrowly publish its evidence tag exactly once, prove finalized validation from a clean checkout, and prove the PR merge ref and actual merge retain the frozen behavior inventory.
 
-**Requirements:** R3, R5, R8, R9, R10, R11
+**Requirements:** R3, R5, R8, R9, R10, R11, R12
 
-**Dependencies:** U2; the post-U2 code-review plan-correction gate; the independent re-review artifact `docs/reviews/2026-08-11-issue-63-port-manifest-reconciliation-plan-re-review.md`; the new independent document review `docs/reviews/2026-08-11-issue-63-port-manifest-reconciliation-code-review-plan-correction-review.md`; and all independent code-review findings are complete, repaired, reconciled, and independently code-reviewed. The amended authority binding, active classification, focused repair tests including the affected Codex 0.147 behavior checks, and independent code re-review must pass with no unresolved P0-P3 finding.
+**Dependencies:** U2; the post-U2 code-review plan-correction and repair gates; the pre-U3 runbook-version correction gate; and the independent document reviews at `docs/reviews/2026-08-11-issue-63-port-manifest-reconciliation-plan-re-review.md`, `docs/reviews/2026-08-11-issue-63-port-manifest-reconciliation-code-review-plan-correction-review.md`, and `docs/reviews/2026-08-11-issue-63-u3-runbook-version-plan-correction-review.md`. Root's corrected live issue #63 readback, the corrected plan binding, all four document-review authority entries, the active issue #63 classification, focused repair tests including affected Codex 0.147 checks, and the completed repair re-review must be current before U3 edits.
 
 Only the already-attributed legacy-workflow inventory and digest drift may remain at entry. U3 must regenerate that inventory, rotate its digest binding, and make the plugin validator and full suite green as separate results before candidate freeze, evidence candidate capture or finalization, tag creation, or any PR.
 
-**Files:** `docs/portability/claude-to-codex-plugin-port-runbook.md`, `docs/portability/ports/2026-08-10-issue-63-port-manifest-reconciliation.json`, `docs/portability/classifications/2026-08-10-issue-63-port-manifest-reconciliation.md`, `docs/validation/issue-63-port-manifest-reconciliation-u3-source-harness.json`, `docs/reviews/2026-08-11-issue-63-port-manifest-reconciliation-plan-re-review.md` and `docs/reviews/2026-08-11-issue-63-port-manifest-reconciliation-code-review-plan-correction-review.md` (reviewer-owned inputs; do not edit in implementation), `docs/engineering-journal/DECISIONS.md`, `docs/validation/verified-workflows-legacy-token-inventory.json`, `scripts/validate_codex_plugins.py`
+**Files:** `docs/portability/claude-to-codex-plugin-port-runbook.md`, `scripts/port_contract.py`, `tests/test_port_runbook.py`, `docs/portability/ports/2026-08-10-issue-63-port-manifest-reconciliation.json`, `docs/portability/classifications/2026-08-10-issue-63-port-manifest-reconciliation.md`, `docs/portability/ports/2026-08-08-codex-0147-alignment.json`, `docs/portability/classifications/2026-08-08-codex-0147-alignment.md`, `docs/validation/issue-63-port-manifest-reconciliation-u3-source-harness.json`, `docs/reviews/2026-08-11-issue-63-port-manifest-reconciliation-plan-re-review.md`, `docs/reviews/2026-08-11-issue-63-port-manifest-reconciliation-code-review-plan-correction-review.md`, and `docs/reviews/2026-08-11-issue-63-u3-runbook-version-plan-correction-review.md` (reviewer-owned inputs; do not edit in implementation), `docs/reviews/2026-08-11-issue-63-port-manifest-reconciliation-u3-code-review.md` (fresh independent Saga code review; reviewer-owned output), `docs/engineering-journal/DECISIONS.md`, `docs/validation/verified-workflows-legacy-token-inventory.json`, and `scripts/validate_codex_plugins.py`
 
-**Approach:** Update the runbook and journal to explain the reviewed bootstrap exception, immediate self-host gate, active `HEAD` versus finalized tag target, narrow `[]` policy, absent-then-immutable tag, candidate attempts, PR merge-ref proof, and issue #63-before-#61/#62 serialization. Rebind the active manifest/classification to the new runbook digest. Preserve and verify the original review, the first re-review, and the post-U2 code-review plan-correction review already bound by their correction gates exactly once each; do not append any of them again.
+**Approach:** Update the runbook and journal to explain the reviewed bootstrap exception, immediate self-host gate, active `HEAD` versus finalized tag target, narrow `[]` policy, absent-then-immutable tag, candidate attempts, PR merge-ref proof, and issue #63-before-#61/#62 serialization. Bump the runbook metadata from 5 to 6 because U3 changes its content.
 
-The blocked U2 code-review artifact remains committed provenance and never becomes a document-review authority entry. After the final journal edit, regenerate the historical inventory, rotate only its expected digest constant and adjacent reason comment, and run focused tests, plugin validation, and the full suite as separate results.
+In `scripts/port_contract.py`, make only `RUNBOOK_VERSION = 6` and `SUPPORTED_RUNBOOK_VERSIONS = {3, 4, 5, RUNBOOK_VERSION}`. In `tests/test_port_runbook.py`, update the exact version expectation to 6 and assert current version 6 with historical support `{3, 4, 5, 6}`; do not add the optional generic cross-file drift assertion or any other hardening.
+
+Rebind only the issue #63 and Codex 0.147 alignment manifests to runbook version 6 and the new SHA-256, then render `docs/portability/classifications/2026-08-10-issue-63-port-manifest-reconciliation.md` and `docs/portability/classifications/2026-08-08-codex-0147-alignment.md`. Preserve every finalized or historical version-5 contract and leave `docs/validation/verified-workflows-runtime-proof.json` unchanged.
+
+Preserve the original review, first re-review, post-U2 code-review plan-correction review, and U3 runbook-version plan-correction review exactly once each in the issue #63 document-review authority. Do not append any of them again during U3.
+
+The completed U2 code-review artifact remains committed provenance and never becomes a document-review authority entry. The fresh U3 code-review artifact is also review provenance rather than document-review authority.
+
+After the final journal edit, regenerate the historical inventory and rotate only its expected digest constant and adjacent reason comment. While the issue #63 manifest is still active and evidence is empty, run the focused port-contract and runbook-version tests, inventory check, both active/live-authority classification validations, plugin validation, and the full suite as separate results.
+
+All those active-state gates must be green before running source-harness evidence or finalizing the issue #63 manifest. Complete a fresh independent Saga code review of the completed active-state U3 candidate at `docs/reviews/2026-08-11-issue-63-port-manifest-reconciliation-u3-code-review.md`; close every P0-P3 finding, rerender both classifications, rerun every affected check, and repeat independent review until no finding remains.
 
 Before freezing, compare current `main` with `43b18477906ba9790ef3ca555ecfd993da068a35`. The newly merged reusable-bootstrap document is documentation-only, is excluded from behavior reconciliation, and does not require this cycle to rebase beyond `43b1847`; the reviewed plan commit must retain that exact parent. If later `main` gains any behavior-bearing path, stop and return to candidate review.
 
 If integration requires a rebase and the intervening changes are documentation-only, perform it only before candidate freeze, repeat review and all gates, and do not silently replace the manifest's reviewed execution base. Serialize integration so issue #63 lands before issue #61 or #62 behavior branches.
 
-Use the disposable Claude checkout at the declared exact target to run `python3 tools/run_cross_runtime_outcome_acceptance.py`. Record its result in `docs/validation/issue-63-port-manifest-reconciliation-u3-source-harness.json`, then add one issue #63 evidence entry with `repository: "source"`, `cwd: "."`, that artifact, and the prior final code commit as `repo_head`. For each disposable clean-checkout validation, explicitly set `CODEX_PORT_SOURCE_REPO` to that exact-target Claude checkout; do not rely on sibling discovery.
+Only after the fresh U3 code review and repeated active-state gates pass, use the disposable Claude checkout at the declared exact target to run `python3 tools/run_cross_runtime_outcome_acceptance.py`. Record its result in `docs/validation/issue-63-port-manifest-reconciliation-u3-source-harness.json`, then add one issue #63 evidence entry with `repository: "source"`, `cwd: "."`, that artifact, and exactly `e40688b263996dda4170a2cae0ac8be51544b2b3` as `repo_head`. For each disposable clean-checkout validation, explicitly set `CODEX_PORT_SOURCE_REPO` to that exact-target Claude checkout; do not rely on sibling discovery.
 
 This truthful revalidation supersedes only the old issue #57 command-location claim. It must not add evidence to, migrate, finalize, or otherwise rewrite the issue #57 version-1 manifest or its regression test.
 
-Let the last code commit after review fixes be the evidence subject. Populate every issue #63 evidence row's `repo_head` with that prior final code commit. Change the issue #63 reconciliation from active to finalized without changing `codex.execution_base`; commit the finalized manifest, classification, evidence, runbook, journal, generated inventory, and digest binding as the candidate.
+Keep the completed repair code commit `e40688b263996dda4170a2cae0ac8be51544b2b3` as the evidence subject; do not substitute a U3 version-contract, documentation, review, or binding commit. Populate every issue #63 evidence row's `repo_head` with that exact commit. Change the issue #63 reconciliation from active to finalized without changing `codex.execution_base`; commit the finalized manifest, classification, evidence, runbook, journal, generated inventory, and digest binding as the candidate.
 
-Confirm the base evidence tag is still absent, create it exactly once at that candidate, and validate that the tagged history contains the execution base and every evidence `repo_head`. Finalized validation resolves the tag and remains stable when later `HEAD` changes.
+Confirm the base evidence tag is still absent only after the fresh U3 code review has no P0-P3 finding and all repeated checks are green. Create the first local evidence tag exactly once at that candidate, and validate that the tagged history contains the execution base and `e40688b263996dda4170a2cae0ac8be51544b2b3`. Finalized validation resolves the tag and remains stable when later `HEAD` changes.
 
 After local finalized validation succeeds, push only `refs/tags/evidence/issue-63-port-manifest-reconciliation-20260810` to the same exact ref on `origin`, without force and without pushing a branch or any other tag. Read `origin` back using that exact ref and require its object ID to equal the frozen candidate. Fetch only that exact remote ref into a disposable clean checkout and run finalized-manifest validation there, proving a fresh clone or CI can resolve all frozen history without local-only refs.
 
@@ -285,11 +335,23 @@ Do not store a behavior-tree digest or add another evidence format.
 
 **Patterns to follow:** `build_manifest` in `scripts/port_contract.py` binds authority artifact bytes; `validate_port_contract` in `scripts/validate_codex_plugins.py` delegates repository port validation; and `main` in that validator returns the process result.
 
-**Test scenarios:** Happy path — the finalized issue #63 manifest resolves the immutable `codex.evidence_ref`, reproduces the frozen behavior rows/digest, contains the execution base and every evidence commit, validates digest-bound historical authority bytes and the `repository: "source"` harness from a disposable clean checkout with `CODEX_PORT_SOURCE_REPO` explicitly set, and survives exact non-force publication/readback and unrelated later `HEAD` changes. The PR merge ref and actual merge have identical selected-path presence, mode, and blobs despite allowed documentation differences; focused, plugin, and full checks pass and are reported separately, with the full suite green. Edge cases — documentation-only main changes remain excluded; the known reusable-bootstrap document does not force a rebase beyond `43b1847`; issue #54 and issue #57 historical records remain unchanged.
+**Test scenarios:** Happy path — the runbook reports version 6; the contract reports current version 6 and supports exactly `{3, 4, 5, 6}`; and the focused test asserts both facts. Only the issue #63 and Codex 0.147 alignment manifests bind version 6 and the new digest, both classifications are rendered, every finalized or historical version-5 contract remains unchanged, and the existing Codex 0.147 runtime proof remains unchanged.
 
-Error paths — pre-existing base tag, missing finalized tag, tag/candidate mismatch, finalized-to-active transition, evidence-ref change, evidence mutation or emptiness, pinned source/Codex authority mutation, non-fast-forward candidate, missing or wrong `CODEX_PORT_SOURCE_REPO`, local finalized-validation failure, rejected push, remote ref mismatch, exact-ref fetch failure, clean-checkout validation failure, changed behavior inventory, selected behavior path missing or changed in mode/blob, evidence `repo_head` outside tagged history, stale runbook/classification/inventory digest, behavior-bearing main drift, or any nonzero validation result blocks progression. Retry path — preserve every published tag and require a reviewed attempt-suffixed tag after renewed review.
+The corrected active issue #63 authority contains exactly four document reviews, while both code-review artifacts remain provenance only. The fresh independent Saga code review closes all P0-P3 findings, and every active-state check passes again before source evidence or finalization.
 
-**Verification:** The runbook, finalized tagged issue #63 manifest, classification, source-harness evidence, decision journal, generated inventory, and digest binding agree. The original review, first re-review, and post-U2 code-review plan-correction review authority entries are each present exactly once, and the blocked code-review artifact is not an authority entry. The exact remote evidence ref resolves to the frozen candidate and finalized-manifest validation passes from a disposable clean checkout with `CODEX_PORT_SOURCE_REPO` explicitly set before PR creation.
+The finalized issue #63 manifest resolves the immutable `codex.evidence_ref`, reproduces the frozen behavior rows and digest, contains the execution base and evidence commit `e40688b263996dda4170a2cae0ac8be51544b2b3`, validates digest-bound historical authority bytes and the `repository: "source"` harness from a disposable clean checkout with `CODEX_PORT_SOURCE_REPO` explicitly set, and survives exact non-force publication/readback and unrelated later `HEAD` changes. The PR merge ref and actual merge have identical selected-path presence, mode, and blobs despite allowed documentation differences; focused, plugin, and full checks pass and are reported separately, with the full suite green.
+
+Edge cases — documentation-only main changes remain excluded; the known reusable-bootstrap document does not force a rebase beyond `43b1847`; issue #54 and issue #57 historical records remain unchanged. Historical runbook versions 3, 4, and 5 remain accepted without rebinding their finalized or historical contracts.
+
+Error paths — a runbook version other than 6, a support set other than `{3, 4, 5, 6}`, an extra port-contract behavior change, optional generic drift hardening, a missed or extra version-6 manifest rebind, stale classification, changed historical contract, changed runtime proof, fewer or more than four document-review authority entries, a code-review artifact in `authority.reviews`, unresolved P0-P3 finding, or nonzero active-state result blocks source evidence and finalization. A pre-existing base tag, missing finalized tag, tag/candidate mismatch, finalized-to-active transition, evidence-ref change, evidence mutation or emptiness, pinned source/Codex authority mutation, non-fast-forward candidate, wrong evidence `repo_head`, missing or wrong `CODEX_PORT_SOURCE_REPO`, local finalized-validation failure, rejected push, remote ref mismatch, exact-ref fetch failure, clean-checkout validation failure, changed behavior inventory, selected behavior path missing or changed in mode/blob, behavior-bearing main drift, or any other nonzero validation result blocks progression.
+
+Retry path — close every review finding, rerender both classifications, and repeat all affected checks before evidence proceeds. Preserve every published tag and require a reviewed attempt-suffixed tag after renewed review.
+
+**Verification:** The runbook metadata is 6; `scripts/port_contract.py` contains only the required version-constant change; and `tests/test_port_runbook.py` proves current version 6 with historical support `{3, 4, 5, 6}`. The issue #63 and Codex 0.147 alignment manifests alone bind the new runbook digest and version, both classifications are current, finalized and historical version-5 contracts are unchanged, and the existing Codex 0.147 runtime proof is unchanged.
+
+The original review, first re-review, post-U2 code-review plan-correction review, and U3 runbook-version plan-correction review authority entries are each present exactly once. The completed U2 and fresh U3 code-review artifacts are not authority entries, the fresh review has no unresolved P0-P3 finding, and every repeated active-state gate is green before source evidence and finalization.
+
+The runbook, finalized tagged issue #63 manifest, classification, source-harness evidence, decision journal, generated inventory, and digest binding agree, with every evidence `repo_head` equal to `e40688b263996dda4170a2cae0ac8be51544b2b3`. The exact remote evidence ref resolves to the frozen candidate and finalized-manifest validation passes from a disposable clean checkout with `CODEX_PORT_SOURCE_REPO` explicitly set before PR creation.
 
 The PR merge ref and actual merge readback preserve the normalized inventory and every selected behavior path's presence, mode, and blob content while permitting documentation-only differences. Focused, plugin-validator, and full-suite exit codes remain separate, and the full suite is green. No release workflow, generic tag manager, behavior-tree digest, second manifest, attribution/suppression system, compatibility database, repository registry, evidence-chain format, or control plane appears.
 
@@ -309,7 +371,13 @@ Local tag validation is not portable proof. U3 treats exact non-force publicatio
 
 Concurrent mainline behavior is an integration risk. The known reusable-bootstrap document is excluded and does not move the cycle beyond `43b1847`; any later behavior-bearing change stops candidate preparation. Issue #63 lands before issue #61 or #62 behavior branches so the PR merge-ref comparison is not racing another port-contract change.
 
-Changing the canonical runbook invalidates its active digest binding. U3 updates the runbook version, cycle manifest, and generated classification together; finalized historical validation thereafter uses its immutable tag and recorded runbook bytes.
+Changing the canonical runbook invalidates its live digest bindings. U3 updates the runbook version and both live manifest/classification pairs together; finalized historical validation thereafter uses its immutable tag and recorded runbook bytes.
+
+The runbook content change also invalidates the Codex 0.147 live-authority binding. U3 advances the version constants and exact test expectations, rebinds only the issue #63 and Codex 0.147 manifests, renders both classifications, and leaves every finalized or historical version-5 contract and the existing runtime proof unchanged.
+
+The prospective authority correction is an ordering risk. Root's live issue update and readback, the independent Saga document review, the corrected plan digest, the fourth document-review authority entry, and green issue #63 classification must all exist before U3 edits; neither code-review artifact may enter document-review authority.
+
+The U3 version-contract edits create a new review boundary even though their behavior is narrow. A fresh independent Saga code review must close every P0-P3 finding and all affected active-state checks must pass again before source evidence, finalization, or the first local evidence tag.
 
 `docs/engineering-journal/DECISIONS.md` is part of the generated legacy-workflow inventory. Planning regenerates and checks that inventory so the required KTD record does not leave document validation stale.
 
@@ -323,6 +391,8 @@ The implementation is limited to same-manifest branch-diff completeness and one 
 
 **Historical evidence only:** Issue #54, its merged lease-registry implementation, its acceptance artifacts, `docs/portability/ports/2026-07-26-lease-registry-forward-compat.json`, and unknown-field compatibility behavior remain unchanged. The version-1 issue #57 manifest `docs/portability/ports/2026-07-25-codex-627-seam-refreeze.json` and `tests/test_codex_627_seam_refreeze_port_contract.py` remain byte-for-byte unchanged; the intentionally absent `refs/tags/evidence/codex-627-seam-refreeze-20260725` is not backfilled.
 
+Every finalized or historical contract that records runbook version 5 keeps version 5 and its recorded digest. Only the issue #63 and Codex 0.147 live-authority contracts advance to version 6, and the existing Codex 0.147 runtime proof remains unchanged.
+
 **Deferred to follow-up work:** Any general multi-repository evidence model, more than one companion repository, redesign of the existing cutover release-proof verifier, or changed-versus-unchanged failure attribution.
 
 ---
@@ -330,6 +400,8 @@ The implementation is limited to same-manifest branch-diff completeness and one 
 ## Sources and Grounding
 
 The plan follows the capability-first port requirements and acceptance examples in `docs/brainstorms/2026-07-26-codex-plugin-lifecycle-simplification-requirements.md`, and the mandatory gate ordering in `docs/portability/claude-to-codex-plugin-port-runbook.md`.
+
+The canonical runbook currently declares version 5 and requires a content change to update its version and every active contract. `scripts/port_contract.py` currently sets version 5 with historical support for versions 3 and 4, while `tests/test_port_runbook.py` expects version 5; U3 advances those exact surfaces to current version 6 with historical support for versions 3, 4, and 5.
 
 Current code derives inventories only over declared pathspecs through `git_inventory`, accepts the existing source and Codex treatment sets through `SOURCE_TREATMENTS` and `CODEX_TREATMENTS`, rejects unsafe argument paths through `_validate_evidence_argv`, and fixes evidence execution to the local root through `validate_manifest` in `scripts/port_contract.py`. The missed `outcome_decompose.py` path and its mechanism are recorded in `docs/engineering-journal/LEARNINGS.md`.
 
