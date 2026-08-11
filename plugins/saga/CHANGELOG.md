@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.83.0+codex.20260811103502 - 2026-08-11
+
+- The bounded Claude command-line adapter preserves approved model effort and macOS Keychain identity.
+- Saga session discovery, re-entry, and closeout now report live and stale state truthfully.
+
 ## 0.83.0 - 2026-07-29
 
 Codex package build: `0.83.0+codex.20260729205037`.

@@ -12,7 +12,7 @@
     {
       "classification": "migration-documentation",
       "path": "README.md",
-      "sha256": "d0957181a8b186d31bb8254cd686bc51d35fcf64fd3196b34d0aa6ceae641aaa",
+      "sha256": "4faa74d5ae5368ae8efb52149f0c0b23be1303f3abaf3134f8d2cebd21f9aaa1",
       "tokens": [
         "Team Execution"
       ]
@@ -584,7 +584,7 @@
     {
       "classification": "legacy-read-metadata",
       "path": "docs/validation/saga-family-target-inventory.json",
-      "sha256": "0dffab7ae22fe6e80f2b959c2c5b7290429b34dede4a5a40f2ec5d2f1a1f0ee6",
+      "sha256": "aca56dcd9cc64490040bf312a136f403189e7a2fb4b011b5990106750e95acfb",
       "tokens": [
         ".codex/team-execution/",
         "team-execution"
@@ -793,7 +793,7 @@
     {
       "classification": "lineage-documentation",
       "path": "plugins/saga/CHANGELOG.md",
-      "sha256": "6e648b536c9a50f7eefea8a84debf5f1c1bc190f7ec562c45cff183d7cb0c3ac",
+      "sha256": "22578c52c4bcbbb413cb7fbf18482fd3c4063094f246d72f64d0a610722fd5ef",
       "tokens": [
         "Team Execution",
         "team-execution"

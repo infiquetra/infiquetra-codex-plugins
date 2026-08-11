@@ -1,6 +1,6 @@
 {
   "name": "saga",
-  "version": "0.83.0+codex.20260729205037",
+  "version": "0.83.0+codex.20260811103502",
   "description": "Infiquetra lifecycle spine with thin external-provider routes over the native Codex harness.",
   "author": {
     "name": "Infiquetra",
