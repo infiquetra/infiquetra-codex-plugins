@@ -32,8 +32,8 @@
     ],
     "runbook": {
       "path": "docs/portability/claude-to-codex-plugin-port-runbook.md",
-      "sha256": "0d1f6e58624e179e7c99da85fdc10089eea84e0ac557761a192bb148a21c9afa",
-      "version": 5
+      "sha256": "c7080427d11eeacb2e4fc1b53afdbbd6fec161d97d0e1d87d2b57b68103fce55",
+      "version": 6
     }
   },
   "codex": {
@@ -125,8 +125,8 @@
   "evidence": [],
   "port_id": "issue-63-port-manifest-reconciliation-2026-08-10",
   "reconciliation": {
-    "expected_count": 1,
-    "inventory_sha256": "dc93802502223e3dbe8fffd6537e714c94abb23a2fa291721882605caacd3757",
+    "expected_count": 2,
+    "inventory_sha256": "159d114ec52f4ac00c8456d53afe94af2d48be3c9108185793e655f9d4ec08b7",
     "rows": [
       {
         "change": "M",
@@ -135,6 +135,16 @@
         "old_path": null,
         "rationale": "U1a adds the Codex-local version 2 reconciliation contract and U2 adds the bounded Codex-local declared-source resolver; the frozen Claude range is empty.",
         "row_id": "recon-0009108629386420",
+        "similarity": null,
+        "source_row_refs": []
+      },
+      {
+        "change": "M",
+        "classification": "codex-local",
+        "new_path": "scripts/validate_codex_plugins.py",
+        "old_path": null,
+        "rationale": "U3 rotates the reviewed Codex-local legacy-workflow inventory digest binding after the version 6 runbook and decision-journal update.",
+        "row_id": "recon-8e22b8117027b34a",
         "similarity": null,
         "source_row_refs": []
       }

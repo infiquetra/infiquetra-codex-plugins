@@ -19,8 +19,8 @@ from typing import Any
 
 SCHEMA_VERSION = 2
 SUPPORTED_SCHEMA_VERSIONS = {1, SCHEMA_VERSION}
-RUNBOOK_VERSION = 5
-SUPPORTED_RUNBOOK_VERSIONS = {3, 4, RUNBOOK_VERSION}
+RUNBOOK_VERSION = 6
+SUPPORTED_RUNBOOK_VERSIONS = {3, 4, 5, RUNBOOK_VERSION}
 DEFAULT_MANIFEST = Path("docs/portability/ports/2026-07-29-codex-0146-native-harness.json")
 DEFAULT_RENDER = Path("docs/portability/classifications/2026-07-11-external-advisory-execution.md")
 DEFAULT_RUNBOOK = Path("docs/portability/claude-to-codex-plugin-port-runbook.md")

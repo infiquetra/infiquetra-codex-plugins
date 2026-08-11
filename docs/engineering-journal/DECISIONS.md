@@ -46,9 +46,10 @@ a nonempty version policy. Version 2 retains those fields, adds only optional
 `repository: "source"`, and normally also requires nonempty policy. The sole empty-policy exception
 is an explicit `[]` file for a version 2 contract-only cycle whose source base equals target, source
 rows are empty, and every reconciliation row is Codex-local. Issue #63 satisfies those conditions and
-does not invent a plugin version or release unit. The issue #57 manifest is upgraded to version 2
-only after self-hosting, and only its affected cross-runtime row gains `repository: "source"`. The
-issue #54 manifest and test stay byte-unchanged version 1 regression evidence.
+does not invent a plugin version or release unit. The issue #57 version 1 manifest and regression test
+remain byte-for-byte historical records; only the issue #63 manifest receives new
+`repository: "source"` evidence. The issue #54 manifest and test also stay byte-unchanged version 1
+regression evidence.
 
 Cross-repository evidence uses no registry. `CODEX_PORT_SOURCE_REPO` has first precedence; otherwise
 the source checkout is the repository-name sibling of the Codex Git common directory derived from
@@ -56,6 +57,15 @@ the singular `source.repository_id`. Normalized origin and exact `HEAD == source
 verified before realpath containment. `repo_head` remains the Codex proof commit. After every
 behavior-bearing unit, the active reconciliation rows and render are updated and classification must
 pass again.
+
+The canonical runbook advances from version 5 to version 6 for this lifecycle. The contract keeps
+historical versions 3, 4, and 5 readable, while only the active issue #63 and Codex 0.147 manifests
+move to version 6 and its exact digest. Historical manifests and the Codex 0.147 runtime proof remain
+unchanged.
+
+The completed active-state U3 candidate is independently code-reviewed before source-harness evidence,
+finalization, or tag creation. Every P0 through P3 finding and every affected active-state check must
+be closed before the evidence boundary.
 
 The evidence ref `refs/tags/evidence/issue-63-port-manifest-reconciliation-20260810` starts absent and
 is refused if it already exists at any commit. U1 does not create it. After independent code-review
@@ -93,8 +103,11 @@ Inventory `--check` and full plugin validation must pass.
 
 Plan: `docs/plans/2026-08-10-issue-63-port-manifest-reconciliation-plan.md`.
 
-Required independent review:
-`docs/reviews/2026-08-10-issue-63-port-manifest-reconciliation-doc-review.md`.
+Required independent review sequence:
+`docs/reviews/2026-08-10-issue-63-port-manifest-reconciliation-doc-review.md`,
+`docs/reviews/2026-08-11-issue-63-port-manifest-reconciliation-plan-re-review.md`,
+`docs/reviews/2026-08-11-issue-63-port-manifest-reconciliation-code-review-plan-correction-review.md`,
+and `docs/reviews/2026-08-11-issue-63-u3-runbook-version-plan-correction-review.md`.
 
 ## 2026-08-09: Committed Profile Bytes Are The Unpromoted Rendering; A Deviation Is Applied At Install
 
