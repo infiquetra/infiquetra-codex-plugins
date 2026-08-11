@@ -144,8 +144,8 @@ installed-plugin or live-runtime result.
   its matching validator pin. A root PR-body invocation containing shell
   backticks was rejected before mutation; a literal standard-input body
   succeeded.
-- Issue #61 remains open pending a fresh-session proof using installed plugin
-  bytes. Its Operations card is still Active, so its move to Done is pending.
+- A fresh live Claude proof closed issue #61 COMPLETED after sanitized evidence
+  was posted. Its Operations card moved to Done.
 
 ### Issue #62: Saga re-entry truthfulness
 
@@ -167,8 +167,7 @@ installed-plugin or live-runtime result.
   selected an ambiguous `FETCH_HEAD` after two refs were fetched and stopped
   before tests. The clone was trashed; separate fetches then passed. The
   ignored `.claude` directory remained untracked.
-- Issue #62 is closed, but its Operations card is still Active. The requested
-  move to Done and its fresh installed-plugin proof remain pending.
+- Issue #62's Operations card moved to Done.
 
 ### Issue validation after the first closeout review
 
@@ -179,9 +178,44 @@ installed-plugin or live-runtime result.
   path in a dry-run broad stage. The maintained legacy-workflow inventory check
   and plugin validator passed. PR #89 and integration commit
   `a8201554be6ad2f9ed9a448b0a08d236073437ba` supplied the fix.
-- Closed issue #45 still has an Active Operations card with an empty Objective
-  field, rather than `improve-codex-plugins`. This objective-scoped session
-  deliberately did not change that card.
+- Issue #45 remained untouched because its Objective field is null.
+
+### PR #90 integration and live proof
+
+- PR #90 candidate `e6b7c01bee51eecc4d6d99aeee9171978860a9cc` merged as
+  `bb6a0f8c68d08b5beb97d62786accf2865a3d2bb`. Its parents are
+  `b6cf4d7d09c0bb6c19994b75073e82afc2c01d35` and the reviewed candidate; the
+  merge tree exactly matches that candidate. The PR body was corrected before
+  merge to name issues #61 and #62 through PRs #88 and #89.
+- PR #90 had no CI checks, branch protections, or rulesets. In a restricted
+  single-branch clone, the bounded suite first had 70 passes and one failure
+  because historical tree `66b23ca` was unavailable. Fetching only tag
+  `evidence/verified-workflows-modernization-20260711` supplied that object;
+  the same 71 tests then passed. Post-merge proof also passed all 71 tests,
+  clean generators, the plugin validator, and diff hygiene.
+- Marketplace upgrade selected `origin/main` at `bb6a0f8c` and installed Saga
+  `0.83.0+codex.20260811103502` at
+  `/Users/jefcox/.codex/plugins/cache/infiquetra-codex-plugins/saga/0.83.0+codex.20260811103502`.
+  Root re-ran `cmp` for each installed and merged-source pair; all six matched
+  byte-for-byte: `.codex-plugin/plugin.json`,
+  `scripts/external_action_adapters.py`, `scripts/discover_sessions.py`,
+  `scripts/extract_session_skeleton.py`, `skills/resume/SKILL.md`, and
+  `skills/loop/SKILL.md`.
+- Fresh live Claude proof session `019ff07d-d824-7c11-8cd3-c7912a870c8d`
+  (gpt-5.6-sol/high) passed exact marker, engine and variant, one `--effort
+  high` pair, empty changed paths, null patch references, receipt binding and
+  attestation, and environment filtering. Sensitive result and receipt
+  evidence were removed, and the temporary directory was moved to Trash.
+- Fresh reentry proof session `019ff07d-e6db-76c0-9495-eb53319655ea`
+  (gpt-5.6-terra/high) passed exact metadata schema, self exclusion, current
+  storage layout, no transcript extraction, and a deterministic cap of five
+  candidates. Fresh skill activation session
+  `019ff082-9c3d-7c40-afe5-a272c0cc8815` (gpt-5.6-terra/medium) activated
+  `saga:resume` at installed version `0.83.0+codex.20260811103502` without
+  fallback.
+- Operations cards #51, #52, #61, #62, and #63 moved from Active to Done. Live
+  board enumeration shows all 13 cards under objective `improve-codex-plugins`
+  in Done.
 
 ### Release surface and closeout review
 
@@ -190,8 +224,8 @@ installed-plugin or live-runtime result.
   inventory, generated Saga facts, validator pin, operator-choice assertion,
   and changelog agree. The legacy-token inventory was regenerated with its
   script. `.agents/plugins/marketplace.json` stayed unchanged because it has no
-  per-plugin version field. Marketplace refresh or reinstall must happen after
-  merge, not by editing a cache.
+  per-plugin version field. The marketplace refresh and reinstall occurred
+  after merge, not by editing a cache.
 - Root independently ran 14 focused release and documentation tests, both
   generated-file checks, the legacy inventory check, the plugin validator,
   version agreement, and diff hygiene; all passed. The independent artifact
@@ -206,16 +240,23 @@ installed-plugin or live-runtime result.
 
 ### Repository and session provenance
 
-- Root local `main` is clean but behind `origin/main`. Both direct and
-  YOLO-session fast-forward operations were rejected by command policy because
-  approval was unavailable. The team used exact-`origin/main` worktrees rather
-  than force, reset, update-ref, or an obscured workaround. This closeout
-  worktree was created directly from `origin/main` at `b6cf4d7`.
-- Fresh installed-plugin proofs, Operations Done moves for #61, #62, and #63,
-  the final marketplace refresh, and temporary-worktree cleanup are pending.
-  Do not treat a source merge as completion of any of those actions.
-- All worker sessions were Codex-only in Herdr workspace w24: one-pane new tabs,
-  no focus, explicit model and effort, and YOLO mode. Session records:
+- Root main remains clean at `ed8d74f` and behind `origin/main` because its
+  normal fast-forward command was policy-rejected. No workaround was used.
+  This provenance worktree was created directly from `origin/main` at
+  `b6cf4d7`.
+- Completed live-test tabs and all issue-specific tabs were closed. The five
+  clean issue worktrees were removed normally; their branches and durable
+  session identifiers remain. At the final provenance review boundary before
+  publication, workspace w24 retained only the user Terminal, root
+  orchestrator, this finalizer, and the independent reviewer. Final publication
+  session `019ff08f-1455-71e2-8664-28fd6ef53059` was then created in the same
+  workspace with gpt-5.6-terra/high and YOLO for the authorized commit, push,
+  PR, and merge scope; it is to close after integration. This provenance
+  worktree and the reviewer and finalizer tabs remain only until the final
+  documentation PR merges.
+- All worker sessions were Codex-only in Herdr workspace w24, with one pane per
+  tab, no focus, and explicit model and effort. YOLO mode was used only for
+  assigned write or runtime scope that needed it. Session records:
   issue #61 integration `019ff02e-5d3b-7de0-a767-f459ece300ae`
   (gpt-5.6-sol/high); issue #61 review
   `019ff038-5578-72c3-81d5-0eb8d0f1c24e` (gpt-5.6-sol/high); issue #61 PR
@@ -234,6 +275,12 @@ installed-plugin or live-runtime result.
   (gpt-5.6-terra/high); independent closeout reviewer
   `019ff067-b919-7a31-8076-0016d5280eb0` (gpt-5.6-sol/high); and closeout log
   finalizer `019ff06e-172d-7ee0-80b4-b3b1ce58ecfa` (gpt-5.6-terra/medium).
+  PR integration session `019ff075-2a56-7f52-aa6a-0b4b4ed4f70f`
+  (gpt-5.6-sol/high) completed the PR metadata correction, merge, and
+  post-merge source proof. It did not perform the later installed live proofs.
+  Final publication session `019ff08f-1455-71e2-8664-28fd6ef53059`
+  (gpt-5.6-terra/high; authorized commit, push, PR, and merge scope) is active
+  and has no recorded outcome.
 - Root `apply_patch` was rejected before mutation because the current root
   session's pre-tool hook referenced retired installed cache path
   `hermes-profile-evolution` version `0.1.3`. The narrow edit was routed to

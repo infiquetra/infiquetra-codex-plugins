@@ -134,3 +134,12 @@ or changed.
 > **Final re-review verdict:** unblocked. The final pre-commit nine-file target diff is internally
 > consistent, generated files are current, live and local provenance is supported, and there are zero
 > actionable P0-P3 findings.
+
+## Final provenance delta review
+
+- **Target:** only the unstaged delta in `docs/work-sessions/2026-08-10-improve-codex-plugins-decision-log.md`.
+- **Binary diff SHA-256:** `6b86716a136915f2e96dd25b9b6a4eaeeaab1063c7d36d7f5049fe9eae460f42`.
+- **Result:** `blocked: false`; P0: 0, P1: 0, P2: 0, P3: 0.
+- **Temporal amendment:** the publication-session amendment was reviewed with zero actionable P0-P3 findings; its review boundary is explicitly time-bounded and it records no completed publication outcome.
+- **Checks:** verified PR #90 commit, parents, candidate-identical tree, PR metadata, and restricted-clone evidence-tag recovery; confirmed the recorded six installed/source byte matches without inspecting cache files; verified three fresh proof-session identities and routing, issue #61 closure, all 13 objective cards in Done, issue #45 exclusion, worktree and tab cleanup, and the policy-blocked fast-forward; reviewed factual accuracy, internal consistency, provenance usefulness, plain language, and proof boundaries.
+- **Review method:** the long-lived reviewer session retained the pre-refresh Saga skill path, so it followed the checked-in document-review instructions. Installed activation was independently proved in fresh session `019ff082-9c3d-7c40-afe5-a272c0cc8815`.
