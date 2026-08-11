@@ -80,6 +80,35 @@ RECONCILIATION_ROW_KEYS = {
     "rationale",
     "source_row_refs",
 }
+PLUGIN_BEHAVIOR_DIRECTORIES = {
+    "scripts",
+    "skills",
+    "hooks",
+    "config",
+    "roles",
+    "agents",
+}
+BEHAVIOR_REFERENCE_ROOTS = (
+    ("plugins", "discord-identity-assets", "references"),
+    ("plugins", "python-toolkit", "references"),
+    ("plugins", "saga", "references", "rubrics"),
+)
+BEHAVIOR_EXACT_PATHS = {
+    ".agents/plugins/marketplace.json",
+    ".codex/config.toml",
+    "plugins/hermes-profile-evolution/conformance/profile-change-classifier.v1.json",
+    "plugins/hermes-profile-evolution/conformance/profile-request-cli.v1.json",
+    "plugins/saga/references/bridge-signatures.json",
+    "plugins/saga/references/effort-policy.yaml",
+    "plugins/saga/references/engine-dispatch.md",
+    "plugins/saga/references/engine-registry.yaml",
+    "plugins/saga/references/formatting-style.md",
+    "plugins/saga/references/model-releases.yaml",
+    "plugins/saga/references/operator-choice.md",
+    "plugins/saga/references/outcome-cross-runtime.md",
+    "plugins/saga/references/outcome-spec.md",
+    "plugins/saga/references/saga-spec.md",
+}
 SURFACE_KINDS = {
     "agent",
     "changelog",
@@ -256,9 +285,7 @@ def inventory_digest(rows: Iterable[Mapping[str, Any]]) -> str:
     return sha256_bytes(canonical_json_bytes(normalize_inventory(rows)))
 
 
-def git_inventory(
-    repo: Path, base: str, target: str, pathspecs: Sequence[str] = ()
-) -> list[dict[str, Any]]:
+def git_inventory(repo: Path, base: str, target: str, pathspecs: Sequence[str] = ()) -> list[dict[str, Any]]:
     args = ["diff", "--name-status", "-z", "-M", f"{base}..{target}", "--", *pathspecs]
     return parse_name_status_z(_run_git(repo, args))
 
@@ -294,6 +321,8 @@ def is_behavior_path(path: str | None) -> bool:
         safe = validate_repo_path(path)
     except ContractError:
         return False
+    if safe in BEHAVIOR_EXACT_PATHS:
+        return True
     parts = PurePosixPath(safe).parts
     if "tests" in parts or "fixtures" in parts:
         return False
@@ -303,7 +332,9 @@ def is_behavior_path(path: str | None) -> bool:
         return False
     if parts[2:] == (".codex-plugin", "plugin.json"):
         return True
-    return parts[2] in {"scripts", "skills", "hooks", "config", "roles"}
+    if any(parts[: len(root)] == root for root in BEHAVIOR_REFERENCE_ROOTS):
+        return True
+    return parts[2] in PLUGIN_BEHAVIOR_DIRECTORIES
 
 
 def behavior_inventory(rows: Iterable[Mapping[str, Any]]) -> list[dict[str, Any]]:
@@ -596,7 +627,9 @@ def _verify_source_topology(source_repo: Path, topology: Mapping[str, Any]) -> d
             f"source topology right tag `{right['tag']}` peeled to {right_commit}, "
             f"not {right['peeled_commit']}"
         )
-    merge_base = _run_git(source_repo, ["merge-base", left_commit, right_commit]).decode().strip()
+    merge_base = _run_git(
+        source_repo, ["merge-base", left_commit, right_commit]
+    ).decode().strip()
     if not HEX40_RE.fullmatch(merge_base):
         raise ContractError("source topology merge base did not resolve to one full commit")
     if merge_base != topology["common_base"]:
@@ -805,14 +838,10 @@ def validate_repo_path(value: str) -> str:
     return path.as_posix()
 
 
-def _exact_keys(
-    value: Mapping[str, Any], expected: set[str], label: str, errors: list[str]
-) -> None:
+def _exact_keys(value: Mapping[str, Any], expected: set[str], label: str, errors: list[str]) -> None:
     actual = set(value)
     if actual != expected:
-        errors.append(
-            f"{label} keys mismatch: missing={sorted(expected - actual)} unexpected={sorted(actual - expected)}"
-        )
+        errors.append(f"{label} keys mismatch: missing={sorted(expected - actual)} unexpected={sorted(actual - expected)}")
 
 
 def _check_commit(value: Any, label: str, errors: list[str]) -> None:
@@ -855,8 +884,22 @@ def _validate_artifact(root: Path, entry: Mapping[str, Any], label: str, errors:
         errors.append(f"{label} digest is stale: {safe}")
 
 
-def _historical_file_by_sha256(root: Path, path: str, expected: str) -> bytes:
+def _historical_file_by_sha256(
+    root: Path,
+    path: str,
+    expected: str,
+    *,
+    commit: str | None = None,
+) -> bytes:
     """Recover a digest-bound historical authority file without changing its manifest."""
+
+    if commit is not None:
+        if not HEX40_RE.fullmatch(commit):
+            raise ContractError("historical authority commit must be a full commit")
+        content = _run_git(root, ["show", f"{commit}:{path}"])
+        if sha256_bytes(content) == expected:
+            return content
+        raise ContractError("digest-bound authority file is unavailable at the frozen candidate")
 
     commits = _run_git(root, ["log", "--all", "--format=%H", "--", path]).decode().splitlines()
     if len(commits) > 256:
@@ -868,6 +911,27 @@ def _historical_file_by_sha256(root: Path, path: str, expected: str) -> bytes:
         if content and sha256_bytes(content) == expected:
             return content
     raise ContractError("digest-bound historical authority preimage is unavailable")
+
+
+def _historical_artifact_bytes(
+    root: Path,
+    entry: Mapping[str, Any],
+    label: str,
+    errors: list[str],
+    *,
+    commit: str | None = None,
+) -> bytes | None:
+    _exact_keys(entry, {"path", "sha256"}, label, errors)
+    try:
+        path = validate_repo_path(str(entry.get("path", "")))
+        expected = str(entry.get("sha256", ""))
+        _check_digest(expected, f"{label}.sha256", errors)
+        if commit is None:
+            return _historical_file_by_sha256(root, path, expected)
+        return _historical_file_by_sha256(root, path, expected, commit=commit)
+    except ContractError as exc:
+        errors.append(f"{label} historical preimage: {exc}")
+        return None
 
 
 def _json_schema_ref(root_schema: Mapping[str, Any], reference: str) -> Mapping[str, Any]:
@@ -966,10 +1030,9 @@ def validate_json_schema_instance(
         pattern = schema.get("pattern")
         if isinstance(pattern, str) and re.search(pattern, value) is None:
             errors.append(f"{label} does not match required pattern")
-        if (
-            schema.get("format") == "date-time"
-            and re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", value) is None
-        ):
+        if schema.get("format") == "date-time" and re.fullmatch(
+            r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", value
+        ) is None:
             errors.append(f"{label} must be an RFC3339 UTC timestamp")
     elif isinstance(value, int) and not isinstance(value, bool) and expected_type == "integer":
         minimum = schema.get("minimum")
@@ -1006,13 +1069,9 @@ def _validate_inventory_rows(rows: Any, label: str, errors: list[str]) -> list[d
                     validate_repo_path(path_value)
                 except (ContractError, TypeError) as exc:
                     errors.append(f"{row_label}.{key}: {exc}")
-        if similarity is not None and (
-            not isinstance(similarity, int) or not 0 <= similarity <= 100
-        ):
+        if similarity is not None and (not isinstance(similarity, int) or not 0 <= similarity <= 100):
             errors.append(f"{row_label}.similarity must be null or 0..100")
-        inventory.append(
-            {"change": change, "old_path": old_path, "new_path": new_path, "similarity": similarity}
-        )
+        inventory.append({"change": change, "old_path": old_path, "new_path": new_path, "similarity": similarity})
     return inventory
 
 
@@ -1051,9 +1110,7 @@ CODEX_ROW_KEYS = {
 }
 
 
-def _validate_string_list(
-    value: Any, label: str, errors: list[str], *, paths: bool = False
-) -> list[str]:
+def _validate_string_list(value: Any, label: str, errors: list[str], *, paths: bool = False) -> list[str]:
     if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
         errors.append(f"{label} must be a list of strings")
         return []
@@ -1105,9 +1162,7 @@ def _validate_source_rows(rows: list[dict[str, Any]], stage: str, errors: list[s
         _exact_keys(row, SOURCE_ROW_KEYS, label, errors)
         if row.get("surface_kind") not in SURFACE_KINDS:
             errors.append(f"{label}.surface_kind is invalid")
-        primitives = _validate_string_list(
-            row.get("host_primitives"), f"{label}.host_primitives", errors
-        )
+        primitives = _validate_string_list(row.get("host_primitives"), f"{label}.host_primitives", errors)
         if set(primitives) - HOST_PRIMITIVES:
             errors.append(f"{label}.host_primitives contains unknown values")
         state = row.get("state")
@@ -1124,22 +1179,12 @@ def _validate_source_rows(rows: list[dict[str, Any]], stage: str, errors: list[s
         units = _validate_string_list(row.get("units"), f"{label}.units", errors)
         if set(units) - UNIT_IDS:
             errors.append(f"{label}.units contains an unknown U-ID")
-        targets = _validate_string_list(
-            row.get("planned_targets"), f"{label}.planned_targets", errors, paths=True
-        )
-        tests = _validate_string_list(
-            row.get("planned_tests"), f"{label}.planned_tests", errors, paths=True
-        )
+        targets = _validate_string_list(row.get("planned_targets"), f"{label}.planned_targets", errors, paths=True)
+        tests = _validate_string_list(row.get("planned_tests"), f"{label}.planned_tests", errors, paths=True)
         _validate_string_list(row.get("capability_refs"), f"{label}.capability_refs", errors)
-        _validate_string_list(
-            row.get("codex_invariant_refs"), f"{label}.codex_invariant_refs", errors
-        )
-        evidence_refs = _validate_string_list(
-            row.get("evidence_refs"), f"{label}.evidence_refs", errors
-        )
-        if treatment == "direct-port" and (
-            row.get("surface_kind") in FORBIDDEN_SOURCE_DIRECT or primitives
-        ):
+        _validate_string_list(row.get("codex_invariant_refs"), f"{label}.codex_invariant_refs", errors)
+        evidence_refs = _validate_string_list(row.get("evidence_refs"), f"{label}.evidence_refs", errors)
+        if treatment == "direct-port" and (row.get("surface_kind") in FORBIDDEN_SOURCE_DIRECT or primitives):
             errors.append(f"{label}: Claude-only surface/primitive cannot be direct-port")
         if treatment in {"direct-port", "codex-adapt"} and (not targets or not tests):
             errors.append(f"{label}: {treatment} requires planned targets and tests")
@@ -1168,15 +1213,9 @@ def _validate_codex_rows(rows: list[dict[str, Any]], stage: str, errors: list[st
         units = _validate_string_list(row.get("units"), f"{label}.units", errors)
         if set(units) - UNIT_IDS:
             errors.append(f"{label}.units contains an unknown U-ID")
-        _validate_string_list(
-            row.get("planned_targets"), f"{label}.planned_targets", errors, paths=True
-        )
-        _validate_string_list(
-            row.get("planned_tests"), f"{label}.planned_tests", errors, paths=True
-        )
-        evidence_refs = _validate_string_list(
-            row.get("evidence_refs"), f"{label}.evidence_refs", errors
-        )
+        _validate_string_list(row.get("planned_targets"), f"{label}.planned_targets", errors, paths=True)
+        _validate_string_list(row.get("planned_tests"), f"{label}.planned_tests", errors, paths=True)
+        evidence_refs = _validate_string_list(row.get("evidence_refs"), f"{label}.evidence_refs", errors)
         if state == "verified" and not evidence_refs:
             errors.append(f"{label}: verified state requires evidence")
 
@@ -1218,6 +1257,8 @@ def _reconciliation_target(
             errors.append(f"active reconciliation target is unavailable: {exc}")
             return None
     if state == "finalized":
+        if not isinstance(evidence, list) or not evidence:
+            errors.append("finalized reconciliation requires nonempty evidence")
         try:
             return resolve_ref(root, evidence_ref)
         except ContractError as exc:
@@ -1330,6 +1371,8 @@ def validate_manifest_transition(
     errors: list[str] = []
     previous_codex = previous.get("codex")
     current_codex = current.get("codex")
+    previous_source = previous.get("source")
+    current_source = current.get("source")
     previous_reconciliation = previous.get("reconciliation")
     current_reconciliation = current.get("reconciliation")
     if not all(
@@ -1337,19 +1380,42 @@ def validate_manifest_transition(
         for value in (
             previous_codex,
             current_codex,
+            previous_source,
+            current_source,
             previous_reconciliation,
             current_reconciliation,
         )
     ):
-        return ["version 2 transition requires codex and reconciliation objects"]
+        return ["version 2 transition requires source, codex, and reconciliation objects"]
     if previous_codex.get("evidence_ref") != current_codex.get("evidence_ref"):
         errors.append("codex.evidence_ref cannot change after version 2 initialization")
+    for container, old_value, new_value, keys in (
+        (
+            "source",
+            previous_source,
+            current_source,
+            ("repository_id", "base_ref", "target_ref"),
+        ),
+        (
+            "codex",
+            previous_codex,
+            current_codex,
+            ("repository_id", "historical_plan_base", "execution_base"),
+        ),
+    ):
+        for key in keys:
+            if old_value.get(key) != new_value.get(key):
+                errors.append(f"{container}.{key} cannot change after version 2 initialization")
     if (
         previous_reconciliation.get("state") == "finalized"
         and current_reconciliation.get("state") != "finalized"
     ):
         errors.append("finalized reconciliation cannot return to active")
     if previous_reconciliation.get("state") == "finalized":
+        if canonical_json_bytes(previous.get("evidence")) != canonical_json_bytes(
+            current.get("evidence")
+        ):
+            errors.append("finalized evidence cannot change")
         for key in ("expected_count", "inventory_sha256", "rows"):
             if previous_reconciliation.get(key) != current_reconciliation.get(key):
                 errors.append(f"finalized reconciliation.{key} cannot change")
@@ -1447,18 +1513,8 @@ def _validate_capability_snapshot(
         for error in validate_json_schema_instance(snapshot, snapshot_schema, label="snapshot")
     )
     expected_top = {
-        "schema_version",
-        "captured_at",
-        "refs",
-        "runtime",
-        "configured_defaults",
-        "catalog",
-        "features",
-        "custom_agents",
-        "collaboration",
-        "hook_capabilities",
-        "capability_dimensions",
-        "official_sources",
+        "schema_version", "captured_at", "refs", "runtime", "configured_defaults", "catalog", "features",
+        "custom_agents", "collaboration", "hook_capabilities", "capability_dimensions", "official_sources",
     }
     if isinstance(snapshot, dict):
         _exact_keys(snapshot, expected_top, "capability snapshot", errors)
@@ -1516,9 +1572,7 @@ def _validate_capability_snapshot(
             errors.append("capability snapshot must record v1 spawn availability")
         receipt_fields = set(spawn.get("spawn_receipt_fields") or [])
         if not {"agent_nickname", "agent_role", "depth"}.issubset(receipt_fields):
-            errors.append(
-                "capability snapshot v1 spawn receipts must attest nickname, role, and depth"
-            )
+            errors.append("capability snapshot v1 spawn receipts must attest nickname, role, and depth")
         if spawn.get("per_child_sandbox") is not False:
             errors.append("capability snapshot must not claim direct per-child sandbox override")
         if spawn.get("named_profile_selection") != "rollout-attested":
@@ -1563,10 +1617,9 @@ def _validate_capability_snapshot(
         ]:
             errors.append("capability snapshot child receipt fields drifted")
         context = snapshot.get("collaboration", {}).get("context", {})
-        if (
-            not isinstance(context, dict)
-            or context.get("child_permissions_inherit_parent_turn") is not True
-        ):
+        if not isinstance(context, dict) or context.get(
+            "child_permissions_inherit_parent_turn"
+        ) is not True:
             errors.append("capability snapshot must record V2 parent-turn permission inheritance")
     elif isinstance(spawn, dict) and spawn.get("contract_version") is None:
         if spawn.get("tool_namespace") != "agents":
@@ -1581,16 +1634,10 @@ def _validate_capability_snapshot(
     elif isinstance(spawn, dict):
         errors.append("capability snapshot collaboration.spawn contract_version is unsupported")
     dimensions = snapshot.get("capability_dimensions", {})
-    workflow_names = {
-        row.get("name"): row.get("status")
-        for row in dimensions.get("workflow_modes", [])
-        if isinstance(row, dict)
-    }
+    workflow_names = {row.get("name"): row.get("status") for row in dimensions.get("workflow_modes", []) if isinstance(row, dict)}
     if workflow_names.get("source-workflow") != "unsupported":
         errors.append("source Workflow must remain unsupported")
-    leaf_names = {
-        row.get("name") for row in dimensions.get("step_vehicles", []) if isinstance(row, dict)
-    }
+    leaf_names = {row.get("name") for row in dimensions.get("step_vehicles", []) if isinstance(row, dict)}
     if "goal" in leaf_names or "hooks" in leaf_names or "fork" in leaf_names:
         errors.append("Goal, hooks, and fork must not be leaf executors")
 
@@ -1627,13 +1674,28 @@ def validate_manifest(
         top_keys.add("reconciliation")
     _exact_keys(manifest, top_keys, "manifest", errors)
     port_id = manifest.get("port_id")
-    current_contract = _uses_live_authority(schema_version, port_id)
+    reconciliation_hint = manifest.get("reconciliation")
+    finalized_version_2 = (
+        schema_version == 2
+        and isinstance(reconciliation_hint, Mapping)
+        and reconciliation_hint.get("state") == "finalized"
+    )
+    frozen_authority_commit: str | None = None
+    if finalized_version_2:
+        codex_hint = manifest.get("codex")
+        evidence_ref_hint = (
+            codex_hint.get("evidence_ref") if isinstance(codex_hint, Mapping) else None
+        )
+        if isinstance(evidence_ref_hint, str):
+            frozen_authority_commit = optional_ref(root, evidence_ref_hint) or ""
+    current_contract = _uses_live_authority(schema_version, port_id) and not finalized_version_2
     if not isinstance(port_id, str) or not port_id or CONTROL_RE.search(port_id):
         errors.append("port_id must be a non-empty printable string")
     if active_contract and port_id != ACTIVE_PORT_ID:
         errors.append(f"port_id must remain the active contract `{ACTIVE_PORT_ID}`")
     _scan_forbidden_keys(manifest, "manifest", errors)
 
+    historical_snapshot: bytes | None = None
     authority = manifest.get("authority")
     if not isinstance(authority, dict):
         errors.append("authority must be an object")
@@ -1645,14 +1707,32 @@ def validate_manifest(
             errors,
         )
         if isinstance(authority.get("plan"), dict):
-            _validate_artifact(root, authority["plan"], "authority.plan", errors)
+            if finalized_version_2:
+                _historical_artifact_bytes(
+                    root,
+                    authority["plan"],
+                    "authority.plan",
+                    errors,
+                    commit=frozen_authority_commit,
+                )
+            else:
+                _validate_artifact(root, authority["plan"], "authority.plan", errors)
         reviews = authority.get("reviews")
         if not isinstance(reviews, list) or not reviews:
             errors.append("authority.reviews must be a non-empty list")
         else:
             for index, review in enumerate(reviews):
                 if isinstance(review, dict):
-                    _validate_artifact(root, review, f"authority.reviews[{index}]", errors)
+                    if finalized_version_2:
+                        _historical_artifact_bytes(
+                            root,
+                            review,
+                            f"authority.reviews[{index}]",
+                            errors,
+                            commit=frozen_authority_commit,
+                        )
+                    else:
+                        _validate_artifact(root, review, f"authority.reviews[{index}]", errors)
                 else:
                     errors.append(f"authority.reviews[{index}] must be an object")
         runbook = authority.get("runbook")
@@ -1668,13 +1748,13 @@ def validate_manifest(
                     errors,
                 )
             else:
-                try:
-                    runbook_path = validate_repo_path(str(runbook.get("path", "")))
-                    runbook_digest = str(runbook.get("sha256", ""))
-                    _check_digest(runbook_digest, "authority.runbook.sha256", errors)
-                    _historical_file_by_sha256(root, runbook_path, runbook_digest)
-                except ContractError as exc:
-                    errors.append(f"authority.runbook historical preimage: {exc}")
+                _historical_artifact_bytes(
+                    root,
+                    {"path": runbook.get("path"), "sha256": runbook.get("sha256")},
+                    "authority.runbook",
+                    errors,
+                    commit=frozen_authority_commit,
+                )
         else:
             errors.append("authority.runbook must be an object")
         capability = authority.get("capability_snapshot")
@@ -1687,26 +1767,25 @@ def validate_manifest(
             )
             if capability.get("schema_version") not in {1, 2, 3}:
                 errors.append("authority.capability_snapshot.schema_version must be 1, 2, or 3")
-            historical_snapshot: bytes | None = None
             historical_schema: bytes | None = None
             if not current_contract:
-                try:
-                    snapshot_path = validate_repo_path(str(capability.get("path", "")))
-                    schema_path = validate_repo_path(str(capability.get("schema_path", "")))
-                    expected = str(capability.get("sha256", ""))
-                    schema_expected = str(capability.get("schema_sha256", ""))
-                    _check_digest(expected, "authority.capability_snapshot.sha256", errors)
-                    _check_digest(
-                        schema_expected,
-                        "authority.capability_snapshot.schema_sha256",
-                        errors,
-                    )
-                    historical_snapshot = _historical_file_by_sha256(root, snapshot_path, expected)
-                    historical_schema = _historical_file_by_sha256(
-                        root, schema_path, schema_expected
-                    )
-                except ContractError as exc:
-                    errors.append(f"authority.capability_snapshot historical preimage: {exc}")
+                historical_snapshot = _historical_artifact_bytes(
+                    root,
+                    {"path": capability.get("path"), "sha256": capability.get("sha256")},
+                    "authority.capability_snapshot",
+                    errors,
+                    commit=frozen_authority_commit,
+                )
+                historical_schema = _historical_artifact_bytes(
+                    root,
+                    {
+                        "path": capability.get("schema_path"),
+                        "sha256": capability.get("schema_sha256"),
+                    },
+                    "authority.capability_snapshot",
+                    errors,
+                    commit=frozen_authority_commit,
+                )
             else:
                 _validate_artifact(
                     root,
@@ -1882,12 +1961,9 @@ def validate_manifest(
         try:
             snapshot_path_value = validate_repo_path(str(capability_entry.get("path", "")))
             if not current_contract:
-                snapshot_content = _historical_file_by_sha256(
-                    root,
-                    snapshot_path_value,
-                    str(capability_entry.get("sha256", "")),
-                )
-                snapshot = json.loads(snapshot_content)
+                if historical_snapshot is None:
+                    raise ContractError("historical capability snapshot is unavailable")
+                snapshot = json.loads(historical_snapshot)
             else:
                 snapshot_path = contained_file(root, snapshot_path_value)
                 snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
@@ -2193,15 +2269,15 @@ def validate_manifest(
     return errors
 
 
-def _validate_cutover_release_proof(root: Path, manifest: Mapping[str, Any]) -> list[str]:
+def _validate_cutover_release_proof(
+    root: Path, manifest: Mapping[str, Any]
+) -> list[str]:
     """Require the canonical evidence tag to retain the exact proof and preimages."""
     codex = manifest.get("codex")
     release = manifest.get("release_evidence")
     evidence = manifest.get("evidence")
-    if (
-        not isinstance(codex, Mapping)
-        or not isinstance(release, Mapping)
-        or not isinstance(evidence, list)
+    if not isinstance(codex, Mapping) or not isinstance(release, Mapping) or not isinstance(
+        evidence, list
     ):
         return ["cutover release proof inputs are unavailable"]
     evidence_ref = codex.get("evidence_ref")
@@ -2263,9 +2339,7 @@ def load_manifest(path: Path) -> dict[str, Any]:
 
 def write_atomic(path: Path, data: bytes) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile(
-        dir=path.parent, prefix=f".{path.name}.", delete=False
-    ) as handle:
+    with tempfile.NamedTemporaryFile(dir=path.parent, prefix=f".{path.name}.", delete=False) as handle:
         temp_path = Path(handle.name)
         handle.write(data)
         handle.flush()
@@ -2391,9 +2465,7 @@ def render_manifest(manifest: Mapping[str, Any]) -> str:
 def refresh_manifest(root: Path, source_repo: Path, manifest: dict[str, Any]) -> dict[str, Any]:
     source = manifest["source"]
     codex = manifest["codex"]
-    new_source = git_inventory(
-        source_repo, source["base_ref"], source["target_ref"], source["pathspecs"]
-    )
+    new_source = git_inventory(source_repo, source["base_ref"], source["target_ref"], source["pathspecs"])
     new_codex = git_inventory(root, codex["historical_plan_base"], codex["execution_base"])
 
     changes: list[dict[str, Any]] = []
@@ -2402,7 +2474,8 @@ def refresh_manifest(root: Path, source_repo: Path, manifest: dict[str, Any]) ->
         ("codex", codex["rows"], new_codex),
     ):
         current_by_id = {
-            row_id("src" if label == "source" else "codex", row): row for row in current_rows
+            row_id("src" if label == "source" else "codex", row): row
+            for row in current_rows
         }
         new_ids = {row_id("src" if label == "source" else "codex", row) for row in new_rows}
         for identifier in sorted(set(current_by_id) - new_ids):
@@ -2417,9 +2490,7 @@ def refresh_manifest(root: Path, source_repo: Path, manifest: dict[str, Any]) ->
         "local_main": optional_ref(source_repo, "main"),
         "origin_main": optional_ref(source_repo, "origin/main"),
     }
-    source["target_reachable"] = is_ancestor(
-        source_repo, source["target_ref"], source["observed_refs"]["head"]
-    )
+    source["target_reachable"] = is_ancestor(source_repo, source["target_ref"], source["observed_refs"]["head"])
     codex["observed_origin_main"] = optional_ref(root, "origin/main")
     return manifest
 
@@ -2517,8 +2588,12 @@ def _source_topology_from_args(args: argparse.Namespace) -> dict[str, Any] | Non
     for raw_value in left_only_values or []:
         commit, separator, disposition = raw_value.partition("=")
         if not separator or not disposition.strip():
-            raise ContractError("--source-left-only-commit must use COMMIT=DISPOSITION")
-        left_only_commits.append({"commit": commit, "disposition": disposition.strip()})
+            raise ContractError(
+                "--source-left-only-commit must use COMMIT=DISPOSITION"
+            )
+        left_only_commits.append(
+            {"commit": commit, "disposition": disposition.strip()}
+        )
     return _normalize_source_topology(
         {
             "left": {
@@ -2539,16 +2614,12 @@ def command_init(args: argparse.Namespace) -> int:
     root = _repo_root()
     manifest_path = _manifest_path(root, args.manifest)
     if manifest_path.exists():
-        raise ContractError(
-            f"init refuses to overwrite existing manifest: {manifest_path.relative_to(root)}"
-        )
+        raise ContractError(f"init refuses to overwrite existing manifest: {manifest_path.relative_to(root)}")
     source_repo = Path(args.source_repo).expanduser().resolve()
     execution_base = args.codex_execution_base or resolve_ref(root, "HEAD")
     version_policy = None
     if args.version_policy:
-        raw_policy = json.loads(
-            _manifest_path(root, args.version_policy).read_text(encoding="utf-8")
-        )
+        raw_policy = json.loads(_manifest_path(root, args.version_policy).read_text(encoding="utf-8"))
         if not isinstance(raw_policy, list) or not all(isinstance(row, dict) for row in raw_policy):
             raise ContractError("--version-policy must contain a JSON array of objects")
         version_policy = raw_policy
@@ -2574,9 +2645,7 @@ def command_init(args: argparse.Namespace) -> int:
         source_topology=_source_topology_from_args(args),
     )
     write_json(manifest_path, manifest)
-    print(
-        f"initialized {manifest_path.relative_to(root)} with {len(manifest['source']['rows'])} source rows and {len(manifest['codex']['rows'])} Codex rows"
-    )
+    print(f"initialized {manifest_path.relative_to(root)} with {len(manifest['source']['rows'])} source rows and {len(manifest['codex']['rows'])} Codex rows")
     return 0
 
 
@@ -2585,12 +2654,8 @@ def command_refresh(args: argparse.Namespace) -> int:
     manifest_path = _manifest_path(root, args.manifest)
     actual_digest = sha256_file(manifest_path)
     if actual_digest != args.expect_digest:
-        raise ContractError(
-            f"refresh digest mismatch: expected {args.expect_digest}, found {actual_digest}"
-        )
-    manifest = refresh_manifest(
-        root, Path(args.source_repo).expanduser().resolve(), load_manifest(manifest_path)
-    )
+        raise ContractError(f"refresh digest mismatch: expected {args.expect_digest}, found {actual_digest}")
+    manifest = refresh_manifest(root, Path(args.source_repo).expanduser().resolve(), load_manifest(manifest_path))
     encoded = (json.dumps(manifest, indent=2, sort_keys=True) + "\n").encode()
     if args.check:
         if encoded != manifest_path.read_bytes():
@@ -2643,14 +2708,10 @@ def command_render(args: argparse.Namespace) -> int:
     rendered = render_manifest(manifest).encode()
     if args.check:
         if not render_path.is_file() or render_path.read_bytes() != rendered:
-            raise ContractError(
-                f"generated classification is stale: {render_path.relative_to(root)}"
-            )
+            raise ContractError(f"generated classification is stale: {render_path.relative_to(root)}")
     else:
         write_atomic(render_path, rendered)
-    print(
-        f"classification {'current' if args.check else 'rendered'}: {render_path.relative_to(root)}"
-    )
+    print(f"classification {'current' if args.check else 'rendered'}: {render_path.relative_to(root)}")
     return 0
 
 
@@ -2689,9 +2750,7 @@ def build_parser() -> argparse.ArgumentParser:
     init.add_argument("--classification-path", default=str(DEFAULT_RENDER))
     init.set_defaults(func=command_init)
 
-    refresh = subparsers.add_parser(
-        "refresh", help="refresh observations without moving frozen refs"
-    )
+    refresh = subparsers.add_parser("refresh", help="refresh observations without moving frozen refs")
     refresh.add_argument("--manifest", default=str(DEFAULT_MANIFEST))
     refresh.add_argument("--source-repo", required=True)
     refresh.add_argument("--expect-digest", required=True)
@@ -2704,9 +2763,7 @@ def build_parser() -> argparse.ArgumentParser:
     validate.add_argument("--unit")
     validate.set_defaults(func=command_validate)
 
-    verify = subparsers.add_parser(
-        "verify-source", help="verify the frozen source from a local checkout"
-    )
+    verify = subparsers.add_parser("verify-source", help="verify the frozen source from a local checkout")
     verify.add_argument("--manifest", default=str(DEFAULT_MANIFEST))
     verify.add_argument("--source-repo", required=True)
     verify.set_defaults(func=command_verify_source)

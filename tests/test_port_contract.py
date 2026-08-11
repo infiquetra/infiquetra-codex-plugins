@@ -59,9 +59,7 @@ def test_frozen_source_and_codex_inventories_are_exhaustive() -> None:
     assert codex["evidence_ref"] == contract.CODEX_EVIDENCE_REF
     assert len(codex["rows"]) == codex["expected_count"] == contract.EXPECTED_CODEX_COUNT
     assert contract.inventory_digest(codex["rows"]) == codex["inventory_sha256"]
-    assert all(
-        row["treatment"] in {"preserve", "reconcile", "superseded-by-plan"} for row in codex["rows"]
-    )
+    assert all(row["treatment"] in {"preserve", "reconcile", "superseded-by-plan"} for row in codex["rows"])
 
 
 def test_active_contract_rejects_shifted_identity_or_frozen_refs() -> None:
@@ -101,7 +99,9 @@ def test_self_consistent_removed_codex_row_still_fails_frozen_inventory() -> Non
     manifest = load_manifest()
     manifest["codex"]["rows"].pop()
     manifest["codex"]["expected_count"] = len(manifest["codex"]["rows"])
-    manifest["codex"]["inventory_sha256"] = contract.inventory_digest(manifest["codex"]["rows"])
+    manifest["codex"]["inventory_sha256"] = contract.inventory_digest(
+        manifest["codex"]["rows"]
+    )
 
     errors = contract.validate_manifest(ROOT, manifest, stage="classification")
 
@@ -275,14 +275,14 @@ def test_capability_schema_digest_is_part_of_the_gate() -> None:
 
     errors = contract.validate_manifest(ROOT, manifest, stage="classification")
 
-    assert any("capability_snapshot historical preimage" in error for error in errors)
+    assert any(
+        "capability_snapshot historical preimage" in error for error in errors
+    )
 
 
 def test_nested_capability_schema_is_closed() -> None:
     snapshot = json.loads(
-        (ROOT / "docs/validation/codex-runtime-capability-snapshot.json").read_text(
-            encoding="utf-8"
-        )
+        (ROOT / "docs/validation/codex-runtime-capability-snapshot.json").read_text(encoding="utf-8")
     )
     schema = json.loads(
         (ROOT / "docs/validation/codex-runtime-capability-snapshot.schema-r3.json").read_text(
@@ -431,9 +431,7 @@ def test_release_evidence_kind_must_match_release_slot() -> None:
 
     errors = contract.validate_manifest(ROOT, manifest, stage="classification")
 
-    assert any(
-        "release_evidence.review must reference `review` evidence" in error for error in errors
-    )
+    assert any("release_evidence.review must reference `review` evidence" in error for error in errors)
 
 
 def test_historical_u2_unit_passes_but_retired_cutover_verifier_blocks_replay() -> None:
@@ -500,10 +498,9 @@ def test_manifest_digest_changes_when_classification_changes() -> None:
     modified = copy.deepcopy(manifest)
     modified["source"]["rows"][0]["rationale"] += " Changed."
 
-    assert (
-        hashlib.sha256(original).hexdigest()
-        != hashlib.sha256(contract.canonical_json_bytes(modified)).hexdigest()
-    )
+    assert hashlib.sha256(original).hexdigest() != hashlib.sha256(
+        contract.canonical_json_bytes(modified)
+    ).hexdigest()
 
 
 def _fixture_repo(path: Path) -> Path:
@@ -608,13 +605,34 @@ def test_new_manifest_writes_version_2_and_preserves_explicit_empty_policy(
 
 def test_behavior_predicate_covers_only_active_runtime_paths() -> None:
     selected = {
+        ".agents/plugins/marketplace.json",
+        ".codex/config.toml",
         "scripts/port_contract.py",
         "plugins/saga/.codex-plugin/plugin.json",
+        "plugins/saga/agents/reviewer.toml",
         "plugins/saga/scripts/tool.py",
         "plugins/saga/skills/work/SKILL.md",
         "plugins/saga/hooks/hooks.json",
         "plugins/saga/config/policy.json",
         "plugins/saga/roles/reviewer.md",
+        "plugins/discord-identity-assets/references/asset-pipeline.md",
+        "plugins/discord-identity-assets/references/nested/example.md",
+        "plugins/python-toolkit/references/lambda-patterns.md",
+        "plugins/python-toolkit/references/nested/example.md",
+        "plugins/saga/references/rubrics/plan/core/context.md",
+        "plugins/saga/references/rubrics/plan/extras/nested/context.md",
+        "plugins/hermes-profile-evolution/conformance/profile-change-classifier.v1.json",
+        "plugins/hermes-profile-evolution/conformance/profile-request-cli.v1.json",
+        "plugins/saga/references/bridge-signatures.json",
+        "plugins/saga/references/effort-policy.yaml",
+        "plugins/saga/references/engine-dispatch.md",
+        "plugins/saga/references/engine-registry.yaml",
+        "plugins/saga/references/formatting-style.md",
+        "plugins/saga/references/model-releases.yaml",
+        "plugins/saga/references/operator-choice.md",
+        "plugins/saga/references/outcome-cross-runtime.md",
+        "plugins/saga/references/outcome-spec.md",
+        "plugins/saga/references/saga-spec.md",
     }
     excluded = {
         "docs/plans/plan.md",
@@ -625,19 +643,47 @@ def test_behavior_predicate_covers_only_active_runtime_paths() -> None:
         "tests/test_port_contract.py",
         "plugins/saga/tests/test_tool.py",
         "plugins/saga/fixtures/input.json",
-        "plugins/saga/references/narrative.md",
+        "plugins/hermes-profile-evolution/conformance/provenance.json",
+        "plugins/hermes-profile-evolution/conformance/future-contract.json",
+        "plugins/fleet-core/references/effort-convention.md",
+        "plugins/fleet-core/references/tier-palette.md",
+        "plugins/mission-control/references/arbitrary.md",
+        "plugins/saga/commands/speculative.md",
+        "plugins/saga/providers/speculative.py",
+        "plugins/saga/references/dispatch-adapter-contract.md",
+        "plugins/saga/references/engine-output-trust-boundary.md",
+        "plugins/saga/references/execution-spec.md",
+        "plugins/saga/references/run-fact-ledger.md",
+        "plugins/saga/references/sandbox-spawn-sites.md",
+        "plugins/saga/references/surface_intent_defaults.yaml",
+        ".agents/plugins/other.json",
+        ".codex/other.toml",
     }
 
     assert all(contract.is_behavior_path(path) for path in selected)
     assert not any(contract.is_behavior_path(path) for path in excluded)
 
-    rename = {
-        "change": "R",
-        "old_path": "plugins/saga/scripts/old.py",
-        "new_path": "docs/old.py",
-        "similarity": 100,
-    }
-    assert contract.behavior_inventory([rename]) == [rename]
+    changed_rows = [
+        {
+            "change": "A",
+            "old_path": None,
+            "new_path": "plugins/saga/agents/reviewer.toml",
+            "similarity": None,
+        },
+        {
+            "change": "D",
+            "old_path": "plugins/python-toolkit/references/testing-patterns.md",
+            "new_path": None,
+            "similarity": None,
+        },
+        {
+            "change": "R",
+            "old_path": "plugins/saga/references/operator-choice.md",
+            "new_path": "docs/operator-choice.md",
+            "similarity": 100,
+        },
+    ]
+    assert contract.behavior_inventory(changed_rows) == contract.normalize_inventory(changed_rows)
 
 
 def test_reconciliation_rows_have_one_closed_deterministic_shape() -> None:
@@ -890,19 +936,199 @@ def test_codex_local_evidence_does_not_resolve_a_companion_checkout() -> None:
 def test_version_2_lifecycle_is_one_way_and_evidence_ref_is_immutable() -> None:
     previous = {
         "schema_version": 2,
-        "codex": {"evidence_ref": "refs/tags/evidence/fixture"},
+        "source": {
+            "repository_id": "infiquetra/source",
+            "base_ref": "1" * 40,
+            "target_ref": "2" * 40,
+        },
+        "codex": {
+            "repository_id": "infiquetra/codex",
+            "historical_plan_base": "3" * 40,
+            "execution_base": "4" * 40,
+            "evidence_ref": "refs/tags/evidence/fixture",
+        },
         "reconciliation": {
             "state": "finalized",
             "expected_count": 0,
             "inventory_sha256": contract.inventory_digest([]),
             "rows": [],
         },
+        "evidence": [{"evidence_id": "proof"}],
     }
     current = copy.deepcopy(previous)
     current["reconciliation"]["state"] = "active"
     current["codex"]["evidence_ref"] = "refs/tags/evidence/replacement"
+    current["evidence"].append({"evidence_id": "replacement"})
 
     errors = contract.validate_manifest_transition(ROOT, previous, current)
 
     assert "codex.evidence_ref cannot change after version 2 initialization" in errors
     assert "finalized reconciliation cannot return to active" in errors
+    assert "finalized evidence cannot change" in errors
+
+
+def test_finalized_version_2_reconciliation_requires_evidence() -> None:
+    errors: list[str] = []
+    with patch.object(contract, "resolve_ref", return_value="1" * 40):
+        contract._reconciliation_target(
+            ROOT,
+            {
+                "codex": {"evidence_ref": "refs/tags/evidence/fixture"},
+                "evidence": [],
+            },
+            {"state": "finalized"},
+            errors,
+        )
+
+    assert errors == ["finalized reconciliation requires nonempty evidence"]
+
+
+def test_version_2_active_to_finalized_source_evidence_is_frozen(
+    tmp_path: Path,
+) -> None:
+    root = _fixture_repo(tmp_path / "codex")
+    (root / "README.md").write_text("fixture\n", encoding="utf-8")
+    execution_base = _commit_all(root, "execution base")
+    source_repo, source_target = _declared_source_repo(
+        tmp_path / "source",
+        "https://github.com/infiquetra/infiquetra-claude-plugins.git",
+    )
+
+    for relative, content in {
+        "plan.md": "plan\n",
+        "review.md": "review\n",
+        "runbook.md": "runbook\n",
+    }.items():
+        (root / relative).write_text(content, encoding="utf-8")
+    snapshot = json.loads(
+        (ROOT / "docs/validation/codex-runtime-capability-snapshot.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    snapshot["refs"] = {
+        "codex": {
+            "historical_plan_base": execution_base,
+            "execution_base": execution_base,
+            "observed_origin_main": execution_base,
+        },
+        "claude": {
+            "source_base": source_target,
+            "source_target": source_target,
+            "observed_head": source_target,
+            "observed_main": source_target,
+            "observed_origin_main": source_target,
+            "target_reachable": True,
+        },
+    }
+    contract.write_json(root / "snapshot.json", snapshot)
+    (root / "snapshot.schema.json").write_bytes(
+        (ROOT / "docs/validation/codex-runtime-capability-snapshot.schema-r4.json").read_bytes()
+    )
+    _commit_all(root, "authority")
+    (root / "scripts").mkdir()
+    (root / "scripts/runtime.py").write_text("VALUE = 1\n", encoding="utf-8")
+    _commit_all(root, "active behavior")
+
+    evidence_ref = "refs/tags/evidence/fixture-finalized-v2"
+    manifest = contract.build_manifest(
+        root,
+        source_repo,
+        source_base=source_target,
+        source_target=source_target,
+        source_pathspecs=["tools/harness.py"],
+        codex_plan_base=execution_base,
+        codex_execution_base=execution_base,
+        runbook=Path("runbook.md"),
+        capability_snapshot=Path("snapshot.json"),
+        capability_schema=Path("snapshot.schema.json"),
+        plan=Path("plan.md"),
+        reviews=[Path("review.md")],
+        classification_path=Path("classification.md"),
+        port_id="fixture-finalized-v2",
+        codex_evidence_ref=evidence_ref,
+        version_policy=[],
+    )
+    for row in manifest["reconciliation"]["rows"]:
+        row["classification"] = "codex-local"
+        row["rationale"] = "Fixture behavior is owned by the Codex repository."
+    active_manifest = copy.deepcopy(manifest)
+    (root / "classification.md").write_text(
+        contract.render_manifest(manifest), encoding="utf-8"
+    )
+    with patch.dict(
+        "os.environ",
+        {contract.PORT_SOURCE_REPO_ENV: str(source_repo)},
+        clear=True,
+    ):
+        assert contract.validate_manifest(root, manifest, stage="classification") == []
+
+    contract.write_json(root / "manifest.json", manifest)
+    contract.write_json(root / "evidence.json", {"result": "passed"})
+    evidence_subject = _commit_all(root, "committed evidence subject")
+    manifest["reconciliation"]["state"] = "finalized"
+    manifest["evidence"] = [
+        {
+            "evidence_id": "source-harness",
+            "unit": "U3",
+            "kind": "source-verification",
+            "artifact_path": "evidence.json",
+            "artifact_sha256": contract.sha256_file(root / "evidence.json"),
+            "argv": ["python3", "tools/harness.py"],
+            "cwd": ".",
+            "exit_code": 0,
+            "recorded_at": "2026-08-11T12:00:00+00:00",
+            "repo_head": evidence_subject,
+            "repository": "source",
+        }
+    ]
+    contract.write_json(root / "manifest.json", manifest)
+    (root / "classification.md").write_text(
+        contract.render_manifest(manifest), encoding="utf-8"
+    )
+    frozen_candidate = _commit_all(root, "finalized candidate")
+    subprocess.run(["git", "-C", str(root), "tag", evidence_ref, frozen_candidate], check=True)
+
+    with patch.dict(
+        "os.environ",
+        {contract.PORT_SOURCE_REPO_ENV: str(source_repo)},
+        clear=True,
+    ):
+        assert contract.validate_manifest(root, manifest, stage="classification") == []
+    assert contract.validate_manifest_transition(
+        root,
+        active_manifest,
+        manifest,
+        previous_commit=evidence_subject,
+    ) == []
+
+    pinned_fields = (
+        ("source", "repository_id"),
+        ("source", "base_ref"),
+        ("source", "target_ref"),
+        ("codex", "repository_id"),
+        ("codex", "historical_plan_base"),
+        ("codex", "execution_base"),
+    )
+    for container, key in pinned_fields:
+        mutated = copy.deepcopy(manifest)
+        mutated[container][key] = (
+            "f" * 40 if key.endswith("ref") or "base" in key else "changed"
+        )
+        errors = contract.validate_manifest_transition(root, active_manifest, mutated)
+        assert f"{container}.{key} cannot change after version 2 initialization" in errors
+
+    for relative in (
+        "plan.md",
+        "review.md",
+        "runbook.md",
+        "snapshot.json",
+        "snapshot.schema.json",
+    ):
+        (root / relative).write_text("later authority bytes\n", encoding="utf-8")
+    _commit_all(root, "unrelated later head")
+    with patch.dict(
+        "os.environ",
+        {contract.PORT_SOURCE_REPO_ENV: str(source_repo)},
+        clear=True,
+    ):
+        assert contract.validate_manifest(root, manifest, stage="classification") == []

@@ -1,7 +1,7 @@
 {
   "authority": {
     "capability_snapshot": {
-      "path": "docs/validation/codex-runtime-capability-snapshot.json",
+      "path": "docs/validation/issue-63-port-manifest-reconciliation-runtime-capability-snapshot.json",
       "schema_path": "docs/validation/codex-runtime-capability-snapshot.schema-r4.json",
       "schema_sha256": "2bc576e9c8a08dce4cb25773a1b8379ed9aa5778fb12feba7f1d563c578d94bf",
       "schema_version": 3,
