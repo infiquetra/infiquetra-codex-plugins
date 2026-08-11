@@ -1,0 +1,37 @@
+{
+  "schema": "port-manifest/source-command-resolution.v1",
+  "unit": "U3",
+  "scope": {
+    "claim": "declared-source command resolution",
+    "cross_runtime_acceptance": false,
+    "statement": "This receipt proves only that the pinned declared-source harness command resolves and exposes its help interface; it is not cross-runtime acceptance evidence."
+  },
+  "source": {
+    "normalized_origin": "infiquetra/infiquetra-claude-plugins",
+    "detached": true,
+    "head": "b53827bb055e08ccc6aa547cade04aedf4385456",
+    "contained_path": "tools/run_cross_runtime_outcome_acceptance.py",
+    "git_blob": "7c6c9aac411ec2a119b45e77558298846e7ee7b5",
+    "size_bytes": 99980
+  },
+  "command": {
+    "argv": [
+      "python3",
+      "tools/run_cross_runtime_outcome_acceptance.py",
+      "--help"
+    ],
+    "cwd": ".",
+    "recorded_at": "2026-08-11T09:13:07.090395+00:00",
+    "exit_code": 0,
+    "stdout": "usage: run_cross_runtime_outcome_acceptance [-h] --claude-repo CLAUDE_REPO\n                                            --claude-sha CLAUDE_SHA\n                                            --claude-saga-version CLAUDE_SAGA_VERSION\n                                            --claude-fleet-core-version CLAUDE_FLEET_CORE_VERSION\n                                            --codex-repo CODEX_REPO\n                                            --codex-sha CODEX_SHA\n                                            --codex-saga-version CODEX_SAGA_VERSION\n                                            --codex-fleet-core-version CODEX_FLEET_CORE_VERSION\n                                            --output OUTPUT [--units UNITS]\n                                            [--keep-workdir]\n\noptions:\n  -h, --help            show this help message and exit\n  --claude-repo CLAUDE_REPO\n  --claude-sha CLAUDE_SHA\n  --claude-saga-version CLAUDE_SAGA_VERSION\n  --claude-fleet-core-version CLAUDE_FLEET_CORE_VERSION\n  --codex-repo CODEX_REPO\n  --codex-sha CODEX_SHA\n  --codex-saga-version CODEX_SAGA_VERSION\n  --codex-fleet-core-version CODEX_FLEET_CORE_VERSION\n  --output OUTPUT\n  --units UNITS         comma-separated unit filter (default all registered\n                        units)\n  --keep-workdir        retain the temporary work directory (runs with any\n                        failing scenario, or halts, always retain it)\n",
+    "stderr": ""
+  },
+  "failed_cross_runtime_receipt": {
+    "artifact_path": "docs/validation/issue-63-port-manifest-reconciliation-u3-source-harness.json",
+    "sha256": "1a83196f6c30a784117dff56702328f7243388deb2a060557eb03fc44c7056e1",
+    "overall_verdict": "halt",
+    "halt_code": "port-digest",
+    "scenario_count": 0,
+    "classification": "non-evidence divergence provenance"
+  }
+}

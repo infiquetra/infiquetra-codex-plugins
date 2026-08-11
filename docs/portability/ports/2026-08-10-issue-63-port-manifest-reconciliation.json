@@ -126,7 +126,25 @@
       }
     ]
   },
-  "evidence": [],
+  "evidence": [
+    {
+      "argv": [
+        "python3",
+        "tools/run_cross_runtime_outcome_acceptance.py",
+        "--help"
+      ],
+      "artifact_path": "docs/validation/issue-63-port-manifest-reconciliation-u3-source-command-resolution.json",
+      "artifact_sha256": "e6c19bd0d5e0058f704cfa54297d4d45b8f235a481e46f7060231d4228a2dcb5",
+      "cwd": ".",
+      "evidence_id": "u3-source-command-resolution-20260811",
+      "exit_code": 0,
+      "kind": "source-verification",
+      "recorded_at": "2026-08-11T09:13:07.090395+00:00",
+      "repo_head": "e40688b263996dda4170a2cae0ac8be51544b2b3",
+      "repository": "source",
+      "unit": "U3"
+    }
+  ],
   "port_id": "issue-63-port-manifest-reconciliation-2026-08-10",
   "reconciliation": {
     "expected_count": 2,
@@ -153,7 +171,7 @@
         "source_row_refs": []
       }
     ],
-    "state": "active"
+    "state": "finalized"
   },
   "refresh_changes": [],
   "release_evidence": {
