@@ -6,6 +6,7 @@ from __future__ import annotations
 import math
 import ipaddress
 import re
+import shlex
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -274,7 +275,9 @@ def _validate_invocation_transport(
     """Require every external route to carry an enforceable model and effort envelope."""
 
     _require_string(invocation, "model", f"{where}: invocation")
-    _require_string(invocation, "effort", f"{where}: invocation")
+    effort = _require_string(invocation, "effort", f"{where}: invocation")
+    if not effort.strip():
+        raise RegistryError(f"{where}: invocation 'effort' must be a non-blank string")
     via = _require_string(invocation, "via", f"{where}: invocation")
     recipe = _require_string(invocation, "recipe", f"{where}: invocation")
     write_capable = _require_bool(invocation, "write_capable", f"{where}: invocation")
@@ -293,8 +296,7 @@ def _validate_invocation_transport(
         )
     if via == "codex:delegate":
         raise RegistryError(f"{where}: codex:delegate is not a Codex external-engine transport")
-    if re.search(r"(?:^|\s)--effort(?:\s|=)", recipe):
-        raise RegistryError(f"{where}: stale --effort recipe is not supported")
+    _validate_recipe_effort(recipe, effort, where)
     if transport == "http":
         _validate_http_base_url(
             _require_string(invocation, "base_url", f"{where}: invocation"), where
@@ -302,6 +304,34 @@ def _validate_invocation_transport(
 
     if "auth" not in invocation:
         raise RegistryError(f"{where}: invocation missing required field 'auth'")
+
+
+def _validate_recipe_effort(recipe: str, effort: str, where: str) -> None:
+    """Keep an optional recipe effort flag consistent with invocation truth."""
+
+    try:
+        tokens = shlex.split(recipe)
+    except ValueError as exc:
+        raise RegistryError(f"{where}: recipe effort cannot be parsed: {exc}") from exc
+
+    values: list[str] = []
+    for index, token in enumerate(tokens):
+        if token == "--effort":
+            value = tokens[index + 1] if index + 1 < len(tokens) else ""
+            values.append("" if value.startswith("--") else value)
+        elif token.startswith("--effort="):
+            values.append(token.partition("=")[2])
+
+    if not values:
+        return
+    if len(values) > 1:
+        raise RegistryError(f"{where}: recipe contains duplicate --effort values")
+    if not values[0].strip():
+        raise RegistryError(f"{where}: recipe contains a blank --effort value")
+    if values[0] != effort:
+        raise RegistryError(
+            f"{where}: recipe effort {values[0]!r} does not match invocation effort {effort!r}"
+        )
 
 
 def _validate_http_base_url(value: str, where: str) -> None:

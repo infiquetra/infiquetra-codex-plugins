@@ -34,7 +34,9 @@ Runner = Callable[[dict[str, Any]], dict[str, Any]]
 LaunchReporter = Callable[[dict[str, Any]], None]
 DEFAULT_REGISTRY = Path(__file__).resolve().parent.parent / "references" / "engine-registry.yaml"
 CHILD_ENV_KEYS = ("HOME", "PATH", "TMPDIR", "LANG", "LC_ALL", "LC_CTYPE", "TERM")
+CLAUDE_EFFORTS = ("low", "medium", "high", "xhigh", "max")
 MAX_ARTIFACT_BYTES = 8 * 1024 * 1024
+_MISSING = object()
 
 
 @dataclass(frozen=True, slots=True)
@@ -84,6 +86,8 @@ def _cli_config(engine_id: str) -> CliConfig:
                 "--print",
                 "--model",
                 str(invocation["model"]),
+                "--effort",
+                str(invocation["effort"]),
             ],
         )
     raise ValueError(f"unsupported CLI engine {engine_id!r}")
@@ -103,6 +107,9 @@ def cli_runner(
         mode = str(invocation.get("mode") or "direct")
         if mode == "direct" and write_set:
             return {"status": "error", "output": "direct Saga external calls are read-only"}
+        unavailable = _cli_launch_unavailable(config.engine_id, invocation)
+        if unavailable is not None:
+            return {"status": "error", "output": unavailable}
         context_scope = tuple(str(item) for item in invocation.get("context_scope", []))
         workspace = Workspace.create(
             repo_root,
@@ -121,7 +128,7 @@ def cli_runner(
                 stderr=subprocess.PIPE,
                 text=True,
                 start_new_session=True,
-                env=_minimal_child_env(),
+                env=_minimal_child_env(config.engine_id),
             )
             if on_launch is not None:
                 try:
@@ -254,6 +261,9 @@ def execute(
             "mode": request.mode,
         }
     )
+    unavailable = _cli_launch_unavailable(request.engine_id, invocation)
+    if unavailable is not None:
+        return _failure(request, unavailable)
     active_runner = runner or runner_for(
         request.engine_id,
         repo_root=repo_root,
@@ -414,6 +424,8 @@ def _validate_receipt_binding(
         errors.append("receipt route identity does not match the request")
     if receipt.get("invocation_sha256") != _receipt.digest_invocation(invocation):
         errors.append("receipt invocation digest does not match the request")
+    if engine_id == "claude-cli":
+        errors.extend(_validate_claude_receipt_effort(receipt, invocation))
     attestation = receipt.get("output_attestation")
     if not isinstance(attestation, dict):
         errors.append("receipt lacks output attestation")
@@ -425,6 +437,35 @@ def _validate_receipt_binding(
                 require_non_empty=True,
             )
         )
+    return errors
+
+
+def _validate_claude_receipt_effort(
+    receipt: Mapping[str, Any],
+    invocation: Mapping[str, Any],
+) -> list[str]:
+    runner = receipt.get("runner")
+    argv = runner.get("argv") if isinstance(runner, Mapping) else None
+    if not isinstance(argv, list) or not all(isinstance(argument, str) for argument in argv):
+        return ["Claude receipt runner argv must contain exactly one two-token --effort pair"]
+
+    errors: list[str] = []
+    if any(argument.startswith("--effort=") for argument in argv):
+        errors.append("Claude receipt runner argv contains a forbidden equals-form --effort value")
+
+    positions = [index for index, argument in enumerate(argv) if argument == "--effort"]
+    if len(positions) != 1:
+        errors.append("Claude receipt runner argv must contain exactly one two-token --effort pair")
+        return errors
+
+    position = positions[0]
+    if position + 1 >= len(argv) or not argv[position + 1].strip():
+        errors.append("Claude receipt runner argv --effort value must be non-blank")
+        return errors
+
+    configured_effort = invocation.get("effort")
+    if argv[position + 1] != configured_effort:
+        errors.append("Claude receipt runner argv effort does not match the configured invocation")
     return errors
 
 
@@ -463,10 +504,35 @@ def _typed_findings(output: str) -> list[dict[str, str]]:
     return [{"content": output}]
 
 
-def _minimal_child_env() -> dict[str, str]:
+def _cli_launch_unavailable(engine_id: str, invocation: Mapping[str, Any]) -> str | None:
+    if engine_id != "claude-cli":
+        return None
+
+    effort = invocation.get("effort", _MISSING)
+    if effort not in CLAUDE_EFFORTS:
+        value = "<missing>" if effort is _MISSING else _safe_config_value(effort)
+        supported = ", ".join(CLAUDE_EFFORTS)
+        return f"claude-cli effort {value} is unavailable; expected one of: {supported}"
+
+    user = os.environ.get("USER")
+    if not user or not user.strip():
+        return "claude-cli launch is unavailable because USER is absent or blank"
+    return None
+
+
+def _safe_config_value(value: object) -> str:
+    rendered = repr(value)
+    return rendered if len(rendered) <= 80 else f"{rendered[:77]}..."
+
+
+def _minimal_child_env(engine_id: str) -> dict[str, str]:
     """Expose process basics and file-backed provider login, never root secret variables."""
 
-    return {key: os.environ[key] for key in CHILD_ENV_KEYS if os.environ.get(key)}
+    environment = {key: os.environ[key] for key in CHILD_ENV_KEYS if os.environ.get(key)}
+    user = os.environ.get("USER")
+    if engine_id == "claude-cli" and user and user.strip():
+        environment["USER"] = user
+    return environment
 
 
 def _kill_process_group(process: subprocess.Popen[str]) -> None:

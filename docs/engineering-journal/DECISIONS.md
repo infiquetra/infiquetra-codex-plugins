@@ -109,6 +109,45 @@ Required independent review sequence:
 `docs/reviews/2026-08-11-issue-63-port-manifest-reconciliation-code-review-plan-correction-review.md`,
 and `docs/reviews/2026-08-11-issue-63-u3-runbook-version-plan-correction-review.md`.
 
+## 2026-08-10: The Claude Adapter Treats Effort And macOS Identity As Launch Inputs, Not Runtime Telemetry
+
+The retained Claude command line interface (CLI) route carries its configured `effort` in the
+selected registry invocation, and the one-shot adapter records the invocation digest and redacted
+process command arguments (argv) in its existing receipt. The adapter had two gaps: it omitted
+`--effort` from Claude's command arguments, and its shared minimal child-environment helper omitted
+`USER`, which macOS Keychain lookup needs to find the existing authenticated Claude session.
+
+**Decision.** The Claude adapter boundary is the enforcement authority for the closed vocabulary
+`low`, `medium`, `high`, `xhigh`, and `max`. It will validate the registry-supplied value, pass it
+exactly once as `--effort <value>`, and fail unavailable before launch when the configured value is
+absent, blank, or unsupported, safely naming that invalid value in the reason.
+
+The receipt remains transport proof that the configured effort was requested and passed in process
+command arguments; it does not prove provider-observed effective effort. The registry recipe may
+show `--effort` only as a checked representation of the same `invocation.effort`, and registry
+validation must reject blank, duplicated, or mismatched recipe values so the recipe cannot become a
+second configuration source.
+
+The shared environment helper will accept the engine identity and retain `USER` only for a non-blank
+`claude-cli` launch. A missing Claude `USER` returns a clear pre-launch unavailable result, while
+non-Claude routes retain their current environment without `USER`.
+
+It will continue to exclude token variables, credentials, unrelated environment values, login
+flows, account inspection, copied credentials, per-profile homes, and broad parent-environment
+inheritance. The attended macOS proof uses existing authentication, confirms auth state is unchanged,
+and retains only sanitized pass/fail evidence rather than raw output or identity.
+
+**Rejected alternatives.** (1) Default or substitute a missing effort — rejected because it hides
+route drift. (2) Add provider observation, status, approval, chaperone, telemetry, subscription, or
+account-detection machinery — rejected because pull request #69 retired those surfaces and neither
+gap needs them. (3) Pass the full environment or credential variables — rejected because it turns a
+minimal Keychain identity input into a secret-egress boundary expansion.
+
+**Revisit when** the Claude CLI publishes an incompatible effort vocabulary or an independently
+verifiable, secret-safe provider observation is explicitly approved. Either condition requires a
+new decision; command-argument and invocation-digest evidence must not be relabeled as provider
+telemetry.
+
 ## 2026-08-09: Committed Profile Bytes Are The Unpromoted Rendering; A Deviation Is Applied At Install
 
 Promoting the two low-cost profiles onto the Luna model is a deviation from what their Fleet Core

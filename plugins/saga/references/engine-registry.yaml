@@ -30,7 +30,7 @@ engines:
     transport: cli
     invocation:
       via: claude:delegate
-      recipe: "claude --safe-mode --tools Read,Glob,Grep --disable-slash-commands --print --model opus"
+      recipe: "claude --safe-mode --tools Read,Glob,Grep --disable-slash-commands --print --model opus --effort high"
       write_capable: false
       model: opus
       effort: high

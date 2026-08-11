@@ -103,6 +103,56 @@ def test_lint_registry_accepts_current_rows(tmp_path: Path) -> None:
     assert len(registry.engines) == 1
 
 
+def test_lint_registry_accepts_a_recipe_without_an_effort_flag(tmp_path: Path) -> None:
+    data = _registry_dict()
+    assert "--effort" not in data["engines"][0]["invocation"]["recipe"]
+    registry_path = _write_yaml(tmp_path / "engine-registry.yaml", data)
+    releases_path = _write_yaml(
+        tmp_path / "model-releases.yaml", {"external-model": "2026-07-06"}
+    )
+
+    registry = LINT.lint_registry(registry_path, releases_path)
+
+    assert len(registry.engines) == 1
+
+
+@pytest.mark.parametrize(
+    ("recipe", "reason"),
+    [
+        ("external-cli delegate --effort '' --mode no-write", "blank"),
+        (
+            "external-cli delegate --effort high --effort high --mode no-write",
+            "duplicate",
+        ),
+        ("external-cli delegate --effort medium --mode no-write", "does not match"),
+        ("external-cli delegate '--effort' medium --mode no-write", "does not match"),
+        ("external-cli delegate '--effort=medium' --mode no-write", "does not match"),
+        ("external-cli delegate '--effort=' --mode no-write", "blank"),
+        (
+            "external-cli delegate '--effort' high '--effort=high' --mode no-write",
+            "duplicate",
+        ),
+    ],
+)
+def test_lint_registry_rejects_inconsistent_recipe_effort(
+    tmp_path: Path,
+    recipe: str,
+    reason: str,
+) -> None:
+    data = _registry_dict()
+    data["engines"][0]["invocation"]["recipe"] = recipe
+    registry_path = _write_yaml(tmp_path / "engine-registry.yaml", data)
+    releases_path = _write_yaml(
+        tmp_path / "model-releases.yaml", {"external-model": "2026-07-06"}
+    )
+
+    with pytest.raises(
+        REG.RegistryError,
+        match=rf"external-cli/model-high.*{reason}",
+    ):
+        LINT.lint_registry(registry_path, releases_path)
+
+
 def test_lint_registry_rejects_stale_rows_with_names(tmp_path: Path) -> None:
     registry_path = _write_yaml(
         tmp_path / "engine-registry.yaml",

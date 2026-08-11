@@ -4,6 +4,7 @@ from dataclasses import replace
 import subprocess
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -39,7 +40,11 @@ def _result(invocation: dict[str, object], output: str = "advisory evidence") ->
         transport="cli",
         wall_time_s=0.1,
         bytes_produced=len(output.encode("utf-8")),
-        runner={"pid": 42, "argv": ["provider"], "exit_code": 0},
+        runner={
+            "pid": 42,
+            "argv": ["provider", "--effort", str(invocation["effort"])],
+            "exit_code": 0,
+        },
         receipt_emitter="fixture",
         run_id="fixture-1",
         invocation_sha256=A._receipt.digest_invocation(invocation),
@@ -55,6 +60,21 @@ def _result(invocation: dict[str, object], output: str = "advisory evidence") ->
         "changed_paths": [],
         "patch": "",
     }
+
+
+def _use_claude_invocation(
+    monkeypatch: pytest.MonkeyPatch,
+    invocation: dict[str, object],
+) -> None:
+    class RegistryFixture:
+        def by_key(self, _key: str) -> SimpleNamespace:
+            return SimpleNamespace(transport="cli", invocation=invocation)
+
+    monkeypatch.setattr(
+        A.engine_registry.Registry,
+        "load",
+        classmethod(lambda _cls, _path: RegistryFixture()),
+    )
 
 
 def test_closed_request_keeps_direct_calls_read_only() -> None:
@@ -98,6 +118,118 @@ def test_valid_advisory_result_preserves_bridge_proof(tmp_path: Path) -> None:
     assert result.evidence == "advisory evidence"
     assert result.receipt is not None
     assert result.findings == ({"content": "advisory evidence"},)
+
+
+@pytest.mark.parametrize(
+    ("recorded_argv", "reason"),
+    [
+        (["provider"], "exactly one two-token"),
+        (
+            ["provider", "--effort", "high", "--effort", "high"],
+            "exactly one two-token",
+        ),
+        (["provider", "--effort", ""], "non-blank"),
+        (["provider", "--effort=high"], "equals-form"),
+        (["provider", "--effort", "medium"], "does not match"),
+    ],
+)
+def test_claude_receipt_rejects_invalid_recorded_effort_pair(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    recorded_argv: list[str],
+    reason: str,
+) -> None:
+    monkeypatch.setenv("USER", "claude-user")
+
+    def runner(invocation: dict[str, object]) -> dict[str, object]:
+        raw = _result(invocation)
+        assert raw["receipt"]["invocation_sha256"] == A._receipt.digest_invocation(invocation)
+        raw["receipt"]["runner"]["argv"] = recorded_argv
+        return raw
+
+    request = C.HarnessRequest("request-1", "claude-cli", "opus", "review", "HEAD")
+    result = A.execute(request, repo_root=tmp_path, runner=runner)
+
+    assert result.status == "invalid-output"
+    assert reason in result.detail
+
+
+def test_claude_receipt_still_rejects_invocation_digest_mismatch(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("USER", "claude-user")
+
+    def runner(invocation: dict[str, object]) -> dict[str, object]:
+        raw = _result(invocation)
+        raw["receipt"]["invocation_sha256"] = "0" * 64
+        return raw
+
+    request = C.HarnessRequest("request-1", "claude-cli", "opus", "review", "HEAD")
+    result = A.execute(request, repo_root=tmp_path, runner=runner)
+
+    assert result.status == "invalid-output"
+    assert "invocation digest" in result.detail
+
+
+@pytest.mark.parametrize(
+    ("invocation", "invalid_value"),
+    [
+        ({"model": "opus"}, "<missing>"),
+        ({"model": "opus", "effort": ""}, "''"),
+        ({"model": "opus", "effort": "   "}, "'   '"),
+        ({"model": "opus", "effort": "extreme"}, "'extreme'"),
+    ],
+)
+def test_claude_invalid_effort_is_unavailable_before_runner(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    invocation: dict[str, object],
+    invalid_value: str,
+) -> None:
+    _use_claude_invocation(monkeypatch, invocation)
+    monkeypatch.setenv("USER", "claude-user")
+    called = False
+
+    def runner(_invocation: dict[str, object]) -> dict[str, object]:
+        nonlocal called
+        called = True
+        return {"status": "ok"}
+
+    request = C.HarnessRequest("request-1", "claude-cli", "opus", "review", "HEAD")
+    result = A.execute(request, repo_root=tmp_path, runner=runner)
+
+    assert result.status == "unavailable"
+    assert invalid_value in result.detail
+    assert result.receipt is None
+    assert called is False
+
+
+@pytest.mark.parametrize("user", [None, "", "   "])
+def test_claude_missing_user_is_unavailable_before_runner(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    user: str | None,
+) -> None:
+    _use_claude_invocation(monkeypatch, {"model": "opus", "effort": "high"})
+    if user is None:
+        monkeypatch.delenv("USER", raising=False)
+    else:
+        monkeypatch.setenv("USER", user)
+    called = False
+
+    def runner(_invocation: dict[str, object]) -> dict[str, object]:
+        nonlocal called
+        called = True
+        return {"status": "ok"}
+
+    request = C.HarnessRequest("request-1", "claude-cli", "opus", "review", "HEAD")
+    result = A.execute(request, repo_root=tmp_path, runner=runner)
+
+    assert result.status == "unavailable"
+    assert "USER" in result.detail
+    assert result.receipt is None
+    assert called is False
 
 
 def test_result_contract_round_trips_and_rejects_evidence_tampering(
@@ -208,7 +340,13 @@ def test_cli_child_environment_drops_root_secret_variables(
     monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "secret")
     monkeypatch.setenv("ANTHROPIC_API_KEY", "secret")
     monkeypatch.setenv("PATH", "/usr/bin")
-    environment = A._minimal_child_env()
-    assert environment["PATH"] == "/usr/bin"
-    assert "AWS_SECRET_ACCESS_KEY" not in environment
-    assert "ANTHROPIC_API_KEY" not in environment
+    monkeypatch.setenv("USER", "claude-user")
+
+    claude_environment = A._minimal_child_env("claude-cli")
+    non_claude_environment = A._minimal_child_env("agy")
+
+    assert claude_environment["PATH"] == "/usr/bin"
+    assert claude_environment["USER"] == "claude-user"
+    assert "USER" not in non_claude_environment
+    assert "AWS_SECRET_ACCESS_KEY" not in claude_environment
+    assert "ANTHROPIC_API_KEY" not in claude_environment

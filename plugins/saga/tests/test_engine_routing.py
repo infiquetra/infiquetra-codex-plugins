@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shlex
 import sys
 from pathlib import Path
 import pytest
@@ -41,6 +42,17 @@ def test_shipped_registry_exposes_only_the_six_supported_routes(
         "deepseek/deepseek-chat",
     }
     assert registry.by_role("cross-family-review-panel").verdict == "advisory"
+
+
+def test_shipped_claude_recipe_declares_its_configured_effort_once(
+    registry: REG.Registry,
+) -> None:
+    invocation = registry.by_key("claude-cli/opus").invocation
+    recipe = shlex.split(invocation["recipe"])
+
+    assert invocation["effort"] == "high"
+    assert recipe.count("--effort") == 1
+    assert recipe[recipe.index("--effort") + 1] == invocation["effort"]
 
 
 @pytest.mark.usefixtures("available")
