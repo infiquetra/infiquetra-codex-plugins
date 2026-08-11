@@ -82,7 +82,7 @@
     {
       "classification": "historical-evidence",
       "path": "docs/engineering-journal/DECISIONS.md",
-      "sha256": "91651da863e25cbd290bcadff1e5b99f51903214920b8b766f8117842bf9efe9",
+      "sha256": "a90d6572af70b61bc5ad05ef206bd2476263cedcced97c13d076689097523691",
       "tokens": [
         "## Team Structure",
         "Team Execution",
@@ -1196,7 +1196,7 @@
     }
   ],
   "generated_by": "scripts/build_legacy_workflow_inventory.py",
-  "historical_inventory_sha256": "f8f97c7a2039256bcb84c9eba6613ce3f8e10415cb8a3d4ed4cfcabd31c8e6af",
+  "historical_inventory_sha256": "6ef11b2f4bd6d2f13a3a45dbe1391bafadb71b4e46a4cf2906ded687c295b242",
   "history_sentinels": {
     "docs/investigations/2026-06-30-team-execution-saga-orchestration-debug-report.md": {
       "sha256": "ecc08eceda3a67dc81d15b1930753fe236ca7c1ae9b3ad9dd506cdecfb0ac4fa",
