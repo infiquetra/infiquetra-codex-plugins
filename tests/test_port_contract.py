@@ -529,6 +529,15 @@ def _commit_all(repo: Path, message: str) -> str:
     ).stdout.strip()
 
 
+def _declared_source_repo(path: Path, origin: str) -> tuple[Path, str]:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    repo = _fixture_repo(path)
+    (repo / "tools").mkdir()
+    (repo / "tools/harness.py").write_text("print('ok')\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(repo), "remote", "add", "origin", origin], check=True)
+    return repo, _commit_all(repo, "source target")
+
+
 def test_schema_dispatch_accepts_only_exact_version_1_or_2() -> None:
     for version in (1, 2):
         errors: list[str] = []
@@ -695,6 +704,187 @@ def test_versioned_evidence_repository_key_is_closed() -> None:
     version_2["evidence"][0]["repository"] = "other"
     errors = contract.validate_manifest(ROOT, version_2, stage="classification")
     assert any("repository must be `source`" in error for error in errors)
+
+
+def test_declared_source_checkout_prefers_override_and_contains_harness(
+    tmp_path: Path,
+) -> None:
+    root = _fixture_repo(tmp_path / "codex")
+    override, target = _declared_source_repo(
+        tmp_path / "nonstandard-source",
+        "git@github.com:infiquetra/infiquetra-claude-plugins.git",
+    )
+    source = {
+        "repository_id": "infiquetra/infiquetra-claude-plugins",
+        "target_ref": target,
+    }
+
+    resolved = contract.resolve_declared_source_checkout(
+        root,
+        source,
+        environ={contract.PORT_SOURCE_REPO_ENV: str(override)},
+    )
+    errors: list[str] = []
+    contract._validate_evidence_command_paths(
+        resolved,
+        ["python3", "tools/harness.py"],
+        "evidence[0].argv",
+        errors,
+    )
+
+    assert resolved == override.resolve()
+    assert errors == []
+
+
+def test_declared_source_checkout_uses_git_common_directory_sibling(
+    tmp_path: Path,
+) -> None:
+    layout = tmp_path / "layout"
+    codex = _fixture_repo(layout / "infiquetra-codex-plugins")
+    (codex / "README.md").write_text("codex\n", encoding="utf-8")
+    _commit_all(codex, "codex")
+    source_repo, target = _declared_source_repo(
+        layout / "infiquetra-claude-plugins",
+        "https://github.com/infiquetra/infiquetra-claude-plugins.git",
+    )
+    detached = tmp_path / "detached"
+    subprocess.run(
+        ["git", "-C", str(codex), "worktree", "add", "--detach", str(detached)],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    resolved = contract.resolve_declared_source_checkout(
+        detached,
+        {
+            "repository_id": "infiquetra/infiquetra-claude-plugins",
+            "target_ref": target,
+        },
+        environ={},
+    )
+
+    assert resolved == source_repo.resolve()
+
+
+def test_declared_source_checkout_rejects_identity_and_head_mismatch(
+    tmp_path: Path,
+) -> None:
+    root = _fixture_repo(tmp_path / "codex")
+    source_repo, target = _declared_source_repo(
+        tmp_path / "source",
+        "https://github.com/example/wrong-source.git",
+    )
+    declaration = {
+        "repository_id": "infiquetra/infiquetra-claude-plugins",
+        "target_ref": target,
+    }
+
+    with patch.dict(
+        "os.environ",
+        {contract.PORT_SOURCE_REPO_ENV: str(source_repo)},
+        clear=True,
+    ):
+        try:
+            contract.resolve_declared_source_checkout(root, declaration)
+        except contract.ContractError as exc:
+            assert "origin mismatch" in str(exc)
+        else:
+            raise AssertionError("origin mismatch was accepted")
+
+    subprocess.run(
+        [
+            "git",
+            "-C",
+            str(source_repo),
+            "remote",
+            "set-url",
+            "origin",
+            "ssh://git@github.com/infiquetra/infiquetra-claude-plugins.git",
+        ],
+        check=True,
+    )
+    (source_repo / "README.md").write_text("later\n", encoding="utf-8")
+    _commit_all(source_repo, "later head")
+
+    with patch.dict(
+        "os.environ",
+        {contract.PORT_SOURCE_REPO_ENV: str(source_repo)},
+        clear=True,
+    ):
+        try:
+            contract.resolve_declared_source_checkout(root, declaration)
+        except contract.ContractError as exc:
+            assert "HEAD mismatch" in str(exc)
+        else:
+            raise AssertionError("source HEAD mismatch was accepted")
+
+
+def test_declared_source_checkout_rejects_missing_declaration_and_checkout(
+    tmp_path: Path,
+) -> None:
+    root = _fixture_repo(tmp_path / "codex")
+    cases = (
+        ({}, {}, "source.repository_id"),
+        (
+            {
+                "repository_id": "infiquetra/infiquetra-claude-plugins",
+                "target_ref": "1" * 40,
+            },
+            {contract.PORT_SOURCE_REPO_ENV: str(tmp_path / "missing")},
+            "source checkout is unavailable",
+        ),
+    )
+
+    for declaration, environ, expected in cases:
+        try:
+            contract.resolve_declared_source_checkout(root, declaration, environ=environ)
+        except contract.ContractError as exc:
+            assert expected in str(exc)
+        else:
+            raise AssertionError(f"invalid source declaration was accepted: {declaration}")
+
+
+def test_source_harness_paths_reject_missing_traversal_and_symlink_escape(
+    tmp_path: Path,
+) -> None:
+    source_repo, _ = _declared_source_repo(
+        tmp_path / "source",
+        "https://github.com/infiquetra/infiquetra-claude-plugins.git",
+    )
+    outside = tmp_path / "outside.py"
+    outside.write_text("print('outside')\n", encoding="utf-8")
+    (source_repo / "tools/escape.py").symlink_to(outside)
+
+    for path in (
+        "tools/missing.py",
+        "../outside.py",
+        "/tmp/outside.py",
+        ".codex/plugins/cache/harness.py",
+        "tools/escape.py",
+    ):
+        errors: list[str] = []
+        contract._validate_evidence_command_paths(
+            source_repo,
+            ["python3", path],
+            "evidence[0].argv",
+            errors,
+        )
+        assert len(errors) == 1
+
+
+def test_codex_local_evidence_does_not_resolve_a_companion_checkout() -> None:
+    manifest = load_manifest()
+
+    with patch.object(contract, "resolve_declared_source_checkout") as resolver:
+        errors = contract.validate_manifest(ROOT, manifest, stage="classification")
+
+    resolver.assert_not_called()
+    assert errors == []
+
+    manifest["evidence"][0]["cwd"] = "subdirectory"
+    errors = contract.validate_manifest(ROOT, manifest, stage="classification")
+    assert any("cwd must be `.`" in error for error in errors)
 
 
 def test_version_2_lifecycle_is_one_way_and_evidence_ref_is_immutable() -> None:

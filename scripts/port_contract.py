@@ -119,6 +119,7 @@ CONTROL_RE = re.compile(r"[\x00-\x1f\x7f]")
 SECRET_KEY_RE = re.compile(r"(?:^|_)(?:token|secret|credential|password|auth_json)(?:_|$)", re.I)
 FORBIDDEN_SOURCE_DIRECT = {"claude-manifest", "command", "agent", "hook"}
 MAX_GIT_OUTPUT = 16 * 1024 * 1024
+PORT_SOURCE_REPO_ENV = "CODEX_PORT_SOURCE_REPO"
 
 
 class ContractError(RuntimeError):
@@ -401,6 +402,96 @@ def contained_file(root: Path, relative_path: str) -> Path:
     if not resolved.is_relative_to(root.resolve()) or not resolved.is_file():
         raise ContractError(f"artifact escapes the repository boundary: {safe}")
     return resolved
+
+
+def _github_repository_id(origin: str) -> str:
+    prefixes = (
+        "https://github.com/",
+        "ssh://git@github.com/",
+        "git@github.com:",
+    )
+    path = next((origin.removeprefix(prefix) for prefix in prefixes if origin.startswith(prefix)), None)
+    if path is None:
+        raise ContractError("source checkout origin must be a GitHub repository URL")
+    parts = path.removesuffix(".git").strip("/").split("/")
+    if len(parts) != 2 or any(not part or part in {".", ".."} for part in parts):
+        raise ContractError("source checkout origin has an invalid repository identity")
+    return "/".join(parts)
+
+
+def resolve_declared_source_checkout(
+    root: Path,
+    source: Mapping[str, Any],
+    *,
+    environ: Mapping[str, str] | None = None,
+) -> Path:
+    """Resolve and verify the manifest's one declared source checkout."""
+
+    repository_id = source.get("repository_id")
+    target_ref = source.get("target_ref")
+    if not isinstance(repository_id, str):
+        raise ContractError("source.repository_id must declare the selected repository")
+    expected_parts = repository_id.strip("/").split("/")
+    if len(expected_parts) != 2 or any(
+        not part or part in {".", ".."} for part in expected_parts
+    ):
+        raise ContractError("source.repository_id must be an owner/name repository identity")
+    expected = "/".join(expected_parts)
+    if not isinstance(target_ref, str) or not HEX40_RE.fullmatch(target_ref):
+        raise ContractError("source.target_ref must be the exact source commit")
+
+    configured = (os.environ if environ is None else environ).get(PORT_SOURCE_REPO_ENV)
+    if configured:
+        candidate = Path(configured)
+    else:
+        common_dir = _run_git(
+            root,
+            ["rev-parse", "--path-format=absolute", "--git-common-dir"],
+        ).decode().strip()
+        common_path = Path(common_dir)
+        if not common_path.is_absolute() or common_path.name != ".git":
+            raise ContractError(
+                f"source checkout discovery requires an absolute Git common directory; "
+                f"set {PORT_SOURCE_REPO_ENV}"
+            )
+        candidate = common_path.parent.parent / expected_parts[1]
+
+    try:
+        is_worktree = _run_git(candidate, ["rev-parse", "--is-inside-work-tree"])
+        origin = _run_git(candidate, ["config", "--get", "remote.origin.url"])
+    except ContractError as exc:
+        raise ContractError(
+            f"source checkout is unavailable at {candidate}; set {PORT_SOURCE_REPO_ENV} "
+            "to the exact target checkout"
+        ) from exc
+    if is_worktree.decode().strip() != "true":
+        raise ContractError(f"source checkout is not a Git worktree: {candidate}")
+    observed = _github_repository_id(origin.decode().strip())
+    if observed != expected:
+        raise ContractError(
+            f"source checkout origin mismatch: expected {expected}, observed {observed}"
+        )
+    head = resolve_ref(candidate, "HEAD")
+    if resolve_ref(candidate, target_ref) != target_ref or head != target_ref:
+        raise ContractError(
+            f"source checkout HEAD mismatch: expected {target_ref}, observed {head}"
+        )
+    return candidate.resolve()
+
+
+def _validate_evidence_command_paths(
+    repository_root: Path,
+    argv: Sequence[str],
+    label: str,
+    errors: list[str],
+) -> None:
+    for argument in argv:
+        if "/" not in argument:
+            continue
+        try:
+            contained_file(repository_root, argument)
+        except ContractError as exc:
+            errors.append(f"{label} command path is missing or unsafe: {exc}")
 
 
 def _authority_entry(root: Path, path: Path) -> dict[str, str]:
@@ -1904,7 +1995,23 @@ def validate_manifest(
             _check_digest(entry.get("artifact_sha256"), f"{label}.artifact_sha256", errors)
             if entry.get("artifact_sha256") != sha256_file(artifact):
                 errors.append(f"{label} artifact digest is stale")
-        _validate_evidence_argv(entry.get("argv"), f"{label}.argv", errors)
+        argv = _validate_evidence_argv(entry.get("argv"), f"{label}.argv", errors)
+        if schema_version == 2 and entry.get("repository") == "source":
+            source_declaration = manifest.get("source")
+            if not isinstance(source_declaration, Mapping):
+                errors.append(f"{label}.repository requires a source declaration")
+            else:
+                try:
+                    evidence_root = resolve_declared_source_checkout(root, source_declaration)
+                except ContractError as exc:
+                    errors.append(f"{label}.repository: {exc}")
+                else:
+                    _validate_evidence_command_paths(
+                        evidence_root,
+                        argv,
+                        f"{label}.argv",
+                        errors,
+                    )
         if entry.get("cwd") != ".":
             errors.append(f"{label}.cwd must be `.`")
         exit_code = entry.get("exit_code")
