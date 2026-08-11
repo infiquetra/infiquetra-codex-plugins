@@ -154,7 +154,7 @@ TARGET_EXPECTED_PLUGINS["fleet-core"] = {
 }
 TARGET_EXPECTED_PLUGINS["saga"] = {
     **TARGET_EXPECTED_PLUGINS["saga"],
-    "version": "0.83.0+codex.20260729205037",
+    "version": "0.83.0+codex.20260811103502",
 }
 TARGET_EXPECTED_PLUGINS["verified-workflows"] = {
     "version": "3.1.0",
