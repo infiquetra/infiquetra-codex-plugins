@@ -73,6 +73,23 @@ requires_hard_test_gate(change_kinds)  # True if any kind in
 Derive `change_kinds` from the plan's unit types and the `parse_issue.py` flags (`has_security`,
 `has_infra`, `has_api`). When in doubt, treat it as risky.
 
+## Two-pass stop for unchanged repair or validation evidence
+
+A pass is complete only when its intended repair or validation ran and produced concrete remaining
+finding or failing-check identifiers and outcomes. Compare that remaining set with the immediately
+preceding completed pass in the current run or in the existing work-session and check evidence.
+
+- If the set changes after the first completed pass, continue the bounded repair loop.
+- If two completed passes leave the same identifiers and outcomes, stop before a third repair attempt.
+  Classify the residue as a product defect, test-oracle defect, or scope expansion, then request one
+  operator decision about the next scope disposition.
+- An interrupted or incomplete pass does not count toward the two-pass threshold.
+
+Derive this decision from existing check output, work-session records, Saga pointers, Git, and GitHub
+state. Record the ordinary work-session summary and imperative `next_step`; do not add a pass counter,
+evidence fingerprint, status field, retry state machine, monitor, ledger, remediation workflow, or
+automatic cleanup instruction.
+
 ## Review-readiness gate (the hard PR gate)
 
 Before PR-ready, run `/code-review` programmatically (SKILL Phase 5.1) and read its returned envelope,

@@ -1,5 +1,21 @@
 # Decisions
 
+## 2026-08-10: Issue #62 Reuses Existing Truth and Adds No Lifecycle State
+
+GitHub issue #62 now has three retained implementation units: current-session discovery and extraction, procedural two-pass stopping, and repository-owned `.claude/` ignore protection. The implementation plan is `docs/plans/2026-08-10-saga-lifecycle-truthfulness-plan.md`; its origin is `docs/brainstorms/2026-07-26-codex-plugin-lifecycle-simplification-requirements.md`.
+
+Child issue #55 is closed `NOT_PLANNED` and its Operations board item is Done. Its former settlement proposal is excluded historical/stale evidence: current Outcome V2 opens no run-ledger attempt around dispatch, silent-no-op remains a threshold-zero casualty, and a correct admission-before-intent redesign requires a separate approved plan.
+
+**KTD3 — discover current sessions through one bounded metadata record, exact path components, and one shared order.** Discovery retains the legacy repository-directory substring branch unchanged. A current-layout candidate must be a regular readable file, and discovery reads at most 65,537 bytes to prove that its complete first record is a `session_meta` record no larger than 64 kibibytes. Without Git calls or a repository registry, `payload.cwd` matches `--repo` only when one complete path component equals the requested repository folder name or its conventional `<name>-worktrees` parent; similarly named components are rejected. Both layouts sort together by modification time descending, session identifier ascending, and path ascending before the five-result cap. Invalid candidates are omitted, and output contains only path, true session identifier, and modification time.
+
+**KTD4 — extract the two supported message shapes directly.** Extraction handles legacy messages and current `response_item` user/assistant text, ignores developer, reasoning, and tool payloads on the current branch, counts unknown shapes, and uses only synthetic in-test records rather than raw transcript fixtures or an event normalization layer.
+
+**KTD5 — derive the two-pass stop procedurally.** `/work` compares the concrete remaining finding or failing-check identifiers and outcomes after completed passes. The second unchanged result is classified as a product defect, test-oracle defect, or scope expansion and pauses for one operator decision; `/loop` respects the pause and `/resume` reconstructs it from existing work-session/check evidence, with no counter, fingerprint, monitor, status store, closeout ledger, or remediation workflow.
+
+**KTD6 — repository ignore policy owns `.claude/` protection.** Add one `.claude/` rule to `.gitignore` and prove Git tracks no matching runtime/session path. The shared checkout's `.git/info/exclude` remains local convenience and the change performs no cleanup, deletion, move, archive, or index rewrite.
+
+The operator selected destination `merge` and orchestration backend `inline`. Outcome code, cross-repository parity work, transcript archives, progress or status databases, monitors, new canonical state, general lifecycle redesign, and automated cleanup remain outside the plan.
+
 ## 2026-08-10: Port Classification Reconciles The Actual Branch And Selects At Most One Source Repository
 
 Issue #63 keeps one JSON port manifest and permits one narrowly reviewed bootstrap before that

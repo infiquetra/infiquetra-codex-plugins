@@ -10,14 +10,16 @@ Usage:
   python3 discover_sessions.py --repo <repo-folder> --days <N> \\
       [--projects-root <path>] [--exclude <session-id>]
 
-It globs ``~/.codex/sessions/*<repo>*/*.jsonl`` within an mtime window, drops
-``--exclude``\\d session ids, RECENCY-ranks newest-first, and CAPS at 5.
+It searches both legacy ``~/.codex/sessions/*<repo>*/*.jsonl`` paths and
+current ``~/.codex/sessions/YYYY/MM/DD/*.jsonl`` paths within an mtime window,
+drops ``--exclude``\\d session ids, and caps the deterministic recency order at
+5. Current-layout repository identity comes only from a bounded first
+``session_meta`` record.
 
 Output is ``json.dumps`` of ``{"candidates": [{"path", "session_id", "mtime"}],
-"count": N}`` — PATHS plus small metadata ONLY. It NEVER reads or emits file
-bodies (session files can be multiple MB; bodies stay out of orchestrator
-context). The extractor (``extract_session_skeleton.py``) is the only thing that
-reads a body, and it does so file-mediated.
+"count": N}`` — PATHS plus small metadata ONLY. It NEVER emits file bodies.
+The extractor (``extract_session_skeleton.py``) is the only thing that reads a
+transcript body, and it does so file-mediated.
 
 MVP = recency ranking only. Keyword / branch relevance ranking (CE's
 ``extract-metadata.py``) is deliberately deferred — see QUEUED.
@@ -27,12 +29,17 @@ from __future__ import annotations
 
 import argparse
 import json
+import stat
 import sys
 import time
 from pathlib import Path
 from typing import TypedDict
 
 MAX_CANDIDATES = 5
+MAX_FIRST_RECORD_BYTES = 65_536
+CURRENT_LAYOUT_GLOB = (
+    "[0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9]/*.jsonl"
+)
 
 
 class Candidate(TypedDict):
@@ -45,7 +52,7 @@ class Candidate(TypedDict):
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--repo", required=True, help="Repo folder name to match (substring)")
+    parser.add_argument("--repo", required=True, help="Repository folder name to match")
     parser.add_argument("--days", type=int, required=True, help="mtime window in days")
     parser.add_argument(
         "--projects-root",
@@ -73,8 +80,51 @@ def _excluded_ids(raw: list[str]) -> set[str]:
     return ids
 
 
+def _current_candidate(jsonl: Path, repo: str, cutoff: float, exclude: set[str]) -> Candidate | None:
+    """Read one bounded current-layout metadata record and return an eligible candidate."""
+    try:
+        file_stat = jsonl.stat()
+        if not stat.S_ISREG(file_stat.st_mode) or file_stat.st_mtime < cutoff:
+            return None
+        with jsonl.open("rb") as session_file:
+            probe = session_file.read(MAX_FIRST_RECORD_BYTES + 1)
+    except OSError:
+        return None
+
+    newline = probe.find(b"\n")
+    if newline >= 0:
+        if newline + 1 > MAX_FIRST_RECORD_BYTES:
+            return None
+        first_record = probe[:newline].removesuffix(b"\r")
+    elif len(probe) <= MAX_FIRST_RECORD_BYTES:
+        first_record = probe
+    else:
+        return None
+
+    try:
+        metadata = json.loads(first_record)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return None
+    if not isinstance(metadata, dict) or metadata.get("type") != "session_meta":
+        return None
+    payload = metadata.get("payload")
+    if not isinstance(payload, dict):
+        return None
+    session_id = payload.get("id")
+    cwd = payload.get("cwd")
+    if not isinstance(session_id, str) or not session_id or not isinstance(cwd, str):
+        return None
+
+    repo_components = {repo, f"{repo}-worktrees"}
+    if repo_components.isdisjoint(Path(cwd).parts):
+        return None
+    if session_id in exclude or jsonl.stem in exclude:
+        return None
+    return {"path": str(jsonl), "session_id": session_id, "mtime": file_stat.st_mtime}
+
+
 def discover(projects_root: Path, repo: str, days: int, exclude: set[str]) -> list[Candidate]:
-    """Return recency-ranked session candidates (newest first), capped at 5."""
+    """Return both layouts in deterministic recency order, capped at 5."""
     if not projects_root.is_dir():
         return []
 
@@ -95,8 +145,12 @@ def discover(projects_root: Path, repo: str, days: int, exclude: set[str]) -> li
                 continue
             candidates.append({"path": str(jsonl), "session_id": session_id, "mtime": mtime})
 
-    # RECENCY rank only (MVP): newest mtime first, then cap.
-    candidates.sort(key=lambda c: c["mtime"], reverse=True)
+    for jsonl in projects_root.glob(CURRENT_LAYOUT_GLOB):
+        candidate = _current_candidate(jsonl, repo, cutoff, exclude)
+        if candidate is not None:
+            candidates.append(candidate)
+
+    candidates.sort(key=lambda c: (-c["mtime"], c["session_id"], c["path"]))
     return candidates[:MAX_CANDIDATES]
 
 

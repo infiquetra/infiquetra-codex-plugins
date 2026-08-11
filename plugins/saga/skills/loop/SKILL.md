@@ -233,6 +233,9 @@ honestly **agent-sequential**, not fire-and-forget: `/loop` pauses at **every ha
 doc-review P0/P1 gate) and **every handoff** for operator confirmation. See
 `references/drive-and-resume.md`.
 
+A procedural two-pass operator-decision pause from `/work` is also terminal for the current Drive turn.
+Preserve it from the existing work-session and check evidence; do not redispatch `/work` automatically.
+
 ### 3.3 The backend offer is ONLY for a /loop-OWNED offload
 
 For a **router-level broad fan-out** that `/loop` itself owns — e.g. a multi-issue sweep across many

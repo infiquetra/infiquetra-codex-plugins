@@ -14,6 +14,7 @@ build/
 .codex/verified-workflows/
 .codex/proofs/
 .codex/cutover/
+.claude/
 # Runtime locks are recreated while validating external-action evidence.
 docs/validation/external-action-evidence/**/.lock
 .neuralmind/

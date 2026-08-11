@@ -85,6 +85,14 @@ Concrete applications:
 Surface every conflict explicitly and confirm the reconciled state with the operator before routing —
 never silently overwrite or silently trust.
 
+## Preserve a procedural two-pass pause
+
+Existing work-session and check evidence may already show two unchanged completed passes with the same
+remaining finding or failing-check identifiers and outcomes. In that case, preserve the pause and its
+classification as a product defect, test-oracle defect, or scope expansion. Route to the recorded one
+operator decision; do not restart `/work` or infer another repair attempt. Derive this only from the
+ordinary evidence and existing Saga pointers. Do not persist a counter, fingerprint, or new status.
+
 ## The reconstructed-state output shape
 
 Tier 1 produces a single reconciled state, ready to route on:

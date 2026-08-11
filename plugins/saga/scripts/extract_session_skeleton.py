@@ -47,7 +47,14 @@ if args.output:
     _buffer = io.StringIO()
     sys.stdout = _buffer
 
-stats = {"lines": 0, "parse_errors": 0, "user": 0, "assistant": 0, "tool": 0}
+stats = {
+    "lines": 0,
+    "parse_errors": 0,
+    "unknown": 0,
+    "user": 0,
+    "assistant": 0,
+    "tool": 0,
+}
 
 # Codex wrapper tags to strip from user message content.
 # Strip entirely (tag + content): framework noise and raw command output.
@@ -153,7 +160,42 @@ def summarize_codex_tool(block):
     return name, target
 
 
+def handle_response_item(obj):
+    """Handle the narrow current message shape without exposing other payloads."""
+    payload = obj.get("payload")
+    if not isinstance(payload, dict) or payload.get("type") != "message":
+        return False
+    role = payload.get("role")
+    if role not in {"user", "assistant"}:
+        return False
+    content = payload.get("content")
+    if not isinstance(content, list):
+        return False
+
+    expected_type = "input_text" if role == "user" else "output_text"
+    minimum_length = 15 if role == "user" else 20
+    recognized = False
+    for block in content:
+        if not isinstance(block, dict) or block.get("type") != expected_type:
+            continue
+        text = block.get("text")
+        if not isinstance(text, str):
+            continue
+        recognized = True
+        text = clean_text(text)
+        if len(text) <= minimum_length:
+            continue
+        flush_tools()
+        ts = obj.get("timestamp", "")[:19]
+        print(f"[{ts}] [{role}] {text[:800]}")
+        print("---")
+        stats[role] += 1
+    return recognized
+
+
 def handle_codex(obj):
+    if not isinstance(obj, dict):
+        return False
     msg_type = obj.get("type")
     ts = obj.get("timestamp", "")[:19]
 
@@ -195,6 +237,7 @@ def handle_codex(obj):
                 print(f"[{ts}] [user] {content[:800]}")
                 print("---")
                 stats["user"] += 1
+        return True
 
     elif msg_type == "assistant":
         msg = obj.get("message", {})
@@ -218,6 +261,12 @@ def handle_codex(obj):
                     if tool_id:
                         entry["id"] = tool_id
                     pending_tools.append(entry)
+        return True
+
+    elif msg_type == "response_item":
+        return handle_response_item(obj)
+
+    return False
 
 
 # Read all lines (source-only: no platform auto-detect across codex/cursor).
@@ -232,7 +281,8 @@ for line in sys.stdin:
 
 for line in buffer:
     try:
-        handle_codex(json.loads(line))
+        if not handle_codex(json.loads(line)):
+            stats["unknown"] += 1
     except (json.JSONDecodeError, KeyError):
         stats["parse_errors"] += 1
 
