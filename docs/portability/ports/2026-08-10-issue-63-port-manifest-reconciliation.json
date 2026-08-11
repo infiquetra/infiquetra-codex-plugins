@@ -1,0 +1,159 @@
+{
+  "authority": {
+    "capability_snapshot": {
+      "path": "docs/validation/codex-runtime-capability-snapshot.json",
+      "schema_path": "docs/validation/codex-runtime-capability-snapshot.schema-r4.json",
+      "schema_sha256": "2bc576e9c8a08dce4cb25773a1b8379ed9aa5778fb12feba7f1d563c578d94bf",
+      "schema_version": 3,
+      "sha256": "2901bc4d1b7964672552d1afcc4e441319fdbdf6b8578d742e25519122f938b1"
+    },
+    "classification_path": "docs/portability/classifications/2026-08-10-issue-63-port-manifest-reconciliation.md",
+    "plan": {
+      "path": "docs/plans/2026-08-10-issue-63-port-manifest-reconciliation-plan.md",
+      "sha256": "e145f62ed0893741abc7fd495ae92e84009dedf287fee65d75b4baafc7c1d58c"
+    },
+    "reviews": [
+      {
+        "path": "docs/reviews/2026-08-10-issue-63-port-manifest-reconciliation-doc-review.md",
+        "sha256": "55205411e9928f47f37f35b4ebed249d9e927d270effc3b51050fc6cc99cd9a0"
+      }
+    ],
+    "runbook": {
+      "path": "docs/portability/claude-to-codex-plugin-port-runbook.md",
+      "sha256": "0d1f6e58624e179e7c99da85fdc10089eea84e0ac557761a192bb148a21c9afa",
+      "version": 5
+    }
+  },
+  "codex": {
+    "evidence_ref": "refs/tags/evidence/issue-63-port-manifest-reconciliation-20260810",
+    "execution_base": "9f4c8d41fb14ed098bd6a7dab9f0f3f9d06c8653",
+    "expected_count": 5,
+    "historical_plan_base": "43b18477906ba9790ef3ca555ecfd993da068a35",
+    "inventory_sha256": "002d4c2179196d750af06a32936a27108b00eb3f8d81f2bf4426003e250c217e",
+    "observed_origin_main": "ed8d74f260f029e41ee4e6e44975f9d70522697a",
+    "repository_id": "infiquetra/infiquetra-codex-plugins",
+    "rows": [
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "The reviewed issue 63 decision record remains part of the approved execution baseline.",
+        "new_path": "docs/engineering-journal/DECISIONS.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Preserve the reviewed decision record byte-for-byte while implementing U1 and U2.",
+        "row_id": "codex-313d2cf5a21dbc54",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "The complete reviewed issue 63 plan remains the execution authority.",
+        "new_path": "docs/plans/2026-08-10-issue-63-port-manifest-reconciliation-plan.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Preserve the approved plan and execute its U1 then U2 sequence without editing it.",
+        "row_id": "codex-7ea858f11f55d5ed",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "A",
+        "evidence_refs": [],
+        "invariant": "The completed independent document review remains the readiness gate for implementation.",
+        "new_path": "docs/reviews/2026-08-10-issue-63-port-manifest-reconciliation-doc-review.md",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Preserve the reviewer-owned artifact with no implementation edits.",
+        "row_id": "codex-6ce60cf5003c4664",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "The reviewed planning baseline keeps its generated legacy-workflow inventory binding.",
+        "new_path": "docs/validation/verified-workflows-legacy-token-inventory.json",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Preserve the generated inventory from the reviewed execution base; U3 owns any later regeneration.",
+        "row_id": "codex-07f0601e027de251",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      },
+      {
+        "change": "M",
+        "evidence_refs": [],
+        "invariant": "The reviewed planning-baseline validator digest binding remains unchanged through U1 and U2.",
+        "new_path": "scripts/validate_codex_plugins.py",
+        "old_path": null,
+        "planned_targets": [],
+        "planned_tests": [],
+        "rationale": "Preserve the reviewed validator binding; U3 owns the runbook and digest rotation.",
+        "row_id": "codex-8e22b8117027b34a",
+        "similarity": null,
+        "state": "classified",
+        "treatment": "preserve",
+        "units": []
+      }
+    ]
+  },
+  "evidence": [],
+  "port_id": "issue-63-port-manifest-reconciliation-2026-08-10",
+  "reconciliation": {
+    "expected_count": 1,
+    "inventory_sha256": "dc93802502223e3dbe8fffd6537e714c94abb23a2fa291721882605caacd3757",
+    "rows": [
+      {
+        "change": "M",
+        "classification": "codex-local",
+        "new_path": "scripts/port_contract.py",
+        "old_path": null,
+        "rationale": "U1a adds only the Codex-local version 2 reconciliation contract and focused tests; the frozen Claude range is empty.",
+        "row_id": "recon-0009108629386420",
+        "similarity": null,
+        "source_row_refs": []
+      }
+    ],
+    "state": "active"
+  },
+  "refresh_changes": [],
+  "release_evidence": {
+    "cutover": null,
+    "fresh_session": null,
+    "isolated_install": null,
+    "review": null,
+    "rollback": null
+  },
+  "schema_version": 2,
+  "source": {
+    "base_ref": "b53827bb055e08ccc6aa547cade04aedf4385456",
+    "expected_count": 0,
+    "inventory_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "observed_refs": {
+      "head": "b53827bb055e08ccc6aa547cade04aedf4385456",
+      "local_main": "b53827bb055e08ccc6aa547cade04aedf4385456",
+      "origin_main": "b53827bb055e08ccc6aa547cade04aedf4385456"
+    },
+    "pathspecs": [
+      "tools/run_cross_runtime_outcome_acceptance.py"
+    ],
+    "repository_id": "infiquetra/infiquetra-claude-plugins",
+    "rows": [],
+    "target_reachable": true,
+    "target_ref": "b53827bb055e08ccc6aa547cade04aedf4385456"
+  },
+  "version_policy": []
+}
