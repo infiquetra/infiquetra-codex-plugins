@@ -20,12 +20,12 @@
       "name": "profile-request-cli",
       "producer_repository": "infiquetra/infiquetra-hermes-plugins",
       "producer_path": "plugins/profile_evolution/conformance/profile-request-cli.v1.json",
-      "source_commit": "292c62eb4dbff9a2b0d2683501a1cd00ed119f7b",
-      "merge_commit": "08e432ef5ed7e75dd84ecc301eecb975c27dd02d",
+      "source_commit": "435b3660e86c41819462bc2b918d49c07a8497a6",
+      "merge_commit": "0fb5dfbc68c21732758167b613658f2a2a7ab9bc",
       "schema_version": 1,
       "fixture_version": 1,
       "imported_path": "plugins/hermes-profile-evolution/conformance/profile-request-cli.v1.json",
-      "sha256": "b651eff9ac155758719f0fee59ad7dcf22fc6a81f11f27bc1668da0720eaf61c"
+      "sha256": "31bb58621853cf42814c15df68dde37db2d992bb675f012ff69ba37b66e01f72"
     }
   ],
   "validation_receipt": {

@@ -154,11 +154,10 @@
         "outcome": "success",
         "stdout_json": [
           {
-            "deadline": "2026-08-08T12:00:00Z",
             "evidence_verification": "verified",
             "proposal_revision_digest": "ea46d3d8cdffcfb7b6e29b91e10dfba72f2e086bd84eb784bf477e1c9448112d",
-            "public_evidence_digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
-            "result": "adopted",
+            "public_evidence_digest": "06c44a2d2471ea28d2d63a404c6d328f8585674dd758285c5ea11db68b9c62ac",
+            "result": "no_change",
             "target": "mimir-engineer"
           }
         ]

@@ -17,7 +17,7 @@ codex plugin add hermes-profile-evolution@infiquetra-codex-plugins --json
 codex plugin list --marketplace infiquetra-codex-plugins --json
 ```
 
-The manifest version is `0.1.3`. If the marketplace already exists, use
+The manifest version is `0.1.4`. If the marketplace already exists, use
 `codex plugin marketplace upgrade infiquetra-codex-plugins` before the install.
 Start a fresh Codex session after installation so skill and hook discovery use
 the installed bytes.
