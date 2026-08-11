@@ -63,6 +63,9 @@ depth: `/resume` reads the whole tick chain, not the last frame.
    phase, via the **shared** `../loop/references/dispatch-table.md` (referenced, never duplicated). The
    common case is `/work` (resume the round-N loop) or `/handoff` (let another session pick it up). It
    never builds, never files issues, and never routes back to `saga:loop`.
+7. **Preserve a procedural stop.** Tier 1 reconstructs the two-pass pause from existing work-session and
+   check evidence. If two completed passes left the same concrete residue, preserve the classification
+   and route to the recorded one operator decision; never infer permission to restart `/work`.
 
 ## SessionStart hook boundary
 
@@ -245,14 +248,19 @@ extract content into the dispatch prompt. (Full recipe + the CE guardrails: `ref
 2. **Discover** sessions for this repo, recency-ranked, capped at 5, current session excluded.
    `--exclude` is **mandatory** here — `discover_sessions.py` does **not** auto-detect the current
    session, so without the flag the current session is returned, extracted, and synthesized, violating
-   the "Never analyze the current session" guardrail and burning a cap slot. `<current-session-id>` is
-   this session's own `*.jsonl` basename under `~/.codex/sessions/<repo>/` (drop the `.jsonl`):
+   the "Never analyze the current session" guardrail and burning a cap slot. For the legacy layout,
+   `<current-session-id>` is the `*.jsonl` filename stem. For the current
+   `~/.codex/sessions/YYYY/MM/DD/*.jsonl` layout, pass either its first `session_meta` record's
+   `payload.id` or the filename stem:
 
    ```bash
    python3 plugins/saga/scripts/discover_sessions.py --repo <repo-folder> --days <N> --exclude <current-session-id>
    ```
 
-   The orchestrator reads only the path list + one-line `_meta` (no session content).
+   Discovery preserves the legacy repository-directory substring scan. Current-layout metadata uses
+   exact repository or `<repo>-worktrees` path-component matching and a 64 KiB first-record limit. Both
+   layouts share modification-time-descending, session-identifier-ascending, path-ascending order before
+   the five-result cap. The orchestrator reads only path, session identifier, and modification time.
 
 3. **Extract** each session's skeleton **file-mediated** to scratch (the orchestrator sees only the
    one-line `_meta` status — never the skeleton bytes):
@@ -260,6 +268,10 @@ extract content into the dispatch prompt. (Full recipe + the CE guardrails: `ref
    ```bash
    python3 plugins/saga/scripts/extract_session_skeleton.py --output "$SCRATCH/<id>.skeleton.txt" < <session-file>
    ```
+
+   Extraction accepts legacy messages and current user `input_text` or assistant `output_text` message
+   records. It omits developer/system content, reasoning, tool calls, and tool results from the current
+   record path and reports unsupported shapes in the unknown-record count.
 
 4. **Dispatch a `default` synthesis agent only after explicit authorization.** This plugin has no
    `agents/` directory; do **not** reference a named `ce-*` or `resume-session-historian` agent. If

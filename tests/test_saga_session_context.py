@@ -10,6 +10,13 @@ PATH = Path(__file__).parents[1] / "plugins/saga/hooks/session_context.py"
 HOOKS_PATH = PATH.with_name("hooks.json")
 RESUME_SKILL_PATH = PATH.parents[1] / "skills/resume/SKILL.md"
 SESSION_FORENSICS_PATH = PATH.parents[1] / "skills/resume/references/session-forensics.md"
+WORK_SKILL_PATH = PATH.parents[1] / "skills/work/SKILL.md"
+TEST_GATES_PATH = PATH.parents[1] / "skills/work/references/test-and-gates.md"
+LOOP_SKILL_PATH = PATH.parents[1] / "skills/loop/SKILL.md"
+DRIVE_RESUME_PATH = PATH.parents[1] / "skills/loop/references/drive-and-resume.md"
+FORENSIC_RECONSTRUCTION_PATH = (
+    PATH.parents[1] / "skills/resume/references/forensic-reconstruction.md"
+)
 spec = importlib.util.spec_from_file_location("saga_session_context", PATH)
 assert spec and spec.loader
 M = importlib.util.module_from_spec(spec)
@@ -54,6 +61,36 @@ def test_resume_documents_session_start_output_as_advisory() -> None:
     assert "exits without reading stdin" in normalized
     assert "advisory re-entry context only" in normalized
     assert "does not prove the current model, agent role, workflow state, completed work" in normalized
+
+
+def test_two_pass_stop_is_procedural_and_owned_by_work() -> None:
+    work = " ".join(WORK_SKILL_PATH.read_text(encoding="utf-8").split())
+    canonical = " ".join(TEST_GATES_PATH.read_text(encoding="utf-8").split())
+
+    assert "finding or failing-check identifiers and outcomes" in canonical
+    assert "immediately preceding completed pass" in canonical
+    assert "An interrupted or incomplete pass does not count" in canonical
+    assert "product defect, test-oracle defect, or scope expansion" in canonical
+    assert "one operator decision" in canonical
+    assert "pass counter" in canonical
+    assert "evidence fingerprint" in canonical
+    assert "`test-and-gates.md` owns the canonical procedure" in work
+
+
+def test_loop_and_resume_preserve_a_reconstructed_two_pass_pause() -> None:
+    loop = " ".join(LOOP_SKILL_PATH.read_text(encoding="utf-8").split())
+    drive = " ".join(DRIVE_RESUME_PATH.read_text(encoding="utf-8").split())
+    resume = " ".join(RESUME_SKILL_PATH.read_text(encoding="utf-8").split())
+    reconstruction = " ".join(
+        FORENSIC_RECONSTRUCTION_PATH.read_text(encoding="utf-8").split()
+    )
+
+    assert "terminal for the current Drive turn" in drive
+    assert "does not redispatch `/work`" in drive
+    assert "operator-decision pause" in loop
+    assert "two unchanged completed passes" in reconstruction
+    assert "preserve the pause" in reconstruction
+    assert "reconstructs the two-pass pause" in resume
 
 
 def write_state(root: Path, saga_id: str, next_step: str = "dangerous instructions") -> Path:

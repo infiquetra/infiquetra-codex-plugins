@@ -30,6 +30,8 @@ Be honest about this: Drive is a sequential agent walk, not autonomous unattende
 - **every handoff** — routing to `/handoff` / `mission-control`, or a deploy hand to `deploy`;
 - **any destructive or outward mutation** the dispatched command would surface (e.g. `/work`'s
   merge confirmation — `/work` owns that, not `/loop`).
+- **a `/work` two-pass operator-decision pause** — it is terminal for the current Drive turn. `/loop`
+  does not redispatch `/work` until the operator chooses the residue's scope disposition.
 
 Between pauses, `/loop` advances on its own; at a pause, it stops and asks.
 
@@ -109,6 +111,9 @@ Carry `lifecycle_phase` forward (the destination's phase) — never clobber a co
 
 The cache points; the committed docs are the truth. A resume that finds a stale or absent cache falls
 back to the durable artifacts — it does not declare the thread lost.
+
+If the ordinary work-session and check evidence already records two unchanged completed passes and an
+operator-decision pause, preserve that pause when routing. Do not infer permission to restart `/work`.
 
 ### Inline cold reconstruction (cache gone)
 

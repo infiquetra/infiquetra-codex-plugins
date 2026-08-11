@@ -272,6 +272,10 @@ Apply `references/test-and-gates.md`:
   **blocks** PR-ready without tests; docs/config/trivial may skip only with an explicit rationale.
 - **Merge-base before tests** — fetch the base and run against the merged state so tests reflect what
   actually lands, not stale local state.
+- **Two-pass stop** — `test-and-gates.md` owns the canonical procedure. Compare concrete remaining
+  finding or failing-check identifiers and outcomes after each completed repair or validation pass. If
+  the second completed pass is unchanged, classify the residue, record the ordinary work-session
+  summary and `next_step`, request one operator decision, and stop before another repair attempt.
 
 ---
 

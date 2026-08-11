@@ -18,23 +18,28 @@ It is **NOT** "a fresh clone on a new machine." On a fresh machine the local `~/
 logs are simply **absent** — there is nothing to forensically read. That case falls back to the durable
 committed `docs/*` (Tier 1's substrate), not to Tier 2.
 
-## The discovery pipeline (MVP — recency only)
+## The discovery pipeline (two layouts, deterministic recency)
 
 ```bash
 python3 plugins/saga/scripts/discover_sessions.py --repo <repo-folder> --days <N> --exclude <current-session-id> [--projects-root <path>]
 ```
 
-`discover_sessions.py` finds this repo's session files, **recency-ranks** them, **caps at 5**, and
-drops any id passed via `--exclude`. It returns the path list plus a one-line `_meta` summary —
-**paths and metadata only, never session content**.
+`discover_sessions.py` finds both legacy repository-directory sessions and current
+`~/.codex/sessions/YYYY/MM/DD/*.jsonl` sessions, combines them, orders by modification time descending,
+then session identifier and path ascending, and **caps at 5**. Current-layout discovery reads at most
+65,537 bytes to accept a complete first `session_meta` record no larger than 64 kibibytes (KiB). Its
+`payload.cwd` must contain a complete component equal to `<repo-folder>` or
+`<repo-folder>-worktrees`; similar names do not match. Invalid candidates are omitted. The command
+returns only path, session identifier, and modification time — never working-directory metadata or
+session content.
 
 `--exclude <current-session-id>` is **mandatory**, not optional: the script has **no** auto-detection of
 the current session, so exclusion depends entirely on the flag being passed. Omit it and the current
 session is returned, its skeleton extracted to scratch, and synthesized — violating the
 "Never analyze the current session" guardrail (below) and wasting one of the 5 cap slots.
-`<current-session-id>` is this session's own `*.jsonl` basename under `~/.codex/sessions/<repo>/` (without
-the `.jsonl` suffix); the flag is repeatable / comma-separated to drop more than one. This MVP ranks by recency alone: **no keyword or
-branch ranking** (that is queued — see the keyword note at the bottom). Pick a `--days` window from the
+For a legacy path, `<current-session-id>` is the `*.jsonl` basename without the suffix. For the current
+date layout, pass either the first record's `payload.id` or the filename stem. The flag is repeatable or
+comma-separated to drop more than one. Pick a `--days` window from the
 ask's time signal (today = 1, recent / this week / no signal = 7, this month = 30, broad = 90); start
 narrow, widen only if a narrow scan finds nothing.
 
@@ -75,7 +80,9 @@ python3 plugins/saga/scripts/extract_session_skeleton.py --output "$SCRATCH/<id>
 ```
 
 `extract_session_skeleton.py` reads one JSONL session on **stdin** and writes the filtered skeleton to
-`--output`; stdout carries only the one-line `_meta` status.
+`--output`; stdout carries only the one-line `_meta` status. It accepts legacy user and assistant
+records plus current `response_item` messages containing user `input_text` or assistant `output_text`.
+Other current roles and payload types are omitted and counted as unknown records.
 
 Then, only after explicit delegation authorization, dispatch a `default` agent. This plugin has no
 `agents/` directory; do **not** reference a named `resume-session-historian` or any `ce-*` agent. If
@@ -103,7 +110,8 @@ is the **one** branch where minting a **new** saga is correct (there is no resto
 
 ## Queued — keyword / branch ranking (cap 10)
 
-This MVP ranks by recency only. The future ranking derives 2-4 keywords from the ask's topic
+The current pipeline uses deterministic recency and identifier/path tie-breakers only. The future
+ranking derives 2-4 keywords from the ask's topic
 (cap **10** keywords), filters sessions by `match_count`, and breaks ties by per-keyword counts — plus a
 branch filter for Codex sessions (with the keyword-fallback caveat that `gitBranch` is captured at
 the first user message, so a mid-session `git checkout` is invisible to branch-match). Until then,
