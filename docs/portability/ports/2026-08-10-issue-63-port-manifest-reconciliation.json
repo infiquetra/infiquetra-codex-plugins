@@ -10,12 +10,16 @@
     "classification_path": "docs/portability/classifications/2026-08-10-issue-63-port-manifest-reconciliation.md",
     "plan": {
       "path": "docs/plans/2026-08-10-issue-63-port-manifest-reconciliation-plan.md",
-      "sha256": "e145f62ed0893741abc7fd495ae92e84009dedf287fee65d75b4baafc7c1d58c"
+      "sha256": "7ff974bf7d293e170c30ff79cef9b52f6dbfccc7c9a55e52e1508582c690c4e7"
     },
     "reviews": [
       {
         "path": "docs/reviews/2026-08-10-issue-63-port-manifest-reconciliation-doc-review.md",
         "sha256": "55205411e9928f47f37f35b4ebed249d9e927d270effc3b51050fc6cc99cd9a0"
+      },
+      {
+        "path": "docs/reviews/2026-08-11-issue-63-port-manifest-reconciliation-plan-re-review.md",
+        "sha256": "6fd06b4ebe38c6a6e64ab49b40c46b8fbb35cd757444e01fdda4fec626bb99ec"
       }
     ],
     "runbook": {
