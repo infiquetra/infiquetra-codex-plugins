@@ -17,19 +17,16 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
+SUPPORTED_SCHEMA_VERSIONS = {1, SCHEMA_VERSION}
 RUNBOOK_VERSION = 5
 SUPPORTED_RUNBOOK_VERSIONS = {3, 4, RUNBOOK_VERSION}
 DEFAULT_MANIFEST = Path("docs/portability/ports/2026-07-29-codex-0146-native-harness.json")
-DEFAULT_RENDER = Path(
-    "docs/portability/classifications/2026-07-11-external-advisory-execution.md"
-)
+DEFAULT_RENDER = Path("docs/portability/classifications/2026-07-11-external-advisory-execution.md")
 DEFAULT_RUNBOOK = Path("docs/portability/claude-to-codex-plugin-port-runbook.md")
 DEFAULT_CAPABILITY = Path("docs/validation/codex-runtime-capability-snapshot.json")
 DEFAULT_CAPABILITY_SCHEMA = Path("docs/validation/codex-runtime-capability-snapshot.schema.json")
-DEFAULT_PLAN = Path(
-    "docs/plans/2026-07-11-codex-external-advisory-execution-contract-plan.md"
-)
+DEFAULT_PLAN = Path("docs/plans/2026-07-11-codex-external-advisory-execution-contract-plan.md")
 DEFAULT_REVIEWS = (
     Path("docs/reviews/2026-07-11-codex-external-advisory-execution-contract-plan-review.md"),
 )
@@ -45,7 +42,9 @@ CURRENT_PORT_IDS = {
 }
 APPROVED_CODEX_EXECUTION_BASE = "d8f5d165ad0e859af9c7d7f1ba7461b00ec1ae95"
 CODEX_EVIDENCE_REF = "refs/tags/evidence/external-advisory-execution-20260711"
-EXPECTED_SOURCE_INVENTORY_SHA256 = "f6d67d4294f8658118cb90728f151c813e87e3fc684c786277fb8a2f07168db0"
+EXPECTED_SOURCE_INVENTORY_SHA256 = (
+    "f6d67d4294f8658118cb90728f151c813e87e3fc684c786277fb8a2f07168db0"
+)
 EXPECTED_CODEX_INVENTORY_SHA256 = "e6182153e2b1e67522491863f485d325d0ae9fd1b6b14b8ea70e4ac0141e83ab"
 DEFAULT_SOURCE_PATHS = (
     "plugins/saga/scripts/second_opinion.py",
@@ -63,6 +62,24 @@ SOURCE_STATES = {"unclassified", "classified", "implemented", "verified"}
 SOURCE_TREATMENTS = {None, "direct-port", "codex-adapt", "defer", "reject"}
 CODEX_STATES = {"unclassified", "classified", "verified"}
 CODEX_TREATMENTS = {None, "preserve", "reconcile", "superseded-by-plan"}
+RECONCILIATION_STATES = {"active", "finalized"}
+RECONCILIATION_CLASSIFICATIONS = {
+    "source-derived",
+    "codex-local",
+    "intentionally-divergent",
+    "deferred",
+    "blocked",
+}
+RECONCILIATION_ROW_KEYS = {
+    "row_id",
+    "change",
+    "old_path",
+    "new_path",
+    "similarity",
+    "classification",
+    "rationale",
+    "source_row_refs",
+}
 SURFACE_KINDS = {
     "agent",
     "changelog",
@@ -78,7 +95,14 @@ SURFACE_KINDS = {
     "skill",
     "test",
 }
-HOST_PRIMITIVES = {"TeamCreate", "Workflow", "SendMessage", "ClaudeHook", "ClaudeAgent", "ClaudeCommand"}
+HOST_PRIMITIVES = {
+    "TeamCreate",
+    "Workflow",
+    "SendMessage",
+    "ClaudeHook",
+    "ClaudeAgent",
+    "ClaudeCommand",
+}
 EVIDENCE_KINDS = {
     "check",
     "review",
@@ -231,7 +255,9 @@ def inventory_digest(rows: Iterable[Mapping[str, Any]]) -> str:
     return sha256_bytes(canonical_json_bytes(normalize_inventory(rows)))
 
 
-def git_inventory(repo: Path, base: str, target: str, pathspecs: Sequence[str] = ()) -> list[dict[str, Any]]:
+def git_inventory(
+    repo: Path, base: str, target: str, pathspecs: Sequence[str] = ()
+) -> list[dict[str, Any]]:
     args = ["diff", "--name-status", "-z", "-M", f"{base}..{target}", "--", *pathspecs]
     return parse_name_status_z(_run_git(repo, args))
 
@@ -256,6 +282,47 @@ def row_id(prefix: str, row: Mapping[str, Any]) -> str:
     }
     digest = sha256_bytes(canonical_json_bytes(inventory_row))[:16]
     return f"{prefix}-{digest}"
+
+
+def is_behavior_path(path: str | None) -> bool:
+    """Return whether a tracked path is part of the active Codex behavior surface."""
+
+    if path is None:
+        return False
+    try:
+        safe = validate_repo_path(path)
+    except ContractError:
+        return False
+    parts = PurePosixPath(safe).parts
+    if "tests" in parts or "fixtures" in parts:
+        return False
+    if parts[0] == "scripts":
+        return True
+    if len(parts) < 3 or parts[0] != "plugins":
+        return False
+    if parts[2:] == (".codex-plugin", "plugin.json"):
+        return True
+    return parts[2] in {"scripts", "skills", "hooks", "config", "roles"}
+
+
+def behavior_inventory(rows: Iterable[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    """Select and normalize rows whose old or new path carries active behavior."""
+
+    return normalize_inventory(
+        row
+        for row in rows
+        if is_behavior_path(row.get("old_path")) or is_behavior_path(row.get("new_path"))
+    )
+
+
+def _reconciliation_contract_row(row: Mapping[str, Any]) -> dict[str, Any]:
+    return {
+        "row_id": row_id("recon", row),
+        **dict(row),
+        "classification": None,
+        "rationale": None,
+        "source_row_refs": [],
+    }
 
 
 def source_surface(path: str) -> tuple[str, list[str]]:
@@ -438,9 +505,7 @@ def _verify_source_topology(source_repo: Path, topology: Mapping[str, Any]) -> d
             f"source topology right tag `{right['tag']}` peeled to {right_commit}, "
             f"not {right['peeled_commit']}"
         )
-    merge_base = _run_git(
-        source_repo, ["merge-base", left_commit, right_commit]
-    ).decode().strip()
+    merge_base = _run_git(source_repo, ["merge-base", left_commit, right_commit]).decode().strip()
     if not HEX40_RE.fullmatch(merge_base):
         raise ContractError("source topology merge base did not resolve to one full commit")
     if merge_base != topology["common_base"]:
@@ -507,6 +572,9 @@ def build_manifest(
         raise ContractError("frozen source base is not an ancestor of the frozen target")
     if not is_ancestor(root, codex_plan_base, codex_execution_base):
         raise ContractError("Codex historical plan base is not an ancestor of the execution base")
+    codex_target = resolve_ref(root, "HEAD")
+    if not is_ancestor(root, codex_execution_base, codex_target):
+        raise ContractError("Codex execution base is not an ancestor of the active candidate")
 
     try:
         capability_schema_version = json.loads(
@@ -519,6 +587,9 @@ def build_manifest(
 
     source_rows = git_inventory(source_repo, source_base, source_target, source_pathspecs)
     codex_rows = git_inventory(root, codex_plan_base, codex_execution_base)
+    reconciliation_rows = behavior_inventory(
+        git_inventory(root, codex_execution_base, codex_target)
+    )
     source_head = resolve_ref(source_repo, "HEAD")
 
     if not port_id or CONTROL_RE.search(port_id):
@@ -529,6 +600,8 @@ def build_manifest(
         or " " in codex_evidence_ref
     ):
         raise ContractError("codex evidence ref must be a safe evidence tag")
+    if optional_ref(root, codex_evidence_ref) is not None:
+        raise ContractError("active version 2 contract requires an absent Codex evidence ref")
     default_version_policy: list[dict[str, str]] = [
         {
             "source_plugin": "fleet-core",
@@ -603,7 +676,16 @@ def build_manifest(
             "inventory_sha256": inventory_digest(codex_rows),
             "rows": [_codex_contract_row(row) for row in codex_rows],
         },
-        "version_policy": [dict(policy) for policy in (version_policy or default_version_policy)],
+        "reconciliation": {
+            "state": "active",
+            "expected_count": len(reconciliation_rows),
+            "inventory_sha256": inventory_digest(reconciliation_rows),
+            "rows": [_reconciliation_contract_row(row) for row in reconciliation_rows],
+        },
+        "version_policy": [
+            dict(policy)
+            for policy in (default_version_policy if version_policy is None else version_policy)
+        ],
         "evidence": [],
         "release_evidence": {
             "review": None,
@@ -632,10 +714,14 @@ def validate_repo_path(value: str) -> str:
     return path.as_posix()
 
 
-def _exact_keys(value: Mapping[str, Any], expected: set[str], label: str, errors: list[str]) -> None:
+def _exact_keys(
+    value: Mapping[str, Any], expected: set[str], label: str, errors: list[str]
+) -> None:
     actual = set(value)
     if actual != expected:
-        errors.append(f"{label} keys mismatch: missing={sorted(expected - actual)} unexpected={sorted(actual - expected)}")
+        errors.append(
+            f"{label} keys mismatch: missing={sorted(expected - actual)} unexpected={sorted(actual - expected)}"
+        )
 
 
 def _check_commit(value: Any, label: str, errors: list[str]) -> None:
@@ -789,9 +875,10 @@ def validate_json_schema_instance(
         pattern = schema.get("pattern")
         if isinstance(pattern, str) and re.search(pattern, value) is None:
             errors.append(f"{label} does not match required pattern")
-        if schema.get("format") == "date-time" and re.fullmatch(
-            r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", value
-        ) is None:
+        if (
+            schema.get("format") == "date-time"
+            and re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", value) is None
+        ):
             errors.append(f"{label} must be an RFC3339 UTC timestamp")
     elif isinstance(value, int) and not isinstance(value, bool) and expected_type == "integer":
         minimum = schema.get("minimum")
@@ -828,24 +915,54 @@ def _validate_inventory_rows(rows: Any, label: str, errors: list[str]) -> list[d
                     validate_repo_path(path_value)
                 except (ContractError, TypeError) as exc:
                     errors.append(f"{row_label}.{key}: {exc}")
-        if similarity is not None and (not isinstance(similarity, int) or not 0 <= similarity <= 100):
+        if similarity is not None and (
+            not isinstance(similarity, int) or not 0 <= similarity <= 100
+        ):
             errors.append(f"{row_label}.similarity must be null or 0..100")
-        inventory.append({"change": change, "old_path": old_path, "new_path": new_path, "similarity": similarity})
+        inventory.append(
+            {"change": change, "old_path": old_path, "new_path": new_path, "similarity": similarity}
+        )
     return inventory
 
 
 SOURCE_ROW_KEYS = {
-    "row_id", "change", "old_path", "new_path", "similarity", "surface_kind", "host_primitives",
-    "state", "treatment", "rationale", "units", "planned_targets", "planned_tests", "capability_refs",
-    "codex_invariant_refs", "evidence_refs",
+    "row_id",
+    "change",
+    "old_path",
+    "new_path",
+    "similarity",
+    "surface_kind",
+    "host_primitives",
+    "state",
+    "treatment",
+    "rationale",
+    "units",
+    "planned_targets",
+    "planned_tests",
+    "capability_refs",
+    "codex_invariant_refs",
+    "evidence_refs",
 }
 CODEX_ROW_KEYS = {
-    "row_id", "change", "old_path", "new_path", "similarity", "state", "treatment", "invariant",
-    "rationale", "units", "planned_targets", "planned_tests", "evidence_refs",
+    "row_id",
+    "change",
+    "old_path",
+    "new_path",
+    "similarity",
+    "state",
+    "treatment",
+    "invariant",
+    "rationale",
+    "units",
+    "planned_targets",
+    "planned_tests",
+    "evidence_refs",
 }
 
 
-def _validate_string_list(value: Any, label: str, errors: list[str], *, paths: bool = False) -> list[str]:
+def _validate_string_list(
+    value: Any, label: str, errors: list[str], *, paths: bool = False
+) -> list[str]:
     if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
         errors.append(f"{label} must be a list of strings")
         return []
@@ -897,7 +1014,9 @@ def _validate_source_rows(rows: list[dict[str, Any]], stage: str, errors: list[s
         _exact_keys(row, SOURCE_ROW_KEYS, label, errors)
         if row.get("surface_kind") not in SURFACE_KINDS:
             errors.append(f"{label}.surface_kind is invalid")
-        primitives = _validate_string_list(row.get("host_primitives"), f"{label}.host_primitives", errors)
+        primitives = _validate_string_list(
+            row.get("host_primitives"), f"{label}.host_primitives", errors
+        )
         if set(primitives) - HOST_PRIMITIVES:
             errors.append(f"{label}.host_primitives contains unknown values")
         state = row.get("state")
@@ -914,12 +1033,22 @@ def _validate_source_rows(rows: list[dict[str, Any]], stage: str, errors: list[s
         units = _validate_string_list(row.get("units"), f"{label}.units", errors)
         if set(units) - UNIT_IDS:
             errors.append(f"{label}.units contains an unknown U-ID")
-        targets = _validate_string_list(row.get("planned_targets"), f"{label}.planned_targets", errors, paths=True)
-        tests = _validate_string_list(row.get("planned_tests"), f"{label}.planned_tests", errors, paths=True)
+        targets = _validate_string_list(
+            row.get("planned_targets"), f"{label}.planned_targets", errors, paths=True
+        )
+        tests = _validate_string_list(
+            row.get("planned_tests"), f"{label}.planned_tests", errors, paths=True
+        )
         _validate_string_list(row.get("capability_refs"), f"{label}.capability_refs", errors)
-        _validate_string_list(row.get("codex_invariant_refs"), f"{label}.codex_invariant_refs", errors)
-        evidence_refs = _validate_string_list(row.get("evidence_refs"), f"{label}.evidence_refs", errors)
-        if treatment == "direct-port" and (row.get("surface_kind") in FORBIDDEN_SOURCE_DIRECT or primitives):
+        _validate_string_list(
+            row.get("codex_invariant_refs"), f"{label}.codex_invariant_refs", errors
+        )
+        evidence_refs = _validate_string_list(
+            row.get("evidence_refs"), f"{label}.evidence_refs", errors
+        )
+        if treatment == "direct-port" and (
+            row.get("surface_kind") in FORBIDDEN_SOURCE_DIRECT or primitives
+        ):
             errors.append(f"{label}: Claude-only surface/primitive cannot be direct-port")
         if treatment in {"direct-port", "codex-adapt"} and (not targets or not tests):
             errors.append(f"{label}: {treatment} requires planned targets and tests")
@@ -948,11 +1077,247 @@ def _validate_codex_rows(rows: list[dict[str, Any]], stage: str, errors: list[st
         units = _validate_string_list(row.get("units"), f"{label}.units", errors)
         if set(units) - UNIT_IDS:
             errors.append(f"{label}.units contains an unknown U-ID")
-        _validate_string_list(row.get("planned_targets"), f"{label}.planned_targets", errors, paths=True)
-        _validate_string_list(row.get("planned_tests"), f"{label}.planned_tests", errors, paths=True)
-        evidence_refs = _validate_string_list(row.get("evidence_refs"), f"{label}.evidence_refs", errors)
+        _validate_string_list(
+            row.get("planned_targets"), f"{label}.planned_targets", errors, paths=True
+        )
+        _validate_string_list(
+            row.get("planned_tests"), f"{label}.planned_tests", errors, paths=True
+        )
+        evidence_refs = _validate_string_list(
+            row.get("evidence_refs"), f"{label}.evidence_refs", errors
+        )
         if state == "verified" and not evidence_refs:
             errors.append(f"{label}: verified state requires evidence")
+
+
+def _manifest_schema_version(manifest: Mapping[str, Any], errors: list[str]) -> int | None:
+    value = manifest.get("schema_version")
+    if isinstance(value, bool) or value not in SUPPORTED_SCHEMA_VERSIONS:
+        errors.append(f"schema_version must be exactly one of {sorted(SUPPORTED_SCHEMA_VERSIONS)}")
+        return None
+    return int(value)
+
+
+def _uses_live_authority(schema_version: int | None, port_id: Any) -> bool:
+    return schema_version == 2 or port_id in CURRENT_PORT_IDS
+
+
+def _reconciliation_target(
+    root: Path,
+    manifest: Mapping[str, Any],
+    reconciliation: Mapping[str, Any],
+    errors: list[str],
+) -> str | None:
+    codex = manifest.get("codex")
+    evidence = manifest.get("evidence")
+    if not isinstance(codex, Mapping):
+        return None
+    evidence_ref = codex.get("evidence_ref")
+    if not isinstance(evidence_ref, str):
+        return None
+    state = reconciliation.get("state")
+    if state == "active":
+        if evidence != []:
+            errors.append("active reconciliation requires empty evidence")
+        if optional_ref(root, evidence_ref) is not None:
+            errors.append("active reconciliation requires codex.evidence_ref to be absent")
+        try:
+            return resolve_ref(root, "HEAD")
+        except ContractError as exc:
+            errors.append(f"active reconciliation target is unavailable: {exc}")
+            return None
+    if state == "finalized":
+        try:
+            return resolve_ref(root, evidence_ref)
+        except ContractError as exc:
+            errors.append(f"finalized reconciliation codex.evidence_ref is unavailable: {exc}")
+            return None
+    return None
+
+
+def _validate_reconciliation(
+    root: Path,
+    manifest: Mapping[str, Any],
+    errors: list[str],
+) -> str | None:
+    reconciliation = manifest.get("reconciliation")
+    if not isinstance(reconciliation, dict):
+        errors.append("reconciliation must be an object")
+        return None
+    _exact_keys(
+        reconciliation,
+        {"state", "expected_count", "inventory_sha256", "rows"},
+        "reconciliation",
+        errors,
+    )
+    state = reconciliation.get("state")
+    if state not in RECONCILIATION_STATES:
+        errors.append("reconciliation.state must be `active` or `finalized`")
+
+    rows_value = reconciliation.get("rows")
+    rows = rows_value if isinstance(rows_value, list) else []
+    inventory = _validate_inventory_rows(rows_value, "reconciliation.rows", errors)
+    if reconciliation.get("expected_count") != len(rows):
+        errors.append("reconciliation.expected_count does not match rows")
+    digest = reconciliation.get("inventory_sha256")
+    _check_digest(digest, "reconciliation.inventory_sha256", errors)
+    if inventory_digest(inventory) != digest:
+        errors.append("reconciliation inventory digest is stale")
+
+    source = manifest.get("source")
+    source_row_ids = (
+        {
+            row.get("row_id")
+            for row in source.get("rows", [])
+            if isinstance(source, Mapping) and isinstance(row, Mapping)
+        }
+        if isinstance(source, Mapping)
+        else set()
+    )
+    for index, row in enumerate(rows):
+        label = f"reconciliation.rows[{index}]"
+        if not isinstance(row, dict):
+            continue
+        _exact_keys(row, RECONCILIATION_ROW_KEYS, label, errors)
+        expected_row_id = row_id("recon", row)
+        if row.get("row_id") != expected_row_id:
+            errors.append(f"{label}.row_id does not match its normalized inventory row")
+        classification = row.get("classification")
+        if classification not in RECONCILIATION_CLASSIFICATIONS:
+            errors.append(f"{label}.classification is invalid")
+        rationale = row.get("rationale")
+        if not isinstance(rationale, str) or not rationale.strip():
+            errors.append(f"{label}.rationale is required")
+        refs = _validate_string_list(row.get("source_row_refs"), f"{label}.source_row_refs", errors)
+        unknown_refs = set(refs) - source_row_ids
+        if unknown_refs:
+            errors.append(f"{label}.source_row_refs contains unknown rows {sorted(unknown_refs)}")
+        if classification == "source-derived" and not refs:
+            errors.append(f"{label}: source-derived classification requires source_row_refs")
+        if classification == "codex-local" and refs:
+            errors.append(f"{label}: codex-local classification cannot claim source rows")
+        if classification in {"deferred", "blocked"}:
+            errors.append(f"{label}: changed behavior cannot be {classification}")
+
+    target = _reconciliation_target(root, manifest, reconciliation, errors)
+    codex = manifest.get("codex")
+    execution_base = codex.get("execution_base") if isinstance(codex, Mapping) else None
+    if (
+        target is None
+        or not isinstance(execution_base, str)
+        or not HEX40_RE.fullmatch(execution_base)
+    ):
+        return target
+    if not is_ancestor(root, execution_base, target):
+        errors.append(
+            "reconciliation target is not a fast-forward descendant of codex.execution_base"
+        )
+        return target
+    try:
+        actual_inventory = behavior_inventory(git_inventory(root, execution_base, target))
+    except ContractError as exc:
+        errors.append(f"reconciliation inventory could not be reproduced: {exc}")
+    else:
+        if actual_inventory != normalize_inventory(inventory):
+            errors.append(
+                "reconciliation rows do not match the behavior inventory for the selected target"
+            )
+    return target
+
+
+def validate_manifest_transition(
+    root: Path,
+    previous: Mapping[str, Any],
+    current: Mapping[str, Any],
+    *,
+    previous_commit: str | None = None,
+) -> list[str]:
+    """Validate the one-way lifecycle between two version 2 manifest snapshots."""
+
+    if previous.get("schema_version") != 2 or current.get("schema_version") != 2:
+        return []
+    errors: list[str] = []
+    previous_codex = previous.get("codex")
+    current_codex = current.get("codex")
+    previous_reconciliation = previous.get("reconciliation")
+    current_reconciliation = current.get("reconciliation")
+    if not all(
+        isinstance(value, Mapping)
+        for value in (
+            previous_codex,
+            current_codex,
+            previous_reconciliation,
+            current_reconciliation,
+        )
+    ):
+        return ["version 2 transition requires codex and reconciliation objects"]
+    if previous_codex.get("evidence_ref") != current_codex.get("evidence_ref"):
+        errors.append("codex.evidence_ref cannot change after version 2 initialization")
+    if (
+        previous_reconciliation.get("state") == "finalized"
+        and current_reconciliation.get("state") != "finalized"
+    ):
+        errors.append("finalized reconciliation cannot return to active")
+    if previous_reconciliation.get("state") == "finalized":
+        for key in ("expected_count", "inventory_sha256", "rows"):
+            if previous_reconciliation.get(key) != current_reconciliation.get(key):
+                errors.append(f"finalized reconciliation.{key} cannot change")
+    if previous_commit is not None and HEX40_RE.fullmatch(previous_commit):
+        current_target = _reconciliation_target(root, current, current_reconciliation, errors)
+        if current_target is not None and not is_ancestor(root, previous_commit, current_target):
+            errors.append("reconciliation candidate is not a fast-forward continuation")
+    return errors
+
+
+def _validate_version_policy(
+    manifest: Mapping[str, Any],
+    schema_version: int | None,
+    errors: list[str],
+) -> None:
+    policies = manifest.get("version_policy")
+    policy_keys = {
+        "source_plugin",
+        "source_version",
+        "current_codex_identity",
+        "current_codex_version",
+        "target_codex_identity",
+        "target_codex_version",
+        "policy",
+        "release_unit",
+    }
+    if not isinstance(policies, list):
+        errors.append("version_policy must be a list")
+        return
+    if not policies:
+        source = manifest.get("source")
+        source_contract_only = (
+            schema_version == 2
+            and isinstance(source, Mapping)
+            and source.get("base_ref") == source.get("target_ref")
+            and source.get("rows") == []
+        )
+        reconciliation = manifest.get("reconciliation")
+        reconciliation_rows = (
+            reconciliation.get("rows", []) if isinstance(reconciliation, Mapping) else []
+        )
+        all_codex_local = all(
+            isinstance(row, Mapping) and row.get("classification") == "codex-local"
+            for row in reconciliation_rows
+        )
+        if not source_contract_only or not all_codex_local:
+            if schema_version == 1:
+                errors.append("version 1 version_policy must be a non-empty list")
+            else:
+                errors.append(
+                    "empty version 2 version_policy requires equal source refs, no source rows, "
+                    "and only codex-local reconciliation rows"
+                )
+        return
+    for index, policy in enumerate(policies):
+        if isinstance(policy, dict):
+            _exact_keys(policy, policy_keys, f"version_policy[{index}]", errors)
+        else:
+            errors.append(f"version_policy[{index}] must be an object")
 
 
 def _validate_capability_snapshot(
@@ -991,8 +1356,18 @@ def _validate_capability_snapshot(
         for error in validate_json_schema_instance(snapshot, snapshot_schema, label="snapshot")
     )
     expected_top = {
-        "schema_version", "captured_at", "refs", "runtime", "configured_defaults", "catalog", "features",
-        "custom_agents", "collaboration", "hook_capabilities", "capability_dimensions", "official_sources",
+        "schema_version",
+        "captured_at",
+        "refs",
+        "runtime",
+        "configured_defaults",
+        "catalog",
+        "features",
+        "custom_agents",
+        "collaboration",
+        "hook_capabilities",
+        "capability_dimensions",
+        "official_sources",
     }
     if isinstance(snapshot, dict):
         _exact_keys(snapshot, expected_top, "capability snapshot", errors)
@@ -1050,7 +1425,9 @@ def _validate_capability_snapshot(
             errors.append("capability snapshot must record v1 spawn availability")
         receipt_fields = set(spawn.get("spawn_receipt_fields") or [])
         if not {"agent_nickname", "agent_role", "depth"}.issubset(receipt_fields):
-            errors.append("capability snapshot v1 spawn receipts must attest nickname, role, and depth")
+            errors.append(
+                "capability snapshot v1 spawn receipts must attest nickname, role, and depth"
+            )
         if spawn.get("per_child_sandbox") is not False:
             errors.append("capability snapshot must not claim direct per-child sandbox override")
         if spawn.get("named_profile_selection") != "rollout-attested":
@@ -1095,9 +1472,10 @@ def _validate_capability_snapshot(
         ]:
             errors.append("capability snapshot child receipt fields drifted")
         context = snapshot.get("collaboration", {}).get("context", {})
-        if not isinstance(context, dict) or context.get(
-            "child_permissions_inherit_parent_turn"
-        ) is not True:
+        if (
+            not isinstance(context, dict)
+            or context.get("child_permissions_inherit_parent_turn") is not True
+        ):
             errors.append("capability snapshot must record V2 parent-turn permission inheritance")
     elif isinstance(spawn, dict) and spawn.get("contract_version") is None:
         if spawn.get("tool_namespace") != "agents":
@@ -1112,20 +1490,30 @@ def _validate_capability_snapshot(
     elif isinstance(spawn, dict):
         errors.append("capability snapshot collaboration.spawn contract_version is unsupported")
     dimensions = snapshot.get("capability_dimensions", {})
-    workflow_names = {row.get("name"): row.get("status") for row in dimensions.get("workflow_modes", []) if isinstance(row, dict)}
+    workflow_names = {
+        row.get("name"): row.get("status")
+        for row in dimensions.get("workflow_modes", [])
+        if isinstance(row, dict)
+    }
     if workflow_names.get("source-workflow") != "unsupported":
         errors.append("source Workflow must remain unsupported")
-    leaf_names = {row.get("name") for row in dimensions.get("step_vehicles", []) if isinstance(row, dict)}
+    leaf_names = {
+        row.get("name") for row in dimensions.get("step_vehicles", []) if isinstance(row, dict)
+    }
     if "goal" in leaf_names or "hooks" in leaf_names or "fork" in leaf_names:
         errors.append("Goal, hooks, and fork must not be leaf executors")
 
 
-def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "classification", unit: str | None = None) -> list[str]:
+def validate_manifest(
+    root: Path, manifest: Mapping[str, Any], stage: str = "classification", unit: str | None = None
+) -> list[str]:
     errors: list[str] = []
+    schema_version = _manifest_schema_version(manifest, errors)
     authority_hint = manifest.get("authority")
     plan_hint = authority_hint.get("plan") if isinstance(authority_hint, dict) else None
     active_contract = (
-        isinstance(plan_hint, dict)
+        schema_version == 1
+        and isinstance(plan_hint, dict)
         and plan_hint.get("path") == DEFAULT_PLAN.as_posix()
     )
     approved_evidence_base = APPROVED_CODEX_EXECUTION_BASE
@@ -1134,14 +1522,21 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
     if stage == "unit" and unit not in UNIT_IDS:
         return ["unit-stage validation requires --unit U1..U10"]
     top_keys = {
-        "schema_version", "port_id", "authority", "source", "codex", "version_policy", "evidence",
-        "release_evidence", "refresh_changes",
+        "schema_version",
+        "port_id",
+        "authority",
+        "source",
+        "codex",
+        "version_policy",
+        "evidence",
+        "release_evidence",
+        "refresh_changes",
     }
+    if schema_version == 2:
+        top_keys.add("reconciliation")
     _exact_keys(manifest, top_keys, "manifest", errors)
-    if manifest.get("schema_version") != SCHEMA_VERSION:
-        errors.append(f"schema_version must be {SCHEMA_VERSION}")
     port_id = manifest.get("port_id")
-    current_contract = port_id in CURRENT_PORT_IDS
+    current_contract = _uses_live_authority(schema_version, port_id)
     if not isinstance(port_id, str) or not port_id or CONTROL_RE.search(port_id):
         errors.append("port_id must be a non-empty printable string")
     if active_contract and port_id != ACTIVE_PORT_ID:
@@ -1152,7 +1547,12 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
     if not isinstance(authority, dict):
         errors.append("authority must be an object")
     else:
-        _exact_keys(authority, {"plan", "reviews", "runbook", "capability_snapshot", "classification_path"}, "authority", errors)
+        _exact_keys(
+            authority,
+            {"plan", "reviews", "runbook", "capability_snapshot", "classification_path"},
+            "authority",
+            errors,
+        )
         if isinstance(authority.get("plan"), dict):
             _validate_artifact(root, authority["plan"], "authority.plan", errors)
         reviews = authority.get("reviews")
@@ -1204,24 +1604,25 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
                     schema_path = validate_repo_path(str(capability.get("schema_path", "")))
                     expected = str(capability.get("sha256", ""))
                     schema_expected = str(capability.get("schema_sha256", ""))
-                    _check_digest(
-                        expected, "authority.capability_snapshot.sha256", errors
-                    )
+                    _check_digest(expected, "authority.capability_snapshot.sha256", errors)
                     _check_digest(
                         schema_expected,
                         "authority.capability_snapshot.schema_sha256",
                         errors,
                     )
-                    historical_snapshot = _historical_file_by_sha256(
-                        root, snapshot_path, expected
-                    )
+                    historical_snapshot = _historical_file_by_sha256(root, snapshot_path, expected)
                     historical_schema = _historical_file_by_sha256(
                         root, schema_path, schema_expected
                     )
                 except ContractError as exc:
                     errors.append(f"authority.capability_snapshot historical preimage: {exc}")
             else:
-                _validate_artifact(root, {"path": capability.get("path"), "sha256": capability.get("sha256")}, "authority.capability_snapshot", errors)
+                _validate_artifact(
+                    root,
+                    {"path": capability.get("path"), "sha256": capability.get("sha256")},
+                    "authority.capability_snapshot",
+                    errors,
+                )
                 _validate_artifact(
                     root,
                     {
@@ -1252,8 +1653,15 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
         errors.append("source must be an object")
     else:
         source_keys = {
-            "repository_id", "base_ref", "target_ref", "observed_refs", "target_reachable",
-            "pathspecs", "expected_count", "inventory_sha256", "rows",
+            "repository_id",
+            "base_ref",
+            "target_ref",
+            "observed_refs",
+            "target_reachable",
+            "pathspecs",
+            "expected_count",
+            "inventory_sha256",
+            "rows",
         }
         if "topology" in source:
             source_keys.add("topology")
@@ -1273,12 +1681,16 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
                     )
         observed = source.get("observed_refs")
         if isinstance(observed, dict):
-            _exact_keys(observed, {"head", "local_main", "origin_main"}, "source.observed_refs", errors)
+            _exact_keys(
+                observed, {"head", "local_main", "origin_main"}, "source.observed_refs", errors
+            )
             for key in ("head", "local_main", "origin_main"):
                 _check_commit(observed.get(key), f"source.observed_refs.{key}", errors)
         else:
             errors.append("source.observed_refs must be an object")
-        paths = _validate_string_list(source.get("pathspecs"), "source.pathspecs", errors, paths=True)
+        paths = _validate_string_list(
+            source.get("pathspecs"), "source.pathspecs", errors, paths=True
+        )
         if active_contract and tuple(paths) != DEFAULT_SOURCE_PATHS:
             errors.append("source.pathspecs changed from the four approved focused paths")
         if active_contract and source.get("base_ref") != DEFAULT_SOURCE_BASE:
@@ -1290,7 +1702,9 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
         if source.get("expected_count") != len(source_rows):
             errors.append("source.expected_count does not match rows")
         if active_contract and len(source_rows) != EXPECTED_SOURCE_COUNT:
-            errors.append(f"focused source inventory must contain exactly {EXPECTED_SOURCE_COUNT} rows")
+            errors.append(
+                f"focused source inventory must contain exactly {EXPECTED_SOURCE_COUNT} rows"
+            )
         expected_digest = source.get("inventory_sha256")
         _check_digest(expected_digest, "source.inventory_sha256", errors)
         if inventory_digest(inventory) != expected_digest:
@@ -1305,7 +1719,21 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
     if not isinstance(codex, dict):
         errors.append("codex must be an object")
     else:
-        _exact_keys(codex, {"repository_id", "historical_plan_base", "execution_base", "evidence_ref", "observed_origin_main", "expected_count", "inventory_sha256", "rows"}, "codex", errors)
+        _exact_keys(
+            codex,
+            {
+                "repository_id",
+                "historical_plan_base",
+                "execution_base",
+                "evidence_ref",
+                "observed_origin_main",
+                "expected_count",
+                "inventory_sha256",
+                "rows",
+            },
+            "codex",
+            errors,
+        )
         _check_commit(codex.get("historical_plan_base"), "codex.historical_plan_base", errors)
         _check_commit(codex.get("execution_base"), "codex.execution_base", errors)
         _check_commit(codex.get("observed_origin_main"), "codex.observed_origin_main", errors)
@@ -1361,9 +1789,7 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
     if isinstance(authority, dict) and isinstance(authority.get("capability_snapshot"), dict):
         capability_entry = authority["capability_snapshot"]
         try:
-            snapshot_path_value = validate_repo_path(
-                str(capability_entry.get("path", ""))
-            )
+            snapshot_path_value = validate_repo_path(str(capability_entry.get("path", "")))
             if not current_contract:
                 snapshot_content = _historical_file_by_sha256(
                     root,
@@ -1376,11 +1802,7 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
                 snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
         except (ContractError, OSError, json.JSONDecodeError):
             snapshot = None
-        staged_topology = (
-            isinstance(source, dict)
-            and "topology" in source
-            and not current_contract
-        )
+        staged_topology = isinstance(source, dict) and "topology" in source and not current_contract
         if (
             isinstance(snapshot, dict)
             and isinstance(source, dict)
@@ -1394,31 +1816,54 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
             snapshot_codex = snapshot_refs.get("codex", {})
             snapshot_claude = snapshot_refs.get("claude", {})
             ref_pairs = (
-                (snapshot_codex.get("historical_plan_base"), codex.get("historical_plan_base"), "Codex historical plan base"),
-                (snapshot_codex.get("execution_base"), codex.get("execution_base"), "Codex execution base"),
+                (
+                    snapshot_codex.get("historical_plan_base"),
+                    codex.get("historical_plan_base"),
+                    "Codex historical plan base",
+                ),
+                (
+                    snapshot_codex.get("execution_base"),
+                    codex.get("execution_base"),
+                    "Codex execution base",
+                ),
                 (snapshot_claude.get("source_base"), source.get("base_ref"), "Claude source base"),
-                (snapshot_claude.get("source_target"), source.get("target_ref"), "Claude source target"),
+                (
+                    snapshot_claude.get("source_target"),
+                    source.get("target_ref"),
+                    "Claude source target",
+                ),
             )
             for snapshot_value, manifest_value, label in ref_pairs:
                 if snapshot_value != manifest_value:
                     errors.append(f"capability snapshot {label} does not match the port contract")
 
-    policies = manifest.get("version_policy")
-    policy_keys = {"source_plugin", "source_version", "current_codex_identity", "current_codex_version", "target_codex_identity", "target_codex_version", "policy", "release_unit"}
-    if not isinstance(policies, list) or not policies:
-        errors.append("version_policy must be a non-empty list")
-    else:
-        for index, policy in enumerate(policies):
-            if isinstance(policy, dict):
-                _exact_keys(policy, policy_keys, f"version_policy[{index}]", errors)
-            else:
-                errors.append(f"version_policy[{index}] must be an object")
+    reconciliation_target: str | None = None
+    if schema_version == 2:
+        reconciliation_target = _validate_reconciliation(root, manifest, errors)
+        reconciliation = manifest.get("reconciliation")
+        if isinstance(reconciliation, Mapping) and reconciliation.get("state") == "finalized":
+            codex_evidence_head = reconciliation_target
+
+    _validate_version_policy(manifest, schema_version, errors)
 
     evidence_entries = manifest.get("evidence")
     evidence_ids: set[str] = set()
     evidence_by_id: dict[str, dict[str, Any]] = {}
-    evidence_keys = {"evidence_id", "unit", "kind", "artifact_path", "artifact_sha256", "argv", "cwd", "exit_code", "recorded_at", "repo_head"}
+    evidence_keys = {
+        "evidence_id",
+        "unit",
+        "kind",
+        "artifact_path",
+        "artifact_sha256",
+        "argv",
+        "cwd",
+        "exit_code",
+        "recorded_at",
+        "repo_head",
+    }
     evidence_optional_keys = {"target_paths", "target_tree_sha256"}
+    if schema_version == 2:
+        evidence_optional_keys.add("repository")
     if not isinstance(evidence_entries, list):
         errors.append("evidence must be a list")
         evidence_entries = []
@@ -1443,6 +1888,9 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
             evidence_by_id[evidence_id] = entry
         if entry.get("unit") not in UNIT_IDS or entry.get("kind") not in EVIDENCE_KINDS:
             errors.append(f"{label} has an invalid unit or kind")
+        if schema_version == 2 and "repository" in entry:
+            if entry.get("repository") != "source":
+                errors.append(f"{label}.repository must be `source`")
         try:
             artifact_path = validate_repo_path(entry.get("artifact_path"))
         except (ContractError, TypeError) as exc:
@@ -1506,7 +1954,9 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
                             if reviewed_digest != target_tree_sha256:
                                 errors.append(f"{label}.target_tree_sha256 is stale")
                             if current_digest != reviewed_digest or unstaged or staged:
-                                errors.append(f"{label} reviewed target tree differs from current source")
+                                errors.append(
+                                    f"{label} reviewed target tree differs from current source"
+                                )
 
     references: list[tuple[str, list[str], str]] = []
     for row in source_rows:
@@ -1541,13 +1991,11 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
         errors.append("refresh_changes must be empty before classification can pass")
 
     if stage == "unit" and unit:
-        claimed_source_rows = [
-            row
-            for row in source_rows
-            if unit in row.get("units", [])
-        ]
+        claimed_source_rows = [row for row in source_rows if unit in row.get("units", [])]
         if not claimed_source_rows:
-            errors.append(f"unit-stage validation for {unit} is vacuous: no source rows claim that unit")
+            errors.append(
+                f"unit-stage validation for {unit} is vacuous: no source rows claim that unit"
+            )
         for row in source_rows:
             if unit not in row.get("units", []) or row.get("treatment") in {"defer", "reject"}:
                 continue
@@ -1558,7 +2006,9 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
                     try:
                         contained_file(root, path)
                     except ContractError:
-                        errors.append(f"{row.get('row_id')} planned artifact is missing or unsafe: {path}")
+                        errors.append(
+                            f"{row.get('row_id')} planned artifact is missing or unsafe: {path}"
+                        )
             matching_evidence = [
                 reference
                 for reference in row.get("evidence_refs", [])
@@ -1605,11 +2055,16 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
                 if evidence_by_id[reference].get("unit") != "U8":
                     errors.append(f"release_evidence.{key} must reference U8 release evidence")
         if stage == "cutover" and any(release.get(key) is None for key in release_keys):
-            errors.append("cutover requires review, isolated-install, fresh-session, rollback, and cutover evidence")
+            errors.append(
+                "cutover requires review, isolated-install, fresh-session, rollback, and cutover evidence"
+            )
 
     if stage == "cutover":
         for row in source_rows:
-            if row.get("treatment") in {"direct-port", "codex-adapt"} and row.get("state") != "verified":
+            if (
+                row.get("treatment") in {"direct-port", "codex-adapt"}
+                and row.get("state") != "verified"
+            ):
                 errors.append(f"{row.get('row_id')} is not verified for cutover")
         for row in codex_rows:
             if row.get("state") != "verified":
@@ -1621,22 +2076,25 @@ def validate_manifest(root: Path, manifest: Mapping[str, Any], stage: str = "cla
         try:
             expected_render = render_manifest(manifest)
             render_path = root / authority["classification_path"]
-            if not render_path.is_file() or render_path.read_text(encoding="utf-8") != expected_render:
+            if (
+                not render_path.is_file()
+                or render_path.read_text(encoding="utf-8") != expected_render
+            ):
                 errors.append("generated classification is missing or stale")
         except (KeyError, TypeError, ContractError) as exc:
             errors.append(f"generated classification could not be rendered: {exc}")
     return errors
 
 
-def _validate_cutover_release_proof(
-    root: Path, manifest: Mapping[str, Any]
-) -> list[str]:
+def _validate_cutover_release_proof(root: Path, manifest: Mapping[str, Any]) -> list[str]:
     """Require the canonical evidence tag to retain the exact proof and preimages."""
     codex = manifest.get("codex")
     release = manifest.get("release_evidence")
     evidence = manifest.get("evidence")
-    if not isinstance(codex, Mapping) or not isinstance(release, Mapping) or not isinstance(
-        evidence, list
+    if (
+        not isinstance(codex, Mapping)
+        or not isinstance(release, Mapping)
+        or not isinstance(evidence, list)
     ):
         return ["cutover release proof inputs are unavailable"]
     evidence_ref = codex.get("evidence_ref")
@@ -1698,7 +2156,9 @@ def load_manifest(path: Path) -> dict[str, Any]:
 
 def write_atomic(path: Path, data: bytes) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile(dir=path.parent, prefix=f".{path.name}.", delete=False) as handle:
+    with tempfile.NamedTemporaryFile(
+        dir=path.parent, prefix=f".{path.name}.", delete=False
+    ) as handle:
         temp_path = Path(handle.name)
         handle.write(data)
         handle.flush()
@@ -1739,9 +2199,7 @@ def render_manifest(manifest: Mapping[str, Any]) -> str:
             ]
         )
         for row in topology["left_only_commits"]:
-            lines.append(
-                f"- Source left-only commit: `{row['commit']}` — {row['disposition']}"
-            )
+            lines.append(f"- Source left-only commit: `{row['commit']}` — {row['disposition']}")
     lines.extend(
         [
             f"- Claude focused rows: **{len(source['rows'])}** (`{source['inventory_sha256']}`)",
@@ -1780,7 +2238,39 @@ def render_manifest(manifest: Mapping[str, Any]) -> str:
             f"| `{row['row_id']}` | `{row['change']}` | `{path}` | `{row.get('treatment') or 'unclassified'}` | "
             f"`{row['state']}` | `{', '.join(row['units']) or '-'}` | {invariant} |"
         )
-    lines.extend(["", "## Version Policy", "", "| Source | Current Codex | Target Codex | Policy |", "|---|---|---|---|"])
+    if manifest.get("schema_version") == 2:
+        reconciliation = manifest["reconciliation"]
+        lines.extend(
+            [
+                "",
+                "## Behavior Reconciliation",
+                "",
+                f"- State: `{reconciliation['state']}`",
+                f"- Rows: **{len(reconciliation['rows'])}** "
+                f"(`{reconciliation['inventory_sha256']}`)",
+                "",
+                "| ID | Change | Codex path | Classification | Source rows | Rationale |",
+                "|---|---|---|---|---|---|",
+            ]
+        )
+        for row in reconciliation["rows"]:
+            path = row.get("new_path") or row.get("old_path") or ""
+            source_refs = ", ".join(row.get("source_row_refs", [])) or "-"
+            rationale = str(row.get("rationale") or "unclassified").replace("|", "\\|")
+            lines.append(
+                f"| `{row['row_id']}` | `{row['change']}` | `{path}` | "
+                f"`{row.get('classification') or 'unclassified'}` | `{source_refs}` | "
+                f"{rationale} |"
+            )
+    lines.extend(
+        [
+            "",
+            "## Version Policy",
+            "",
+            "| Source | Current Codex | Target Codex | Policy |",
+            "|---|---|---|---|",
+        ]
+    )
     for policy in manifest["version_policy"]:
         lines.append(
             f"| `{policy['source_plugin']} {policy['source_version']}` | "
@@ -1794,7 +2284,9 @@ def render_manifest(manifest: Mapping[str, Any]) -> str:
 def refresh_manifest(root: Path, source_repo: Path, manifest: dict[str, Any]) -> dict[str, Any]:
     source = manifest["source"]
     codex = manifest["codex"]
-    new_source = git_inventory(source_repo, source["base_ref"], source["target_ref"], source["pathspecs"])
+    new_source = git_inventory(
+        source_repo, source["base_ref"], source["target_ref"], source["pathspecs"]
+    )
     new_codex = git_inventory(root, codex["historical_plan_base"], codex["execution_base"])
 
     changes: list[dict[str, Any]] = []
@@ -1803,8 +2295,7 @@ def refresh_manifest(root: Path, source_repo: Path, manifest: dict[str, Any]) ->
         ("codex", codex["rows"], new_codex),
     ):
         current_by_id = {
-            row_id("src" if label == "source" else "codex", row): row
-            for row in current_rows
+            row_id("src" if label == "source" else "codex", row): row for row in current_rows
         }
         new_ids = {row_id("src" if label == "source" else "codex", row) for row in new_rows}
         for identifier in sorted(set(current_by_id) - new_ids):
@@ -1819,7 +2310,9 @@ def refresh_manifest(root: Path, source_repo: Path, manifest: dict[str, Any]) ->
         "local_main": optional_ref(source_repo, "main"),
         "origin_main": optional_ref(source_repo, "origin/main"),
     }
-    source["target_reachable"] = is_ancestor(source_repo, source["target_ref"], source["observed_refs"]["head"])
+    source["target_reachable"] = is_ancestor(
+        source_repo, source["target_ref"], source["observed_refs"]["head"]
+    )
     codex["observed_origin_main"] = optional_ref(root, "origin/main")
     return manifest
 
@@ -1873,6 +2366,30 @@ def _manifest_path(root: Path, value: str | Path) -> Path:
     return path
 
 
+def _previous_manifest_snapshot(
+    root: Path,
+    manifest_path: Path,
+    current: Mapping[str, Any],
+) -> tuple[str, dict[str, Any]] | None:
+    """Return the newest committed, different preimage for one manifest path."""
+
+    relative = manifest_path.relative_to(root).as_posix()
+    commits = _run_git(root, ["log", "-64", "--format=%H", "--", relative]).decode().splitlines()
+    for commit in commits:
+        if not HEX40_RE.fullmatch(commit):
+            continue
+        raw = _run_git(root, ["show", f"{commit}:{relative}"], allow_failure=True)
+        if not raw:
+            continue
+        try:
+            previous = json.loads(raw)
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            continue
+        if isinstance(previous, dict) and previous != current:
+            return commit, previous
+    return None
+
+
 def _source_topology_from_args(args: argparse.Namespace) -> dict[str, Any] | None:
     values = {
         "left_tag": getattr(args, "source_left_tag", None),
@@ -1893,12 +2410,8 @@ def _source_topology_from_args(args: argparse.Namespace) -> dict[str, Any] | Non
     for raw_value in left_only_values or []:
         commit, separator, disposition = raw_value.partition("=")
         if not separator or not disposition.strip():
-            raise ContractError(
-                "--source-left-only-commit must use COMMIT=DISPOSITION"
-            )
-        left_only_commits.append(
-            {"commit": commit, "disposition": disposition.strip()}
-        )
+            raise ContractError("--source-left-only-commit must use COMMIT=DISPOSITION")
+        left_only_commits.append({"commit": commit, "disposition": disposition.strip()})
     return _normalize_source_topology(
         {
             "left": {
@@ -1919,12 +2432,16 @@ def command_init(args: argparse.Namespace) -> int:
     root = _repo_root()
     manifest_path = _manifest_path(root, args.manifest)
     if manifest_path.exists():
-        raise ContractError(f"init refuses to overwrite existing manifest: {manifest_path.relative_to(root)}")
+        raise ContractError(
+            f"init refuses to overwrite existing manifest: {manifest_path.relative_to(root)}"
+        )
     source_repo = Path(args.source_repo).expanduser().resolve()
     execution_base = args.codex_execution_base or resolve_ref(root, "HEAD")
     version_policy = None
     if args.version_policy:
-        raw_policy = json.loads(_manifest_path(root, args.version_policy).read_text(encoding="utf-8"))
+        raw_policy = json.loads(
+            _manifest_path(root, args.version_policy).read_text(encoding="utf-8")
+        )
         if not isinstance(raw_policy, list) or not all(isinstance(row, dict) for row in raw_policy):
             raise ContractError("--version-policy must contain a JSON array of objects")
         version_policy = raw_policy
@@ -1950,7 +2467,9 @@ def command_init(args: argparse.Namespace) -> int:
         source_topology=_source_topology_from_args(args),
     )
     write_json(manifest_path, manifest)
-    print(f"initialized {manifest_path.relative_to(root)} with {len(manifest['source']['rows'])} source rows and {len(manifest['codex']['rows'])} Codex rows")
+    print(
+        f"initialized {manifest_path.relative_to(root)} with {len(manifest['source']['rows'])} source rows and {len(manifest['codex']['rows'])} Codex rows"
+    )
     return 0
 
 
@@ -1959,8 +2478,12 @@ def command_refresh(args: argparse.Namespace) -> int:
     manifest_path = _manifest_path(root, args.manifest)
     actual_digest = sha256_file(manifest_path)
     if actual_digest != args.expect_digest:
-        raise ContractError(f"refresh digest mismatch: expected {args.expect_digest}, found {actual_digest}")
-    manifest = refresh_manifest(root, Path(args.source_repo).expanduser().resolve(), load_manifest(manifest_path))
+        raise ContractError(
+            f"refresh digest mismatch: expected {args.expect_digest}, found {actual_digest}"
+        )
+    manifest = refresh_manifest(
+        root, Path(args.source_repo).expanduser().resolve(), load_manifest(manifest_path)
+    )
     encoded = (json.dumps(manifest, indent=2, sort_keys=True) + "\n").encode()
     if args.check:
         if encoded != manifest_path.read_bytes():
@@ -1974,7 +2497,19 @@ def command_refresh(args: argparse.Namespace) -> int:
 def command_validate(args: argparse.Namespace) -> int:
     root = _repo_root()
     manifest_path = _manifest_path(root, args.manifest)
-    errors = validate_manifest(root, load_manifest(manifest_path), stage=args.stage, unit=args.unit)
+    manifest = load_manifest(manifest_path)
+    errors = validate_manifest(root, manifest, stage=args.stage, unit=args.unit)
+    previous = _previous_manifest_snapshot(root, manifest_path, manifest)
+    if previous is not None:
+        previous_commit, previous_manifest = previous
+        errors.extend(
+            validate_manifest_transition(
+                root,
+                previous_manifest,
+                manifest,
+                previous_commit=previous_commit,
+            )
+        )
     if errors:
         for error in errors:
             print(f"ERROR: {error}", file=sys.stderr)
@@ -2001,10 +2536,14 @@ def command_render(args: argparse.Namespace) -> int:
     rendered = render_manifest(manifest).encode()
     if args.check:
         if not render_path.is_file() or render_path.read_bytes() != rendered:
-            raise ContractError(f"generated classification is stale: {render_path.relative_to(root)}")
+            raise ContractError(
+                f"generated classification is stale: {render_path.relative_to(root)}"
+            )
     else:
         write_atomic(render_path, rendered)
-    print(f"classification {'current' if args.check else 'rendered'}: {render_path.relative_to(root)}")
+    print(
+        f"classification {'current' if args.check else 'rendered'}: {render_path.relative_to(root)}"
+    )
     return 0
 
 
@@ -2043,7 +2582,9 @@ def build_parser() -> argparse.ArgumentParser:
     init.add_argument("--classification-path", default=str(DEFAULT_RENDER))
     init.set_defaults(func=command_init)
 
-    refresh = subparsers.add_parser("refresh", help="refresh observations without moving frozen refs")
+    refresh = subparsers.add_parser(
+        "refresh", help="refresh observations without moving frozen refs"
+    )
     refresh.add_argument("--manifest", default=str(DEFAULT_MANIFEST))
     refresh.add_argument("--source-repo", required=True)
     refresh.add_argument("--expect-digest", required=True)
@@ -2056,7 +2597,9 @@ def build_parser() -> argparse.ArgumentParser:
     validate.add_argument("--unit")
     validate.set_defaults(func=command_validate)
 
-    verify = subparsers.add_parser("verify-source", help="verify the frozen source from a local checkout")
+    verify = subparsers.add_parser(
+        "verify-source", help="verify the frozen source from a local checkout"
+    )
     verify.add_argument("--manifest", default=str(DEFAULT_MANIFEST))
     verify.add_argument("--source-repo", required=True)
     verify.set_defaults(func=command_verify_source)

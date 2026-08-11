@@ -15,11 +15,7 @@ from scripts import port_contract as contract
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_PATH = (
-    ROOT
-    / "docs"
-    / "portability"
-    / "manifests"
-    / "2026-07-11-external-advisory-execution.json"
+    ROOT / "docs" / "portability" / "manifests" / "2026-07-11-external-advisory-execution.json"
 )
 
 
@@ -63,7 +59,9 @@ def test_frozen_source_and_codex_inventories_are_exhaustive() -> None:
     assert codex["evidence_ref"] == contract.CODEX_EVIDENCE_REF
     assert len(codex["rows"]) == codex["expected_count"] == contract.EXPECTED_CODEX_COUNT
     assert contract.inventory_digest(codex["rows"]) == codex["inventory_sha256"]
-    assert all(row["treatment"] in {"preserve", "reconcile", "superseded-by-plan"} for row in codex["rows"])
+    assert all(
+        row["treatment"] in {"preserve", "reconcile", "superseded-by-plan"} for row in codex["rows"]
+    )
 
 
 def test_active_contract_rejects_shifted_identity_or_frozen_refs() -> None:
@@ -103,9 +101,7 @@ def test_self_consistent_removed_codex_row_still_fails_frozen_inventory() -> Non
     manifest = load_manifest()
     manifest["codex"]["rows"].pop()
     manifest["codex"]["expected_count"] = len(manifest["codex"]["rows"])
-    manifest["codex"]["inventory_sha256"] = contract.inventory_digest(
-        manifest["codex"]["rows"]
-    )
+    manifest["codex"]["inventory_sha256"] = contract.inventory_digest(manifest["codex"]["rows"])
 
     errors = contract.validate_manifest(ROOT, manifest, stage="classification")
 
@@ -279,14 +275,14 @@ def test_capability_schema_digest_is_part_of_the_gate() -> None:
 
     errors = contract.validate_manifest(ROOT, manifest, stage="classification")
 
-    assert any(
-        "capability_snapshot historical preimage" in error for error in errors
-    )
+    assert any("capability_snapshot historical preimage" in error for error in errors)
 
 
 def test_nested_capability_schema_is_closed() -> None:
     snapshot = json.loads(
-        (ROOT / "docs/validation/codex-runtime-capability-snapshot.json").read_text(encoding="utf-8")
+        (ROOT / "docs/validation/codex-runtime-capability-snapshot.json").read_text(
+            encoding="utf-8"
+        )
     )
     schema = json.loads(
         (ROOT / "docs/validation/codex-runtime-capability-snapshot.schema-r3.json").read_text(
@@ -435,7 +431,9 @@ def test_release_evidence_kind_must_match_release_slot() -> None:
 
     errors = contract.validate_manifest(ROOT, manifest, stage="classification")
 
-    assert any("release_evidence.review must reference `review` evidence" in error for error in errors)
+    assert any(
+        "release_evidence.review must reference `review` evidence" in error for error in errors
+    )
 
 
 def test_historical_u2_unit_passes_but_retired_cutover_verifier_blocks_replay() -> None:
@@ -502,6 +500,219 @@ def test_manifest_digest_changes_when_classification_changes() -> None:
     modified = copy.deepcopy(manifest)
     modified["source"]["rows"][0]["rationale"] += " Changed."
 
-    assert hashlib.sha256(original).hexdigest() != hashlib.sha256(
-        contract.canonical_json_bytes(modified)
-    ).hexdigest()
+    assert (
+        hashlib.sha256(original).hexdigest()
+        != hashlib.sha256(contract.canonical_json_bytes(modified)).hexdigest()
+    )
+
+
+def _fixture_repo(path: Path) -> Path:
+    subprocess.run(["git", "init", "-q", str(path)], check=True)
+    subprocess.run(
+        ["git", "-C", str(path), "config", "user.name", "Port Contract Test"], check=True
+    )
+    subprocess.run(
+        ["git", "-C", str(path), "config", "user.email", "port-contract@example.invalid"],
+        check=True,
+    )
+    return path
+
+
+def _commit_all(repo: Path, message: str) -> str:
+    subprocess.run(["git", "-C", str(repo), "add", "--all"], check=True)
+    subprocess.run(["git", "-C", str(repo), "commit", "-qm", message], check=True)
+    return subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+
+
+def test_schema_dispatch_accepts_only_exact_version_1_or_2() -> None:
+    for version in (1, 2):
+        errors: list[str] = []
+        assert contract._manifest_schema_version({"schema_version": version}, errors) == version
+        assert errors == []
+
+    for version in (None, True, 0, 3, "2"):
+        errors = []
+        assert contract._manifest_schema_version({"schema_version": version}, errors) is None
+        assert errors == ["schema_version must be exactly one of [1, 2]"]
+
+
+def test_version_2_uses_live_authority_without_a_port_registry_entry() -> None:
+    assert contract._uses_live_authority(2, "new-version-2-cycle") is True
+    assert contract._uses_live_authority(1, "new-version-2-cycle") is False
+    assert contract._uses_live_authority(1, next(iter(contract.CURRENT_PORT_IDS))) is True
+
+
+def test_new_manifest_writes_version_2_and_preserves_explicit_empty_policy(
+    tmp_path: Path,
+) -> None:
+    root = _fixture_repo(tmp_path / "codex")
+    source = _fixture_repo(tmp_path / "source")
+    for relative, content in {
+        "plan.md": "plan\n",
+        "review.md": "review\n",
+        "runbook.md": "runbook\n",
+        "snapshot.json": '{"schema_version": 1}\n',
+        "snapshot.schema.json": "{}\n",
+    }.items():
+        target = root / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content, encoding="utf-8")
+    execution_base = _commit_all(root, "execution base")
+    (root / "scripts").mkdir()
+    (root / "scripts/new_contract_behavior.py").write_text("VALUE = 1\n", encoding="utf-8")
+    _commit_all(root, "candidate")
+
+    (source / "tools").mkdir()
+    (source / "tools/harness.py").write_text("print('ok')\n", encoding="utf-8")
+    source_target = _commit_all(source, "source")
+
+    manifest = contract.build_manifest(
+        root,
+        source,
+        source_base=source_target,
+        source_target=source_target,
+        source_pathspecs=["tools/harness.py"],
+        codex_plan_base=execution_base,
+        codex_execution_base=execution_base,
+        runbook=Path("runbook.md"),
+        capability_snapshot=Path("snapshot.json"),
+        capability_schema=Path("snapshot.schema.json"),
+        plan=Path("plan.md"),
+        reviews=[Path("review.md")],
+        classification_path=Path("classification.md"),
+        codex_evidence_ref="refs/tags/evidence/fixture-v2",
+        version_policy=[],
+    )
+
+    assert manifest["schema_version"] == 2
+    assert manifest["version_policy"] == []
+    assert manifest["reconciliation"]["state"] == "active"
+    assert [row["new_path"] for row in manifest["reconciliation"]["rows"]] == [
+        "scripts/new_contract_behavior.py"
+    ]
+
+
+def test_behavior_predicate_covers_only_active_runtime_paths() -> None:
+    selected = {
+        "scripts/port_contract.py",
+        "plugins/saga/.codex-plugin/plugin.json",
+        "plugins/saga/scripts/tool.py",
+        "plugins/saga/skills/work/SKILL.md",
+        "plugins/saga/hooks/hooks.json",
+        "plugins/saga/config/policy.json",
+        "plugins/saga/roles/reviewer.md",
+    }
+    excluded = {
+        "docs/plans/plan.md",
+        "docs/reviews/review.md",
+        "docs/portability/classifications/render.md",
+        "docs/validation/receipt.json",
+        "docs/engineering-journal/DECISIONS.md",
+        "tests/test_port_contract.py",
+        "plugins/saga/tests/test_tool.py",
+        "plugins/saga/fixtures/input.json",
+        "plugins/saga/references/narrative.md",
+    }
+
+    assert all(contract.is_behavior_path(path) for path in selected)
+    assert not any(contract.is_behavior_path(path) for path in excluded)
+
+    rename = {
+        "change": "R",
+        "old_path": "plugins/saga/scripts/old.py",
+        "new_path": "docs/old.py",
+        "similarity": 100,
+    }
+    assert contract.behavior_inventory([rename]) == [rename]
+
+
+def test_reconciliation_rows_have_one_closed_deterministic_shape() -> None:
+    inventory = {
+        "change": "M",
+        "old_path": None,
+        "new_path": "scripts/port_contract.py",
+        "similarity": None,
+    }
+
+    row = contract._reconciliation_contract_row(inventory)
+
+    assert set(row) == contract.RECONCILIATION_ROW_KEYS
+    assert row["row_id"] == contract.row_id("recon", inventory)
+    assert row["classification"] is None
+    assert row["rationale"] is None
+    assert row["source_row_refs"] == []
+
+
+def test_empty_version_2_policy_is_narrowly_contract_only() -> None:
+    manifest = {
+        "source": {"base_ref": "1" * 40, "target_ref": "1" * 40, "rows": []},
+        "reconciliation": {"rows": [{"classification": "codex-local"}]},
+        "version_policy": [],
+    }
+    errors: list[str] = []
+    contract._validate_version_policy(manifest, 2, errors)
+    assert errors == []
+
+    for mutation in ("source-range", "source-row", "source-derived"):
+        changed = copy.deepcopy(manifest)
+        if mutation == "source-range":
+            changed["source"]["target_ref"] = "2" * 40
+        elif mutation == "source-row":
+            changed["source"]["rows"] = [{}]
+        else:
+            changed["reconciliation"]["rows"][0]["classification"] = "source-derived"
+        errors = []
+        contract._validate_version_policy(changed, 2, errors)
+        assert any("empty version 2 version_policy" in error for error in errors)
+
+    errors = []
+    contract._validate_version_policy(manifest, 1, errors)
+    assert errors == ["version 1 version_policy must be a non-empty list"]
+
+
+def test_versioned_evidence_repository_key_is_closed() -> None:
+    version_1 = load_manifest()
+    version_1["evidence"][0]["repository"] = "source"
+    errors = contract.validate_manifest(ROOT, version_1, stage="classification")
+    assert any("unexpected=['repository']" in error for error in errors)
+
+    version_2 = copy.deepcopy(version_1)
+    version_2["schema_version"] = 2
+    version_2["reconciliation"] = {
+        "state": "active",
+        "expected_count": 0,
+        "inventory_sha256": contract.inventory_digest([]),
+        "rows": [],
+    }
+    errors = contract.validate_manifest(ROOT, version_2, stage="classification")
+    assert not any("unexpected=['repository']" in error for error in errors)
+
+    version_2["evidence"][0]["repository"] = "other"
+    errors = contract.validate_manifest(ROOT, version_2, stage="classification")
+    assert any("repository must be `source`" in error for error in errors)
+
+
+def test_version_2_lifecycle_is_one_way_and_evidence_ref_is_immutable() -> None:
+    previous = {
+        "schema_version": 2,
+        "codex": {"evidence_ref": "refs/tags/evidence/fixture"},
+        "reconciliation": {
+            "state": "finalized",
+            "expected_count": 0,
+            "inventory_sha256": contract.inventory_digest([]),
+            "rows": [],
+        },
+    }
+    current = copy.deepcopy(previous)
+    current["reconciliation"]["state"] = "active"
+    current["codex"]["evidence_ref"] = "refs/tags/evidence/replacement"
+
+    errors = contract.validate_manifest_transition(ROOT, previous, current)
+
+    assert "codex.evidence_ref cannot change after version 2 initialization" in errors
+    assert "finalized reconciliation cannot return to active" in errors
