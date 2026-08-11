@@ -20,8 +20,8 @@
     ],
     "runbook": {
       "path": "docs/portability/claude-to-codex-plugin-port-runbook.md",
-      "sha256": "0d1f6e58624e179e7c99da85fdc10089eea84e0ac557761a192bb148a21c9afa",
-      "version": 5
+      "sha256": "c7080427d11eeacb2e4fc1b53afdbbd6fec161d97d0e1d87d2b57b68103fce55",
+      "version": 6
     }
   },
   "codex": {

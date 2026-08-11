@@ -1,0 +1,564 @@
+{
+  "schema_version": 3,
+  "captured_at": "2026-08-11T04:27:23Z",
+  "refs": {
+    "codex": {
+      "historical_plan_base": "43b18477906ba9790ef3ca555ecfd993da068a35",
+      "execution_base": "9f4c8d41fb14ed098bd6a7dab9f0f3f9d06c8653",
+      "observed_origin_main": "ed8d74f260f029e41ee4e6e44975f9d70522697a"
+    },
+    "claude": {
+      "source_base": "b53827bb055e08ccc6aa547cade04aedf4385456",
+      "source_target": "b53827bb055e08ccc6aa547cade04aedf4385456",
+      "observed_head": "b53827bb055e08ccc6aa547cade04aedf4385456",
+      "observed_main": "b53827bb055e08ccc6aa547cade04aedf4385456",
+      "observed_origin_main": "b53827bb055e08ccc6aa547cade04aedf4385456",
+      "target_reachable": true
+    }
+  },
+  "runtime": {
+    "codex_cli_version": "0.147.0",
+    "effective_parent_permission_mode": {
+      "sandbox_mode": "danger-full-access",
+      "approval_policy": "never"
+    },
+    "configured_max_threads": 6,
+    "configured_max_threads_source": "config",
+    "configured_max_threads_key": "max_threads",
+    "configured_v2_total_threads": 7,
+    "configured_v2_total_threads_source": "agents-plus-root",
+    "configured_max_depth": 1,
+    "configured_max_depth_source": "config",
+    "host_total_slots": 7,
+    "effective_total_slots": 6,
+    "effective_max_children": 5,
+    "session_fact_source": "current-0.147-live-tool-contract",
+    "multi_agent_v2_config": {
+      "enabled": true,
+      "tool_namespace": "collaboration",
+      "hide_spawn_agent_metadata": true,
+      "expose_spawn_agent_model_overrides": true,
+      "non_code_mode_only": true
+    }
+  },
+  "configured_defaults": {
+    "model": "gpt-5.6-sol",
+    "model_reasoning_effort": "max"
+  },
+  "catalog": {
+    "source": "refreshed",
+    "normalized_sha256": "7a8eaa7fc65492c2c0e0689304972eea17fec2ba4f39d06fa5d8a905f3e40868",
+    "models": [
+      {
+        "slug": "gpt-5.6-sol",
+        "default_effort": "low",
+        "supported_efforts": [
+          "low",
+          "medium",
+          "high",
+          "xhigh",
+          "max",
+          "ultra"
+        ],
+        "visibility": "list",
+        "supported_in_api": true,
+        "multi_agent_version": "v2",
+        "multi_agent_v2_override_filter": {
+          "rule": "codex-0.147.0/model-supports-multi-agent-backend",
+          "passes": true
+        },
+        "multi_agent_v2_collaboration": {
+          "rule": "codex-0.147.0/collab-tools-enabled",
+          "as_root": true,
+          "as_child": true
+        }
+      },
+      {
+        "slug": "gpt-5.6-sol-wm",
+        "default_effort": "low",
+        "supported_efforts": [
+          "low",
+          "medium",
+          "high",
+          "xhigh",
+          "max",
+          "ultra"
+        ],
+        "visibility": "hide",
+        "supported_in_api": false,
+        "multi_agent_version": "v2",
+        "multi_agent_v2_override_filter": {
+          "rule": "codex-0.147.0/model-supports-multi-agent-backend",
+          "passes": true
+        },
+        "multi_agent_v2_collaboration": {
+          "rule": "codex-0.147.0/collab-tools-enabled",
+          "as_root": true,
+          "as_child": true
+        }
+      },
+      {
+        "slug": "gpt-5.6-terra",
+        "default_effort": "medium",
+        "supported_efforts": [
+          "low",
+          "medium",
+          "high",
+          "xhigh",
+          "max",
+          "ultra"
+        ],
+        "visibility": "list",
+        "supported_in_api": true,
+        "multi_agent_version": "v2",
+        "multi_agent_v2_override_filter": {
+          "rule": "codex-0.147.0/model-supports-multi-agent-backend",
+          "passes": true
+        },
+        "multi_agent_v2_collaboration": {
+          "rule": "codex-0.147.0/collab-tools-enabled",
+          "as_root": true,
+          "as_child": true
+        }
+      },
+      {
+        "slug": "gpt-5.6-luna",
+        "default_effort": "medium",
+        "supported_efforts": [
+          "low",
+          "medium",
+          "high",
+          "xhigh",
+          "max"
+        ],
+        "visibility": "list",
+        "supported_in_api": true,
+        "multi_agent_version": "v1",
+        "multi_agent_v2_override_filter": {
+          "rule": "codex-0.147.0/model-supports-multi-agent-backend",
+          "passes": true
+        },
+        "multi_agent_v2_collaboration": {
+          "rule": "codex-0.147.0/collab-tools-enabled",
+          "as_root": true,
+          "as_child": false
+        }
+      },
+      {
+        "slug": "gpt-5.5",
+        "default_effort": "medium",
+        "supported_efforts": [
+          "low",
+          "medium",
+          "high",
+          "xhigh"
+        ],
+        "visibility": "list",
+        "supported_in_api": true,
+        "multi_agent_version": null,
+        "multi_agent_v2_override_filter": {
+          "rule": "codex-0.147.0/model-supports-multi-agent-backend",
+          "passes": true
+        },
+        "multi_agent_v2_collaboration": {
+          "rule": "codex-0.147.0/collab-tools-enabled",
+          "as_root": true,
+          "as_child": false
+        }
+      },
+      {
+        "slug": "gpt-5.4",
+        "default_effort": "medium",
+        "supported_efforts": [
+          "low",
+          "medium",
+          "high",
+          "xhigh"
+        ],
+        "visibility": "list",
+        "supported_in_api": true,
+        "multi_agent_version": null,
+        "multi_agent_v2_override_filter": {
+          "rule": "codex-0.147.0/model-supports-multi-agent-backend",
+          "passes": true
+        },
+        "multi_agent_v2_collaboration": {
+          "rule": "codex-0.147.0/collab-tools-enabled",
+          "as_root": true,
+          "as_child": false
+        }
+      },
+      {
+        "slug": "gpt-5.4-mini",
+        "default_effort": "medium",
+        "supported_efforts": [
+          "low",
+          "medium",
+          "high",
+          "xhigh"
+        ],
+        "visibility": "list",
+        "supported_in_api": true,
+        "multi_agent_version": null,
+        "multi_agent_v2_override_filter": {
+          "rule": "codex-0.147.0/model-supports-multi-agent-backend",
+          "passes": true
+        },
+        "multi_agent_v2_collaboration": {
+          "rule": "codex-0.147.0/collab-tools-enabled",
+          "as_root": true,
+          "as_child": false
+        }
+      },
+      {
+        "slug": "gpt-5.3-codex-spark",
+        "default_effort": "high",
+        "supported_efforts": [
+          "low",
+          "medium",
+          "high",
+          "xhigh"
+        ],
+        "visibility": "list",
+        "supported_in_api": false,
+        "multi_agent_version": null,
+        "multi_agent_v2_override_filter": {
+          "rule": "codex-0.147.0/model-supports-multi-agent-backend",
+          "passes": true
+        },
+        "multi_agent_v2_collaboration": {
+          "rule": "codex-0.147.0/collab-tools-enabled",
+          "as_root": true,
+          "as_child": false
+        }
+      },
+      {
+        "slug": "codex-auto-review",
+        "default_effort": "medium",
+        "supported_efforts": [
+          "low",
+          "medium",
+          "high",
+          "xhigh",
+          "max"
+        ],
+        "visibility": "hide",
+        "supported_in_api": true,
+        "multi_agent_version": "v1",
+        "multi_agent_v2_override_filter": {
+          "rule": "codex-0.147.0/model-supports-multi-agent-backend",
+          "passes": true
+        },
+        "multi_agent_v2_collaboration": {
+          "rule": "codex-0.147.0/collab-tools-enabled",
+          "as_root": true,
+          "as_child": false
+        }
+      }
+    ]
+  },
+  "features": {
+    "multi_agent": {
+      "stage": "stable",
+      "enabled": true
+    },
+    "multi_agent_v2": {
+      "stage": "stable",
+      "enabled": true
+    },
+    "hooks": {
+      "stage": "stable",
+      "enabled": true
+    },
+    "goals": {
+      "stage": "stable",
+      "enabled": true
+    },
+    "plugins": {
+      "stage": "stable",
+      "enabled": true
+    }
+  },
+  "custom_agents": {
+    "builtins": [
+      "default",
+      "worker",
+      "explorer"
+    ],
+    "required_fields": [
+      "name",
+      "description",
+      "developer_instructions"
+    ],
+    "optional_config_fields": [
+      "nickname_candidates",
+      "model",
+      "model_reasoning_effort",
+      "sandbox_mode",
+      "mcp_servers",
+      "skills.config"
+    ],
+    "repo_managed_source_count": 7,
+    "installed_custom_agent_count": 11,
+    "installed_verified_workflows_managed_count": 7
+  },
+  "collaboration": {
+    "spawn": {
+      "available": true,
+      "contract_version": "v2",
+      "tool_namespace": "collaboration",
+      "hide_spawn_agent_metadata": false,
+      "request_fields": [
+        "agent_type",
+        "fork_turns",
+        "message",
+        "model",
+        "reasoning_effort",
+        "task_name"
+      ],
+      "response_fields": [
+        "agent_id",
+        "nickname",
+        "task_name"
+      ],
+      "default_fork_turns": "all",
+      "profile_selection_fork_turns": [
+        "none",
+        "positive-integer"
+      ],
+      "per_child_agent_type": true,
+      "per_child_model": true,
+      "per_child_effort": true,
+      "per_child_sandbox": false,
+      "runtime_receipt_sources": [
+        "session_meta",
+        "turn_context"
+      ],
+      "selection_readback_fields": [
+        "agent_path",
+        "agent_role",
+        "model",
+        "reasoning_effort",
+        "model_provider",
+        "approval_policy",
+        "permission_profile",
+        "sandbox_policy",
+        "multi_agent_version"
+      ]
+    },
+    "operations": [
+      "followup_task",
+      "interrupt_agent",
+      "list_agents",
+      "send_message",
+      "spawn_agent",
+      "wait_agent"
+    ],
+    "context": {
+      "fork_turns": [
+        "none",
+        "all",
+        "positive-integer"
+      ],
+      "full_history_profile_override": false,
+      "child_permissions_inherit_parent_turn": true
+    },
+    "messaging": {
+      "queue_only": "send_message",
+      "trigger_turn": "followup_task"
+    },
+    "wait": {
+      "request_fields": [
+        "timeout_ms"
+      ],
+      "response_fields": [
+        "message",
+        "timed_out"
+      ],
+      "content_delivered_out_of_band": true
+    },
+    "list": {
+      "request_fields": [
+        "path_prefix"
+      ],
+      "response_fields": [
+        "agent_name",
+        "agent_status"
+      ]
+    },
+    "interruption": {
+      "operation": "interrupt_agent",
+      "agent_remains_addressable": true
+    },
+    "restoration": {
+      "same_path_operation": "followup_task",
+      "root_resume_surface": "codex-exec-resume"
+    },
+    "child_result_delivery": "mailbox-and-final-status",
+    "required_capabilities": [
+      {
+        "name": "configured-agent-selection",
+        "status": "supported"
+      },
+      {
+        "name": "model-effort-readback",
+        "status": "supported"
+      },
+      {
+        "name": "provider-readback",
+        "status": "supported"
+      },
+      {
+        "name": "effective-permission-readback",
+        "status": "supported"
+      },
+      {
+        "name": "bounded-context",
+        "status": "supported"
+      },
+      {
+        "name": "nested-delegation",
+        "status": "supported"
+      },
+      {
+        "name": "typed-results",
+        "status": "supported"
+      },
+      {
+        "name": "messaging",
+        "status": "supported"
+      },
+      {
+        "name": "follow-up",
+        "status": "supported"
+      },
+      {
+        "name": "wait-list",
+        "status": "supported"
+      },
+      {
+        "name": "interruption",
+        "status": "supported"
+      },
+      {
+        "name": "restoration",
+        "status": "supported"
+      },
+      {
+        "name": "luna-leaf",
+        "status": "unavailable"
+      },
+      {
+        "name": "ultra-root-only",
+        "status": "supported"
+      }
+    ]
+  },
+  "hook_capabilities": {
+    "plugin_hooks_supported": true,
+    "trust_required": true,
+    "writable_data_environment": "PLUGIN_DATA",
+    "subagent_event_allowlist": [
+      "SubagentStart",
+      "SubagentStop"
+    ],
+    "observes_active_model": true,
+    "observes_agent_type": true,
+    "observes_reasoning_effort": false,
+    "runtime_authority": false
+  },
+  "capability_dimensions": {
+    "lifecycle_owner": [
+      {
+        "name": "saga",
+        "status": "available"
+      }
+    ],
+    "continuation": [
+      {
+        "name": "turn",
+        "status": "available"
+      },
+      {
+        "name": "goal",
+        "status": "explicit-only"
+      }
+    ],
+    "workflow_modes": [
+      {
+        "name": "inline",
+        "status": "available"
+      },
+      {
+        "name": "manual",
+        "status": "available"
+      },
+      {
+        "name": "verified-workflow",
+        "status": "available"
+      },
+      {
+        "name": "source-workflow",
+        "status": "unsupported"
+      }
+    ],
+    "step_vehicles": [
+      {
+        "name": "inline",
+        "status": "available"
+      },
+      {
+        "name": "deterministic-tool",
+        "status": "available"
+      },
+      {
+        "name": "v2-configured-agent",
+        "status": "available"
+      }
+    ],
+    "role_identities": [
+      {
+        "name": "logical-role",
+        "status": "available"
+      },
+      {
+        "name": "runtime-agent-role",
+        "status": "available"
+      }
+    ],
+    "execution_class_controls": [
+      {
+        "name": "configured-agent-file",
+        "status": "available"
+      },
+      {
+        "name": "per-spawn-model-effort",
+        "status": "available"
+      },
+      {
+        "name": "per-child-permission",
+        "status": "unavailable"
+      }
+    ],
+    "hook_roles": [
+      {
+        "name": "historical-observation",
+        "status": "legacy-current"
+      },
+      {
+        "name": "runtime-authority",
+        "status": "rejected"
+      }
+    ]
+  },
+  "official_sources": [
+    {
+      "title": "Codex subagents",
+      "url": "https://developers.openai.com/codex/subagents"
+    },
+    {
+      "title": "Codex 0.146.0 source",
+      "url": "https://github.com/openai/codex/tree/rust-v0.146.0"
+    }
+  ]
+}

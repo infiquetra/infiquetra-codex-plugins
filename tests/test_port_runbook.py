@@ -5,6 +5,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from scripts import port_contract
+
 
 ROOT = Path(__file__).resolve().parents[1]
 RUNBOOK = ROOT / "docs/portability/claude-to-codex-plugin-port-runbook.md"
@@ -86,7 +88,9 @@ def test_runbook_has_exact_versioned_structure() -> None:
 
     assert headings == list(REQUIRED_H2)
     assert "Status: canonical" in text
-    assert "Runbook version: `5`" in text
+    assert "Runbook version: `6`" in text
+    assert port_contract.RUNBOOK_VERSION == 6
+    assert port_contract.SUPPORTED_RUNBOOK_VERSIONS == {3, 4, 5, 6}
 
 
 def test_runbook_requires_native_v2_profiles_and_bounded_deviation() -> None:

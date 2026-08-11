@@ -15,11 +15,7 @@ from scripts import port_contract as contract
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_PATH = (
-    ROOT
-    / "docs"
-    / "portability"
-    / "manifests"
-    / "2026-07-11-external-advisory-execution.json"
+    ROOT / "docs" / "portability" / "manifests" / "2026-07-11-external-advisory-execution.json"
 )
 
 
@@ -505,3 +501,634 @@ def test_manifest_digest_changes_when_classification_changes() -> None:
     assert hashlib.sha256(original).hexdigest() != hashlib.sha256(
         contract.canonical_json_bytes(modified)
     ).hexdigest()
+
+
+def _fixture_repo(path: Path) -> Path:
+    subprocess.run(["git", "init", "-q", str(path)], check=True)
+    subprocess.run(
+        ["git", "-C", str(path), "config", "user.name", "Port Contract Test"], check=True
+    )
+    subprocess.run(
+        ["git", "-C", str(path), "config", "user.email", "port-contract@example.invalid"],
+        check=True,
+    )
+    return path
+
+
+def _commit_all(repo: Path, message: str) -> str:
+    subprocess.run(["git", "-C", str(repo), "add", "--all"], check=True)
+    subprocess.run(["git", "-C", str(repo), "commit", "-qm", message], check=True)
+    return subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+
+
+def _declared_source_repo(path: Path, origin: str) -> tuple[Path, str]:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    repo = _fixture_repo(path)
+    (repo / "tools").mkdir()
+    (repo / "tools/harness.py").write_text("print('ok')\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(repo), "remote", "add", "origin", origin], check=True)
+    return repo, _commit_all(repo, "source target")
+
+
+def test_schema_dispatch_accepts_only_exact_version_1_or_2() -> None:
+    for version in (1, 2):
+        errors: list[str] = []
+        assert contract._manifest_schema_version({"schema_version": version}, errors) == version
+        assert errors == []
+
+    for version in (None, True, 0, 3, "2"):
+        errors = []
+        assert contract._manifest_schema_version({"schema_version": version}, errors) is None
+        assert errors == ["schema_version must be exactly one of [1, 2]"]
+
+
+def test_version_2_uses_live_authority_without_a_port_registry_entry() -> None:
+    assert contract._uses_live_authority(2, "new-version-2-cycle") is True
+    assert contract._uses_live_authority(1, "new-version-2-cycle") is False
+    assert contract._uses_live_authority(1, next(iter(contract.CURRENT_PORT_IDS))) is True
+
+
+def test_new_manifest_writes_version_2_and_preserves_explicit_empty_policy(
+    tmp_path: Path,
+) -> None:
+    root = _fixture_repo(tmp_path / "codex")
+    source = _fixture_repo(tmp_path / "source")
+    for relative, content in {
+        "plan.md": "plan\n",
+        "review.md": "review\n",
+        "runbook.md": "runbook\n",
+        "snapshot.json": '{"schema_version": 1}\n',
+        "snapshot.schema.json": "{}\n",
+    }.items():
+        target = root / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content, encoding="utf-8")
+    execution_base = _commit_all(root, "execution base")
+    (root / "scripts").mkdir()
+    (root / "scripts/new_contract_behavior.py").write_text("VALUE = 1\n", encoding="utf-8")
+    _commit_all(root, "candidate")
+
+    (source / "tools").mkdir()
+    (source / "tools/harness.py").write_text("print('ok')\n", encoding="utf-8")
+    source_target = _commit_all(source, "source")
+
+    manifest = contract.build_manifest(
+        root,
+        source,
+        source_base=source_target,
+        source_target=source_target,
+        source_pathspecs=["tools/harness.py"],
+        codex_plan_base=execution_base,
+        codex_execution_base=execution_base,
+        runbook=Path("runbook.md"),
+        capability_snapshot=Path("snapshot.json"),
+        capability_schema=Path("snapshot.schema.json"),
+        plan=Path("plan.md"),
+        reviews=[Path("review.md")],
+        classification_path=Path("classification.md"),
+        codex_evidence_ref="refs/tags/evidence/fixture-v2",
+        version_policy=[],
+    )
+
+    assert manifest["schema_version"] == 2
+    assert manifest["version_policy"] == []
+    assert manifest["reconciliation"]["state"] == "active"
+    assert [row["new_path"] for row in manifest["reconciliation"]["rows"]] == [
+        "scripts/new_contract_behavior.py"
+    ]
+
+
+def test_behavior_predicate_covers_only_active_runtime_paths() -> None:
+    selected = {
+        ".agents/plugins/marketplace.json",
+        ".codex/config.toml",
+        "scripts/port_contract.py",
+        "plugins/saga/.codex-plugin/plugin.json",
+        "plugins/saga/agents/reviewer.toml",
+        "plugins/saga/scripts/tool.py",
+        "plugins/saga/skills/work/SKILL.md",
+        "plugins/saga/hooks/hooks.json",
+        "plugins/saga/config/policy.json",
+        "plugins/saga/roles/reviewer.md",
+        "plugins/discord-identity-assets/references/asset-pipeline.md",
+        "plugins/discord-identity-assets/references/nested/example.md",
+        "plugins/python-toolkit/references/lambda-patterns.md",
+        "plugins/python-toolkit/references/nested/example.md",
+        "plugins/saga/references/rubrics/plan/core/context.md",
+        "plugins/saga/references/rubrics/plan/extras/nested/context.md",
+        "plugins/hermes-profile-evolution/conformance/profile-change-classifier.v1.json",
+        "plugins/hermes-profile-evolution/conformance/profile-request-cli.v1.json",
+        "plugins/saga/references/bridge-signatures.json",
+        "plugins/saga/references/effort-policy.yaml",
+        "plugins/saga/references/engine-dispatch.md",
+        "plugins/saga/references/engine-registry.yaml",
+        "plugins/saga/references/formatting-style.md",
+        "plugins/saga/references/model-releases.yaml",
+        "plugins/saga/references/operator-choice.md",
+        "plugins/saga/references/outcome-cross-runtime.md",
+        "plugins/saga/references/outcome-spec.md",
+        "plugins/saga/references/saga-spec.md",
+    }
+    excluded = {
+        "docs/plans/plan.md",
+        "docs/reviews/review.md",
+        "docs/portability/classifications/render.md",
+        "docs/validation/receipt.json",
+        "docs/engineering-journal/DECISIONS.md",
+        "tests/test_port_contract.py",
+        "plugins/saga/tests/test_tool.py",
+        "plugins/saga/fixtures/input.json",
+        "plugins/hermes-profile-evolution/conformance/provenance.json",
+        "plugins/hermes-profile-evolution/conformance/future-contract.json",
+        "plugins/fleet-core/references/effort-convention.md",
+        "plugins/fleet-core/references/tier-palette.md",
+        "plugins/mission-control/references/arbitrary.md",
+        "plugins/saga/commands/speculative.md",
+        "plugins/saga/providers/speculative.py",
+        "plugins/saga/references/dispatch-adapter-contract.md",
+        "plugins/saga/references/engine-output-trust-boundary.md",
+        "plugins/saga/references/execution-spec.md",
+        "plugins/saga/references/run-fact-ledger.md",
+        "plugins/saga/references/sandbox-spawn-sites.md",
+        "plugins/saga/references/surface_intent_defaults.yaml",
+        ".agents/plugins/other.json",
+        ".codex/other.toml",
+    }
+
+    assert all(contract.is_behavior_path(path) for path in selected)
+    assert not any(contract.is_behavior_path(path) for path in excluded)
+
+    changed_rows = [
+        {
+            "change": "A",
+            "old_path": None,
+            "new_path": "plugins/saga/agents/reviewer.toml",
+            "similarity": None,
+        },
+        {
+            "change": "D",
+            "old_path": "plugins/python-toolkit/references/testing-patterns.md",
+            "new_path": None,
+            "similarity": None,
+        },
+        {
+            "change": "R",
+            "old_path": "plugins/saga/references/operator-choice.md",
+            "new_path": "docs/operator-choice.md",
+            "similarity": 100,
+        },
+    ]
+    assert contract.behavior_inventory(changed_rows) == contract.normalize_inventory(changed_rows)
+
+
+def test_reconciliation_rows_have_one_closed_deterministic_shape() -> None:
+    inventory = {
+        "change": "M",
+        "old_path": None,
+        "new_path": "scripts/port_contract.py",
+        "similarity": None,
+    }
+
+    row = contract._reconciliation_contract_row(inventory)
+
+    assert set(row) == contract.RECONCILIATION_ROW_KEYS
+    assert row["row_id"] == contract.row_id("recon", inventory)
+    assert row["classification"] is None
+    assert row["rationale"] is None
+    assert row["source_row_refs"] == []
+
+
+def test_empty_version_2_policy_is_narrowly_contract_only() -> None:
+    manifest = {
+        "source": {"base_ref": "1" * 40, "target_ref": "1" * 40, "rows": []},
+        "reconciliation": {"rows": [{"classification": "codex-local"}]},
+        "version_policy": [],
+    }
+    errors: list[str] = []
+    contract._validate_version_policy(manifest, 2, errors)
+    assert errors == []
+
+    for mutation in ("source-range", "source-row", "source-derived"):
+        changed = copy.deepcopy(manifest)
+        if mutation == "source-range":
+            changed["source"]["target_ref"] = "2" * 40
+        elif mutation == "source-row":
+            changed["source"]["rows"] = [{}]
+        else:
+            changed["reconciliation"]["rows"][0]["classification"] = "source-derived"
+        errors = []
+        contract._validate_version_policy(changed, 2, errors)
+        assert any("empty version 2 version_policy" in error for error in errors)
+
+    errors = []
+    contract._validate_version_policy(manifest, 1, errors)
+    assert errors == ["version 1 version_policy must be a non-empty list"]
+
+
+def test_versioned_evidence_repository_key_is_closed() -> None:
+    version_1 = load_manifest()
+    version_1["evidence"][0]["repository"] = "source"
+    errors = contract.validate_manifest(ROOT, version_1, stage="classification")
+    assert any("unexpected=['repository']" in error for error in errors)
+
+    version_2 = copy.deepcopy(version_1)
+    version_2["schema_version"] = 2
+    version_2["reconciliation"] = {
+        "state": "active",
+        "expected_count": 0,
+        "inventory_sha256": contract.inventory_digest([]),
+        "rows": [],
+    }
+    errors = contract.validate_manifest(ROOT, version_2, stage="classification")
+    assert not any("unexpected=['repository']" in error for error in errors)
+
+    version_2["evidence"][0]["repository"] = "other"
+    errors = contract.validate_manifest(ROOT, version_2, stage="classification")
+    assert any("repository must be `source`" in error for error in errors)
+
+
+def test_declared_source_checkout_prefers_override_and_contains_harness(
+    tmp_path: Path,
+) -> None:
+    root = _fixture_repo(tmp_path / "codex")
+    override, target = _declared_source_repo(
+        tmp_path / "nonstandard-source",
+        "git@github.com:infiquetra/infiquetra-claude-plugins.git",
+    )
+    source = {
+        "repository_id": "infiquetra/infiquetra-claude-plugins",
+        "target_ref": target,
+    }
+
+    resolved = contract.resolve_declared_source_checkout(
+        root,
+        source,
+        environ={contract.PORT_SOURCE_REPO_ENV: str(override)},
+    )
+    errors: list[str] = []
+    contract._validate_evidence_command_paths(
+        resolved,
+        ["python3", "tools/harness.py"],
+        "evidence[0].argv",
+        errors,
+    )
+
+    assert resolved == override.resolve()
+    assert errors == []
+
+
+def test_declared_source_checkout_uses_git_common_directory_sibling(
+    tmp_path: Path,
+) -> None:
+    layout = tmp_path / "layout"
+    codex = _fixture_repo(layout / "infiquetra-codex-plugins")
+    (codex / "README.md").write_text("codex\n", encoding="utf-8")
+    _commit_all(codex, "codex")
+    source_repo, target = _declared_source_repo(
+        layout / "infiquetra-claude-plugins",
+        "https://github.com/infiquetra/infiquetra-claude-plugins.git",
+    )
+    detached = tmp_path / "detached"
+    subprocess.run(
+        ["git", "-C", str(codex), "worktree", "add", "--detach", str(detached)],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    resolved = contract.resolve_declared_source_checkout(
+        detached,
+        {
+            "repository_id": "infiquetra/infiquetra-claude-plugins",
+            "target_ref": target,
+        },
+        environ={},
+    )
+
+    assert resolved == source_repo.resolve()
+
+
+def test_declared_source_checkout_rejects_identity_and_head_mismatch(
+    tmp_path: Path,
+) -> None:
+    root = _fixture_repo(tmp_path / "codex")
+    source_repo, target = _declared_source_repo(
+        tmp_path / "source",
+        "https://github.com/example/wrong-source.git",
+    )
+    declaration = {
+        "repository_id": "infiquetra/infiquetra-claude-plugins",
+        "target_ref": target,
+    }
+
+    with patch.dict(
+        "os.environ",
+        {contract.PORT_SOURCE_REPO_ENV: str(source_repo)},
+        clear=True,
+    ):
+        try:
+            contract.resolve_declared_source_checkout(root, declaration)
+        except contract.ContractError as exc:
+            assert "origin mismatch" in str(exc)
+        else:
+            raise AssertionError("origin mismatch was accepted")
+
+    subprocess.run(
+        [
+            "git",
+            "-C",
+            str(source_repo),
+            "remote",
+            "set-url",
+            "origin",
+            "ssh://git@github.com/infiquetra/infiquetra-claude-plugins.git",
+        ],
+        check=True,
+    )
+    (source_repo / "README.md").write_text("later\n", encoding="utf-8")
+    _commit_all(source_repo, "later head")
+
+    with patch.dict(
+        "os.environ",
+        {contract.PORT_SOURCE_REPO_ENV: str(source_repo)},
+        clear=True,
+    ):
+        try:
+            contract.resolve_declared_source_checkout(root, declaration)
+        except contract.ContractError as exc:
+            assert "HEAD mismatch" in str(exc)
+        else:
+            raise AssertionError("source HEAD mismatch was accepted")
+
+
+def test_declared_source_checkout_rejects_missing_declaration_and_checkout(
+    tmp_path: Path,
+) -> None:
+    root = _fixture_repo(tmp_path / "codex")
+    cases = (
+        ({}, {}, "source.repository_id"),
+        (
+            {
+                "repository_id": "infiquetra/infiquetra-claude-plugins",
+                "target_ref": "1" * 40,
+            },
+            {contract.PORT_SOURCE_REPO_ENV: str(tmp_path / "missing")},
+            "source checkout is unavailable",
+        ),
+    )
+
+    for declaration, environ, expected in cases:
+        try:
+            contract.resolve_declared_source_checkout(root, declaration, environ=environ)
+        except contract.ContractError as exc:
+            assert expected in str(exc)
+        else:
+            raise AssertionError(f"invalid source declaration was accepted: {declaration}")
+
+
+def test_source_harness_paths_reject_missing_traversal_and_symlink_escape(
+    tmp_path: Path,
+) -> None:
+    source_repo, _ = _declared_source_repo(
+        tmp_path / "source",
+        "https://github.com/infiquetra/infiquetra-claude-plugins.git",
+    )
+    outside = tmp_path / "outside.py"
+    outside.write_text("print('outside')\n", encoding="utf-8")
+    (source_repo / "tools/escape.py").symlink_to(outside)
+
+    for path in (
+        "tools/missing.py",
+        "../outside.py",
+        "/tmp/outside.py",
+        ".codex/plugins/cache/harness.py",
+        "tools/escape.py",
+    ):
+        errors: list[str] = []
+        contract._validate_evidence_command_paths(
+            source_repo,
+            ["python3", path],
+            "evidence[0].argv",
+            errors,
+        )
+        assert len(errors) == 1
+
+
+def test_codex_local_evidence_does_not_resolve_a_companion_checkout() -> None:
+    manifest = load_manifest()
+
+    with patch.object(contract, "resolve_declared_source_checkout") as resolver:
+        errors = contract.validate_manifest(ROOT, manifest, stage="classification")
+
+    resolver.assert_not_called()
+    assert errors == []
+
+    manifest["evidence"][0]["cwd"] = "subdirectory"
+    errors = contract.validate_manifest(ROOT, manifest, stage="classification")
+    assert any("cwd must be `.`" in error for error in errors)
+
+
+def test_version_2_lifecycle_is_one_way_and_evidence_ref_is_immutable() -> None:
+    previous = {
+        "schema_version": 2,
+        "source": {
+            "repository_id": "infiquetra/source",
+            "base_ref": "1" * 40,
+            "target_ref": "2" * 40,
+        },
+        "codex": {
+            "repository_id": "infiquetra/codex",
+            "historical_plan_base": "3" * 40,
+            "execution_base": "4" * 40,
+            "evidence_ref": "refs/tags/evidence/fixture",
+        },
+        "reconciliation": {
+            "state": "finalized",
+            "expected_count": 0,
+            "inventory_sha256": contract.inventory_digest([]),
+            "rows": [],
+        },
+        "evidence": [{"evidence_id": "proof"}],
+    }
+    current = copy.deepcopy(previous)
+    current["reconciliation"]["state"] = "active"
+    current["codex"]["evidence_ref"] = "refs/tags/evidence/replacement"
+    current["evidence"].append({"evidence_id": "replacement"})
+
+    errors = contract.validate_manifest_transition(ROOT, previous, current)
+
+    assert "codex.evidence_ref cannot change after version 2 initialization" in errors
+    assert "finalized reconciliation cannot return to active" in errors
+    assert "finalized evidence cannot change" in errors
+
+
+def test_finalized_version_2_reconciliation_requires_evidence() -> None:
+    errors: list[str] = []
+    with patch.object(contract, "resolve_ref", return_value="1" * 40):
+        contract._reconciliation_target(
+            ROOT,
+            {
+                "codex": {"evidence_ref": "refs/tags/evidence/fixture"},
+                "evidence": [],
+            },
+            {"state": "finalized"},
+            errors,
+        )
+
+    assert errors == ["finalized reconciliation requires nonempty evidence"]
+
+
+def test_version_2_active_to_finalized_source_evidence_is_frozen(
+    tmp_path: Path,
+) -> None:
+    root = _fixture_repo(tmp_path / "codex")
+    (root / "README.md").write_text("fixture\n", encoding="utf-8")
+    execution_base = _commit_all(root, "execution base")
+    source_repo, source_target = _declared_source_repo(
+        tmp_path / "source",
+        "https://github.com/infiquetra/infiquetra-claude-plugins.git",
+    )
+
+    for relative, content in {
+        "plan.md": "plan\n",
+        "review.md": "review\n",
+        "runbook.md": "runbook\n",
+    }.items():
+        (root / relative).write_text(content, encoding="utf-8")
+    snapshot = json.loads(
+        (ROOT / "docs/validation/codex-runtime-capability-snapshot.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    snapshot["refs"] = {
+        "codex": {
+            "historical_plan_base": execution_base,
+            "execution_base": execution_base,
+            "observed_origin_main": execution_base,
+        },
+        "claude": {
+            "source_base": source_target,
+            "source_target": source_target,
+            "observed_head": source_target,
+            "observed_main": source_target,
+            "observed_origin_main": source_target,
+            "target_reachable": True,
+        },
+    }
+    contract.write_json(root / "snapshot.json", snapshot)
+    (root / "snapshot.schema.json").write_bytes(
+        (ROOT / "docs/validation/codex-runtime-capability-snapshot.schema-r4.json").read_bytes()
+    )
+    _commit_all(root, "authority")
+    (root / "scripts").mkdir()
+    (root / "scripts/runtime.py").write_text("VALUE = 1\n", encoding="utf-8")
+    _commit_all(root, "active behavior")
+
+    evidence_ref = "refs/tags/evidence/fixture-finalized-v2"
+    manifest = contract.build_manifest(
+        root,
+        source_repo,
+        source_base=source_target,
+        source_target=source_target,
+        source_pathspecs=["tools/harness.py"],
+        codex_plan_base=execution_base,
+        codex_execution_base=execution_base,
+        runbook=Path("runbook.md"),
+        capability_snapshot=Path("snapshot.json"),
+        capability_schema=Path("snapshot.schema.json"),
+        plan=Path("plan.md"),
+        reviews=[Path("review.md")],
+        classification_path=Path("classification.md"),
+        port_id="fixture-finalized-v2",
+        codex_evidence_ref=evidence_ref,
+        version_policy=[],
+    )
+    for row in manifest["reconciliation"]["rows"]:
+        row["classification"] = "codex-local"
+        row["rationale"] = "Fixture behavior is owned by the Codex repository."
+    active_manifest = copy.deepcopy(manifest)
+    (root / "classification.md").write_text(
+        contract.render_manifest(manifest), encoding="utf-8"
+    )
+    with patch.dict(
+        "os.environ",
+        {contract.PORT_SOURCE_REPO_ENV: str(source_repo)},
+        clear=True,
+    ):
+        assert contract.validate_manifest(root, manifest, stage="classification") == []
+
+    contract.write_json(root / "manifest.json", manifest)
+    contract.write_json(root / "evidence.json", {"result": "passed"})
+    evidence_subject = _commit_all(root, "committed evidence subject")
+    manifest["reconciliation"]["state"] = "finalized"
+    manifest["evidence"] = [
+        {
+            "evidence_id": "source-harness",
+            "unit": "U3",
+            "kind": "source-verification",
+            "artifact_path": "evidence.json",
+            "artifact_sha256": contract.sha256_file(root / "evidence.json"),
+            "argv": ["python3", "tools/harness.py"],
+            "cwd": ".",
+            "exit_code": 0,
+            "recorded_at": "2026-08-11T12:00:00+00:00",
+            "repo_head": evidence_subject,
+            "repository": "source",
+        }
+    ]
+    contract.write_json(root / "manifest.json", manifest)
+    (root / "classification.md").write_text(
+        contract.render_manifest(manifest), encoding="utf-8"
+    )
+    frozen_candidate = _commit_all(root, "finalized candidate")
+    subprocess.run(["git", "-C", str(root), "tag", evidence_ref, frozen_candidate], check=True)
+
+    with patch.dict(
+        "os.environ",
+        {contract.PORT_SOURCE_REPO_ENV: str(source_repo)},
+        clear=True,
+    ):
+        assert contract.validate_manifest(root, manifest, stage="classification") == []
+    assert contract.validate_manifest_transition(
+        root,
+        active_manifest,
+        manifest,
+        previous_commit=evidence_subject,
+    ) == []
+
+    pinned_fields = (
+        ("source", "repository_id"),
+        ("source", "base_ref"),
+        ("source", "target_ref"),
+        ("codex", "repository_id"),
+        ("codex", "historical_plan_base"),
+        ("codex", "execution_base"),
+    )
+    for container, key in pinned_fields:
+        mutated = copy.deepcopy(manifest)
+        mutated[container][key] = (
+            "f" * 40 if key.endswith("ref") or "base" in key else "changed"
+        )
+        errors = contract.validate_manifest_transition(root, active_manifest, mutated)
+        assert f"{container}.{key} cannot change after version 2 initialization" in errors
+
+    for relative in (
+        "plan.md",
+        "review.md",
+        "runbook.md",
+        "snapshot.json",
+        "snapshot.schema.json",
+    ):
+        (root / relative).write_text("later authority bytes\n", encoding="utf-8")
+    _commit_all(root, "unrelated later head")
+    with patch.dict(
+        "os.environ",
+        {contract.PORT_SOURCE_REPO_ENV: str(source_repo)},
+        clear=True,
+    ):
+        assert contract.validate_manifest(root, manifest, stage="classification") == []

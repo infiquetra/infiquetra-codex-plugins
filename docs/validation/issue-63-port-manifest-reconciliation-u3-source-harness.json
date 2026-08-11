@@ -1,0 +1,43 @@
+{
+  "broker_root_digest": "",
+  "contract_digests": {},
+  "environment_names_set": [],
+  "halt": {
+    "code": "port-digest",
+    "detail": "outcome_compat.py copies diverge beyond RUNTIME_LABEL"
+  },
+  "overall_verdict": "halt",
+  "runtimes": {
+    "claude": {
+      "expected_versions": {
+        "fleet-core": "0.24.0",
+        "saga": "0.131.1"
+      },
+      "identity": {
+        "sha": "b53827bb055e08ccc6aa547cade04aedf4385456",
+        "versions": {
+          "fleet-core": "0.24.0",
+          "saga": "0.131.1"
+        }
+      },
+      "sha": "b53827bb055e08ccc6aa547cade04aedf4385456"
+    },
+    "codex": {
+      "expected_versions": {
+        "fleet-core": "0.15.0",
+        "saga": "0.83.0+codex.20260729205037"
+      },
+      "identity": {
+        "sha": "e40688b263996dda4170a2cae0ac8be51544b2b3",
+        "versions": {
+          "fleet-core": "0.15.0",
+          "saga": "0.83.0+codex.20260729205037"
+        }
+      },
+      "sha": "e40688b263996dda4170a2cae0ac8be51544b2b3"
+    }
+  },
+  "scenarios": [],
+  "schema": "lease-safe-runtime-continuity/cross-runtime-acceptance.v1",
+  "started_at": "2026-08-11T08:24:58Z"
+}

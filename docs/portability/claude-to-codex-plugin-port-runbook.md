@@ -3,7 +3,7 @@
 ## Contract Metadata
 
 - Status: canonical
-- Runbook version: `5`
+- Runbook version: `6`
 - Machine contract: `ports/<date>-<scope>.json`
 - Contract tool: `../../scripts/port_contract.py`
 - Digest rule: the machine contract stores the SHA-256 of the exact UTF-8 runbook bytes.
@@ -188,6 +188,45 @@ independence and blocks required independence.
    receipt.
 10. Pass `validate --stage cutover`, activate exactly one package identity, and verify exact rollback
     of every managed surface.
+
+### Version 2 reconciliation lifecycle
+
+A reviewed plan MAY authorize one bounded Codex-local bootstrap when the version 2 gate does not yet
+exist. That exception MUST name the exact implementation and focused-test paths, land as its own
+tested commit, and add no source-derived behavior or unrelated machinery. The cycle MUST then
+initialize its active manifest from the reviewed execution base, classify every bootstrap behavior
+path, render the classification, and pass classification validation before another behavior change.
+
+An active version 2 manifest MUST have empty evidence and a safe `codex.evidence_ref` whose named Git
+tag is unresolved. It compares `codex.execution_base..HEAD` against live authority files. A finalized
+manifest MUST have nonempty evidence, resolve the immutable evidence tag as its target, and validate
+the digest-bound authority bytes recorded at that candidate rather than later working-tree files.
+
+Version 2 normally requires a nonempty version policy. An explicit `[]` is permitted only for a
+contract-only cycle whose source base equals its source target, whose source inventory is empty, and
+whose reconciliation rows are all `codex-local`. This exception does not invent a plugin version or
+release unit.
+
+The evidence tag MUST be absent through active validation, source-harness capture, and finalization.
+Every evidence row MUST name the reviewed prior code commit as `repo_head`; the finalized manifest,
+classification, evidence, documentation, and generated bindings are then committed as one candidate.
+Only after that commit may the still-absent tag be created once at the candidate, and its history MUST
+contain the execution base and every evidence commit.
+
+Local tag validation is not publication proof. Before a PR is created, push only the exact evidence
+ref without force, read the same remote ref back, fetch only that ref into a disposable clean checkout,
+and run finalized validation there with any declared source checkout set explicitly. A failure stops;
+a published tag is never moved or deleted.
+
+A changed candidate returns to review and uses a reviewed `-attempt-N` evidence ref. Immediately
+before merge, the PR merge ref MUST match the frozen normalized reconciliation inventory and every
+selected behavior path's presence, mode, and blob bytes; repeat both comparisons against the actual
+merge commit. Documentation-only differences may be allowed, but any behavior difference stops.
+
+Serialize overlapping behavior work so the reconciliation cycle lands first. For issue #63, that
+means issue #63 lands before issue #61 or issue #62 behavior branches. The issue #57 version 1 manifest
+and regression test remain historical records; new declared-source evidence belongs only to the issue
+#63 manifest.
 
 ### Bounded unplanned repair
 
