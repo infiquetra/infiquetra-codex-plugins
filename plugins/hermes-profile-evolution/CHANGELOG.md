@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.4 - 2026-08-10
+
+- Refresh the producer-owned status fixture from Hermes producer pull request 41.
+- Accept verified terminal status that omits the adopted-only `deadline` field.
+
 ## 0.1.3 - 2026-08-10
 
 - Require the producer's profile-change classifier contract as an explicit repository opt-in.

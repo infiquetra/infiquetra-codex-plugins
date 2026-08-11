@@ -669,3 +669,16 @@ and docstrings — requires `build_legacy_workflow_inventory.py --write` in the 
 with `--repo-root` against a clean worktree because the builder refuses the primary tree while
 untracked `.claude/` paths exist. Check membership with a path lookup against the inventory's
 `entries`, not by guessing from the directory.
+
+## 2026-08-10: A Generated Outcome Example Is a Lower Bound, Not a Universal Status Shape
+
+**Evidence:** The installed profile-evolution adapter rejected a verified live `no_change`
+status because its imported producer example described an adopted task and required the
+outcome-specific `deadline` field.
+
+**Mechanism:** The adapter projects producer output onto the imported example, so every field
+in that example becomes required while additional valid fields remain compatible.
+
+**Generalizable rule:** Import the producer's smallest valid terminal status as the shared
+projection example. Keep outcome-specific fields optional by proving both the minimal terminal
+shape and a richer status remain compatible.

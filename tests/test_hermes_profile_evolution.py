@@ -82,7 +82,7 @@ def test_native_plugin_skill_and_hook_surfaces_are_discoverable() -> None:
 def test_installed_skill_path_resolves_bundled_adapter_without_plugin_root(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    installed = tmp_path / "cache/infiquetra/hermes-profile-evolution/0.1.3"
+    installed = tmp_path / "cache/infiquetra/hermes-profile-evolution/0.1.4"
     shutil.copytree(PLUGIN, installed)
     skill = installed / "skills/hermes-profile-evolution/SKILL.md"
     monkeypatch.delenv("PLUGIN_ROOT", raising=False)
@@ -407,8 +407,29 @@ def test_reply_resume_and_status_follow_producer_command_shapes(
     status = request.status("proposal-12345678", "a" * 64, "brokkr")
     assert reply["action"] == resume["action"] == "hermes_dialogue"
     assert status and calls[-1][0][0] == "status"
+    assert status[-1]["result"] == "no_change"
+    assert "deadline" not in status[-1]
+    assert "public_evidence_digest" in status[-1]
     assert calls[1][0] == ["reply", "--message", "Please compare it."]
     assert calls[1][1] is not None
+
+
+def test_status_projection_accepts_outcome_specific_deadline() -> None:
+    values = request._parse_json_sequence(
+        completed("status", target="brokkr", revision_digest="a" * 64).stdout
+    )
+    values[-1]["result"] = "adopted"
+    values[-1]["deadline"] = "2026-08-11T12:00:00Z"
+
+    projected = request._validated_output(
+        "status",
+        CompletedProcess([], 0, b"\n".join(request._canonical(value) for value in values), b""),
+        target="brokkr",
+        revision_digest="a" * 64,
+    )
+
+    assert projected[-1]["result"] == "adopted"
+    assert "deadline" not in projected[-1]
 
 
 def recompute_revision(proposal: dict[str, object]) -> None:
