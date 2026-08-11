@@ -1,5 +1,101 @@
 # Decisions
 
+## 2026-08-10: Port Classification Reconciles The Actual Branch And Selects At Most One Source Repository
+
+Issue #63 keeps one JSON port manifest and permits one narrowly reviewed bootstrap before that
+manifest can self-host. U1a may change only `scripts/port_contract.py` and focused tests for the
+minimum version 2 substrate: exact version dispatch, the reconciliation and behavior-path contract,
+active/finalized target semantics, the optional evidence repository schema, and the contract-only
+version-policy rule. It lands as a separate tested commit. No companion resolver, issue #57
+migration, source-derived change, tag creation, or unrelated behavior is allowed in that exception.
+U1b immediately initializes version 2 from the reviewed plan commit, inventories every bootstrap
+behavior path, classifies each `codex-local`, renders, and passes explicit classification. Runbook
+requirements R22 and R23 then govern every later behavior change as usual.
+
+The reviewed plan commit must have parent `43b18477906ba9790ef3ca555ecfd993da068a35`, which remains
+the Codex plan base. That commit is passed explicitly as `codex.execution_base`. The newly merged
+reusable-bootstrap document is documentation-only and does not require this cycle to rebase beyond
+`43b1847`. Any later behavior-bearing mainline change stops candidate preparation; issue #63 is
+serialized to merge before issue #61 or #62 behavior branches.
+
+Source authority remains explicit. The preserved ordinary checkout `HEAD` is
+`7f2b98f2ac61431c98d177c25277d287a111aef4`, its stale local `origin/main` is
+`1f6c6df4f080247150f489280836e7f4eda4973d`, and live `refs/heads/main` is
+`b53827bb055e08ccc6aa547cade04aedf4385456`. Issue #63 pins the live commit as both source base and
+target and names only `tools/run_cross_runtime_outcome_acceptance.py`, so source rows are empty.
+Read-only GitHub verification found that harness at blob
+`7c6c9aac411ec2a119b45e77558298846e7ee7b5`, size 99,980 bytes; the intervening commits change only
+Hermes profile-evolution documentation, metadata, timeout behavior, and tests. Initialization and
+live proof use a disposable detached checkout or temporary clone with normalized origin
+`infiquetra/infiquetra-claude-plugins` and exact target `HEAD`. The ordinary source checkout is never
+fetched, switched, cleaned, or updated.
+
+Version 2 adds one closed `reconciliation` object: `state`, `expected_count`, `inventory_sha256`, and
+normalized `rows`. The existing `codex.evidence_ref` remains the sole target authority. Active
+validation is allowed only with empty evidence and that safe ref absent; it compares the reviewed
+execution base to current `HEAD`. Finalized historical validation resolves the immutable ref and
+compares the execution base to that target, never later `HEAD`. A finalized manifest cannot silently
+return to active, change `codex.evidence_ref`, accept a non-fast-forward candidate, or validate
+different rows. The behavior predicate covers root tooling
+and active plugin runtime/configuration surfaces, including both sides of renames, while excluding
+documentation, tests, fixtures, generated classifications, validation receipts, and journal prose.
+Missing, duplicate, stale, or unknown rows fail; changed `deferred` and `blocked` rows remain red.
+
+Version 1 keeps its exact evidence fields, remains byte-readable, rejects `repository`, and requires
+a nonempty version policy. Version 2 retains those fields, adds only optional
+`repository: "source"`, and normally also requires nonempty policy. The sole empty-policy exception
+is an explicit `[]` file for a version 2 contract-only cycle whose source base equals target, source
+rows are empty, and every reconciliation row is Codex-local. Issue #63 satisfies those conditions and
+does not invent a plugin version or release unit. The issue #57 manifest is upgraded to version 2
+only after self-hosting, and only its affected cross-runtime row gains `repository: "source"`. The
+issue #54 manifest and test stay byte-unchanged version 1 regression evidence.
+
+Cross-repository evidence uses no registry. `CODEX_PORT_SOURCE_REPO` has first precedence; otherwise
+the source checkout is the repository-name sibling of the Codex Git common directory derived from
+the singular `source.repository_id`. Normalized origin and exact `HEAD == source.target_ref` are
+verified before realpath containment. `repo_head` remains the Codex proof commit. After every
+behavior-bearing unit, the active reconciliation rows and render are updated and classification must
+pass again.
+
+The evidence ref `refs/tags/evidence/issue-63-port-manifest-reconciliation-20260810` starts absent and
+is refused if it already exists at any commit. U1 does not create it. After independent code-review
+fixes and separate focused, plugin-validator, and full-suite checks pass, every evidence row records
+the prior final code commit as `repo_head`. The finalized manifest, evidence, classification,
+runbook, journal, generated inventory, and digest binding are committed as one candidate. Only then
+is the still-absent tag created once at that candidate. Tagged history must contain the execution
+base and every evidence commit.
+
+Local validation is not enough for finalized history. Before PR creation, push only the exact
+evidence ref to the same ref on `origin`, without force and without pushing a branch or another tag.
+Read that exact remote ref back and require its object ID to equal the frozen candidate. Fetch only
+that exact ref into a disposable clean checkout and run finalized-manifest validation there. Local
+validation, push, remote readback, fetch, and clean-checkout validation are one fail-closed sequence;
+any failure stops. Once remotely published, a tag is never moved or deleted. A changed candidate
+uses a reviewed `-attempt-N` ref and repeats the narrow sequence. This adds no release workflow,
+generic tag manager, or other publication machinery.
+
+Immediately before merge, GitHub's PR merge ref must reproduce the normalized frozen behavior
+inventory. A read-only Git comparison over paths selected by the deterministic behavior predicate
+must also prove identical presence, mode, and blob content; documentation-only files may differ.
+The actual merge commit must pass the same inventory and selected-path content comparisons against
+the candidate. A changed behavior path, merge result, or candidate returns to review and gets a new
+`-attempt-N` tag; the old tag remains immutable. Historical validation continues to resolve the
+frozen `codex.evidence_ref`, so later unrelated `HEAD` changes cannot invalidate the cycle. No stored
+behavior-tree digest or new evidence format is added.
+
+Focused capability checks, repository validation, and the full test suite remain separate visible
+outcomes with their real exit status. Issue #63 adds no suppression baseline, validation-attribution
+subsystem, second manifest, compatibility database, evidence-chain format, repository registry, or
+port control plane. The final documentation unit updates the runbook and this journal, regenerates
+`docs/validation/verified-workflows-legacy-token-inventory.json`, and changes only the adjacent reason
+comment and `LEGACY_WORKFLOW_HISTORICAL_INVENTORY_SHA256` in `scripts/validate_codex_plugins.py`.
+Inventory `--check` and full plugin validation must pass.
+
+Plan: `docs/plans/2026-08-10-issue-63-port-manifest-reconciliation-plan.md`.
+
+Required independent review:
+`docs/reviews/2026-08-10-issue-63-port-manifest-reconciliation-doc-review.md`.
+
 ## 2026-08-09: Committed Profile Bytes Are The Unpromoted Rendering; A Deviation Is Applied At Install
 
 Promoting the two low-cost profiles onto the Luna model is a deviation from what their Fleet Core
