@@ -19,7 +19,9 @@ def test_sdlc_manager_metadata_and_marketplace_entry_match() -> None:
     entry = next(p for p in fixture["plugins"] if p["name"] == "mission-control")
 
     assert plugin_json["name"] == "mission-control"
-    assert plugin_json["version"] == "2.4.2"  # #35 fail-loud board move
+    assert (
+        plugin_json["version"] == "2.5.0"
+    )  # retire the hermes-task / hermes-not-actionable dispatch markers
     assert entry["version"] == plugin_json["version"]
     assert sorted(entry["skills"]) == [
         "board",
@@ -50,13 +52,15 @@ def test_flow_catalog_description_leads_with_assign_mimir() -> None:
 def test_issue_type_reference_uses_current_template_labels() -> None:
     issue_types = _read(PLUGIN_ROOT / "skills/issues/references/issue-types.md")
 
-    assert "`capability`, `hermes-task`, `needs-plan`" in issue_types
-    assert "`enhancement`, `hermes-task`, `needs-plan`" in issue_types
-    assert "`defect`, `hermes-task`, `needs-plan`" in issue_types
+    assert "`capability`, `needs-plan`" in issue_types
+    assert "`enhancement`, `needs-plan`" in issue_types
+    assert "`defect`, `needs-plan`" in issue_types
     assert "Do not create an Objective issue" in issue_types
-    assert "`objective`, `hermes-not-actionable`" not in issue_types
-    assert "`exploration`, `research`, `hermes-not-actionable`" in issue_types
-    assert "`context-update`, `documentation`, `hermes-not-actionable`" in issue_types
+    assert "`exploration`, `research`" in issue_types
+    assert "`context-update`, `documentation`" in issue_types
+    # the retired Hermes dispatch markers must not come back
+    assert "hermes-task" not in issue_types
+    assert "hermes-not-actionable" not in issue_types
     assert "`capability`, `needs-analysis` (auto-applied by template)" not in issue_types
     assert "`enhancement`, `needs-analysis` (auto-applied by template)" not in issue_types
     assert "`defect`, `needs-triage` (auto-applied by template)" not in issue_types
@@ -64,13 +68,16 @@ def test_issue_type_reference_uses_current_template_labels() -> None:
     assert "`initiative:{name}`" not in issue_types
 
 
-def test_issue_skill_honors_hermes_actionability_contract() -> None:
+def test_issue_skill_honors_the_card_contract_split() -> None:
     skill = _read(PLUGIN_ROOT / "skills/issues/SKILL.md")
 
     assert "Actionable issue types are `capability`, `enhancement`, and `defect`" in skill
     assert "`exploration` and `context-update` are context-only types" in skill
     assert "capability/enhancement/defect/exploration/context-update" not in skill
-    assert "hermes-task`, `needs-plan`" in skill
+    assert "apply `needs-plan` and the type label" in skill
+    # the retired Hermes dispatch markers must not come back
+    assert "hermes-task" not in skill
+    assert "hermes-not-actionable" not in skill
     assert "needs-analysis" not in skill
     assert "issue prepare" in skill
     assert "issue approve" in skill

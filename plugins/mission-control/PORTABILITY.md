@@ -11,6 +11,10 @@ Lineage:
   `docs/portability/ports/2026-07-14-mission-control-2100.json`
 - Codex adapter Mission Control 2.4.2 focused port contract:
   `docs/portability/ports/2026-07-16-mission-control-2101.json`
+- Claude Mission Control 2.12.0 retirement of the `hermes-task` /
+  `hermes-not-actionable` dispatch markers: `infiquetra-claude-plugins` at
+  `bfc4ac676d3269aaa0fa581ab6ced70f84d52343`, synchronized into this adapter as
+  2.5.0 under `AUTH-VENDORED` (no new port manifest; vendored-behavior sync)
 - Codex replacement target: `sdlc-manager` successor in the Saga-family cutover
 
 Codex differences:

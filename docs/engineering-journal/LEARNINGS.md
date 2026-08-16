@@ -1,5 +1,29 @@
 # Learnings
 
+## 2026-08-16: A Vendored Copy Can Be Broken By An Edit To A Repository It Only Reads
+
+**Evidence:** `plugins/mission-control/tests/test_template_sync.py::test_generated_reference_matches_checked_in_file`
+was already failing on `main` before this change, with 2735 other tests passing. Nothing in this
+repository had changed. `plugins/mission-control/scripts/sync_template_docs.py` resolves
+`INFIQUETRA_SDLC_PATH` (default `~/workspace/infiquetra/infiquetra-sdlc`) and renders
+`skills/issues/references/templates-reference.md` from that other repository's five
+`.github/ISSUE_TEMPLATE/*.yml` files at test time. Those templates dropped their `hermes-task` and
+`hermes-not-actionable` labels upstream, so the checked-in reference stopped matching what the
+renderer produces.
+
+**Mechanism:** the generated reference has two inputs — the renderer in this repository and the
+templates in another one — and only the first is under version control here. A regenerate-and-diff
+gate compares those inputs, so an edit made entirely outside this checkout turns the gate red with
+no local commit to blame it on. In continuous integration the same tests skip, because the sibling
+checkout does not exist there; the failure is only reachable on an operator's machine, which is also
+the only place it can be fixed. The signal is real and useful — it caught genuine drift — but it
+arrives detached from any change you can see in `git log`.
+
+**Generalizable rule:** when a test reads a path outside the repository, a red suite is not proof
+that the working tree is wrong. Establish the baseline before editing, and check whether the failing
+assertion's inputs all live in this checkout; if one does not, find out what moved on the other side
+before assuming you broke something.
+
 ## 2026-08-09: A Gate Whose Success Branch Has Never Executed Is Not A Gate
 
 **Evidence:** commit `4c3e4a0` (U9 of the Codex 0.147 alignment, pull request 78);

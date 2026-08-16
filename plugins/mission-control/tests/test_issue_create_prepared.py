@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 import sdlc_manager  # noqa: E402
 
 
-# Updated 2026-06-14 for the U8 context-package contract: a hermes-task card now
+# Updated 2026-06-14 for the U8 context-package contract: an actionable card now
 # carries the always-required Intent (R1) + Context library links (R4), and the
 # acceptance criteria name a runnable check (R2/KTD8).
 OLYMPUS_BODY = """### Objective
@@ -320,7 +320,7 @@ def test_missing_labels_and_templates_are_deployed_after_confirmation(tmp_path) 
 
     with (
         patch.object(sdlc_manager, "load_config", return_value=_mapped_config()),
-        patch.object(sdlc_manager, "_repo_missing_labels", return_value=["hermes-task"]),
+        patch.object(sdlc_manager, "_repo_missing_labels", return_value=["needs-plan"]),
         patch.object(sdlc_manager, "_repo_missing_templates", return_value=["capability.yml"]),
         patch.object(sdlc_manager, "labels_deploy") as mock_labels,
         patch.object(sdlc_manager, "rollout_deploy_templates") as mock_templates,
