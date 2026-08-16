@@ -1,5 +1,41 @@
 # Decisions
 
+## 2026-08-16: A Vendored Mission Control Sync Ships As A Release Unit Without A New Port Manifest
+
+Mission Control 2.5.0 retires the `hermes-task` and `hermes-not-actionable` dispatch markers,
+synchronizing canonical `infiquetra-claude-plugins` mission-control 2.12.0
+(`bfc4ac676d3269aaa0fa581ab6ced70f84d52343`) into this adapter. Authority is `AUTH-VENDORED`: the
+canonical repository changed first, and this copy follows.
+
+**Decision.** Land it as a release unit — manifest, inventory in `scripts/validate_codex_plugins.py`
+and `docs/validation/saga-family-target-inventory.json`, `README.md` table, changelog,
+`PORTABILITY.md` lineage, and the regenerated `docs/saga/generated/lifecycle-facts.json` — with no
+new JSON port manifest under `docs/portability/ports/`.
+
+**Rejected alternative: a full port-contract cycle** (bootstrap a manifest, render a classification
+document, record evidence). The runbook's staged workflow exists for Codex-native adaptation, where
+this repository owns judgment about surface mapping and capability interpretation. This change makes
+no such judgment: the label set, the constant rename, and the reference wording are all decided in
+the canonical repository, and the only Codex-shaped decision is which surfaces exist here. Precedent
+supports the lighter path — commit `36d4a5d` mirrored the canonical Mount Olympus routing retirement
+into this vendored copy with a source edit and a journal entry alone. A full cycle would also require
+a live capability snapshot and an isolated install proof, neither of which this change's behavior
+depends on.
+
+**Rejected alternative: no version bump** (as `36d4a5d` did). That change altered internal routing
+only. This one changes exposed behavior — interactive `issue create` now applies the canonical type
+labels where it previously applied only the retired marker — and the runbook requires a
+behavior-bearing version whenever Codex-visible behavior and its tests are present. `STOP-VERSION`
+forbids the reverse, metadata moving without tested behavior; here the behavior and its tests move
+together.
+
+**Revisit when** a mission-control sync carries a Codex-shaped adaptation rather than a pure mirror —
+a new skill surface, a changed mutation boundary, or any behavior this repository decides for itself.
+That is a port, and it takes the manifest.
+
+**Not covered here.** Isolated-install and fresh-session install proof are operator-run and were not
+performed for 2.5.0.
+
 ## 2026-08-10: Issue #62 Reuses Existing Truth and Adds No Lifecycle State
 
 GitHub issue #62 now has three retained implementation units: current-session discovery and extraction, procedural two-pass stopping, and repository-owned `.claude/` ignore protection. The implementation plan is `docs/plans/2026-08-10-saga-lifecycle-truthfulness-plan.md`; its origin is `docs/brainstorms/2026-07-26-codex-plugin-lifecycle-simplification-requirements.md`.

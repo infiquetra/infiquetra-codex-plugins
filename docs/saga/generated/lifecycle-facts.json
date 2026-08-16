@@ -130,7 +130,7 @@
           "skill_path": "plugins/mission-control/skills/rollout/SKILL.md"
         }
       ],
-      "version": "2.4.2"
+      "version": "2.5.0"
     },
     "saga": {
       "skills": [

@@ -1,5 +1,27 @@
 # Changelog — mission-control
 
+## 2.5.0 - 2026-08-16
+
+### Changed - retire the `hermes-task` / `hermes-not-actionable` dispatch markers
+
+- `_ISSUE_TYPE_LABELS` no longer applies either marker. The Hermes orchestrator that read them
+  was frozen on 2026-07-18 (empty repository list, plan phase off, webhook relay stopped and
+  disabled), so they marked cards for a consumer that cannot run.
+- Interactive `issue create` now applies the **canonical type labels** instead. That path
+  previously guaranteed only the dispatch marker — not even the type label — so a card whose
+  browser template failed to prefill landed untyped.
+- `_HERMES_ACTIONABLE_TYPES` renamed to `_CONTRACT_ISSUE_TYPES`: it names the types that carry
+  the eight-section card contract, which is what it has actually meant since the orchestrator
+  froze.
+- Generated template reference: `Hermes actionable: yes/no` becomes
+  `Card contract: required/not required`.
+- The `issues` and `flow` skills and the issue-type reference updated to match.
+
+Synchronized from canonical `infiquetra-claude-plugins` mission-control 2.12.0 at
+`bfc4ac676d3269aaa0fa581ab6ced70f84d52343` (AUTH-VENDORED). Paired with the `infiquetra-sdlc`
+change that removes both labels from the five issue templates. Writers stop here; the label
+definitions and the GitHub-side labels are retired separately.
+
 ## 2.4.2 - 2026-07-16
 
 ### Fixed

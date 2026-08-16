@@ -3089,11 +3089,11 @@ _TEAM_CHOICES = ("asgard", "campps")
 _TEAM_SAFE_STATUSES = {"asgard": "Shaping", "campps": "Idea"}
 _DISPATCH_ACTIONABLE_TYPES = frozenset({"capability", "enhancement", "defect"})
 _ISSUE_TYPE_LABELS = {
-    "capability": ["capability", "hermes-task", "needs-plan"],
-    "enhancement": ["enhancement", "hermes-task", "needs-plan"],
-    "defect": ["defect", "hermes-task", "needs-plan"],
-    "exploration": ["exploration", "research", "hermes-not-actionable"],
-    "context-update": ["context-update", "documentation", "hermes-not-actionable"],
+    "capability": ["capability", "needs-plan"],
+    "enhancement": ["enhancement", "needs-plan"],
+    "defect": ["defect", "needs-plan"],
+    "exploration": ["exploration", "research"],
+    "context-update": ["context-update", "documentation"],
 }
 _PREPARED_DRAFT_DIR = Path("docs") / "sdlc-issue-drafts"
 _HANDOFF_MATURITY_CHOICES = (
@@ -3128,7 +3128,10 @@ _SOURCE_HINT_DIRS = {
     "draft": (Path("docs") / "sdlc-issue-drafts",),
 }
 
-_HERMES_ACTIONABLE_TYPES = frozenset(
+# The issue types that carry the eight-section card contract. Kept in sync with
+# canonical mission-control, where the created-body gate reads it; this adapter
+# has not ported that gate yet.
+_CONTRACT_ISSUE_TYPES = frozenset(
     {
         "capability",
         "enhancement",
@@ -4757,7 +4760,7 @@ def _apply_post_create_metadata(
     isolated — failures in one don't abort the others.
 
     Steps execute IN ORDER (later steps depend on earlier ones):
-      1. Apply hermes-task / hermes-not-actionable label
+      1. Apply the canonical type labels
       2. Add the issue to the project board (`board_add`) — required
          before step 3 can target the project item
       3. Set each project field value via `flow_set_field` — depends on
@@ -4778,9 +4781,13 @@ def _apply_post_create_metadata(
     # load_config would address that more cleanly, deferred to follow-up.)
     cached_config = load_config()
 
-    # 1. Hermes-actionability label (only types we want the orchestrator
-    # to act on — capability/enhancement/defect)
-    if issue_type in _HERMES_ACTIONABLE_TYPES:
+    # 1. Type labels. The browser template applies these when it prefills, but
+    # `gh issue create --template ... --web` does not always prefill, so a card
+    # could previously land with no type label at all — this path only ever
+    # guaranteed the retired Hermes dispatch marker. Applying the canonical set
+    # is idempotent when the template already did it.
+    labels = _ISSUE_TYPE_LABELS.get(issue_type, [])
+    if labels:
         try:
             _gh(
                 [
@@ -4790,29 +4797,12 @@ def _apply_post_create_metadata(
                     "--repo",
                     f"{ORG}/{repo}",
                     "--add-label",
-                    "hermes-task",
+                    ",".join(labels),
                 ]
             )
-            print("  ✓ Applied label `hermes-task`")
+            print(f"  ✓ Applied labels `{'`, `'.join(labels)}`")
         except GhApiError as e:
-            _warn(f"  ✗ Could not apply hermes-task label: {e}")
-    else:
-        # Exploration and context-update get explicit opt-out.
-        try:
-            _gh(
-                [
-                    "issue",
-                    "edit",
-                    str(issue_number),
-                    "--repo",
-                    f"{ORG}/{repo}",
-                    "--add-label",
-                    "hermes-not-actionable",
-                ]
-            )
-            print("  ✓ Applied label `hermes-not-actionable`")
-        except GhApiError as e:
-            _warn(f"  ✗ Could not apply hermes-not-actionable label: {e}")
+            _warn(f"  ✗ Could not apply type labels: {e}")
 
     # 2. Add to project board
     if project_name:
@@ -4904,7 +4894,7 @@ def issue_create(
       6. Capability-adaptive: prompt for Size if type is capability AND project exposes the field
       7. Open `gh issue create --web` in browser; operator fills body
       8. Operator pastes back the issue number
-      9. Apply hermes-task / hermes-not-actionable label, project field values, sub-issue link
+      9. Apply the canonical type labels, project field values, sub-issue link
      10. Paired-card prompt (opt-in) — suppressed when called recursively
          (`_in_paired_card=True`) to prevent unbounded nesting
 

@@ -12,7 +12,7 @@
     {
       "classification": "migration-documentation",
       "path": "README.md",
-      "sha256": "4faa74d5ae5368ae8efb52149f0c0b23be1303f3abaf3134f8d2cebd21f9aaa1",
+      "sha256": "ba26bb30126a35cfd1d03114a8f40db72f9be776fd1fdf8cd6d26bd2629dd961",
       "tokens": [
         "Team Execution"
       ]
@@ -82,7 +82,7 @@
     {
       "classification": "historical-evidence",
       "path": "docs/engineering-journal/DECISIONS.md",
-      "sha256": "ffc4a4b5e7d983007e763632e2547355af89c67a51b86a94e571f74c32f5e69b",
+      "sha256": "79dbb9b0e5064b1ee1388ce07df8687d77dea009783f2e0b43c400f946568c7c",
       "tokens": [
         "## Team Structure",
         "Team Execution",
@@ -584,7 +584,7 @@
     {
       "classification": "legacy-read-metadata",
       "path": "docs/validation/saga-family-target-inventory.json",
-      "sha256": "aca56dcd9cc64490040bf312a136f403189e7a2fb4b011b5990106750e95acfb",
+      "sha256": "67af7222b8cdc0a5860e66307550c368528c2c7761f51cd3925f0e556ea353bf",
       "tokens": [
         ".codex/team-execution/",
         "team-execution"
@@ -1196,7 +1196,7 @@
     }
   ],
   "generated_by": "scripts/build_legacy_workflow_inventory.py",
-  "historical_inventory_sha256": "6115498a8b03f105698942d67965dd784702ee65225b94aad9e58221d9b44a42",
+  "historical_inventory_sha256": "484450d23606c93cb849fc2a7982ade0ab781e4e6c450528335133c69f006d73",
   "history_sentinels": {
     "docs/investigations/2026-06-30-team-execution-saga-orchestration-debug-report.md": {
       "sha256": "ecc08eceda3a67dc81d15b1930753fe236ca7c1ae9b3ad9dd506cdecfb0ac4fa",
