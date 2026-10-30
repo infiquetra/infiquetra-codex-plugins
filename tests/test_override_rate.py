@@ -548,7 +548,7 @@ def test_real_saga_save_feeds_override_rate_reader(
     assert "50.0%" in report
 
     # The override decision's operator_choice is explicit, not inferred from mode.
-    override_rec = next(r for r in records if r.recommended == "inline")
+    override_rec = next(r for r in records if r.saga_id == "task-override-decision")
     assert override_rec.operator_choice == "verified-workflow"
     assert override_rec.actual_mode == "verified-workflow"
 

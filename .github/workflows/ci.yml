@@ -1,0 +1,112 @@
+name: Adapter CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  validate:
+    name: Adapter validation (Python 3.12)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          # Validators and port contracts read historical commits and evidence tags.
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check dependency lockfile
+        run: |
+          umask 022
+          test -f uv.lock
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+        with:
+          version: "0.13.6"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+          cache-suffix: uv-0.13.6-python-3.12
+          # Dependency cache: downloaded data, metadata and source-built wheels.
+          # Fresh locked sync recreates the environment; no installed runtime is cached.
+          cache-local-path: ${{ runner.temp }}/uv-cache
+          prune-cache: true
+
+      - name: Install Python and locked development dependencies
+        run: |
+          umask 022
+          uv python install 3.12
+          uv sync --locked --python 3.12
+
+      - name: Check change whitespace
+        env:
+          DIFF_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          DIFF_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          umask 022
+          if [[ "$DIFF_BASE" == "0000000000000000000000000000000000000000" ]]; then
+            DIFF_BASE=$(git hash-object -t tree /dev/null)
+          fi
+          git diff --check "$DIFF_BASE" "$DIFF_HEAD" --
+
+      - name: Validate registered plugin manifests and inventory
+        timeout-minutes: 3
+        run: |
+          umask 022
+          uv run --locked python3 scripts/validate_codex_plugins.py
+
+      - name: Exercise the registered quality-runner dry run
+        timeout-minutes: 1
+        run: |
+          umask 022
+          uv run --locked python3 plugins/test-suite/skills/run-quality-checks/scripts/test_runner.py --dry-run --checks pytest,ruff
+
+      - name: Prepare frozen upstream port oracle
+        timeout-minutes: 3
+        env:
+          CODEX_PORT_SOURCE_REPO: ${{ runner.temp }}/port-source
+        run: |
+          umask 022
+          git init "$CODEX_PORT_SOURCE_REPO"
+          git -C "$CODEX_PORT_SOURCE_REPO" remote add origin https://github.com/infiquetra/infiquetra-claude-plugins.git
+          git -C "$CODEX_PORT_SOURCE_REPO" fetch --no-tags origin b464d090fccb59d0ff862f273902f1653f1d8835
+          git -C "$CODEX_PORT_SOURCE_REPO" checkout --detach FETCH_HEAD
+          for revision in \
+            a6f3bcff0fe9df213e2d2947afca99d5e7516393 \
+            cf15a09f8ffe9bf7c6f1218b2c72a8143d60ab49 \
+            b464d090fccb59d0ff862f273902f1653f1d8835 \
+            4eb2fe155bbb3c96606532f73e7fc1df4bc93c72 \
+            1648a21b26115d2bc59ed45857af4b58545f2bee; do
+            git -C "$CODEX_PORT_SOURCE_REPO" cat-file -e "$revision^{commit}"
+          done
+
+      - name: Run the complete configured pytest suite
+        timeout-minutes: 10
+        env:
+          CODEX_PORT_SOURCE_REPO: ${{ runner.temp }}/port-source
+          PYTEST_JUNIT_PATH: ${{ runner.temp }}/adapter-pytest.xml
+        run: |
+          umask 022
+          uv run --locked python3 -m pytest --import-mode=importlib -ra --durations=10 --junitxml="$PYTEST_JUNIT_PATH"
+
+      - name: Retain bounded pytest diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: adapter-pytest
+          path: ${{ runner.temp }}/adapter-pytest.xml
+          if-no-files-found: ignore
+          retention-days: 7
