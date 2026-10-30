@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 from pathlib import Path
 from types import ModuleType
+
+import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -23,7 +26,34 @@ def load_proof_script() -> ModuleType:
 proof_script = load_proof_script()
 
 
-def test_generate_static_proof_contains_required_evidence(tmp_path: Path) -> None:
+def test_generate_static_proof_contains_required_evidence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Exercise the real CLI preview/refusal with deterministic provider reads.
+    # Remote config reads fail locally so the existing vendored fallback runs.
+    fixture_bin = tmp_path / "fixture-bin"
+    fixture_bin.mkdir()
+    gh_log = tmp_path / "gh-calls.jsonl"
+    gh = fixture_bin / "gh"
+    gh.write_text(
+        f"#!{sys.executable}\n"
+        "import json, sys\n"
+        f"with open({str(gh_log)!r}, 'a') as out:\n"
+        "    out.write(json.dumps(sys.argv[1:]) + '\\n')\n"
+        "args = sys.argv[1:]\n"
+        "if args == ['api', '/repos/infiquetra/campps-platform/labels?per_page=100']:\n"
+        "    print(json.dumps([{'name': 'capability'}, {'name': 'needs-plan'}]))\n"
+        "elif args == ['api', '/repos/infiquetra/campps-platform/contents/.github/ISSUE_TEMPLATE']:\n"
+        "    print(json.dumps([{'name': n + '.yml'} for n in "
+        "('capability', 'enhancement', 'defect', 'exploration', 'context-update')]))\n"
+        "else:\n"
+        "    print('offline proof fixture: unsupported invocation', file=sys.stderr)\n"
+        "    raise SystemExit(1)\n",
+        encoding="utf-8",
+    )
+    gh.chmod(0o755)
+    monkeypatch.setenv("PATH", str(fixture_bin), prepend=":")
+
     proof = proof_script.generate_proof(
         repo_root=ROOT,
         proof_root=tmp_path,
@@ -56,6 +86,18 @@ def test_generate_static_proof_contains_required_evidence(tmp_path: Path) -> Non
     assert proof["state_proof"]["ignored"][".codex/verified-workflows/"] is True
     assert proof["state_proof"]["legacy_readable_roots"] == [".codex/team-execution/"]
     assert proof["state_proof"]["ignored"][".codex/proofs/"] is True
+
+    allowed_reads = {
+        ("api", "/repos/infiquetra/campps-platform/labels?per_page=100"),
+        ("api", "/repos/infiquetra/campps-platform/contents/.github/ISSUE_TEMPLATE"),
+        *(
+            ("api", f"repos/infiquetra/infiquetra-sdlc/contents/config/{name}", "--jq", ".content")
+            for name in ("labels.json", "beads-config.json", "sdlc-schema.json?ref=main")
+        ),
+    }
+    calls = [tuple(json.loads(line)) for line in gh_log.read_text().splitlines()]
+    assert calls
+    assert all(call in allowed_reads for call in calls), "proof attempted a non-fixture read/write"
 
 
 def test_rendered_markdown_redacts_local_profile_paths() -> None:

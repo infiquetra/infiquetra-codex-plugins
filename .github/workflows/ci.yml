@@ -40,6 +40,8 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
           cache-suffix: uv-0.13.6-python-3.12
+          # Dependency cache: downloaded data, metadata and source-built wheels.
+          # Fresh locked sync recreates the environment; no installed runtime is cached.
           cache-local-path: ${{ runner.temp }}/uv-cache
           prune-cache: true
 

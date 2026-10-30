@@ -89,18 +89,30 @@ def test_resume_instructions_cover_contradiction_and_stale_context_repair() -> N
         assert phrase in body
 
 
-def test_legacy_workflow_leaf_without_ref_normalizes_then_halts() -> None:
+def test_legacy_workflow_leaf_without_ref_normalizes_then_halts(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
     req = SimpleNamespace(
         outcome_id="ship-x",
         subplot_id="build",
         title="Build",
         backend="team-execution",
-        repo_root=Path("."),
+        repo_root=tmp_path,
         orchestration_ref="",
     )
 
     result = DISPATCHER.dispatch(req)
 
+    assert result["status"] == "halt"
+    assert result["receipt"]["backend"] == "verified-workflow"
+    assert "missing orchestration_ref" in result["receipt"]["reason"]
+    assert "## Workflow Structure" in result["receipt"]["reason"]
+
+    # A legacy backend label is not evidence that legacy state exists.
+    # Retain the original diagnostic assertion with its actual state prerequisite.
+    (tmp_path / ".codex" / "team-execution").mkdir(parents=True)
+    result = DISPATCHER.dispatch(req)
     assert result["status"] == "halt"
     assert result["receipt"]["backend"] == "verified-workflow"
     assert "legacy workflow state" in result["receipt"]["reason"]

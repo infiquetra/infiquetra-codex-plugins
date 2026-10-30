@@ -1088,7 +1088,7 @@
     {
       "classification": "migration-fixture",
       "path": "tests/test_override_rate.py",
-      "sha256": "4a63d70bc6b3415670f213928e1cb3c72a2135310a79edbb92c299cd32127f74",
+      "sha256": "bfe15fe01f854c14cca7220bb2cb69412c1eac1ffc341bb38b009050c0419d2e",
       "tokens": [
         "team-execution"
       ]
@@ -1120,7 +1120,7 @@
     {
       "classification": "migration-fixture",
       "path": "tests/test_prove_codex_plugin_profile.py",
-      "sha256": "6b02d881935a8cb24cea9fc484a72009cf6d0bd2a4a1e75005f71fd8339cefe0",
+      "sha256": "abf06bf63522776682e65f40dc46c1e9b177b5ab8706ae29afdffd7cf38e469a",
       "tokens": [
         ".codex/team-execution/",
         "team-execution"
@@ -1159,7 +1159,7 @@
     {
       "classification": "migration-fixture",
       "path": "tests/test_verified_workflow_orchestration_regressions.py",
-      "sha256": "61b6bd2e4a4e075e0a77812f246c939a38288170b201075fefa407942845a155",
+      "sha256": "5f19b4a070a43db301cbcb4f048335e5262bf0238ba729715baa943bb10aa523",
       "tokens": [
         "team-execution"
       ]

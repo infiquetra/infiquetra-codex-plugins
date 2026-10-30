@@ -18,10 +18,15 @@ from the historical upstream repository identity, verifies all five required
 commit objects, and passes that checkout through `CODEX_PORT_SOURCE_REPO`.
 No moving-branch fallback or installed plugin cache supplies the oracle.
 
-Only uv's download cache is archived, under the runner's temporary directory;
-lockfile, platform, interpreter and uv policy distinguish cache entries. The
-environment, tool installations and source checkouts are recreated each run.
-Installs and validation commands execute regardless of cache hits.
+uv's dependency cache is archived under the runner's temporary directory. It can
+contain downloaded package data, metadata and wheels built from source; pruning
+does not make it a downloads-only archive. Lockfile, platform, uv version and the
+Python 3.12 policy distinguish entries. The setup action discovers its key's Python
+identity before the later explicit test-interpreter install, so that key does not
+attest the eventual interpreter patch. The environment, runtime installations and
+uncached source oracle are recreated each run. Locked installs and all validation
+commands execute regardless of cache hits. GitHub PR-ref isolation and the absence
+of a privileged consumer bound reuse; this cache is not release evidence.
 
 The job has a fifteen-minute deadline, with separate bounds for entrypoints and
 pytest. Pytest reports slow cases and skip/failure summaries; its JUnit file is
@@ -35,3 +40,11 @@ not change branch protection or publish releases.
 
 Rollback removes this workflow and note. Preserve the existing test commands,
 assertions and source inventory while repairing any prerequisite failure.
+
+The baseline needs three owned migration-fixture corrections: select the intended
+saved decision by identity, supply actual legacy state before asserting its
+diagnostic, and provide deterministic read-only provider metadata for the static
+proof. The proof still executes the real preview/refusal path and rejects any
+unexpected provider invocation. Existing assertions remain; only the three
+corresponding current-inventory hashes change. Runtime, vendored implementations,
+profiles, manifests and frozen historical proof objects retain their bytes.
